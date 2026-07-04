@@ -1,0 +1,161 @@
+# 📑 Test Prompt Blueprint Templates
+
+**📍 You are here:** `references/prompts-templates.md` | **🏠 Return to:** [MTA Test Design Skill](../SKILL.md)
+
+This reference file contains standardized, copy-pasteable build templates optimized for generating prompts for the `mta-build` skill. Each template aligns with the Menditect Testability Framework (MTF) and MTA guidelines.
+
+> [!IMPORTANT]
+> **Low-Code Custom-Logic Rule**: When generating build prompts using these templates, you **MUST** ensure that the objectives and chronological plans focus *solely* on verifying unique, custom business rules, math formulas, validations, or custom UI-specific visibility constraints. Under no circumstance should you include test steps or assertions that verify standard Mendix platform features (e.g., verifying that standard layout templates render, or checking if standard Committer steps write to the database).
+
+---
+
+## 🧪 Template 1: Unit Test (MTA Category A - Backend)
+
+Use this template when testing deterministic business logic, calculations, or validations (`VAL_`, `RULE_`, `FTN_`, `OPR_`).
+
+```markdown
+### 📋 Unit Test Blueprint: [Test Case Name]
+
+**MTA Category:** Category A (Backend)
+**Workflow Mode:** Express with Build Plan
+**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+
+#### 1. High-Level Specifications
+*   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
+*   **Objective:** Verify that `[ElementName]` correctly mitigates the technical risk of `[Technical Risk]` and business risk of `[Business Risk]`.
+*   **Preconditions:** None (isolated memory execution).
+*   **Expected Result:** The microflow returns `[Expected Return, e.g., true/false/calculated decimal]` for the specified input parameters.
+
+#### 2. Chronological Build Plan (Step Sequence)
+1.  **Step 1**: Create options parameter block in memory (if required).
+    *   *Type*: Create Object
+    *   *Entity*: `[ModuleName].[ParameterEntityName]`
+    *   *Execution*: `"Always"`, `_Continue`
+2.  **Step 2**: Execute target microflow.
+    *   *Type*: Call Microflow
+    *   *Microflow*: `[ModuleName].[ElementName]`
+    *   *Parameters*: Pipe parameters from Step 1.
+    *   *Execution*: `"None"`, `"Stop"`
+3.  **Step 3**: Assert returned output.
+    *   *Type*: Assert Microflow Return Value
+    *   *Assertion*: Assert that return value equals `[Expected Value]`.
+    *   *Execution*: `"None"`, `"Stop"`
+```
+
+### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases
+
+To achieve extremely high coverage in Category A Unit Tests, you **MUST** formulate build plans and prompts for multiple test cases covering these critical execution profiles.
+
+> [!IMPORTANT]
+> **Data Variation Focus & Risk Prioritization**: When defining and designing data variations, always focus strictly on the relevant attributes that directly change the execution path or logical outcome of the code. Avoid wasting variations on static or non-impactful attributes. If applicable, prioritize and expand variations for attributes carrying high business value or operational risk (such as billing calculations, tax rates, or regulatory limits).
+
+You **MUST** cover these critical execution profiles:
+
+1.  **Standard Happy Path Scenario**: 
+    - Verifies that normal, correct inputs result in the expected successful outcomes and state changes.
+2.  **Boundary Value Test (BVT) Scenarios**:
+    - **Numeric Thresholds**: Test the exact threshold value, plus exactly one unit above and one unit below (e.g., testing age thresholds of 18 requires distinct test cases for `17`, `18`, and `19`).
+    - **Mathematical Extremes**: Test with zero (`0`), negative values, and very large integers or decimals.
+    - **String Lengths**: Test with empty string (`""`), single-character strings, and extremely long strings.
+    - **List/Collection Sizes**: Test with empty lists (`0` items), single-item lists, and multi-item lists.
+3.  **Negative Edge Case Scenarios**:
+    - **Null and Empty States**: Test passing `null` or unassigned association values to verify defensive guard logic.
+    - **Validation Failures**: Test invalid formatting, out-of-range values, or incorrect domain validation flags to ensure that the microflow gracefully handles illegal states.
+    - **Exception Assertions**: When an input is expected to trigger an explicit error or crash, build a test case that verifies the error handling. 
+      - *MTA Rule*: Downstream, use `CreateAssertException` and set its properties via `SetAssertExceptionProperties` to assert that the target microflow throws the expected error message or error code.
+
+---
+
+## 🔗 Template 2: Integration Test (MTA Category A - Backend)
+
+Use this template when testing multi-step processes or transactional orchestrations (`ORC_`, `CMT_`, `VAL_ORC_`) utilizing **TestLogger** foot-printing.
+
+```markdown
+### 📋 Integration Test Blueprint: [Test Case Name]
+
+**MTA Category:** Category A (Backend)
+**Workflow Mode:** Express with Build Plan
+**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+
+#### 1. High-Level Specifications
+*   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
+*   **Objective:** Verify that `[ElementName]` coordinates business components in the exact sequence, avoiding the operational risk of `[Operational Risk]` and transactional risk of `[ACID Risk]`.
+*   **Preconditions:** Database state seeded.
+*   **Expected Result:** Orchestration finishes successfully and the **TestLogger** footprint matches the expected baseline.
+
+#### 2. Chronological Build Plan (Step Sequence)
+1.  **Step 1 (Setup)**: Seed database objects.
+    *   *Type*: Create and Persist database entities.
+    *   *Execution*: `"Always"`, `_Continue`
+2.  **Step 2 (Execution)**: Call parent orchestration microflow.
+    *   *Type*: Call Microflow
+    *   *Microflow*: `[ModuleName].[ElementName]`
+    *   *Execution*: `"None"`, `"Stop"`
+3.  **Step 3 (Assertion)**: Query TestLogger.
+    *   *Type*: Call Microflow `TestLogger.GetFootprint` or equivalent.
+    *   *Assertion*: Assert that called unit sequence equals the expected footprint baseline.
+    *   *Execution*: `"None"`, `"Stop"`
+4.  **Step 4 (Teardown)**: Clean up seeded records.
+    *   *Type*: Delete and Persist database entities.
+    *   *Execution*: `"Always"`, `_Continue`
+```
+
+---
+
+## 🖥️ Template 3: Functional UI Test (MTA Category B - Frontend)
+
+Use this template when testing screen layouts, button clicks, client-cache synchronization, and navigational flows (`ACT_` triggered from pages).
+
+```markdown
+### 📋 Functional UI Test Blueprint: [Test Case Name]
+
+**MTA Category:** Category B (Frontend)
+**Workflow Mode:** Express with Build Plan
+**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+
+#### 1. High-Level Specifications
+*   **Case 1: SETUP**
+    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Setup`
+    *   *Objective*: Initialize browser environment.
+    *   *Execution*: `"Always"`, `_Continue`
+*   **Case 2: EXECUTION**
+    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Execute`
+    *   *Objective*: Verify UI navigation, widget inputs, and page submission, mitigating client desync and brand abandonment.
+    *   *Expected Result*: User lands on success page and success notification is displayed.
+    *   *Execution*: `"None"`, `"Stop"`
+*   **Case 3: TEARDOWN**
+    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Teardown`
+    *   *Objective*: Close browser context safely.
+    *   *Execution*: `"Always"`, `_Continue`
+
+#### 2. Chronological Build Plan (Step Sequence)
+*   **CASE 1 (Setup)**:
+    1.  Create Playwright browser session (`Start_Playwright_Browser`).
+*   **CASE 2 (Execution)**:
+    1.  *[Seeding - Always, _Continue]* Create and persist backend records needed for the UI screen context.
+    2.  *[UI Startup - Always, _Continue]* Open browser to URL: `[PageLoginRedirectURL]`.
+    3.  *[UI Interaction - None, Stop]* Locate and fill text widget `'[WidgetCaption]'` with `[InputValue]`.
+    4.  *[UI Interaction - None, Stop]* Locate and click button `'[ButtonCaption]'`.
+    5.  *[UI Assertion - None, Stop]* Verify notification text equals `[SuccessMessage]`.
+    6.  *[UI Session Stop - Always, _Continue]* Call `Stop_MxFrontendTest`.
+    7.  *[Cleanup - Always, _Continue]* Delete and persist seeded database records.
+*   **CASE 3 (Teardown)**:
+    1.  Call `Teardown_Playwright`.
+```
+
+### 🖥️ Frontend Risk-Focus Strategy for Category B Tests
+
+To ensure that frontend tests are highly valuable and not just duplicating backend logic, the prompts for Category B tests **MUST** focus strictly on aspects and risks unique to the frontend that *cannot* be verified via direct backend microflow or unit tests. These include:
+
+1.  **Conditional Visibility & Editability**:
+    - Verifying that fields, containers, or buttons are correctly hidden, visible, enabled, or disabled on screen based on the user's role or other data selections (e.g., verifying a "Submit" button is disabled until all required fields are filled).
+2.  **Client-Side Validation & Feedback**:
+    - Checking that validation error messages, tooltips, or popup dialogs are displayed immediately in the UI when invalid data is entered.
+3.  **UI Navigation & Interactive Page Flows**:
+    - Verifying multi-page wizards, popup windows (opening and closing), tab switching, and menu navigation sequences.
+4.  **Client Cache State & Uncommitted Data**:
+    - Testing user interactions that alter the local client-cache state before any server-side database commit occurs (such as entering data, navigating away and back, and verifying the state is preserved or discarded).
+5.  **Role-Based Dynamic Layouts**:
+    - Verifying that different user roles see different screens, sections, or widgets, ensuring restricted UI elements are inaccessible to unauthorized personas.
+6.  **Asynchronous UI Updates & Loading States**:
+    - Checking the behavior of loading indicators, progress bars, dynamic search grids, and instant page refreshes upon backend changes.
