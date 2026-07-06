@@ -1,9 +1,11 @@
 ---
 name: mta-run-analyze
-description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.1, Skill Version v3.1_1.0). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
+description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
+version: "3.2_1.0"
+changes: "Updated MTA version to 3.2 and removed duplicate version numbers from description and title."
 ---
 
-# MTA Execution, Analysis, & Diagnostics Skill (Version v3.1_1.0) 
+# MTA Execution, Analysis, & Diagnostics Skill
 
 🚨 **CRITICAL MTA GUARDRAIL: STOP AND ENFORCE INTERACTIVE DISCOVERY** 🚨
 
