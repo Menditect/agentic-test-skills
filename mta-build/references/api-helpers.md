@@ -109,6 +109,10 @@ To query and retrieve existing objects from the database within your test cases,
 *   **The "AND" Filtering Law:** When multiple associations and/or attribute filters are defined on a single retrieve step, they act as **AND** filters (meaning the retrieved object must satisfy *all* specified criteria).
 *   **The Empty Filter Note:** If no attributes or associations are specified, the step will retrieve the first available record of that entity type in the database.
 
+> [!IMPORTANT]
+> **Associations on Retrieve Steps (No "Create/Change Only" Limitation):**
+> Some AI assistants (like MAIA) may mistakenly claim that associations can only be configured on `Create` or `Change` teststeps. This is a critical misconception. The MTA API officially supports configuring associations on **`RetrieveObject`** teststeps using `CreateSelectObjectForAssociation` to act as precise relational filters.
+
 ---
 
 ## 💾 DATABASE OBJECT MODIFICATION ACTIONS (CHANGE, DELETE, PERSIST)
@@ -192,11 +196,11 @@ Rules for configuring execution settings for backend data actions—including da
 
 ## 🔗 THE OBJECT ASSOCIATION BLUEPRINT (3-STEP SEQUENCE)
 
-When a teststep creates a database record using `CreateTestStepCreateObject` and needs to associate it with another record (either created or retrieved upstream), you **MUST** execute this exact 3-step sequence sequentially:
+When a teststep (of category `CreateObject`, `ChangeObject`, or `RetrieveObject`) needs to associate or filter by another record (either created or retrieved upstream), you **MUST** execute this exact 3-step sequence sequentially:
 
 1. **Establish the Association Link:** Call `CreateSelectObjectForAssociation` with:
    * `AssociationName`: Fully qualified name of the Mendix association (e.g., `MyModule.Customer_Address`).
-   * `TestStepKey`: The key of the step that created the base object (e.g., the step that created `Customer`).
+   * `TestStepKey`: The key of the step being configured (e.g., the `Create`, `Change`, or `Retrieve` step).
    * *Returns:* `SelectObjectForAssociationKey` (the association link key).
 2. **Set the Operation:** Call `SetOperationOfSelectObjectForAssociation` with:
    * `SelectObjectForAssociationKey`: The key returned in Step 1.

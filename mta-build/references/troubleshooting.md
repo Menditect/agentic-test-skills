@@ -186,6 +186,17 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
     3.  Manually edit the step properties (e.g., configure complex custom widget bindings) or perform manual deletion actions where required (since deletion actions are not supported by the MCP toolset and must be manually executed in MTA).
     4.  Once the manual configuration is complete, you can optionally remove the highlight or run the test case as usual.
 
+### Pattern J: "Associations can only be configured on Create/Change steps" Misconception
+*   **Symptom:** An AI assistant (like MAIA) or developer claims that associations cannot be configured on a Retrieve step, or refuses to call `CreateSelectObjectForAssociation` targeting a `RetrieveObject` teststep.
+*   **Root Cause:** Conflating *mutation* (writing associations) with *filtering* (querying/XPath simulation). While setting associations on `Create` or `Change` steps modifies the model's data, setting associations on a `Retrieve` step acts as a powerful relational query filter.
+*   **Resolution Protocol:**
+    1.  Acknowledge that `CreateSelectObjectForAssociation` officially supports `RetrieveObject` steps.
+    2.  To configure a relational filter on a `RetrieveObject` step:
+        - Call `CreateSelectObjectForAssociation` on the retrieve `TestStepKey`.
+        - Set the operation (typically `"Set"` or `"Add"`) using `SetOperationOfSelectObjectForAssociation`.
+        - Bind the target record using `SetTestStepOutputForSelectObjectForAssociation`.
+    3.  Verify that this relational retrieve is used for list-filtering rather than single-object assertions (which must remain clean).
+
 ---
 
 ## 🛠️ DESIGN-TIME CONSTRUCTION DIAGNOSTICS (GetTestConstructionErrorsOfTestCase)
