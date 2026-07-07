@@ -30,6 +30,34 @@ graph TD
 
 ---
 
+## 🏢 TEST SUITE & CONTAINER ADMINISTRATION
+
+When establishing or restructuring test environments, you can programmatically provision and manage test suites and test cases.
+
+### 1. Programmatic Suite Initialization Flow
+To create and initialize a new test suite from scratch, you **MUST** follow this canonical 3-step sequence:
+1.  **Create the Suite:** Call `CreateTestSuite` passing the target `ApplicationKey` (from the test configuration lookup). This instantiates a new empty suite container and returns its `TestSuiteKey`.
+2.  **Configure Suite Metadata:** Call `SetTestSuiteNameDescription` passing:
+    * `TestSuiteKey`: The key returned in Step 1.
+    * `Name`: A concise, descriptive name (e.g., `"Billing Calculation Suite"`).
+    * `Description`: A clear explanation of the suite's functional scope and objective.
+    * `ExecutionCondition`: Set to `"Always"` or `"None"`.
+3.  **Provision the First Test Case:** Call `CreateTestCase` passing the `TestSuiteKey` as the parent container. This begins the test case placement and spec definition lifecycle.
+
+### 2. Application & Configuration Lookup Getters
+Before creating suites or configurations, you can look up application keys and registered configurations using these lightweight getters:
+*   **`GetApplicationByName`**: Retrieves an application key and metadata based on the application's unique name.
+*   **`GetApplicationForApplicationInstanceToken`**: Programmatically fetches the associated application key, details, and environment configurations for a given active application instance connection token.
+*   **`GetTestConfigurationsForApplicationKey`**: Lists all active and available test configurations for the specified application key.
+
+### 3. 🚨 CRITICAL GUARDRAIL: Large Payload Warning (`GetTestSuiteDetails`)
+The `GetTestSuiteDetails` tool retrieves a recursively expanded, highly verbose JSON representation detailing all test cases, steps, parameter bindings, attributes, and assertions under a given test suite.
+*   **The Guardrail Rule:** You are **strictly prohibited** from calling `GetTestSuiteDetails` during standard placement lookups, initial scoping, or standard workflows in both the `mta-build` and `mta-run-analyze` skills. Calling it unnecessarily will flood the context window, causing immediate token bloat and severe model performance degradation.
+*   **When to Use:** You **MUST ONLY** invoke `GetTestSuiteDetails` when explicitly conducting a deep manual structural audit of an existing suite or when specifically requested by the user to explain a complete, complex suite hierarchy.
+*   **Preferred Alternatives:** Symmetrically, for standard lookups, routing, and sequence checks, you **MUST** use lightweight lookup tools like `GetTestSuites` and `GetTestCases` which return clean, compact lists of keys and metadata.
+
+---
+
 ## 🧬 TESTRUN SCOPES, REVISIONS & BRANCHING STRATEGY
 
 ### 1. Test Run Execution Scopes

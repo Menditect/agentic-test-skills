@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "3.2_1.0"
-changes: "Updated MTA version to 3.2 and removed duplicate version numbers from description and title."
+version: "3.2_1.1"
+changes: "Integrated reference documentation and troubleshooting rules for 31 newly discovered MTA MCP tools, reaching 100% tool coverage."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill

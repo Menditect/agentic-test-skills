@@ -43,9 +43,11 @@ Use this checklist to evaluate your own proposals or verify existing Mendix micr
 - [ ] **Prefix Match?** Does the microflow name start with an approved prefix (e.g., `ACT_`, `ORC_`, `GET_`, `OPR_`, `VAL_`, `FTN_`, `CMT_`, `VAL_ORC_`) that matches its actual behaviour?
 - [ ] **Single Responsibility?** If the microflow description requires the word "and", it is doing too much. Can it be divided into separate Units?
 - [ ] **No Hidden Retrieves (DI)?** Is the microflow "asking" for the data it needs via input parameters instead of "looking" for it with retrieve activities?
-- [ ] **Isolatable Unit?** Is a Unit microflow strictly isolated (i.e. does not call other microflows, except common helper units like `GET_` or `FTN_`) so it is simple to unit test?
+- [ ] **Isolatable Unit?** Is a Unit microflow strictly isolated (i.e. does not call other microflows, with the sole exception of nested `GET_` calling another `GET_` or `FTN_` calling another `FTN_` of the exact same typology) so it is simple to unit test?
 - [ ] **Allowed Calls?** Does the microflow follow the strict call hierarchy? (e.g., a Unit never calls an Orchestration; a Committer `CMT` never calls a data-mutating Operator `OPR`).
 - [ ] **Encapsulated?** If this microflow is an internal implementation detail, is it marked as private (prefixed with an underscore, e.g. `_ORC_`)?
 - [ ] **Centralized Commit?** Are there any database commits or deletes happening outside a dedicated `CMT_` microflow? If so, refactor them into a `CMT_` microflow.
 - [ ] **Server-Side Validation?** Are Invariant validations (`VAL_`) executed in the `CMT` back-end layer before any commit is processed?
 - [ ] **Return Values for Testability?** Do Unit and Touchpoint microflows have return values? Having a return value makes it much easier to assert on the returned outcome directly in unit tests or to pipe the output as input to downstream change or microflow parameter steps in MTA.
+- [ ] **Safe Event Handlers?** If Before-Commit event handlers are implemented, are they used exclusively for Data Augmentation (e.g., timestamps/logging) and configured to **always return `true`**? Are business validations (`VAL_`) kept strictly out of event handlers?
+- [ ] **Explicit Scope Pattern?** Is a clear, consistent transactional scope pattern (List-based, Main Object, or Helper NPE) declared and correctly managed through the `CMT_` execution sequence?

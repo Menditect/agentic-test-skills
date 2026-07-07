@@ -186,16 +186,35 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
     3.  Manually edit the step properties (e.g., configure complex custom widget bindings) or perform manual deletion actions where required (since deletion actions are not supported by the MCP toolset and must be manually executed in MTA).
     4.  Once the manual configuration is complete, you can optionally remove the highlight or run the test case as usual.
 
-### Pattern J: "Associations can only be configured on Create/Change steps" Misconception
-*   **Symptom:** An AI assistant (like MAIA) or developer claims that associations cannot be configured on a Retrieve step, or refuses to call `CreateSelectObjectForAssociation` targeting a `RetrieveObject` teststep.
-*   **Root Cause:** Conflating *mutation* (writing associations) with *filtering* (querying/XPath simulation). While setting associations on `Create` or `Change` steps modifies the model's data, setting associations on a `Retrieve` step acts as a powerful relational query filter.
-*   **Resolution Protocol:**
-    1.  Acknowledge that `CreateSelectObjectForAssociation` officially supports `RetrieveObject` steps.
-    2.  To configure a relational filter on a `RetrieveObject` step:
-        - Call `CreateSelectObjectForAssociation` on the retrieve `TestStepKey`.
-        - Set the operation (typically `"Set"` or `"Add"`) using `SetOperationOfSelectObjectForAssociation`.
-        - Bind the target record using `SetTestStepOutputForSelectObjectForAssociation`.
-    3.  Verify that this relational retrieve is used for list-filtering rather than single-object assertions (which must remain clean).
+---
+
+## 🔍 RUNTIME FAILURE DIAGNOSTICS & PROACTIVE AUDITING GETTERS
+
+When a test case or suite fails during runtime execution verification (`[STATE_EXECUTION_VERIFY]` or `[STATE_QA_ASSISTANCE]`), you **MUST** leverage MTA's programmatic diagnostics and auditing getters to trace values, associations, and assertion structures. 
+
+These tools let you inspect the internal states of executed teststeps in transaction memory without resorting to guess-work.
+
+### 1. Programmatic Failure Retrieval & Assertion Inspection
+To audit failed assertions or retrieve structured execution receipts:
+*   **`RetrieveTestRunResults`**: Call this tool immediately after execution to retrieve the complete, structured execution receipt. It returns execution statuses, timestamps, logs, and a list of failed step keys.
+*   **`GetAssertExceptionByTestStep`**: If a microflow execution step fails with an exception, use this getter to retrieve the exact exception assertion properties configured on that step.
+*   **`GetAssertObjectCountByTestStep`**: If a retrieve-and-assert step fails count validations, use this getter to retrieve the expected vs. actual object count assertion properties.
+
+### 2. Auditing Attributes and Associations in Memory
+To inspect what values were written or read by a specific teststep during active execution, call these audit getters:
+*   **`GetAttributeValuesOfTeststep`**: Programmatically retrieves all attribute values configured, written, or filtered on the specified teststep.
+*   **`GetAssociationsByTestStep`**: Programmatically retrieves all configured association select objects and their operations (e.g., `Add`, `Set`, `Clear`) defined on the specified teststep.
+
+### 3. Deep Memory Object Inspection
+For advanced verification of structured object states inside the transaction memory, use the specialized detail getters:
+*   **`GetObjectActionTestStepCreateObjectDetails`**: Retrieves the deep, recursive entity values, included attributes, and values for a `Create Object` step.
+*   **`GetObjectActionTestStepChangeObjectDetails`**: Retrieves details of the changes and output mappings applied to a `Change Object` step.
+*   **`GetObjectActionTestStepRetrieveObjectDetails`**: Retrieves the database filters, XPaths, and output select options for a `Retrieve Object` step.
+*   **`GetObjectActionTestStepDeleteObjectDetails`**: Retrieves output mappings and target selectors for a `Delete Object` step.
+*   **`GetObjectActionTestStepPersistDetails`**: Retrieves transaction commit information for a `Persist` step.
+
+> [!TIP]
+> **Diagnostic Workflow:** When a step fails, run `GetAttributeValuesOfTeststep` and `GetAssociationsByTestStep` on both the *producer step* and the *consumer step* to verify that keys, values, and reference mappings were correctly propagated.
 
 ---
 

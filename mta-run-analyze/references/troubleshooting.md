@@ -188,6 +188,36 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 
 ---
 
+## 🔍 RUNTIME FAILURE DIAGNOSTICS & PROACTIVE AUDITING GETTERS
+
+When a test case or suite fails during runtime execution verification (`[STATE_EXECUTION_VERIFY]` or `[STATE_QA_ASSISTANCE]`), you **MUST** leverage MTA's programmatic diagnostics and auditing getters to trace values, associations, and assertion structures. 
+
+These tools let you inspect the internal states of executed teststeps in transaction memory without resorting to guess-work.
+
+### 1. Programmatic Failure Retrieval & Assertion Inspection
+To audit failed assertions or retrieve structured execution receipts:
+*   **`RetrieveTestRunResults`**: Call this tool immediately after execution to retrieve the complete, structured execution receipt. It returns execution statuses, timestamps, logs, and a list of failed step keys.
+*   **`GetAssertExceptionByTestStep`**: If a microflow execution step fails with an exception, use this getter to retrieve the exact exception assertion properties configured on that step.
+*   **`GetAssertObjectCountByTestStep`**: If a retrieve-and-assert step fails count validations, use this getter to retrieve the expected vs. actual object count assertion properties.
+
+### 2. Auditing Attributes and Associations in Memory
+To inspect what values were written or read by a specific teststep during active execution, call these audit getters:
+*   **`GetAttributeValuesOfTeststep`**: Programmatically retrieves all attribute values configured, written, or filtered on the specified teststep.
+*   **`GetAssociationsByTestStep`**: Programmatically retrieves all configured association select objects and their operations (e.g., `Add`, `Set`, `Clear`) defined on the specified teststep.
+
+### 3. Deep Memory Object Inspection
+For advanced verification of structured object states inside the transaction memory, use the specialized detail getters:
+*   **`GetObjectActionTestStepCreateObjectDetails`**: Retrieves the deep, recursive entity values, included attributes, and values for a `Create Object` step.
+*   **`GetObjectActionTestStepChangeObjectDetails`**: Retrieves details of the changes and output mappings applied to a `Change Object` step.
+*   **`GetObjectActionTestStepRetrieveObjectDetails`**: Retrieves the database filters, XPaths, and output select options for a `Retrieve Object` step.
+*   **`GetObjectActionTestStepDeleteObjectDetails`**: Retrieves output mappings and target selectors for a `Delete Object` step.
+*   **`GetObjectActionTestStepPersistDetails`**: Retrieves transaction commit information for a `Persist` step.
+
+> [!TIP]
+> **Diagnostic Workflow:** When a step fails, run `GetAttributeValuesOfTeststep` and `GetAssociationsByTestStep` on both the *producer step* and the *consumer step* to verify that keys, values, and reference mappings were correctly propagated.
+
+---
+
 ## 🛠️ DESIGN-TIME CONSTRUCTION DIAGNOSTICS (GetTestConstructionErrorsOfTestCase)
 
 Design-time construction and validation errors are programmatically retrieved from the MTA server using `GetTestConstructionErrorsOfTestCase(TestCaseKey)` during the Pre-Execution Smoke Audit at the end of `STATE_CONSTRUCTION`.

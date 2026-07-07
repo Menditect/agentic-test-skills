@@ -105,6 +105,27 @@ When designing database queries for assertions, or mapping inheritance structure
 
 To query and retrieve existing objects from the database within your test cases, use `CreateTestStepRetrieveObject` or `CreateTestStepRetrieveObjectByAssociation`. 
 
+### 1. The Retrieve Filter Configuration Flow
+To filter retrieve operations, you **MUST NOT** use standard `SetAttribute<Type>Value` tools. Instead, you **MUST** follow this canonical filtering sequence:
+1. **Create the Retrieve step:** Call `CreateTestStepRetrieveObject` with the entity name (e.g., `Sales.Order`). This returns `TestStepKey`.
+2. **Include the Attribute:** Call `IncludeAttributeInTeststep` with `TestStepKey` and the attribute name (e.g., `OrderStatus`). This returns `AttributeValueKey`.
+3. **Set the Filter Comparison:** Call the specialized **`SetFilter<Type>AttributeValue`** or **`SetFilter<Type>AttributeValueRange`** tool (e.g., `SetFilterStringAttributeValue`) passing:
+   - `AttributeValueKey`: The key from Step 2.
+   - `FilterComparisonOperator`: The comparison operator (e.g., `Equals`, `NotEquals`, `Contains`, `NotContains` for Strings; range operators for numbers and Dates).
+   - The filtering target value (e.g., `StringValue`, `DecimalValue`, etc.).
+
+### 2. The 13 Specialized Retrieve Filter Tools:
+Depending on the attribute data type, you **MUST** call the corresponding specialized filtering tool on the `AttributeValueKey`:
+*   **String:** `SetFilterStringAttributeValue` (supports `Equals`, `NotEquals`, `Contains`, `NotContains`)
+*   **Integer / Long:** `SetFilterIntegerLongAttributeValue` / `SetFilterIntegerLongAttributeValueRange`
+*   **Decimal:** `SetFilterDecimalAttributeValue` / `SetFilterDecimalAttributeValueRange`
+*   **Boolean:** `SetFilterBooleanAttributeValue`
+*   **DateTime:** `SetFilterDateTimeAttributeValue` / `SetFilterDateTimeAttributeValueRange` / `SetFilterCurrentDateTimeAttributeValue` (supports offsets)
+*   **AutoNumber:** `SetFilterAutoNumberAttributeValue` / `SetFilterAutoNumberAttributeValueRange`
+*   **Enumeration:** `SetFilterEnumerationAttributeValue`
+*   **HashString:** `SetFilterHashStringAttributeValue`
+
+### 3. Core Database Retrieval Filtering Laws
 *   **XPath Filter Simulation:** Attribute values and associations configured on a retrieve teststep act as **XPath filters** at runtime to select the target record.
 *   **The "AND" Filtering Law:** When multiple associations and/or attribute filters are defined on a single retrieve step, they act as **AND** filters (meaning the retrieved object must satisfy *all* specified criteria).
 *   **The Empty Filter Note:** If no attributes or associations are specified, the step will retrieve the first available record of that entity type in the database.
@@ -123,7 +144,18 @@ To set attribute values on a **newly created object**, you do NOT need a separat
 If you are creating an object and want to set its initial state immediately:
 1. **Create the Object:** Call `CreateTestStepCreateObject` (returns `TestStepKey`).
 2. **Include Attributes:** Call `IncludeAttributeValueInTeststep` directly on the creation step's `TestStepKey` to get `AttributeValueKey`.
-3. **Set Values:** Call type-specific setters (e.g., `SetAttributeStringValue`) on `AttributeValueKey`.
+3.  **Set Values:** Call type-specific setters (e.g., `SetAttributeStringValue`) on `AttributeValueKey`.
+
+#### ⚙️ Complete List of Typed Attribute Setter Tools
+When configuring included attributes on Create or Change steps, you **MUST** call the corresponding type-specific setter tool on the `AttributeValueKey` returned by `IncludeAttributeValueInTeststep`:
+*   **`SetAttributeStringValue`**: Sets a Mendix String attribute.
+*   **`SetAttributeIntegerValue`**: Sets a Mendix Integer attribute.
+*   **`SetAttributeLongValue`**: Sets a Mendix Long attribute.
+*   **`SetAttributeDecimalValue`**: Sets a Mendix Decimal attribute.
+*   **`SetAttributeBooleanValue`**: Sets a Mendix Boolean attribute.
+*   **`SetAttributeDateTimeValue`**: Sets a Mendix DateTime attribute to a specific timestamp.
+*   **`SetAttributeCurrentDateTime`**: Sets a Mendix DateTime attribute to the current runtime server timestamp.
+*   **`SetAttributeEnumerationValue`**: Sets a Mendix Enumeration attribute (pass the technical Name of the enumeration value, NOT the caption).
 
 > [!TIP]
 > Always use direct initialization for new objects. It reduces teststeps, simplifies test cases, and runs faster.
@@ -201,9 +233,12 @@ When a teststep creates a database record using `CreateTestStepCreateObject` and
 2. **Set the Operation:** Call `SetOperationOfSelectObjectForAssociation` with:
    * `SelectObjectForAssociationKey`: The key returned in Step 1.
    * `Operation`: Use `"Add"`, `"Set"`, `"Remove"`, `"Clear"`, or `"Omit"`.
-3. **Pipe the Target Object:** Call `SetTestStepOutputForSelectObjectForAssociation` with:
-   * `SelectObjectForAssociationKey`: The key from Step 1.
-   * `TestStepOutputKey`: The output key of the **parent TestStep** that created/retrieved the target associated object (e.g., the parent `TestStepKey` returned by `CreateTestStepCreateObject` or `CreateTestStepRetrieveObject` for the `Address` object).
+3. **Configure Target Value (Choose Option A or Option B):**
+   * **Option A: Pipe the Target Object (To Set/Bind Reference):** Call `SetTestStepOutputForSelectObjectForAssociation` with:
+     * `SelectObjectForAssociationKey`: The key from Step 1.
+     * `TestStepOutputKey`: The output key of the **parent TestStep** that created/retrieved the target associated object (e.g., the parent `TestStepKey` returned by `CreateTestStepCreateObject` or `CreateTestStepRetrieveObject` for the `Address` object).
+   * **Option B: Set the Association to Empty (To Clear Reference):** If you explicitly want to empty/clear the association link on the object, call **`SetEmptyValueOfSelectObjectForAssociation`** with:
+     * `SelectObjectForAssociationKey`: The key from Step 1.
 
 > [!IMPORTANT]
 > **Parent TestStep Key vs. Nested EntityValue Key:**
@@ -219,6 +254,21 @@ When a teststep creates a database record using `CreateTestStepCreateObject` and
 > [!WARNING]
 > * **Never skip Step 3:** Skipping Step 3 will silently ignore the association at runtime, causing database validation or business logic failures.
 > * **Never use `EntityValueKey`:** Symmetrically to `AttributeValueKey`, you might feel tempted to use `EntityValueKey` for object/entity value parameters. This is a critical mistake as no such parameter exists in any MTA tool. Use `TestStepOutputKey` exclusively for bindings.
+
+---
+
+## ⚙️ MICROFLOW CALL TEST STEP PARAMETER SETTERS
+
+When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7), you must configure and bind input parameters. Call `GetMicroflowCallTeststepDetails(TestStepKey)` to retrieve the parameter keys, then call the appropriate typed setter tool:
+*   **`SetStringValueMicroflowParameterValue`**: Binds a String microflow parameter.
+*   **`SetBooleanValueMicroflowParameterValue`**: Binds a Boolean microflow parameter.
+*   **`SetEnumerationValueMicroflowParameterValue`**: Binds an Enumeration microflow parameter (pass the technical value Name).
+*   **`SetDateTimeValueMicroflowParameterValue`**: Binds a DateTime microflow parameter to a specific timestamp.
+*   **`SetCurrentDateTimeValueMicroflowParameterValue`**: Binds a DateTime microflow parameter to the current runtime server timestamp.
+*   **`SetEmptyForSelectObjectForMicroflowParameter`**: Explicitly passes a null/empty object reference to an object parameter.
+*   **`SetTestStepOutputForSelectObjectForMicroflowParameter`**: Pipes an upstream step's output (using its `TestStepKey`) into the microflow's object parameter.
+*   **`SetInputTypeMicroflowParameterValueToTestStep`**: Sets the input type/source mapping for microflow parameter values.
+*   **GetSelectValueForValueByMicroflowParameterValue**: Retrieves the select value for value mappings configured on a microflow parameter.
 
 ---
 

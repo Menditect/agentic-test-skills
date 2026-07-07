@@ -48,7 +48,7 @@ graph TD
 
 ### 3. Unit Typology
 *   **Purpose**: The smallest executable functionality resulting in a measurable, quantifiable output (e.g., an object/attribute change, retrieved list, or boolean result).
-*   **Key Responsibility**: Performs isolated data manipulation, queries, or computations. To remain easily testable, a Unit **should not** call other business microflows (except common helper Units).
+*   **Key Responsibility**: Performs isolated data manipulation, queries, or computations. To remain easily testable, a Unit **should not** call other business microflows (with the sole exception of nested `GET_` calling another `GET_` or `FTN_` calling another `FTN_` of the exact same typology).
 *   **Sub-Groups**:
     *   **Data Units** (Allowed to mutate data in memory):
         *   **Operator (`OPR`)**: Creates, modifies, or flags objects for deletion. *(Note: physical deletion is executed by the CMT; OPR merely flags the object).*
@@ -74,7 +74,7 @@ To maintain Separation of Concerns and prevent circular dependencies, a strict c
 | **Orchestrations** (`ORC`) | Same typology (`ORC`), `CMT`, `VAL_ORC`, and any Unit (`OPR`, `GET`, `VAL`, etc.) | Touchpoint microflows. |
 | **Committers** (`CMT`) | Same typology (`CMT`), `VAL_ORC`, and Common Units (`GET`, `VAL`, `FTN`, `RULE`) | **Data Units** (`OPR`, `CON`) — *to prevent object mutations during final commit*. |
 | **Validation Orchestrations** (`VAL_ORC`) | Same typology (`VAL_ORC`), Validation Units (`VAL`) | `ORC`, `CMT`, `OPR`, `CON`, and other non-validation Units. |
-| **Units** (`OPR`, `CON`, `GET`, `VAL`, `FTN`, `RULE`) | Only Common Units of the *same type* or helper Units (e.g., `GET` calls another `GET`). | Any Touchpoint, Orchestration, Committer, or dissimilar Unit. |
+| **Units** (`OPR`, `CON`, `GET`, `VAL`, `FTN`, `RULE`) | Only nested `GET_` calling another `GET_` or `FTN_` calling another `FTN_` of the exact same typology. | Any Touchpoint, Orchestration, Committer, or dissimilar Unit. |
 
 > [!WARNING]
 > **Deeply Nested Units**: Be extremely cautious when nesting Unit microflows (e.g., `GET` calling multiple `GET`s). Every nested call exponentially multiplies the number of edge cases that must be verified, making unit testing extremely difficult.

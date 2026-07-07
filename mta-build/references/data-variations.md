@@ -4,14 +4,6 @@
 
 This reference defines the sequence, parameters, and naming rules for creating data-driven test scenarios (variations) in MTA.
 
----
-
-## 🎯 CORE PRINCIPLE: FOCUS & PRIORITIZE RELEVANT ATTRIBUTES
-
-When designing and building tests with data variations, you **MUST** always apply these two core optimization rules:
-1. **Focus on Relevant Attributes**: Only include and vary attributes that directly change the execution paths, decisions, or logical outcomes of the tested component. Do not waste variations on static attributes or values that have no functional impact on the test logic.
-2. **Prioritize High Business Value/Risk**: If a component has multiple attributes that can be varied, prioritize creating variations for those attributes that carry the highest business value or risk (e.g., billing calculations, tax rates, regulatory compliance thresholds, or security permissions). Ensure your data matrix spends its columns on mitigating high-impact risks rather than trivial data configurations.
-
 > [!TIP]
 > **⚡ SPEED OPTIMIZATION: Headless Backend Case for Frontend Variations**
 > If you have extensive data-driven variations (e.g., testing 5+ input validation or calculation scenarios on a form), do **NOT** run them all via browser screens. Doing so is extremely slow and fragile.
