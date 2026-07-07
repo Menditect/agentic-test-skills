@@ -1,14 +1,8 @@
 ---
 name: mta-test-design
-description: >
-  Use this skill (MTA v3.2) when the user wants to start testing, asks how to test their app,
-  wants to know what to test, or has a vague testing request without a specific
-  test case in mind. Also triggers on: user stories, Jira details, git commits,
-  test scoping, risk assessment, define tests, what to test, audit module,
-  where to start with testing, improve test coverage, MAIA, AI built software,
-  changed mendix document, app startup.
-version: "3.2_1.1"
-changes: "Added data risk-based test strategy guidelines for domain model prioritization."
+description: "Use this skill (MTA v3.2) when the user wants to start testing, asks how to test their app, wants to know what to test, or has a vague testing request without a specific test case in mind. Also triggers on: user stories, Jira details, git commits, test scoping, risk assessment, define tests, what to test, audit module, where to start with testing, improve test coverage, MAIA, AI built software, changed mendix document, app startup."
+version: "3.2_1.2"
+changes: "Converted multi-line description to single-line double-quoted string for standard parser compatibility."
 ---
 
 # MTA Test Scoping & Design Skill
