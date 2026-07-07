@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
-description: "This skill enables the agent to design, implement, and review Mendix applications according to the **Menditect Testability Framework (MTF) v2.0**. By adhering to this skill, the agent ensures that all Mendix logic is modular, highly testable, robust, and maintains high standards of data quality and maintainability."
-version: "2.0_1.3"
-changes: "Wrapped description in double quotes to prevent YAML parsing issues."
+description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
+version: "2.0_1.4"
+changes: "Simplified description and removed all special characters."
 ---
 
 # Skill: Menditect Testability Framework (MTF)
