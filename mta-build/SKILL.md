@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_1.9"
-changes: "Added void microflow side-effect warning and analysis rules with testability refactoring guidelines"
+version: "3.2_2.1"
+changes: "Added Golden Rule 15 for Incremental Construction Success Verification using GetTestConstructionErrorsOfTestCase"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -51,11 +51,9 @@ This determines how many times we HALT for your approval during step constructio
 *   *Note:* I have automatically executed `GetMtaUrl` and retrieved your active MTA Base URL: **[RetrievedUrl]** (If `GetMtaUrl` failed or returned empty, this will display: *"GetMtaUrl failed or returned empty. Please enter your MTA Base URL manually [e.g. https://mta-trial.mendixcloud.com] to proceed!"*). Please validate that this is correct, or override it if you wish to use a different URL.
 ```
 
----
+## 🚫 THE 15 CRITICAL MTA RED LINES (GOLDEN RULES)
 
-## 🚫 THE 13 CRITICAL MTA RED LINES (GOLDEN RULES)
-
-You **MUST** strictly follow the 13 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
+You **MUST** strictly follow the 14 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
 1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
 2. **No parallel or batched creations**: Create cases and steps sequentially, waiting for Key N's response before building step N+1.
 3. **No dummy predecessor keys**: Omit predecessor keys for first elements. For subsequent elements, query the last active element's key to append chronologically.
@@ -78,6 +76,13 @@ You **MUST** strictly follow the 13 Golden Rules defined in `references/core-pla
     *   **Sub-Microflow Warning:** If sub-microflows are present, highlight that deep, careful side-effect analysis is even more complex and critical.
     *   **The Action:** In `STATE_SPEC_APPROVAL` or `STATE_BUILD_PLANNING`, you must issue a prominent warning advising that an exception-only assertion is highly limited. Propose adding downstream database Retrieve steps (for Category A) or page inspection steps (for Category B) to verify the actual expected state changes or entity modifications.
     *   **Testability Refactoring Suggestion:** Proactively advise the user that they can refactor the Mendix microflow to return a value (such as the primary record created or a status flag) to simplify test verification.
+14. **Allowed Operational States for Parameter Setters & AALC Assertions**:
+    *   You are strictly prohibited from calling `MicroflowParameterValue` setters and `AssertAttributeValueCompare` (AALC) builders during planning, discovery, or placement states.
+    *   These tools are exclusively permitted inside **`[STATE_CONSTRUCTION]`**, **`[STATE_STEP_BINDING]`**, or **`[STATE_ASSERT_CONSTRUCTION]`**.
+15. **Incremental Construction Success Verification Checklist**:
+    *   **The Guardrail:** During step building inside `[STATE_CONSTRUCTION]`, you **MUST** verify step creation success incrementally using MTA MCP tools.
+    *   **The Action:** Immediately after creating or configuring a complex step block (such as after setting parameters via `MicroflowParameterValue` tools, creating `AssertAttributeValueCompare` builders, or adding custom associations), you **MUST** call `GetTestConstructionErrorsOfTestCase` targeting the active testcase key. 
+    *   **The Failure Gate:** If any validation error, option-binding, mapping, or coordinate failure is returned, you **MUST NOT** proceed to construct subsequent steps. You **MUST** stop, analyze the validation errors, and fix the active step before building further.
 
 ---
 

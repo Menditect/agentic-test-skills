@@ -260,15 +260,20 @@ When a teststep creates a database record using `CreateTestStepCreateObject` and
 ## ⚙️ MICROFLOW CALL TEST STEP PARAMETER SETTERS
 
 When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7), you must configure and bind input parameters. Call `GetMicroflowCallTeststepDetails(TestStepKey)` to retrieve the parameter keys, then call the appropriate typed setter tool:
-*   **`SetStringValueMicroflowParameterValue`**: Binds a String microflow parameter.
-*   **`SetBooleanValueMicroflowParameterValue`**: Binds a Boolean microflow parameter.
-*   **`SetEnumerationValueMicroflowParameterValue`**: Binds an Enumeration microflow parameter (pass the technical value Name).
-*   **`SetDateTimeValueMicroflowParameterValue`**: Binds a DateTime microflow parameter to a specific timestamp.
-*   **`SetCurrentDateTimeValueMicroflowParameterValue`**: Binds a DateTime microflow parameter to the current runtime server timestamp.
+*   **`SetStringMicroflowParameterValue`**: Binds a String microflow parameter.
+*   **`SetBooleanMicroflowParameterValue`**: Binds a Boolean microflow parameter.
+*   **`SetEnumerationMicroflowParameterValue`**: Binds an Enumeration microflow parameter (pass the technical value Name).
+*   **`SetDateTimeMicroflowParameterValue`**: Binds a DateTime microflow parameter to a specific timestamp.
+*   **`SetCurrentDateTimeMicroflowParameterValue`**: Binds a DateTime microflow parameter to the current runtime server timestamp.
+*   **`SetDecimalMicroflowParameterValue`**: Binds a Decimal microflow parameter.
+*   **`SetIntegerMicroflowParameterValue`**: Binds an Integer microflow parameter.
 *   **`SetEmptyForSelectObjectForMicroflowParameter`**: Explicitly passes a null/empty object reference to an object parameter.
 *   **`SetTestStepOutputForSelectObjectForMicroflowParameter`**: Pipes an upstream step's output (using its `TestStepKey`) into the microflow's object parameter.
 *   **`SetInputTypeMicroflowParameterValueToTestStep`**: Sets the input type/source mapping for microflow parameter values.
-*   **GetSelectValueForValueByMicroflowParameterValue**: Retrieves the select value for value mappings configured on a microflow parameter.
+*   **`GetSelectValueForValueByMicroflowParameterValue`**: Retrieves the select value for value mappings configured on a microflow parameter.
+
+> [!IMPORTANT]
+> **State Isolation Rule:** These setters are strictly allowed to execute only inside **`[STATE_CONSTRUCTION]`** and **`[STATE_STEP_BINDING]`**. Calling them in discovery or high-level planning is prohibited.
 
 ---
 
@@ -301,6 +306,46 @@ If your test case has data variations enabled, you can override expected asserti
 
 ---
 
+## 🎯 OBJECT ATTRIBUTE VALUE COMPARISON ASSERTIONS (AALC)
+
+For asserting and verifying individual attributes of a Mendix Object (created, modified, or retrieved in an upstream teststep), you **MUST** use the Assert Attribute Value Compare (AALC) framework.
+
+### State Validation Rule
+These tools are strictly allowed to execute only inside **`[STATE_CONSTRUCTION]`**, **`[STATE_STEP_BINDING]`**, and **`[STATE_ASSERT_CONSTRUCTION]`**. Calling them in discovery or high-level planning is prohibited.
+
+### The 3-Step Programmatic Assertion Sequence
+To programmatically assert an object's attribute value, execute the following three steps:
+
+#### Step 1: Create the Assertion
+First, instantiate the assertion on the target test step:
+Call `CreateAssertAttributeValueCompare` with:
+*   `TestStepKey`: The key of the step that retrieved, created, or changed the target object.
+*   `AttributeName`: The fully qualified or relative attribute name (e.g. `"Status"`, `"TotalAmount"`).
+*   *Returns:* `AssertAttributeValueCompareKey` (referred to as `AalcKey`).
+
+#### Step 2: Configure Properties
+Set standard assertion properties:
+Call `SetAssertAttributeValueCompareProperties` with:
+*   `AssertAttributeValueCompareKey`: Your `AalcKey`.
+*   `ActionFailedAssert`: The failure behavior (must be `"ContinueTestRun"` or `"StopTestRun"`). **Default: `"ContinueTestRun"`**.
+
+#### Step 3: Configure Type-Specific Expected Values
+Call the appropriate type-specific configuration setter tool on your `AalcKey`:
+
+| Attribute Datatype | Setter Tool to Call | Key Parameters |
+| :--- | :--- | :--- |
+| **Boolean** | `SetBooleanAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `BooleanValue` (boolean) |
+| **Enumeration** | `SetEnumerationAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `EnumerationValue` *(Technical Value Name, NOT Caption)* |
+| **HashString** | `SetHashStringAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `HashStringValue` (string) |
+| **String / StringLimited / StringUnlimited** | `SetStringAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`), `SetStringValue` (`True`), `StringValue`, `SetTrimStringValue` (`True`/`False`), `TrimStringValue` |
+
+### Overriding Attribute Assertions in Data Variations
+If your test case has data variations enabled, you can promote individual attribute assertions to the variation matrix to test multiple data scenarios:
+1. **Promote Assertion:** Call `AddTestCaseVariationItemAssertAttributeValueCompare` with your `AalcKey`.
+2. **Set Scenario Values:** Call the type-specific setter tool (e.g. `SetStringAssertAttributeValueCompare`) passing the specific variation's assertion key retrieved via `GetTestCaseDataVariationsDetails`.
+
+---
+
 ## 🎯 MEMORY RETRIEVE PATTERNS FOR ASSERTING COMPLEX OBJECTS & MODIFICATIONS
 
 Direct microflow return value assertions (`CreateAssertMicroflowReturnValue`) are strictly limited to scalar types (String, Boolean, Integer, Long, Decimal, DateTime, Enumeration). They **cannot** directly inspect or assert individual attributes of a complex **Object or List of Objects** returned or modified by a microflow.
@@ -318,11 +363,11 @@ For **all single objects** (whether returned directly by a microflow, modified i
 2. **Provider Linking (For Memory):**
    - **Direct Return:** If the microflow returns the object directly, link the retrieve step to the **microflow execution step**'s output (`TestStepOutputKey = MicroflowStepKey`).
    - **In-Place Modification:** If the microflow modifies a parameter object in-place (returns void or a different type), link the retrieve step to the **original provider step** that created or retrieved the object before the microflow execution (`TestStepOutputKey = OriginalProviderStepKey`).
-3. **Downstream Assertions:** Assertions on the retrieved object's count can be performed programmatically downstream using the object count assertion tools. Since attribute-specific assertion MCP tools are not yet complete, attribute assertions on objects must currently be configured manually via the MTA Web UI, while count assertions must be set up programmatically.
+3. **Downstream Assertions:** Assertions on the retrieved object's count and individual attributes can be performed completely programmatically downstream. Use `CreateAssertObjectCount` to verify the object was successfully retrieved, and use `CreateAssertAttributeValueCompare` (AALC) along with its type-specific setters to programmatically verify individual attribute values (e.g. `Status = "Completed"`), removing any need for manual configuration via the MTA Web UI.
 
 > [!CAUTION]
 > **Why we DO NOT add filters to assertion retrieves (Memory or Database):**
-> If you add attribute filters (e.g., `ReferenceNumber = "CLAIM-HAPPY-001"`) directly to the retrieve step of an object you wish to assert on, the retrieve step itself will execute as an XPath filter query. If the assertion fails (e.g., the claim wasn't saved, or has the wrong reference number), the retrieve step itself will fail with a cryptic "Object not found" error. This completely hides the actual database state and values, making debugging extremely difficult. Using a clean retrieve and manual downstream assertions on object count and attributes ensures explicit, readable assertion results.
+> If you add attribute filters (e.g., `ReferenceNumber = "CLAIM-HAPPY-001"`) directly to the retrieve step of an object you wish to assert on, the retrieve step itself will execute as an XPath filter query. If the assertion fails (e.g., the claim wasn't saved, or has the wrong reference number), the retrieve step itself will fail with a cryptic "Object not found" error. This completely hides the actual database state and values, making debugging extremely difficult. Using a clean retrieve and programmatic downstream assertions on object count and attributes ensures explicit, highly readable assertion results.
 
 ---
 
@@ -390,9 +435,26 @@ If a microflow `Sales.ProcessOrder` returns an `Order` object, and you want to a
      - `ExpectedObjectCount`: `1`
      - `ActionFailedAssert`: `"ContinueTestRun"` (🚨 **CRITICAL RULE:** The default behavior for failed assertions is to continue execution. Only stop execution if explicitly requested in the prompt or by the user).
 
-6. **Keep Retrieve Clean & Assert Attributes Downstream:**
-   - Do **NOT** call `IncludeAttributeValueInTeststep` on step `401`. Keep it completely clean of filters. Dynamically piped/linked filters from preceding steps are **strongly preferred**. Hardcoded/static filters are **strictly restricted** and **only allowed as a last resort fallback** if no other option exists.
-   - Attribute assertions (e.g., Status = "Completed", TotalAmount = 150.00) must currently be configured manually downstream using the MTA Web UI, but the retrieve step execution integrity and returned count are now fully verified programmatically.
+6. **Programmatically Assert Attributes Downstream (AALC):**
+   - Keep retrieve step `401` completely clean of filters (do **NOT** call `IncludeAttributeValueInTeststep`).
+   - Programmatically assert that the retrieved `Order` has `Status = "Completed"`:
+     1. **Create the Attribute Assertion:** Call `CreateAssertAttributeValueCompare` with:
+        - `TestStepKey`: `401` (refers to the clean retrieve step)
+        - `AttributeName`: `"Status"`
+        - *Returns:* `AssertAttributeValueCompareKey: 900` (referred to as `AalcKey`).
+     2. **Configure Assertion Properties:** Call `SetAssertAttributeValueCompareProperties` with:
+        - `AssertAttributeValueCompareKey`: `900`
+        - `ActionFailedAssert`: `"ContinueTestRun"` (🚨 **CRITICAL RULE:** Always continue test execution on failed assertions).
+     3. **Configure Expected Value:** Call `SetStringAssertAttributeValueCompare` with:
+        - `AssertAttributeValueCompareKey`: `900`
+        - `ComparisonOperator`: `"Equals"`
+        - `SetStringValue`: `True`
+        - `StringValue`: `"Completed"`
+        - `SetTrimStringValue`: `True`
+        - `TrimStringValue`: `False`
+   - Repeat the 3-step sequence for other attributes (e.g. `TotalAmount`) using the appropriate typed setter tool on step `401`.
+
+
 
 
 ---

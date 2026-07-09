@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Scoping and design of test cases for Menditect Test Automation"
-version: "3.2_1.7"
-changes: "Added void microflow side-effect warning and analysis rules with testability refactoring guidelines"
+version: "3.2_1.8"
+changes: "Added functional Intended Use Alignment in State 1, Golden Rule 12, and refined final Handoff Blueprint format"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -32,15 +32,20 @@ This skill helps the user identify what to test by analyzing business requiremen
 To ensure high-quality test scoping, you MUST progress sequentially through these five states. Do not skip any state:
 
 ### 1. `STATE_SCOPE_START` (State 1)
-*   **Action**: Ingest the business context. This can be triggered by:
+*   **Action**: Ingest the business context and establish application alignment. This can be triggered by:
     1.  **A Change Event**: A text user story (from Confluence/Jira MCP) or a specific Git branch/commit diff.
     2.  **A Manual Component Input**: Directly naming an existing microflow or page (e.g., *"Design tests for Billing.ORC_CalculateInvoice"*).
     3.  **A Wishful Thinking / TDD Path**: Describing a planned, non-existent component (e.g., *"I want to design a new VAT calculator called MyModule.VAL_Vat_Check"*).
     4.  **A Module-Wide Audit Path**: Auditing an entire functional area or Mendix module (e.g., *"Audit the risks of MyBillingModule"*).
     5.  **A Product Risk Analysis (PRA) Input**: Ingesting or auditing an existing Product Risk Analysis (PRA) document.
     6.  **An AI-Built Software Trigger (MAIA/AI Assistant)**: Software was created or modified by an AI (detected via a changed Mendix `.mpr` document, a new Git commit, or on application startup). You must analyze what the AI built and proactively propose a test scoping session for those changes.
+*   **Intended Use Alignment Requirement (CRITICAL):**
+    Before designing tests, you **MUST** identify the **intended use of the application** to design tests that verify: *"Does the application make it possible to do what it should do?"* (functional purpose validation).
+    *   *Production Apps:* If the app has been in production for a while, derive its intended use from existing features, active domain structures, and module layout.
+    *   *Active Development Apps:* If the app is in active development, retrieve and analyze **user stories, functional requirement specifications (FRS), user personas, and design documentation** (via Confluence/Jira MCP or local guides).
+    *   *Ambiguity Gate:* If the intended use of the application is unclear, ambiguous, or undocumented, you **MUST NOT** guess or assume. You **MUST** stop and proactively ask the user to clarify the core functional purpose and intended use of the application before continuing.
 *   **PRA Discovery Rule**: You **MUST** proactively ask the user if they have a **Product Risk Analysis (PRA)** available, or attempt to find one via Confluence/Jira MCP under keywords like `PRA`, `Product Risk Analysis`, or `Risk Register` for the target module.
-*   **Halt Rule**: Transition to `STATE_MODEL_AUDIT` once the input is captured.
+*   **Halt Rule**: Transition to `STATE_MODEL_AUDIT` once the input and application purpose are clearly captured.
 
 ### 2. `STATE_MODEL_AUDIT` (State 2)
 *   **Action**: Identify the targeted Mendix components. Based on State 1's trigger:
@@ -78,11 +83,38 @@ To ensure high-quality test scoping, you MUST progress sequentially through thes
     4.  **Frontend Risk-Focus Rule**: For Category B Frontend Tests, you **MUST** generate prompts that focus strictly on specific risks and aspects of the frontend that cannot be verified in the backend (such as conditional visibility, client-side validation, UI navigation flows, client-cache synchronization, and role-based page elements) as described in `references/prompts-templates.md`.
     5.  **Placement Scanning Rule**: The generated prompt **MUST NOT** use auto-placement defaults. It must instruct the builder to scan the current test configurations and suites using MTA MCP tools first, then propose placing the test inside the correct existing suite/configuration or ask the user for confirmation if no match is found.
     6.  **Data Variation Focus & Risk Prioritization Rule**: For any tests utilizing data variations (such as boundary values or negative cases), the generated prompt **MUST** instruct the builder to focus strictly on relevant attributes that change the execution paths or behavior of the logic, and to prioritize creating variations for attributes with a high business value or risk (such as billing calculations, tax rates, or regulatory limits).
+    7.  **Standardized AI-Generated Handoff Blueprint (CRITICAL):**
+        You **MUST** output the final generated build instruction inside this exact standard markdown blueprint format to guarantee seamless ingestion by the `mta-build` skill:
+        ```markdown
+        # 📋 MTA BUILD SPECIFICATION HANDOFF
+        
+        ## 1. Metadata
+        *   **Target Application:** `[AppName]`
+        *   **Target Configuration:** `[TestConfigName]`
+        *   **Target Suite:** `[TestSuiteName]`
+        *   **Test Case Name:** `[TestCaseName]`
+        *   **MTA Category:** `[Category A (Backend) | Category B (Frontend)]`
+        
+        ## 2. Risk & Purpose Alignment
+        *   **Intended Application Use:** `[Briefly state what functional flow is being validated]`
+        *   **Primary Technical Risk:** `[e.g., Database ACID violation on void commit]`
+        *   **Primary Business Risk:** `[e.g., Billing discrepancy / financial leakage]`
+        
+        ## 3. Verified Elements
+        *   **Microflows/Pages Under Test:** `[e.g., Billing.ACT_CalculateInvoice]`
+        *   **Entities & Attributes Involved:** `[e.g., Billing.Invoice, TotalAmount]`
+        
+        ## 4. Chronological Step Specification Plan
+        *   **Step 1 (Setup/Seeding):** `[Describe action and exact parameters to pass/assert]`
+        *   **Step 2 (Execution):** `[Describe microflow call or page navigation details]`
+        *   **Step 3 (Assertion):** `[Describe attributes/values/object counts to assert on]`
+        *   **Step 4 (Teardown/Cleanup):** `[Describe rollback or cleanup steps]`
+        ```
 *   **Halt Gate (MANDATORY - All Modes)**: Display the copy-pasteable prompts to the user and **HALT**. Wait for the user to copy the prompt or confirm transition to the `mta-build` skill.
 
 ---
 
-## 🚫 THE 11 GOLDEN RULES OF TEST SCOPING
+## 🚫 THE 12 GOLDEN RULES OF TEST SCOPING
 
 1.  **Do Not Assume Category B by Default**: Only recommend Category B (Frontend) tests when there is clear UI/Client Cache risk (such as modified custom widgets or touchpoint `ACT_` logic). Prefer high-speed, highly stable Category A (Backend) Unit and Integration tests for business calculations and process orchestration.
 2.  **Explicit Dual-Risk Alignment**: Every test proposed must clearly state both the **technical risk** (e.g., database ACID corruption) and the **business risk** (e.g., direct financial leakage) it is designed to mitigate.
@@ -106,6 +138,9 @@ To ensure high-quality test scoping, you MUST progress sequentially through thes
     *   **The Warning Template:** Explain that since there are no return parameters, the outputs are hard to determine automatically and proceeding without analysis limits the test to a basic exception-only check.
     *   **The Proactive Guidance:** Proactively prompt the user to help identify side-effects (e.g., database creations, changes, reference associations, or log actions) so that retrieve and count/attribute assertions can be designed instead of a basic crash test.
     *   **Refactoring Suggestion:** Suggest that the user modify the microflow in Mendix to return a value (e.g., the main created entity or a success boolean) for testing purposes, making it immediately testable.
+12. **Rule 12: Intended Use Alignment & Purpose Verification:**
+    *   **The Guardrail:** You must always verify that your proposed tests validate whether the application makes it possible to do what it *should* do (functional purpose validation). Map test scenarios directly to the high-level business workflow.
+    *   **The Action:** If the intended use of the application is unclear or lacks documentation (user stories, FRS, wiki pages), you are strictly prohibited from proceeding with test design. You must stop, raise a clarification flag, and ask the user to explain the app's core purpose.
 
 ---
 

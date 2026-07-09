@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "3.2_1.4"
-changes: "Updated state machine to ask for user validation when leaving the QA _Assistance state"
+version: "3.2_1.6"
+changes: "Implemented standardized MTA Premium Diagnostic Blueprint for failing run executions"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -66,6 +66,17 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 This skill manages runtime execution, post-run logs, failure analysis, static audits, and developer onboarding tutorials. Transition through these states as described in **`references/core-playbook.md`**:
 
 8.  `[STATE_EXECUTION_VERIFY]`: Triggering test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
+    *   **MTA Premium Diagnostic Blueprint (CRITICAL):**
+        Whenever a test run execution fails during `[STATE_EXECUTION_VERIFY]`, you **MUST** retrieve and parse the logs, then format your diagnostic analysis using this exact standard markdown structure (do not use ad-hoc layouts):
+        ```markdown
+        ### 🚨 MTA RUN FAILURE DIAGNOSTIC
+        *   **Failing Test Case:** `[TestCaseName]`
+        *   **Failing Step Index:** `[StepNumber] - [StepName]`
+        *   **Failure Category:** `[e.g., AssertMismatch | Timeout | ClassNotFound | NetworkError]`
+        *   **Mendix Exception Log:** `[Exact log snippet or exception trace]`
+        *   **Root Cause Analysis (RCA):** `[Concise, technical description of why the step failed]`
+        *   **Surgical Fix Action:** `[The exact action, step refactoring, or parameter adjustment required to fix the test]`
+        ```
 -   `[STATE_QA_ASSISTANCE]`: Explaining existing test scripts to developers/testers, analyzing step sequencing, verifying pattern compliance, or answering conceptual questions.
 
 ---

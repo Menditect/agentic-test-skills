@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.5"
-changes: "updatede license file with notice"
+version: "2.0_1.6"
+changes: "Integrated 5-point Pre-Response Self-Audit, Reactive Loading Strategy, and Operational State Machine"
 ---
 
 # Skill: Menditect Testability Framework (MTF)
@@ -18,6 +18,45 @@ When writing, refactoring, or reviewing Mendix code, you must strictly follow th
 3. **Use Mendix-style Dependency Injection (DI)**: Avoid retrieving database objects or global settings deep within business logic. Separate data retrieval from business logic by fetching data at the process entry points and passing it as input parameters.
 4. **Enforce Microflow Typologies**: Every microflow must belong to a predefined typology (e.g., `ACT_` Touchpoint, `ORC_` Orchestration, `OPR_` Operator, `GET_` Getter, `VAL_` Validation) with a strict responsibility and allowed call hierarchy.
 5. **Enforce Transactional Atomicity and Consistency (ACID)**: Centralize all database writes and deletes in dedicated Committer (`CMT`) microflows, and execute server-side Invariant validations (`VAL`) within the `CMT` before any data is committed.
+
+---
+
+## 🧠 MTF CODE REVIEW PRE-RESPONSE SELF-AUDIT
+*Immediately before responding to any code review or architecture query, the AI assistant MUST mentally run this 5-point self-audit checklist to guarantee compliance with MTF v2:*
+1.  **Is Separation of Concerns (SoC) maintained?** Ensure logic is cleanly divided into Touchpoint (`ACT_`), Orchestration (`ORC_`), and Unit layers.
+2.  **Is Dependency Injection (DI) respected?** Ensure no database retrieves or global settings are loaded deep inside Unit or App Logic microflows. All required data must be passed as parameters.
+3.  **Are Microflow Typologies strictly followed?** Verify that microflow names are prefixed exactly with their typology (`ACT_`, `ORC_`, `GET_`, `VAL_`, `OPR_`, `CMT_`).
+4.  **Is transaction consistency atomic?** Ensure all commits and deletes happen exclusively within dedicated Committer (`CMT_`) microflows, and back-end validations (`VAL_`) run inside the `CMT` before any write.
+5.  **Do Unit and Touchpoint flows have return values?** Ensure a clear return value is designed to enable direct parameter piping and assertions in MTA.
+
+---
+
+## 📅 STRICT REACTIVE LOADING STRATEGY
+To maximize token efficiency, **DO NOT load reference files preemptively**. Load them **strictly on-demand** depending on the specific focus of the query:
+
+| User request focus... | ...then load ONLY this file: |
+| --- | --- |
+| *Microflow prefix patterns, permitted calls, or typology structure* | **`references/microflow_typologies.md`** |
+| *Naming rules for variables, parameters, entities, or modules* | **`references/naming_conventions.md`** |
+| *Dependency injection, horizontal layering, or encapsulation* | **`references/testable_app_architecture.md`** |
+| *Transactional scopes, commits, or invariant validations* | **`references/data_quality_acid.md`** |
+| *Software testing pyramid, unit testing, or developer workflow* | **`references/developer_workflow.md`** |
+| *Contextual logging probes, TestLogger usage, or assertions* | **`references/testlogger_integration.md`** |
+| *Licensing terms, Apache 2.0 notices, or DSA contacts* | **`references/terms_of_use.md`** |
+
+---
+
+## 🧭 WORKFLOW STATES (THE STATE MACHINE)
+To guide users safely and professionally, always announce your current state at the top of your response using this format:
+```markdown
+Active Setup State: [STATE_NAME]
+Next Destination State: [NEXT_STATE_NAME] (if applicable)
+```
+
+Transition sequentially through these states during any design or review session:
+1.  `[STATE_PATTERN_AUDIT]`: Scanning existing microflow names, parameter definitions, and prefixes for naming convention or typology violations.
+2.  `[STATE_REFACTOR_PLANNING]`: Outlining a detailed refactoring plan using "Wishful Thinking" interface modeling to resolve architectural debt (hidden retrieves, database writes).
+3.  `[STATE_TRANSACTION_ALIGN]`: Aligning database writes and deletes into atomic Committer (`CMT_`) microflows and positioning invariant validations (`VAL_`).
 
 ---
 
