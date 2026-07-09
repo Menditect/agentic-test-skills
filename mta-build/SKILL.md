@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_1.4"
-changes: "updated skills for improved design of tests"
+version: "3.2_1.5"
+changes: "improved behaviour on data varitations for backend tests"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -66,7 +66,10 @@ You **MUST** strictly follow the 12 Golden Rules defined in `references/core-pla
 8. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 9. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
 10. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
-11. **Focus & Prioritize Data Variations**: For any data-driven test cases, focus strictly on relevant attributes that change the execution paths or logic behavior. Prioritize attributes carrying high business value or risk (e.g., billing, tax, compliance thresholds), and avoid wasting variations on static or non-impactful attributes.
+11. **🚫 STRICT DATA VARIATION PROMOTION & DUPLICATION PROHIBITION**: 
+    *   **Proactive Variation Identification:** For all Category A (Backend) tests, you **MUST** actively seek to use MTA **Data Variations** rather than designing or proposing separate, duplicate test cases that only modify input data. Proposing duplicate test cases with different inputs is a severe quality violation.
+    *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix.
+    *   **Mandatory User Alignment Gate:** If you are in doubt about whether different inputs warrant separate test cases or should be consolidated into a data variation matrix, **you MUST halt and ask the user for their preference BEFORE proposing a test specification or build plan.**
 12. **Untestable Component Escape Hatch**: If you identify a very large microflow or one with many sub-microflows that is impossible to test thoroughly or where data seeding is extremely difficult, stop and suggest both to yourself (the AI) and the user to load and consult the **`menditecttestabilityframework`** skill to learn how to refactor it for testability.
 
 ---
