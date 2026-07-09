@@ -2,7 +2,7 @@
 name: mta-test-design
 description: "Scoping and design of test cases for Menditect Test Automation"
 version: "3.2_1.5"
-changes: "prefer in-memory execution for backend tests"
+changes: "updated skills for improved design of tests"
 ---
 
 # MTA Test Scoping & Design Skill
