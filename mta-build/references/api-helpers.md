@@ -597,3 +597,16 @@ This tool functions across two distinct use cases with model-wide symmetry:
 1. **Object Mutation Steps (Create/Change Object):** Completely removes/deletes a set attribute value, returning that attribute's value parameter to empty/undefined on the step.
 2. **Retrieve Steps (Retrieve Object):** Removes an attribute-based XPath filter query constraint from the retrieve step, letting you dynamically expand search scopes or revert a filtered retrieve back to a clean retrieve.
 
+---
+
+## 🛠️ VERIFYING SIDE-EFFECTS OF VOID MICROFLOWS
+
+When a microflow under test returns no parameters (Void), a simple `AssertException` is highly limited. To build a robust test, you must assert its **side effects**:
+
+1.  **Retrieve After Microflow Call:** Add a `Retrieve Object` step (or count) immediately after the `Microflow Call` step targeting the entity that the microflow (or its sub-flows) was designed to create, update, or associate.
+2.  **Assert Attributes/Counts:** Use attribute assertions (`SetAttributeStringValue`, `SetAttributeIntegerValue`, etc.) or count assertions (`CreateAssertObjectCount`) on that retrieve step to verify that values were correctly calculated or populated.
+3.  **Sub-Microflow Complexity:** If the void microflow calls sub-microflows, deep-dive into those sub-flows to locate the exact entities being written or modified, as the logic is much harder to trace automatically.
+4.  **Refactoring for Testability:** Highly recommend that the developer refactor the microflow to return a value (such as a status boolean or the created object) to make it directly testable.
+5.  **Exemption for Setups/Teardowns:** These checks and warnings are not required if the void microflow is executed purely as a setup or teardown data utility.
+6.  **Exception Only as a Last Resort:** Only use an exception assertion if the microflow has zero side effects and operates purely as a state check or utility logic.
+

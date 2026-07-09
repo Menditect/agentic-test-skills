@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_1.8"
-changes: "Updated state machine to ask for user validation when leaving the QA _Assistance state"
+version: "3.2_1.9"
+changes: "Added void microflow side-effect warning and analysis rules with testability refactoring guidelines"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -53,9 +53,9 @@ This determines how many times we HALT for your approval during step constructio
 
 ---
 
-## 🚫 THE 12 CRITICAL MTA RED LINES (GOLDEN RULES)
+## 🚫 THE 13 CRITICAL MTA RED LINES (GOLDEN RULES)
 
-You **MUST** strictly follow the 12 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
+You **MUST** strictly follow the 13 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
 1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
 2. **No parallel or batched creations**: Create cases and steps sequentially, waiting for Key N's response before building step N+1.
 3. **No dummy predecessor keys**: Omit predecessor keys for first elements. For subsequent elements, query the last active element's key to append chronologically.
@@ -73,6 +73,11 @@ You **MUST** strictly follow the 12 Golden Rules defined in `references/core-pla
     *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix.
     *   **Mandatory User Alignment Gate:** If you are in doubt about whether different inputs warrant separate test cases or should be consolidated into a data variation matrix, **you MUST halt and ask the user for their preference BEFORE proposing a test specification or build plan.**
 12. **Untestable Component Escape Hatch**: If you identify a very large microflow or one with many sub-microflows that is impossible to test thoroughly or where data seeding is extremely difficult, stop and suggest both to yourself (the AI) and the user to load and consult the **`menditecttestabilityframework`** skill to learn how to refactor it for testability.
+13. **Void Microflow Build-Plan Guardrail**:
+    *   **The Guardrail:** If asked to build a test for a void microflow (no return value/output parameters) as the main component under test (excluding setup/teardown utility cases), you **MUST NOT** default to a simple exception-only assertion unless the user explicitly confirms it is sufficient.
+    *   **Sub-Microflow Warning:** If sub-microflows are present, highlight that deep, careful side-effect analysis is even more complex and critical.
+    *   **The Action:** In `STATE_SPEC_APPROVAL` or `STATE_BUILD_PLANNING`, you must issue a prominent warning advising that an exception-only assertion is highly limited. Propose adding downstream database Retrieve steps (for Category A) or page inspection steps (for Category B) to verify the actual expected state changes or entity modifications.
+    *   **Testability Refactoring Suggestion:** Proactively advise the user that they can refactor the Mendix microflow to return a value (such as the primary record created or a status flag) to simplify test verification.
 
 ---
 
