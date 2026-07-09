@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.4"
-changes: "Simplified description and removed all special characters."
+version: "2.0_1.5"
+changes: "updatede license file with notice"
 ---
 
 # Skill: Menditect Testability Framework (MTF)

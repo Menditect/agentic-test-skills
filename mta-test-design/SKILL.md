@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Scoping and design of test cases for Menditect Test Automation"
-version: "3.2_1.3"
-changes: "Simplified description and removed all special characters."
+version: "3.2_1.4"
+changes: "updatede license file with notice"
 ---
 
 # MTA Test Scoping & Design Skill
