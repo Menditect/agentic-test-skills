@@ -1,3 +1,13 @@
+# 📄 License & Attribution Notice
+
+> [!IMPORTANT]
+> **Built by Menditect B.V.**
+> These agentic test skills are developed, maintained, and copyrighted by **Menditect B.V.** (https://menditect.com).
+> 
+> Menditect B.V. is a pioneer in low-code test automation, delivering smart, agentic capabilities to automate testing in Mendix environments. Please preserve this notice in any copies or derivative works.
+
+---
+
 # Apache License
 Version 2.0, January 2004
 http://www.apache.org/licenses/
