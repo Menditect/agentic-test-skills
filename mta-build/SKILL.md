@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_1.5"
-changes: "improved behaviour on data varitations for backend tests"
+version: "3.2_1.6"
+changes: "clarified execution settings rule for backend tests"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -61,7 +61,9 @@ You **MUST** strictly follow the 12 Golden Rules defined in `references/core-pla
 3. **No dummy predecessor keys**: Omit predecessor keys for first elements. For subsequent elements, query the last active element's key to append chronologically.
 4. **Mandatory Specification Approval**: Draft specification outlines and HALT for user approval in `[STATE_SPEC_APPROVAL]`.
 5. **Mandatory Browser Setup & Piping (Category B (Frontend))**: In UI tests, HALT in `[STATE_BROWSER_SETUP]`. Pipe the `Browser` context output from Case 1 directly to subsequent cases.
-6. **No "None" conditions on setups, teardowns, or database steps**: Must be set to `"Always"`.
+6. **Execution Settings Distinction (Always vs. None)**: 
+   *   **Category B (Frontend) & Multi-Case Tests:** You **MUST** configure all setups, teardowns, and database seeding/cleanup steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. This guarantees database and browser cleanups execute reliably even if intermediate UI steps fail.
+   *   **Category A (Backend) Unit Tests:** You **MUST** keep the default execution settings (`ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`) for all data steps, and you must NOT call `SetExecutionSettingsOfTeststep` on them. Since the entire testcase has rollback enabled (`RollbackTcseAfterExecution = "Yes"`), any failure will automatically roll back the transaction; stopping execution immediately is the desired and expected behavior.
 7. **No redundant model reading**: Use widget names from `GetWidgets` whenever possible.
 8. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 9. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
