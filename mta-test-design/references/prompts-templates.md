@@ -70,6 +70,14 @@ You **MUST** cover these critical execution profiles:
 
 Use this template when testing multi-step processes or transactional orchestrations (`ORC_`, `CMT_`, `VAL_ORC_`) utilizing **TestLogger** foot-printing.
 
+> [!IMPORTANT]
+> **🧠 THE IN-MEMORY PREFERENCE PRINCIPLE (CATEGORY A):**
+> - **Preferred Standard:** For all Category A (Backend) tests, the **highly preferred method is to run everything entirely in memory** without database writes (`Persist` steps) or database cleanups. 
+> - **Seeding & Setup:** Create required objects in memory using `Create Object` steps, link them, and pass them directly as input parameters to the target microflow. Do **NOT** use `Persist` steps unless:
+>   1. The target microflow or any of its sub-microflows explicitly performs a **Database Retrieve** (`[By Database]`) that cannot be satisfied by passing in-memory object lists or associations.
+>   2. You need to pass state across separate test cases in the same suite (since in-memory state is isolated at the individual Test Case boundary).
+> - **Clean Up:** By avoiding database persistence, you eliminate the need for cleanup/teardown steps, resulting in extremely fast, stable, and self-contained tests that never pollute the database.
+
 ```markdown
 ### 📋 Integration Test Blueprint: [Test Case Name]
 
@@ -80,22 +88,23 @@ Use this template when testing multi-step processes or transactional orchestrati
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
 *   **Objective:** Verify that `[ElementName]` coordinates business components in the exact sequence, avoiding the operational risk of `[Operational Risk]` and transactional risk of `[ACID Risk]`.
-*   **Preconditions:** Database state seeded.
+*   **Preconditions:** None (Isolated in-memory execution) or [Database state seeded - ONLY if database retrieve is required].
 *   **Expected Result:** Orchestration finishes successfully and the **TestLogger** footprint matches the expected baseline.
 
 #### 2. Chronological Build Plan (Step Sequence)
-1.  **Step 1 (Setup)**: Seed database objects.
+1.  **Step 1 (Setup - Optional, ONLY if DB-retrieve is required)**: Seed database objects.
     *   *Type*: Create and Persist database entities.
     *   *Execution*: `"Always"`, `_Continue`
 2.  **Step 2 (Execution)**: Call parent orchestration microflow.
     *   *Type*: Call Microflow
     *   *Microflow*: `[ModuleName].[ElementName]`
+    *   *Parameters*: Pipe seeded in-memory parameter objects (if any).
     *   *Execution*: `"None"`, `"Stop"`
 3.  **Step 3 (Assertion)**: Query TestLogger.
     *   *Type*: Call Microflow `TestLogger.GetFootprint` or equivalent.
     *   *Assertion*: Assert that called unit sequence equals the expected footprint baseline.
     *   *Execution*: `"None"`, `"Stop"`
-4.  **Step 4 (Teardown)**: Clean up seeded records.
+4.  **Step 4 (Teardown - Optional, ONLY if Step 1 was executed)**: Clean up seeded records.
     *   *Type*: Delete and Persist database entities.
     *   *Execution*: `"Always"`, `_Continue`
 ```
