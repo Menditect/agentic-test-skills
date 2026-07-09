@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_1.2"
-changes: "updatede license file with notice"
+version: "3.2_1.3"
+changes: "Enforce strict Category A (Backend) vs Category B (Frontend) reference loading and testing boundary isolation."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -87,6 +87,12 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Test case placement, hierarchy, lifecycles, database/memory piping, setups* | **`references/placement-and-lifecycle.md`** |
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Predecessor chaining, zero-data, golden rules, piping structures* | **`references/golden-rules.md`** |
+
+> [!IMPORTANT]
+> **🚫 STRICT CATEGORY A (BACKEND) VS CATEGORY B (FRONTEND) ISOLATION:**
+> - If the user selects **Category A (Backend)**, you are **strictly prohibited** from loading or referencing `references/frontend-testing.md` or `references/playwright-api.md`, even if their prompt mentions "pages", "inputs", "buttons", or other UI keywords.
+> - For **Category A**, keep your focus exclusively on `references/api-helpers.md` (microflows, associations, database actions, assertions, and REST API calls). If the user tries to add form/UI steps to a Category A test, reject it immediately and politely explain that Category A is headless/backend-only.
+> - Conversely, for **Category B (Frontend)**, avoid using backend-only assertions and pure microflow-testing logic unless strictly used as a database setup/teardown utility.
 
 ---
 
