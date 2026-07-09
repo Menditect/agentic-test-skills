@@ -338,6 +338,24 @@ While single-object assertions require clean retrieves, configuring attribute fi
 
 ---
 
+### 🔧 DIRECT OBJECT COUNT ASSERTION ON MICROFLOWS (PREFERRED METHOD FOR LIST COUNTS)
+
+If a microflow `Sales.GetPendingOrders` returns a List of `Order` objects, and you want to assert that the list contains exactly `3` records:
+
+1. **Execute the Microflow:**
+   Call `CreateMicroflowCallTestStep` (executes `Sales.GetPendingOrders`) ➔ Returns `TestStepKey: 400`.
+
+2. **Directly Assert Returned Object Count:**
+   Verify the size of the returned list directly on the microflow call step without creating any intermediate retrieve steps:
+   - Call `CreateAssertObjectCount(TestStepKey = 400)` ➔ Returns `AssertObjectCountKey: 700`.
+   - Call `SetAssertObjectCountProperties` with:
+     - `AssertObjectCountKey`: `700`
+     - `ComparisonOperator`: `"Equals"`
+     - `ExpectedObjectCount`: `3`
+     - `ActionFailedAssert`: `"ContinueTestRun"` (🚨 **CRITICAL RULE:** The default behavior for failed assertions is to continue execution. Only stop execution if explicitly requested in the prompt or by the user).
+
+---
+
 ### 🔧 THE 6-STEP TOOL CALL SEQUENCE FOR SINGLE OBJECT ASSERTIONS (WITH OBJECT COUNT VERIFICATION)
 
 If a microflow `Sales.ProcessOrder` returns an `Order` object, and you want to assert that its `Status` is `"Completed"` and `TotalAmount` is `150.00`:
