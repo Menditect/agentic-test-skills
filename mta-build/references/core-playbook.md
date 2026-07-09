@@ -30,7 +30,7 @@ You MUST progress through these workflow states. Rollback/revision paths are sup
 | **`STATE_CONSTRUCTION`** | `STATE_BUILD_PLANNING` | Sequential creation tools fail (sequence/binding block) | Yes | **Rollback** |
 | **`STATE_EXECUTION_VERIFY`**| `STATE_CONSTRUCTION` | Browser execution returns "failed" or "error" steps | No | **Rollback** |
 | *Any State* | **`STATE_QA_ASSISTANCE`** | User asks tangent, conceptual question, or platform clarification | No | Out-of-Band |
-| **`STATE_QA_ASSISTANCE`** | *Resumed State* | Tangent fully addressed; assistant returns to test-building | Yes/No (matches resumed state) | Resume |
+| **`STATE_QA_ASSISTANCE`** | *Resumed State* | Tangent addressed; assistant **MUST HALT and ask for explicit user approval to resume** | **YES (Always)** | Resume |
 
 ### 📊 State Machine Flowchart
 
@@ -147,7 +147,8 @@ All Category B (Frontend) tests **MUST** adhere strictly to this 3-Test Case arc
 *   👉 **Read:** [MTA Troubleshooting Guide](troubleshooting.md)
 
 ### `STATE_QA_ASSISTANCE` (Out-of-Band State)
-*   **Inquiry:** Pauses active test building to address tangents, questions, or explanations, then resumes the suspended state.
+*   **Inquiry:** Pauses active test building to address tangents, questions, or explanations.
+*   **🚨 Resumption Halt Gate (MANDATORY):** Before transitioning back to resume the active building or execution state, the assistant **MUST HALT** and explicitly ask the user for approval to proceed (e.g., "Would you like to resume test building according to our approved plan?"). This ensures the user has a chance to ask further questions before test construction continues.
 *   👉 **Read:** [MTA Glossary & Syntax Map](glossary.md)
 
 ---
