@@ -44,13 +44,33 @@ To prevent any confusion between system-generated defaults and our logical test 
 
 ---
 
+## 🚨 MANDATORY VARIATION METADATA (NAME & DESCRIPTION) RULE
+
+To ensure that all data variations can be identified, understood, and audited in the MTA dashboard, you **MUST** configure both the Name and Description for **every single variation** you create, including the baseline Template Variation (Variation #1) and any duplicated variations.
+
+For **each** variation (both the template and duplicated ones):
+1.  **Set Name:** Call `TestCaseDataVariationName(TestCaseVariationKey, Name)`.
+    *   *Format:* Lowercase alphanumeric with hyphens (e.g. `"standard-case"`, `"invalid-age-negative"`). Do not use spaces, uppercase characters, or special symbols like `#`.
+2.  **Set Description (MANDATORY - DO NOT FORGET):** Call `TestCaseDataVariationDescription(TestCaseVariationKey, Description)`.
+    *   *Requirement:* Provide a complete, clear, and professional description explaining the exact functional scenario, inputs, and expected outcomes verified by this variation (e.g., `"Verifies that a registration with age 17 fails with validation error."`).
+
+This metadata is **mandatory for all workflows** (both the Simple Fast-Track and the Complex Workflow). Failing to set names and descriptions for all variations is a severe quality violation.
+
+---
+
 ## 🏃 SIMPLE CASE: 3-STEP FAST-TRACK
 For 1 or 2 alternate scenarios:
 1.  **Enable Variations:** Call `EnableTestCaseDataVariations(TestCaseKey)` ➔ Returns template `TestCaseVariationKey`.
-2.  **Build Template Steps:** Build your teststeps sequentially.
-3.  **Register & Override:**
+2.  **Configure Template Metadata:** Set the name and description for the template/primary variation (Variation #1).
+    *   Call `TestCaseDataVariationName(TemplateVariationKey, "variation-name")`
+    *   Call `TestCaseDataVariationDescription(TemplateVariationKey, "Description of primary scenario...")`
+3.  **Build Template Steps:** Build your teststeps sequentially.
+4.  **Register & Override:**
     *   Call `AddAttributeValueAsVariationItem` for the specific attribute to change ➔ Returns base `AttributeValueKey`.
     *   Call `DuplicateTestCaseDataVariation` ➔ Returns new `TestCaseVariationKey`.
+    *   **Configure Duplicated Metadata:** Set the name and description for the new variation:
+        *   Call `TestCaseDataVariationName(NewTestCaseVariationKey, "duplicate-variation-name")`
+        *   Call `TestCaseDataVariationDescription(NewTestCaseVariationKey, "Description of duplicated scenario...")`
     *   **MANDATORY:** Call `GetTestCaseDataVariationsDetails` to fetch the nested JSON structure.
     *   Extract the **unique, variation-specific `AttributeValueKey`** for that attribute within the duplicated variation.
     *   Call `SetAttributeStringValue` (or appropriate setter) passing the **unique, variation-specific** `AttributeValueKey` (not the base template key) and the override value.

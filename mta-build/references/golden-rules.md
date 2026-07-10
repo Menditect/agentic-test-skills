@@ -41,7 +41,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
             *   Adding variation items: Calling `AddAttributeValueAsVariationItem` for multiple attributes/values.
             *   Duplicating variations: Calling `DuplicateTestCaseDataVariation` for different test cases/variations.
             *   Configuring execution settings of different steps or test cases: Calling `SetExecutionSettingsOfTestStep` or `SetExecutionSettingsOfTestCase` across separate targets.
-            *   Setting metadata: Calling `SetTestStepNameDescription` or `TestCaseDataVariationName` on independent entities.
+            *   Setting metadata: Calling `SetTestStepNameDescription`, `TestCaseDataVariationName`, or `TestCaseDataVariationDescription` on independent entities.
 *   **🚨 THE `SetSequenceOfTeststep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to three strict safety gates:
     1.  *Same-Case Validation:* Both `TestStepKey` and `TestStepBeforeKey` MUST reside within the exact same parent Test Case. Linking across case boundaries is strictly prohibited.
     2.  *No Self-Reference or Loops:* Never pass the same key for both parameters, and never point a step's predecessor to a downstream step (which creates circular references and crashes the UI/runner).
