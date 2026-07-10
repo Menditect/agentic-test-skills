@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Scoping and design of test cases for Menditect Test Automation"
-version: "3.2_1.8"
-changes: "Added functional Intended Use Alignment in State 1, Golden Rule 12, and refined final Handoff Blueprint format"
+version: "3.2_1.9"
+changes: "updated skills with input from MTA 3.1 reference guide"
 ---
 
 # MTA Test Scoping & Design Skill

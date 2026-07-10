@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.6"
-changes: "Integrated 5-point Pre-Response Self-Audit, Reactive Loading Strategy, and Operational State Machine"
+version: "2.0_1.7"
+changes: "updated skills with input from MTA 3.1 reference guide"
 ---
 
 # Skill: Menditect Testability Framework (MTF)
