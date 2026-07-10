@@ -35,14 +35,15 @@ graph TD
 When establishing or restructuring test environments, you can programmatically provision and manage test suites and test cases.
 
 ### 1. Programmatic Suite Initialization Flow
-To create and initialize a new test suite from scratch, you **MUST** follow this canonical 3-step sequence:
+To create and initialize a new test suite from scratch, you **MUST** follow this canonical 4-step sequence:
 1.  **Create the Suite:** Call `CreateTestSuite` passing the target `ApplicationKey` (from the test configuration lookup). This instantiates a new empty suite container and returns its `TestSuiteKey`.
 2.  **Configure Suite Metadata:** Call `SetTestSuiteNameDescription` passing:
     * `TestSuiteKey`: The key returned in Step 1.
     * `Name`: A concise, descriptive name (e.g., `"Billing Calculation Suite"`).
     * `Description`: A clear explanation of the suite's functional scope and objective.
     * `ExecutionCondition`: Set to `"Always"` or `"None"`.
-3.  **Provision the First Test Case:** Call `CreateTestCase` passing the `TestSuiteKey` as the parent container. This begins the test case placement and spec definition lifecycle.
+3.  **Resolve/Provision Execution User:** Call `GetExecutionUsers` to verify if a suitable backend execution user is configured. If none are present (or a new custom user is required), call `CreateExecutionUser` **first** to provision the user and obtain its `ExecutionUserKey`. It is impossible to create the test case first and then register the user.
+4.  **Provision the First Test Case:** Call `CreateTestCase` passing the `TestSuiteKey` as the parent container, and the resolved `ExecutionUserKey`. This begins the test case placement and spec definition lifecycle.
 
 ### 2. Application & Configuration Lookup Getters
 Before creating suites or configurations, you can look up application keys and registered configurations using these lightweight getters:

@@ -95,6 +95,17 @@ You can list and provision backend test users using the following MCP tools:
 *   `GetExecutionUsers(ApplicationKey, TestConfigurationKey)`: Lists all configured backend execution users for an application and environment configuration.
 *   `CreateExecutionUser(ApplicationKey, TestConfigurationKey, Username)`: Programmatically registers a new backend execution user.
 
+### 🚨 CRITICAL DEPENDENCY: User Creation Before Test Case Creation
+
+There is a strict, sequential dependency between the creation of backend execution users and test cases:
+*   **Execution User Key Requirement:** The `CreateTestCase` tool requires a valid `ExecutionUserKey` as a mandatory input parameter.
+*   **Sequential Ordering:** If there are no execution users configured (or if you need a new one), you **MUST** call `CreateExecutionUser` **first** to register the user and obtain its key.
+*   **No Post-Creation Assignment:** It is impossible and invalid to create the test case first and then create the execution user. The execution user key must already exist at the moment of calling `CreateTestCase`.
+*   **Workflow Sequence:**
+    1. Call `GetExecutionUsers` to verify if a suitable execution user already exists.
+    2. If no users are returned (or a new user is needed), call `CreateExecutionUser` to provision the new user and receive its key.
+    3. Call `CreateTestCase` passing the verified/created `ExecutionUserKey` as a required parameter.
+
 ---
 
 ### 🚨 THE 5 RULES OF BACKEND VS. FRONTEND SECURITY

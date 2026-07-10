@@ -117,9 +117,10 @@ All Category B (Frontend) tests **MUST** adhere strictly to this 3-Test Case arc
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md) | [MTA Execution Settings Reference](execution-settings.md)
 
 ### 4. `STATE_CASE_CREATION` (State 4)
-*   **Creation & Save Specifications (MANDATORY):** Create test cases sequentially in forward chronological order. Immediately after creation, you **MUST** call `SetTestCaseSpecifications` to save the complete approved specifications (Name, Objective, Preconditions, Expected Result) to the MTA server without any summarization.
+*   **🚨 Execution User Resolution (CRITICAL):** You **MUST** resolve the `ExecutionUserKey` before creating a test case, as it is a required parameter for `CreateTestCase`. Call `GetExecutionUsers` to verify if a user exists. If none are present (or a new user is needed), call `CreateExecutionUser` **first** to provision the user and obtain its key. You cannot create the test case first and register the user later.
+*   **Creation & Save Specifications (MANDATORY):** Create test cases sequentially in forward chronological order passing the resolved `ExecutionUserKey`. Immediately after creation, you **MUST** call `SetTestCaseSpecifications` to save the complete approved specifications (Name, Objective, Preconditions, Expected Result) to the MTA server without any summarization.
 *   **Settings:** Set execution options via `SetExecutionSettingsOfTestCase`.
-*   👉 **Read:** [MTA Execution Settings Reference](execution-settings.md)
+*   👉 **Read:** [MTA Execution Settings Reference](execution-settings.md) | [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md)
 
 ### 5. `STATE_BROWSER_SETUP` (State 5)
 *   **Halt Gate:** In Guided Mode, offer Option A or Option B and **HALT** for validation. Auto-apply smart defaults in Express modes.
