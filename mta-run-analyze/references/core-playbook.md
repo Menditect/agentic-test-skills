@@ -103,6 +103,7 @@ All Category B (Frontend) tests **MUST** adhere strictly to this 3-Test Case arc
 
 ### 1. `STATE_DISCOVERY` (State 1)
 *   **First-Turn Tool Ban:** Run `GetMtaUrl` and present the interactive discovery template. Do NOT execute any other tools on a fresh turn.
+*   **🚨 Handoff Category Validation (MANDATORY):** If you receive a handoff prompt from the Test Design skill or a custom user prompt, you **MUST** immediately check for a clear, explicit category selection (`Category A (Backend)` or `Category B (Frontend)`). If the prompt is generic, ambiguous, or lacks an explicit category, you **MUST NOT** proceed. You **MUST** halt in `STATE_DISCOVERY` and force the user to choose the category before starting any planning or suite scanning.
 *   **Selection:** Lock the Test Category (Backend A vs Frontend B - **MANDATORY**) and Workflow Mode (Guided, Express-BP, Full Express).
 *   **⚡ Concurrency Law (Scan Phase Parallelization):** Once discovery parameters are established, all read-only lookup and scanning tools (such as `GetPages`, `GetWidgets`, `GetTestSuites`, etc.) MUST be executed in parallel to minimize prompt roundtrips and accelerate discovery.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md)
@@ -113,6 +114,10 @@ All Category B (Frontend) tests **MUST** adhere strictly to this 3-Test Case arc
 
 ### 3. `STATE_SPEC_APPROVAL` (State 3)
 *   **Mandatory Halt:** Draft detailed specs for all 3 cases and **HALT for user approval** in all modes.
+*   **🚨 Category Consistency Gate (MANDATORY):** You **MUST** run a strict consistency validation on your drafted specifications to ensure zero mixing of frontend and backend concerns.
+    *   *If Category A (Backend) is locked:* Specifications and step descriptions are strictly prohibited from referencing pages, UI widgets, button clicks, browser navigation, or starting/stopping Playwright sessions.
+    *   *If Category B (Frontend) is locked:* Specifications and step descriptions must focus on browser-level actions and UI assertions, restricting direct microflow calls exclusively to setup/teardown utility cases.
+    *   *If any mixing is detected:* You **MUST** reject the specifications, explain the mismatch to the user, and rollback to `STATE_DISCOVERY`.
 *   **Data Seeding Trigger:** If setup requires complex or multiple entities, proactively ask the user if they exist as static master data or should be created in-case.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md) | [MTA Execution Settings Reference](execution-settings.md)
 
