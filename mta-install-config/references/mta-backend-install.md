@@ -8,7 +8,8 @@ This document describes the sizing requirements, environment configuration, and 
 
 The private backend platform requires an active subscription and can be downloaded from the Mendix Marketplace:
 
-*   **MTA Platform (Private, License Required):** [Mendix Marketplace Component 225791](https://marketplace.mendix.com/link/component/225791)
+*   **MTA Platform - Menditect Direct (Private, License Required):** [Mendix Marketplace Component 225791](https://marketplace.mendix.com/link/component/225791) — For customers who purchased their MTA subscription directly from Menditect.
+*   **MTA Platform - via Mendix (Private, License Required):** [Mendix Marketplace Component 230793](https://marketplace.mendix.com/link/component/230793) — For customers who purchased their MTA subscription via Mendix.
 
 ---
 

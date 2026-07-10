@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.1.0"
-changes: "Added 5-Point Pre-Response Self-Audit, interactive Halt Gates, and standard Success Checklists to reference guides"
+version: "1.1.1"
+changes: "Synced setup documentation with MTA 3.1 reference guide"
 ---
 
 # MTA Installation & Configuration Skill

@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.6.1](releases/v1.6.1.md) | 2026-07-10 | merge branch development into main for release 1.6.1 |
 | [🚀 v1.6.0](releases/v1.6.0.md) | 2026-07-09 | added new installation skill and improved existing skills |
 | [🚀 v1.5.5](releases/v1.5.5.md) | 2026-07-09 | Added void microflow side-effect warning and analysis rules with testability refactoring guidelines |
 | [🚀 v1.5.4](releases/v1.5.4.md) | 2026-07-09 | Updated state machine to ask for user validation when leaving the QA _Assistance state |

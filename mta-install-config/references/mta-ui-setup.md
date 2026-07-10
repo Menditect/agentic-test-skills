@@ -36,6 +36,16 @@ To ensure Playwright can reliably locate and target your inputs, buttons, and gr
 3. Under the properties of individual components (or the page document itself), locate the **Class** field.
 4. Add unique, descriptive class names (e.g. `mta-input-username`, `mta-btn-submit`) to assist locator-based resolution.
 
+> [!TIP]
+> **AI-Assisted Class Tagging Automation:**
+> You can completely automate this manual class-tagging step across all user modules in seconds using AI:
+> *   **If using MAIA (inside Mendix Studio Pro):**
+>     `"List all pages in the user modules of this app and set the appearance class of each page to its page name."`
+> *   **If using an AI Coding Assistant (with mxcli access, e.g. Antigravity):**
+>     `"Please use mxcli to list all pages within the user modules of this Mendix application, and then execute individual update commands to set the appearance class of each page to match its page name."`
+
+
+
 ### 2. Enable Pages & Widgets Download in MTA Web UI
 You **MUST** explicitly grant MTA permission to download Page and Widget XML structures from your App Under Test:
 1. Open your Application Settings page inside the MTA portal.
