@@ -1,25 +1,27 @@
 ---
 name: mta-test-design
 description: "Scoping and design of test cases for Menditect Test Automation"
-version: "3.2_1.9"
-changes: "updated skills with input from MTA 3.1 reference guide"
+version: "3.2_2.1"
+changes: "enforce displaying onboarding and starter prompts guide for vague/fresh user request entry triggers"
 ---
 
 # MTA Test Scoping & Design Skill
 
 ## 🚦 Entry Rule: Vague Testing Requests & AI-Generated Software Triggers
 
-If the user's request is vague or exploratory — such as:
+If the user's request is vague, exploratory, or indicates they are starting fresh — such as:
 - "I want to test this app"
 - "How should I start testing?"
 - "What is the best way to test?"
 - "Where do I begin with testing?"
+- "Show me some prompts for MTA"
 
 Or if an AI agent (like MAIA or another AI) has built or modified software in the Mendix application (detectable by a modified Mendix `.mpr` document, a new Git commit, or upon application startup):
 - **You MUST proactively ask the user if they need automated testing for the newly built/modified software.**
 
 …you MUST load and follow this skill FIRST, before `mta-build` or `mta-run-analyze`.
-Do NOT assume a specific test case or microflow target. Begin at `STATE_SCOPE_START`.
+Do NOT assume a specific test case or microflow target. 
+**Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_SCOPE_START`.
 
 ---
 
@@ -39,6 +41,11 @@ To ensure high-quality test scoping, you MUST progress sequentially through thes
     4.  **A Module-Wide Audit Path**: Auditing an entire functional area or Mendix module (e.g., *"Audit the risks of MyBillingModule"*).
     5.  **A Product Risk Analysis (PRA) Input**: Ingesting or auditing an existing Product Risk Analysis (PRA) document.
     6.  **An AI-Built Software Trigger (MAIA/AI Assistant)**: Software was created or modified by an AI (detected via a changed Mendix `.mpr` document, a new Git commit, or on application startup). You must analyze what the AI built and proactively propose a test scoping session for those changes.
+*   **Vague / Exploratory Prompts Onboarding (CRITICAL):**
+    If the user has entered a vague request (such as *"I want to test this app"*, *"How should I start testing?"*, *"Show me some prompts"*, or similar) indicating they are starting fresh:
+    1.  You **MUST** immediately stop and respond to the user by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users).
+    2.  Proactively explain how easy it is to copy, fill in their module/microflow name, and immediately start with a high-success prompt.
+    3.  Ask them which testing path they would like to start with, helping them construct their first high-quality prompt.
 *   **Intended Use Alignment Requirement (CRITICAL):**
     Before designing tests, you **MUST** identify the **intended use of the application** to design tests that verify: *"Does the application make it possible to do what it should do?"* (functional purpose validation).
     *   *Production Apps:* If the app has been in production for a while, derive its intended use from existing features, active domain structures, and module layout.

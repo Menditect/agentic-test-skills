@@ -168,3 +168,45 @@ To ensure that frontend tests are highly valuable and not just duplicating backe
     - Verifying that different user roles see different screens, sections, or widgets, ensuring restricted UI elements are inaccessible to unauthorized personas.
 6.  **Asynchronous UI Updates & Loading States**:
     - Checking the behavior of loading indicators, progress bars, dynamic search grids, and instant page refreshes upon backend changes.
+
+---
+
+## 🚀 ONBOARDING & STARTER PROMPTS FOR NEW USERS
+
+To help new users get started successfully with MTA and the AI coding assistant, we have compiled a set of proven starter prompts. These prompts are designed to trigger high-quality, structured behaviors from the AI, avoiding typical starting friction.
+
+### 🔑 The 3 Golden Starter Prompts:
+
+1.  **For Backend Unit Testing:**
+    > "I want to build a unit test in MTA with boundaries tests microflow [ModuleName].[MicroflowName]"
+    *   *Why this works:* It immediately locks Category A (Backend), specifies the target element, and triggers the automated boundary-value analysis (BVT) coverage guidelines.
+
+2.  **For Test Architecture and Strategy Planning:**
+    > "I run on app instance [InstanceName], suggest a building plan for backend/frontend testing in mta for module [ModuleName]"
+    *   *Why this works:* It provides the environment context, locks the module scope, and allows the AI to suggest a clean structural separation of tests.
+
+3.  **For Frontend Functional Testing (Happy Paths):**
+    > "I use MTA with app instance [InstanceName]. Build a happy flow frontend testscript in MTA to '[achieve functional goal X]'"
+    *   *Why this works:* It establishes the environment, locks Category B (Frontend), and provides the functional user story for UI actions and assertions.
+
+---
+
+### 💡 Additional Specialized MTA AI Starter Prompts:
+
+Based on the capabilities of the MTA skills, users can also use these advanced prompt starters to achieve high-quality results:
+
+#### 🧪 1. For Microflows returning complex Calculations or Decisions:
+> "I want to build a backend test case for microflow [ModuleName].[MicroflowName] with data variations. Here is the spec table: [paste data matrix/table]"
+*   *Outcome:* Triggers the creation of a Category A (Backend) data-driven test case using the "In-Memory Preference Principle" and automatically sets up duplicated variations with names and descriptions.
+
+#### 🛠️ 2. For Page Security and Dynamic Visibility Checks:
+> "Build a frontend test case to verify that the button '[ButtonCaption]' on page [ModuleName].[PageName] is only visible to user role '[RoleName]'"
+*   *Outcome:* Locks Category B (Frontend), targets the specific layout rule, and builds the dual-user setup/execution step sequence.
+
+#### 📈 3. For Complex Multi-Step Integration Flows (Transactional):
+> "I need an integration test for the orchestration microflow [ModuleName].[OrchestrationMicroflowName]. Show me a plan using TestLogger footprints first."
+*   *Outcome:* Instructs the AI to build a Category A transactional integration test and map the exact expected sequence of sub-microflow calls.
+
+#### 🐛 4. For Debugging Runtime Failures:
+> "My test case '[TestCaseName]' failed. Here is the execution log output: [paste log snippet]. Help me troubleshoot and fix the test case."
+*   *Outcome:* Triggers the `mta-run-analyze` diagnostic skill to parse the error codes and propose specific sequencing or attribute fixes.
