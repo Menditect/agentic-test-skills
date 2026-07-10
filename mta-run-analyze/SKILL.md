@@ -1,11 +1,19 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "3.2_2.1"
-changes: "make data variation descriptions strictly mandatory in reference guides and smoke audits"
+version: "3.2_2.2"
+changes: "added platform-agnostic cross-skill redirection rules for vague or onboarding requests"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
+
+🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
+
+> [!IMPORTANT]
+> **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
+> *   You **MUST** immediately stop using this `mta-run-analyze` skill.
+> *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
+> *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
 
 🚨 **CRITICAL MTA GUARDRAIL: STOP AND ENFORCE INTERACTIVE DISCOVERY** 🚨
 

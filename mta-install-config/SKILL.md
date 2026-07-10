@@ -1,11 +1,19 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.1.2"
-changes: "updated skills with input from MTA 3.1 reference guide"
+version: "1.1.3"
+changes: "added platform-agnostic cross-skill redirection rules for vague or onboarding requests"
 ---
 
 # MTA Installation & Configuration Skill
+
+🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
+
+> [!IMPORTANT]
+> **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
+> *   You **MUST** immediately stop using this `mta-install-config` skill.
+> *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
+> *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
 
 This skill guides the user and the AI assistant in installing, configuring, and connecting Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser.
 

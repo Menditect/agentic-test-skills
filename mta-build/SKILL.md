@@ -1,11 +1,19 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_2.6"
-changes: "make data variation descriptions strictly mandatory in reference guides and smoke audits"
+version: "3.2_2.7"
+changes: "improved skills for new users and frontend testing (added FQN directory and cross-skill redirection rules)"
 ---
 
 # MTA Build, Design, & Optimization Skill
+
+🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
+
+> [!IMPORTANT]
+> **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
+> *   You **MUST** immediately stop using this `mta-build` skill.
+> *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
+> *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
 
 🚨 **CRITICAL MTA GUARDRAIL: STOP AND ENFORCE INTERACTIVE DISCOVERY** 🚨
 

@@ -5,6 +5,25 @@
 This reference file contains standardized, copy-pasteable build templates optimized for generating prompts for the `mta-build` skill. Each template aligns with the Menditect Testability Framework (MTF) and MTA guidelines.
 
 > [!IMPORTANT]
+> ### 🛡️ THE MTA HANDOFF VERIFICATION GATE & PRE-FILLING RULE
+> Before compiling or outputting any build prompt using these templates, the Test Design agent **MUST halt** and present the user with the Interactive Selection Gate:
+> 1. **Test Category Selection:** Ask the user to confirm the category:
+>    * *Category A (Backend):* For direct microflow testing without a browser.
+>    * *Category B (Frontend):* For functional page and widget testing in a browser.
+>    * *Recommendation:* Pre-suggest the category determined during the Test Strategy phase.
+> 2. **Workflow Mode Selection:** Ask the user to select their desired build workflow:
+>    * *Express with Build Plan:* High speed. HALTs to approve specs and steps list before building.
+>    * *Full Express Mode:* Maximum speed. HALTs only once to approve specs.
+>    * *Guided Mode:* Full control. HALTs at every step and binding during construction.
+> 3. **Placement Discovery Setup:** Ask the user to choose their placement path:
+>    * *Direct Path:* User inputs the exact target Configuration, Suite, and desired Test Case Name.
+>    * *Scan/Explore Path:* Proactively ask the Test Design agent to run MTA scan tools right now to list available active configurations and suites so they can pick.
+>    * *Auto-Default Path:* The prompt instructs the builder to automatically create a default suite named `[ModuleName]_Suite` under the default active configuration.
+>    * *Builder Discovery Path (TBD):* Specify placement as `"TBD (Scan and confirm during build)"`. This instructs the build skill to run its standard interactive discovery (Phase 0) when it receives the prompt.
+> 
+> **Zero-Halt Handoff:** Once selections are made, you **MUST** pre-fill these exact parameters into the metadata block of the generated prompt (e.g. `Target Configuration`, `Target Suite`, `MTA Category`, `Workflow Mode`). This removes vague placeholders, enabling a seamless, zero-halt bridge directly into the `mta-build` skill.
+
+> [!IMPORTANT]
 > **Low-Code Custom-Logic Rule**: When generating build prompts using these templates, you **MUST** ensure that the objectives and chronological plans focus *solely* on verifying unique, custom business rules, math formulas, validations, or custom UI-specific visibility constraints. Under no circumstance should you include test steps or assertions that verify standard Mendix platform features (e.g., verifying that standard layout templates render, or checking if standard Committer steps write to the database).
 
 ---
@@ -14,11 +33,15 @@ This reference file contains standardized, copy-pasteable build templates optimi
 Use this template when testing deterministic business logic, calculations, or validations (`VAL_`, `RULE_`, `FTN_`, `OPR_`).
 
 ```markdown
-### 📋 Unit Test Blueprint: [Test Case Name]
+# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
 
-**MTA Category:** Category A (Backend)
-**Workflow Mode:** Express with Build Plan
-**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+## 1. Metadata
+*   **Target Application:** `[AppName]`
+*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
+*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **MTA Category:** Category A (Backend)
+*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
 
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
@@ -79,11 +102,15 @@ Use this template when testing multi-step processes or transactional orchestrati
 > - **Clean Up:** By avoiding database persistence, you eliminate the need for cleanup/teardown steps, resulting in extremely fast, stable, and self-contained tests that never pollute the database.
 
 ```markdown
-### 📋 Integration Test Blueprint: [Test Case Name]
+# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
 
-**MTA Category:** Category A (Backend)
-**Workflow Mode:** Express with Build Plan
-**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+## 1. Metadata
+*   **Target Application:** `[AppName]`
+*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
+*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **MTA Category:** Category A (Backend)
+*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
 
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
@@ -116,11 +143,15 @@ Use this template when testing multi-step processes or transactional orchestrati
 Use this template when testing screen layouts, button clicks, client-cache synchronization, and navigational flows (`ACT_` triggered from pages).
 
 ```markdown
-### 📋 Functional UI Test Blueprint: [Test Case Name]
+# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
 
-**MTA Category:** Category B (Frontend)
-**Workflow Mode:** Express with Build Plan
-**Target Placement:** Scan existing configurations and suites first, then propose placing inside an existing suite/configuration, or ask the user for confirmation
+## 1. Metadata
+*   **Target Application:** `[AppName]`
+*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
+*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **MTA Category:** Category B (Frontend)
+*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
 
 #### 1. High-Level Specifications
 *   **Case 1: SETUP**
@@ -175,19 +206,27 @@ To ensure that frontend tests are highly valuable and not just duplicating backe
 
 To help new users get started successfully with MTA and the AI coding assistant, we have compiled a set of proven starter prompts. These prompts are designed to trigger high-quality, structured behaviors from the AI, avoiding typical starting friction.
 
+> [!TIP]
+> ### 🔑 Where to find your App Instance Token:
+> You can retrieve your secure **App Instance Token** directly from the **MTA Web Portal**:
+> 1. Log in to your **MTA Portal** account.
+> 2. Select your target **Application** from the dashboard.
+> 3. Navigate to the **Application Instances** section.
+> 4. Locate your specific environment instance (e.g., `Local`, `Development`, `Staging`) and click to copy its secure **App Instance Token** (or App Token).
+
 ### 🔑 The 3 Golden Starter Prompts:
 
-1.  **For Backend Unit Testing:**
-    > "I want to build a unit test in MTA with boundaries tests microflow [ModuleName].[MicroflowName]"
+1.  **For Test Architecture and Strategy Planning:**
+    > "I want to run strategy planning in MTA using App Instance Token '[AppInstanceToken]'. Suggest a testing blueprint plan for module '[ModuleName]'"
+    *   *Why this works:* It provides the secure token context, locks the module scope, and allows the AI to suggest a clean structural separation of tests.
+
+2.  **For Backend Unit Testing:**
+    > "I want to build a backend unit test in MTA using App Instance Token '[AppInstanceToken]'. Generate boundary tests for microflow '[ModuleName].[MicroflowName]'"
     *   *Why this works:* It immediately locks Category A (Backend), specifies the target element, and triggers the automated boundary-value analysis (BVT) coverage guidelines.
 
-2.  **For Test Architecture and Strategy Planning:**
-    > "I run on app instance [InstanceName], suggest a building plan for backend/frontend testing in mta for module [ModuleName]"
-    *   *Why this works:* It provides the environment context, locks the module scope, and allows the AI to suggest a clean structural separation of tests.
-
 3.  **For Frontend Functional Testing (Happy Paths):**
-    > "I use MTA with app instance [InstanceName]. Build a happy flow frontend testscript in MTA to '[achieve functional goal X]'"
-    *   *Why this works:* It establishes the environment, locks Category B (Frontend), and provides the functional user story for UI actions and assertions.
+    > "I want to build a frontend happy flow in MTA using App Instance Token '[AppInstanceToken]'. Build a test script to '[achieve functional goal X]'"
+    *   *Why this works:* It establishes the environment and token, locks Category B (Frontend), and provides the functional user story for UI actions and assertions.
 
 ---
 
