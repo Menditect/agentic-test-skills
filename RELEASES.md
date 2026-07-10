@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [🚀 v1.6.5](releases/v1.6.5.md) | 2026-07-10 | merge development into main for release 1.6.5 |
+| [🚀 v1.6.5](releases/v1.6.5.md) | 2026-07-10 | updated skills for datavariation descriptions |
 | [🚀 v1.6.4](releases/v1.6.4.md) | 2026-07-10 | better separation of frontend and backend test creation |
 | [🚀 v1.6.3](releases/v1.6.3.md) | 2026-07-10 | updated skills with improved handling of new execution users |
 | [🚀 v1.6.2](releases/v1.6.2.md) | 2026-07-10 | release: v1.6.2 - updated skills with input from MTA 3.1 reference guide |
