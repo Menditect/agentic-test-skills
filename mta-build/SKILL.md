@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_2.8"
-changes: "new version of skills, optimized for last MTA update"
+version: "3.2_2.9"
+changes: "added mutual exclusivity of test suite and test case variations"
 ---
 
 # MTA Build, Design, & Optimization Skill

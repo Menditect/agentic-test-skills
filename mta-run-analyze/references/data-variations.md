@@ -522,3 +522,12 @@ The workflow for establishing Test Suite Data Variations symmetrically mirrors t
 > [!IMPORTANT]
 > Just like with TestCases, you **MUST** use the unique, variation-specific keys extracted via `GetTestSuiteDataVariationsDetails` when overriding values for duplicated variations. Never call setters using the base template key, as that would continuously overwrite Variation #1 (the template).
 
+### 🚫 Architectural Constraint: Mutual Exclusivity of Variation Types
+
+> [!CAUTION]
+> **STRICT ARCHITECTURAL CONSTRAINT:** A single test case can ONLY vary its data at **one level**—either the Test Suite level OR the local Test Case level. Items inside a single test case **can never be varied in both types of variations simultaneously.**
+>
+> *   **Local Variation Precedence & Scope Isolation:** If a testcase has local variations enabled (`EnableTestCaseDataVariations`), it is completely decoupled from the Test Suite's global variations. Its steps will **only** run against its local test case variation matrix, completely ignoring the suite-level variations. No Cartesian product expansion or overlapping parameter blending is supported.
+> *   **Global Variation Scope:** Only test cases whose step attributes/assertions are explicitly registered at the Test Suite level (using `AddTestSuiteVariationItem*`) are driven by the Test Suite's global variations.
+
+
