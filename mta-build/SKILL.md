@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_2.7"
-changes: "improved skills for new users and frontend testing (added FQN directory and cross-skill redirection rules)"
+version: "3.2_2.8"
+changes: "new version of skills, optimized for last MTA update"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -64,7 +64,7 @@ This determines how many times we HALT for your approval during step constructio
 You **MUST** strictly follow the 14 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
 1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
 2. **No parallel or batched creations**: Create cases and steps sequentially, waiting for Key N's response before building step N+1.
-3. **No dummy predecessor keys**: Omit predecessor keys for first elements. For subsequent elements, query the last active element's key to append chronologically.
+3. **No dummy predecessor keys**: Pass predecessor keys of `0` for absolute first elements. For subsequent elements, query the last active element's key to append chronologically.
 4. **Mandatory Specification Approval**: Draft specification outlines and HALT for user approval in `[STATE_SPEC_APPROVAL]`.
 5. **Mandatory Browser Setup & Piping (Category B (Frontend))**: In UI tests, HALT in `[STATE_BROWSER_SETUP]`. Pipe the `Browser` context output from Case 1 directly to subsequent cases.
 6. **Execution Settings Distinction (Always vs. None)**: 

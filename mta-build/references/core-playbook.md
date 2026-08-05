@@ -82,20 +82,31 @@ flowchart TD
 
 ## 📋 THE 3-TEST CASE PATTERN FOR FRONTEND UI TESTS
 
-All Category B (Frontend) tests **MUST** adhere strictly to this 3-Test Case architecture (never separate browser initialization from data setup/teardown):
+All Category B (Frontend) tests **MUST** adhere strictly to this session-isolated 3-Test Case architecture. Because the backend transaction session and the client browser session are completely unshared, setup data must be committed in Case 1 before the browser starts in Case 2. Any data created natively by the browser session must be cleaned up in Case 2 itself, and Setup data must be deleted in Case 3:
 
 ```
 1. CASE 1: SETUP (ExecutionCondition = "Always", ResumeExecutionAfterException = "_Continue")
-   └─► Start Playwright (Local, Server, or Azure options) ➔ Returns Browser Context Output
+   ├─► Start Playwright (Local, Server, or Azure options) ➔ Returns Browser Context Output
+   ├─► Backend Setup / Data Seeding: Create & Change objects (Seeding Setup Data)
+   └─► Single Persist (Always, _Continue): Commit Setup Data to DB so the browser can see it
 
 2. CASE 2: EXECUTION (ExecutionCondition = "None", ResumeExecutionAfterException = "Stop")
-   ├─► A. BACKEND SETUP / DATA SEEDING (Always, _Continue): Create objects & Persist once.
-   ├─► B. UI EXECUTION & VERIFICATION (None, Stop): Starts frontend browser session, acts, asserts, and Stop_MxFrontendTest.
-   └─► C. BACKEND TEARDOWN / CLEANUP (Always, _Continue): Delete seeded objects & Persist once.
+   ├─► A. UI EXECUTION & VERIFICATION (None, Stop): Starts frontend session, acts, asserts, and Stop_MxFrontendTest.
+   ├─► B. BACKEND UI CLEANUP: Retrieve UI-Created Data (using maximum context, e.g. unique identifiers), and Delete Object.
+   └─► C. Single Persist (Always, _Continue): Commit deletions of UI-created data
 
 3. CASE 3: TEARDOWN (ExecutionCondition = "Always", ResumeExecutionAfterException = "_Continue")
+   ├─► Backend Teardown / Cleanup (Always, _Continue): Delete Case 1 Setup Data (piped via TestStepOutputKey)
+   ├─► Single Persist (Always, _Continue): Commit Teardown deletions
    └─► Teardown_Playwright ➔ Closes browser context safely
 ```
+
+### 🔀 Multi-Case Suite Architecture
+If there are multiple frontend execution cases between Setup (Case 1) and Teardown (Case N):
+1. **Consolidated Seeding (Case 1):** Create and commit **all** setup data for all execution cases inside Case 1 in a single, clean seeding block, followed by a single `Persist` step. Ensure data for different testcases is isolated and uniquely prefixed to maintain test idempotency.
+2. **Consolidated Teardown (Case N):** Pipe all setup object keys from Case 1 directly to Case N's `Delete Object` steps using cross-case step output piping and commit with a single `Persist` step.
+3. **Local UI Cleanup (Cases 2, 3, etc.):** Each execution test case remains strictly responsible for retrieving, deleting, and committing any data created by its own frontend browser clicks before it exits.
+
 
 ---
 
@@ -179,7 +190,7 @@ To ensure complete clarity, prevent compilation errors, and guarantee database c
 To prevent sequence corruption, maintain clean naming, and build robust dynamic piping, all core test construction laws, variable piping patterns, and lifecycle cleanup best practices are isolated in a dedicated manual.
 
 ### 🧭 High-Level Summary of Golden Rules:
-1.  **The Predecessor Chaining Law:** Elements (steps or cases) must be created in chronological forward order. Omit predecessors entirely for the absolute first element in an empty container; do NOT pass `0` or `null`. Concurrent/parallel step creation or sequence modifications are strictly banned.
+1.  **The Predecessor Chaining Law:** Elements (steps, cases, or suites) must be created in chronological forward order. For the absolute first element in an empty container, you **MUST** pass `0` for the predecessor parameter (e.g. `TestStepBeforeKey = 0`). Concurrent/parallel step creation or sequence modifications are strictly banned.
 2.  **Zero Data in Step Names:** Describe *what* the step does, not *which* data it uses. Use the template: `[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]`.
 3.  **Proactive Output Piping:** Always pipe outputs from preceding teststeps (locators, objects, primitive attributes) directly into subsequent steps to maximize dynamic test maintenance and avoid hardcoding values.
 4.  **Modular Setup & Teardown Isolation:** Isolate data seeding and teardown actions in setup/teardown cases, keeping core test flows clean.

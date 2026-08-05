@@ -86,6 +86,8 @@ For complex matrices (3+ scenarios):
     *   *Microflow Return Values:* `AddTestCaseVariationItemAssertMicroflowReturnValue(AssertMicroflowReturnValueCompareKey)`
     *   *Object Counts:* `AddTestCaseVariationItemAssertObjectCount(AssertObjectCountKey)`
     *   *Exceptions:* `AddTestCaseVariationItemAssertException(AssertExceptionKey)`
+    *   *Validation Feedback Message Compare:* `AddTestCaseVariationItemAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey)`
+    *   *Validation Feedback Message Count:* `AddTestCaseVariationItemAssertValidationFeedbackMessageCount(AssertValidationFeedbackMessageCountKey)`
 5.  **Duplicate:** Call `DuplicateTestCaseDataVariation` for each scenario ➔ Returns a new `TestCaseVariationKey`.
 6.  **Name Variation:** Call `TestCaseDataVariationName(TestCaseVariationKey, Name)`.
     *   *Format:* Lowercase alphanumeric with hyphens (e.g. `"blank-password"`). Never prepend `#` or use spaces.
@@ -93,9 +95,11 @@ For complex matrices (3+ scenarios):
 8.  **MANDATORY MAP RETRIEVAL:** Call `GetTestCaseDataVariationsDetails` to retrieve the complete mapping of scenarios and their unique keys.
 9.  **Override Inputs:** Call type-specific setter tools (e.g. `SetAttributeStringValue`) passing the **unique, variation-specific `AttributeValueKey`** extracted from the mapping in Step 8 (not the base `AttributeValueKey`!).
 10. **Override Assertions:** For each duplicated variation, call the appropriate type-specific assertion setter tool:
-    *   *Microflow Return Values:* Call `SetDecimalAssertMicroflowReturnValue`, `SetIntegerLongValueAssertMicroflowReturnValue`, or `SetEnumerationValueAssertMicroflowReturnValue` with that variation's unique assertion key (obtained via `GetTestCaseDataVariationsDetails`).
+    *   *Microflow Return Values:* Call `SetDecimalAssertMicroflowReturnValueCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`, `SetBooleanAssertMicroflowReturnValueCompare`, etc. with that variation's unique assertion key (obtained via `GetTestCaseDataVariationsDetails`).
     *   *Object Counts:* Call `SetAssertObjectCountProperties` passing that variation's unique `AssertObjectCountKey`, the comparison operator, expected count, and failed action.
     *   *Exceptions:* Call `SetAssertExceptionProperties` passing that variation's unique `AssertExceptionKey`, expected result, comparison string, and actions.
+    *   *Validation Feedback Compare:* Call `SetAssertValidationFeedbackMessageCompareProperties` with that variation's unique `AssertValidationFeedbackMessageCompareKey`.
+    *   *Validation Feedback Count:* Call `SetAssertValidationFeedbackMessageCountProperties` with that variation's unique `AssertValidationFeedbackMessageCountKey`.
 11. **Verify Sync:** Call `GetTestCaseDataVariationsDetails` again to verify all variation values are correctly set and synchronized.
 
 ---
@@ -483,3 +487,38 @@ To prevent parsing errors or markdown rendering layout breaks when variations ar
    | `Customer.Age` | `120` | ... | ... |
 
 4. **Exact Separator Alignment:** The cell/column count in the separator row (`|:---|`) **MUST** match the header column count exactly. A single missing or extra cell in the separator will break the markdown rendering parser.
+
+---
+
+## 🏢 TEST SUITE DATA VARIATIONS
+
+Test Suite Data Variations allow you to define global data matrices at the **TestSuite level**. All child test cases inside the suite run against these global suite variations. This enables powerful cross-case data-driven scenario runs.
+
+The workflow for establishing Test Suite Data Variations symmetrically mirrors the TestCase variation workflow:
+
+### 🔄 Programmatic 7-Step Workflow
+
+1.  **Enable Suite Variations:** Call `EnableTestSuiteDataVariations(TestSuiteKey)` ➔ Returns a template `TestSuiteVariationKey`.
+2.  **Configure Template Metadata:** Set the name and description for the template/primary variation (Variation #1):
+    *   Call `TestSuiteDataVariationName(TemplateVariationKey, "variation-name")`.
+    *   Call `TestSuiteDataVariationDescription(TemplateVariationKey, "Description of primary scenario...")`.
+3.  **Register Variation Items:** For any step attribute or assertion that needs to vary across scenarios, register it as a suite variation item.
+    *   *Step Attributes:* Call `AddTestSuiteVariationItemAttributeValue(TestSuiteKey, AttributeValueKey)` ➔ Returns a base `AttributeValueKey`.
+    *   *Microflow Return Values:* Call `AddTestSuiteVariationItemAssertMicroflowReturnValue(TestSuiteKey, AssertMicroflowReturnValueCompareKey)`.
+    *   *Exceptions:* Call `AddTestSuiteVariationItemAssertException(TestSuiteKey, AssertExceptionKey)`.
+    *   *Object Counts:* Call `AddTestSuiteVariationItemAssertObjectCount(TestSuiteKey, AssertObjectCountKey)`.
+    *   *Validation Feedback Compare:* Call `AddTestSuiteVariationItemAssertValidationFeedbackMessageCompare(TestSuiteKey, AssertValidationFeedbackMessageCompareKey)`.
+    *   *Validation Feedback Count:* Call `AddTestSuiteVariationItemAssertValidationFeedbackMessageCount(TestSuiteKey, AssertValidationFeedbackMessageCountKey)`.
+4.  **Duplicate Variations:** For each alternate scenario, call `DuplicateTestSuiteDataVariation(TestSuiteDataVariationKey)` ➔ Returns a new unique `TestSuiteVariationKey`.
+5.  **Configure Duplicated Metadata:**
+    *   Call `TestSuiteDataVariationName(NewTestSuiteVariationKey, Name)`.
+    *   Call `TestSuiteDataVariationDescription(NewTestSuiteVariationKey, Description)`.
+6.  **MANDATORY MAP RETRIEVAL:** Call `GetTestSuiteDataVariationsDetails(TestSuiteKey)` to retrieve the recursively expanded JSON tree.
+7.  **Override Values Per Variation:** 
+    *   Look inside the returned JSON tree from Step 6.
+    *   Locate each variation and extract its **unique, variation-specific key** (e.g. `AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, etc.).
+    *   Call the standard type-specific setter tools (e.g., `SetAttributeStringValue` or `SetDecimalAssertMicroflowReturnValueCompare`) passing the **variation-specific key** and override value.
+
+> [!IMPORTANT]
+> Just like with TestCases, you **MUST** use the unique, variation-specific keys extracted via `GetTestSuiteDataVariationsDetails` when overriding values for duplicated variations. Never call setters using the base template key, as that would continuously overwrite Variation #1 (the template).
+

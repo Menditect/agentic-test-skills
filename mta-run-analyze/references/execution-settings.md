@@ -21,9 +21,10 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 2. For any Teststep inside Category B (Frontend) tests:
    ├─► Is it a Boilerplate step (Options Objects, Start Frontend Session [Start_MxFrontend_Test_...], Stop Frontend Session [Stop_MxFrontendTest], Playwright Teardown [Teardown_Playwright])?
    │   └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
-   ├─► Is it a Backend Data Action (Create, Change, Delete, Persist setup/teardown steps in Case 2)?
-   │   ├─► Setup, Teardown, and commits (Create, Change, Delete, Persist):
+   ├─► Is it a Backend Data Action?
+   │   ├─► Setup Seeding (Case 1), Teardown Setup Cleanup (Case 3), and UI-Created Cleanup (Case 2) steps:
    │   │   └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
+   │   │       *(This includes Create, Change, Retrieve, Delete, and Persist steps used to prepare data or clean up the database).*
    │   └─► Database Assertions, Assert Steps, & Retrievals used for Assertions:
    │       └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue" (🚨 **CRITICAL RULE:** Assertions and retrieve steps used for asserting must default to continuing on failure; only use "Stop" if explicitly requested in the prompt or by the user).
    └─► Is it a Standard UI Interaction (Clicks, Fills, standard UI Assertions)?

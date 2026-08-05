@@ -69,7 +69,7 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 *   **Error Payload:** `CompilationError: Parameter 'Options' on step 'ACT_CalculateInterest' (StepKey: 'step_mf_calc', Index: 2) requires an object of type 'Financials.InterestOptions', but the preceding step output 'out_interest_options' is located downstream at step 'Create_InterestOptions' (StepKey: 'step_opts_create', Index: 5).`
 *   **Root Cause:** Consuming microflow occurs before the creation of the required parameter object. Parameters evaluate sequentially.
 *   **Resolution:**
-    1.  **Reordering:** Call `SetSequenceOfTeststep` to move `step_opts_create` (and its attribute values) before `step_mf_calc`. *Note: If a step needs to be moved to the absolute first position of a testcase to fix the sequence, `SetSequenceOfTestStep` should be called with `TestStepBeforeKey` completely omitted (leaving only `TestStepKey`).*
+    1.  **Reordering:** Call `SetSequenceOfTeststep` to move `step_opts_create` (and its attribute values) before `step_mf_calc`. *Note: If a step needs to be moved to the absolute first position of a testcase to fix the sequence, `SetSequenceOfTestStep` should be called with `TestStepBeforeKey = 0`.*
     2.  **Forward Reconstruction:** Recreate steps in forward order: Call `CreateTestStepCreateObject` first ➔ `IncludeAttributeValueInTeststep` ➔ `SetAttribute*Value` ➔ `CreateMicroflowCallTestStep` (binding parameter to the options output key).
 
 ### Pattern B: Missing Cross-TestCase Parameter Binding
@@ -98,7 +98,7 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
     3.  **Localize the Provider:** Duplicate/recreate the object-creation step inside the same container before the consumer step to break the dependency on the skipped step.
 
 ### Pattern D: "Always" Condition on Dependent Consumer (Step-Level / Case-Level)
-*   **Error Payload:** `StepExecutionException: Step 'ACT_CleanUpOrder' (StepKey: 'step_cleanup', Case 2) failed to execute. The step is set to 'Always' run, but it requires input parameter 'Order' from setup step 'out_order_object' (StepKey: 'step_order_create', Case 2), which was skipped or failed to initialize.`
+*   **Error Payload:** `StepExecutionException: Step 'ACT_CleanUpOrder' (StepKey: 'step_cleanup', Case 3) failed to execute. The step is set to 'Always' run, but it requires input parameter 'Order' from setup step 'out_order_object' (StepKey: 'step_order_create', Case 1), which was skipped or failed to initialize.`
 *   **Root Cause:** A boundary/teardown/cleanup step is set to `"Always"` but its dependent provider step failed or was skipped, leaving the input unbound.
 *   **Rule (The Cascading Provider Rule):** If a teststep is set to `"Always"`, **all providing teststeps** (those supplying inputs/parameters to it) in the same test suite must also be set to `"Always"` to guarantee they execute and provide valid inputs. This cascades backward through the entire dependency chain in the test suite.
 *   **Resolution:**

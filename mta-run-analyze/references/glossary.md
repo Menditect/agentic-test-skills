@@ -36,12 +36,13 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 | Parameter Key | Name / Role | Meaning & System Usage |
 | :--- | :--- | :--- |
 | **`TestStepKey`** | Step Key | Targets an existing step for reading, updating, or sequencing. |
-| **`TestStepBeforeKey`** | Before Key | Placement/predecessor key for step operations. For creating the absolute first step in an empty testcase, this parameter **MUST** be completely omitted from the tool call (or pass `0` if the active tool schema enforces it as a required parameter). For `SetSequenceOfTestStep`, it is officially **optional**; omitting it sequences the target step to the absolute first position of the testcase. For all other step creation tools, it remains strictly required. |
+| **`TestStepBeforeKey`** | Before Key | Placement/predecessor key for step operations. For creating the absolute first step in an empty testcase, or sequencing a step to the first position using `SetSequenceOfTestStep`, this parameter **MUST** be set to `0`. For subsequent steps, use the key of the immediate predecessor. |
 | **`TestStepOutputKey`** | Output Key | Unique identifier of a step's returned object (e.g., `Browser`, `MxPageLocator`). |
 | **`TestStepProvidePlaywrightPageKey`** | Parent Context Key | Output key of a parent locator (e.g. `MxPageLocator`, `MxGalleryItemLocator`) scoping a nested widget. |
 | **`TestCaseKey`** | Case Key | Targets a specific test case. |
-| **`TestCaseBeforeKey`** | Case Before Key | Placement/predecessor key for case creation. For creating the absolute first case in an empty test suite, this parameter **MUST** be completely omitted from the tool call (or pass `0` if the active tool schema enforces it as a required parameter). For subsequent case creations, it remains strictly required. Test cases do not have a sequencing tool (like `SetSequenceOfTestStep`) and must be created in correct chronological order. |
-| **`TestSuiteKey`** | Suite Key | Targets a specific test suite. Test suites do not support any `TestSuiteBeforeKey` or sequencing/ordering parameters, and cannot be reordered via tools. |
+| **`TestCaseBeforeKey`** | Case Before Key | Placement/predecessor key for case creation. For creating the absolute first case in an empty test suite, or sequencing a case to the first position using `SetSequenceOfTestCase`, this parameter **MUST** be set to `0`. For subsequent cases, use the key of the immediate predecessor. |
+| **`TestSuiteKey`** | Suite Key | Targets a specific test suite. Used for reading, executing, or reordering suites. |
+| **`TestSuiteBeforeKey`** | Suite Before Key | Placement/predecessor key for suite sequencing using `SetSequenceOfTestSuite`. If a suite needs to be the absolute first in the Test Configuration, this parameter **MUST** be set to `0`. For subsequent suites, use the key of the immediate predecessor. |
 
 ---
 

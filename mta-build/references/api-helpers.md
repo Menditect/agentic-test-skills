@@ -183,7 +183,7 @@ To mark an object for deletion from the database, you MUST execute this exact se
 ### 3. The Persist Step Framework (`CreateTestStepPersist`)
 MTA operates in transactional memory. Changes, creations, and deletions are only pushed to the database and finalized once a **Persist** step is executed.
 
-*   **Syntax:** Call `CreateTestStepPersist(TestCaseKey, TestStepBeforeKey)`. Note that selecting Persist automatically sets the name of the teststep to `"Persist"`. (If this is the absolute first teststep in the test case, completely omit `TestStepBeforeKey` from the tool call).
+*   **Syntax:** Call `CreateTestStepPersist(TestCaseKey, TestStepBeforeKey)`. Note that selecting Persist automatically sets the name of the teststep to `"Persist"`. (If this is the absolute first teststep in the test case, pass `0` for `TestStepBeforeKey` in the tool call).
 *   **Chronological Placement Rule:** Always insert the Persist step chronologically **after** the steps that perform the other object actions (Create, Change, Delete).
 *   **Domain Model Events:** Configured domain model events (`Before Commit` and `After Commit` for committed objects; `Before Delete` and `After Delete` for deleted objects) are triggered natively for objects modified or deleted by the transaction.
 *   **Domain Model Access:** Access rights are NOT checked during the Persist step execution, but are validated inside individual action steps (Create, Change, Delete).
@@ -286,23 +286,25 @@ First, instantiate the assertion block on your microflow step:
 Call `CreateAssertMicroflowReturnValue` with:
 * `TestStepKey`: The key of the microflow call teststep.
 * `AMRC_ComparisonOperator`: The comparison operator enum value (e.g., `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"LessThan"`, `"Contains"`).
-* `ASRT_ActionFailedAssert`: The behavior on assertion failure (must be either `"ContinueTestRun"` or `"StopTestRun"`). **Default: `"ContinueTestRun"`**. Do NOT set to `"StopTestRun"` unless explicitly instructed by the user or prompt.
+* `ASRT_ActionFailedAssert`: The behavior on assertion failure (must be either `"ContinueTestRun"` or `"StopTestRun"`). **Default: `"ContinueTestRun"`**. Do NOT set to `"StopTestRun"` unless explicitly instructed by the user.
 * *Returns:* `AssertMicroflowReturnValueCompareKey` (referred to as `AssertCompareKey` in code).
 
 ### Step 2: Configure Type-Specific Assertion Constraints
 MTA uses specialized helper tools to process typed assertions. Depending on the Mendix return data type of your microflow, you **MUST** call the corresponding configuration tool on the `AssertCompareKey` returned in Step 1:
 
-| Mendix Return Type | Typed Assertion Tool to Call | Key Parameters |
+| Mendix Return Type | Typed Assertion Tool to Call | Key Parameters & Description |
 | :--- | :--- | :--- |
-| **Decimal** | `SetDecimalAssertMicroflowReturnValue` | `AssertMicroflowReturnValueCompareKey`, `ComparisonOperatorDecimal`, `Value`, `MinimumValue`, `MaximumValue` |
-| **Integer / Long** | `SetIntegerLongValueAssertMicroflowReturnValue` | `AssertMicroflowReturnValueCompareKey`, `ComparisonOperatorIntegerLong`, `Value`, `MinimumValue`, `MaximumValue` |
-| **Enumeration** | `SetEnumerationValueAssertMicroflowReturnValue` | `AssertMicroflowReturnValueCompareKey`, `EnumerationValue` *(Use technical Value Name, NOT Caption. Empty = `""`)* |
-| **String / Boolean** | *No helper required* | Handled via the base assertion `AMRC_ComparisonOperator` on creation, or overridden in variations using variation details. |
+| **Boolean** | `SetBooleanAssertMicroflowReturnValueCompare` | `ComparisonOperator` (`"Equals"`/`"NotEquals"`), `BooleanValue` (boolean). |
+| **DateTime** | `SetDateTimeAssertMicroflowReturnValueCompare`<br>`SetDateTimeAssertMicroflowReturnValueCompareRange` | `ValueDateTimeOption` (`"CurrentDateTime"`/`"SpecifiedDate"`), `ValueSpecifiedDateTime` (ISO string), offset parameters, and range limits. |
+| **Decimal** | `SetDecimalAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `DecimalValue` (exact). For range operators, use `MinimumDecimalValue` and `MaximumDecimalValue`. |
+| **Enumeration** | `SetEnumerationAssertMicroflowReturnValueCompare` | `ComparisonOperator` (`"Equals"`/`"NotEquals"`), `EnumerationValue` *(Use technical Value Name, NOT Caption)*. |
+| **Integer / Long** | `SetIntegerLongAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `IntegerLongValue` (exact). For range operators, use `MinimumIntegerLongValue` and `MaximumIntegerLongValue`. |
+| **String** | `SetStringAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `SetStringValue` (boolean), `StringValue` (string), `SetTrimStringValue` (boolean), `TrimStringValue` (boolean). |
 
 ### Overriding Assertions in Data Variations
 If your test case has data variations enabled, you can override expected assertion outcomes for different scenarios:
 1. **Register Assertion as Variation Item:** Call `AddTestCaseVariationItemAssertMicroflowReturnValue` with `AssertMicroflowReturnValueCompareKey`.
-2. **Configure Scenario Values per Variation:** For each duplicated variation, call the appropriate type-specific setter tool (e.g. `SetDecimalAssertMicroflowReturnValue`) with that variation's specific assertion key (retrieved via `GetTestCaseDataVariationsDetails`).
+2. **Configure Scenario Values per Variation:** For each duplicated variation, call the appropriate type-specific setter tool (e.g. `SetDecimalAssertMicroflowReturnValueCompare`) with that variation's specific assertion key (retrieved via `GetTestCaseDataVariationsDetails`).
 
 ---
 
@@ -332,12 +334,18 @@ Call `SetAssertAttributeValueCompareProperties` with:
 #### Step 3: Configure Type-Specific Expected Values
 Call the appropriate type-specific configuration setter tool on your `AalcKey`:
 
-| Attribute Datatype | Setter Tool to Call | Key Parameters |
+| Attribute Datatype | Setter Tool to Call | Key Parameters & Description |
 | :--- | :--- | :--- |
 | **Boolean** | `SetBooleanAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `BooleanValue` (boolean) |
 | **Enumeration** | `SetEnumerationAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `EnumerationValue` *(Technical Value Name, NOT Caption)* |
 | **HashString** | `SetHashStringAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"` / `"NotEquals"`), `HashStringValue` (string) |
 | **String / StringLimited / StringUnlimited** | `SetStringAssertAttributeValueCompare` | `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`), `SetStringValue` (`True`), `StringValue`, `SetTrimStringValue` (`True`/`False`), `TrimStringValue` |
+| **Integer** | `SetIntegerAssertAttributeValueCompare`<br>`SetIntegerAssertAttributeValueCompareRange` | `IntegerValue` for exact matches. `MinimumIntegerValue` and `MaximumIntegerValue` for range comparisons (`"Range"` / `"NotRange"`). |
+| **Long** | `SetLongAssertAttributeValueCompare`<br>`SetLongAssertAttributeValueCompareRange` | `LongValue` for exact matches. `MinimumLongValue` and `MaximumLongValue` for range comparisons. |
+| **Decimal** | `SetDecimalAssertAttributeValueCompare`<br>`SetDecimalAssertAttributeValueCompareRange` | `DecimalValue` for exact matches. `MinimumDecimalValue` and `MaximumDecimalValue` for range comparisons. |
+| **DateTime** | `SetDateTimeAssertAttributeValueCompare`<br>`SetDateTimeAssertAttributeValueCompareRange` | `ValueDateTimeOption` (`"CurrentDateTime"` or `"SpecifiedDate"`), `ValueSpecifiedDateTime` (ISO 8601 string), `EnableOffset` (boolean), along with various offset parameters (`OffsetDays`, `OffsetHours`, etc.) and range limits. |
+| **CurrentDateTime** | `SetCurrentDateTimeAssertAttributeValueCompare` | Set current dateTime assertions with active offsets (`OffsetDays`, `OffsetHours`, `OffsetMinutes`, etc.) and comparison operators. |
+| **AutoNumber** | `SetAutoNumberAssertAttributeValueCompare`<br>`SetAutoNumberAssertAttributeValueCompareRange` | `AutoNumberValue` for exact matches. `MinimumAutoNumberValue` and `MaximumAutoNumberValue` for range comparisons. |
 
 ### Overriding Attribute Assertions in Data Variations
 If your test case has data variations enabled, you can promote individual attribute assertions to the variation matrix to test multiple data scenarios:
@@ -671,4 +679,42 @@ When a microflow under test returns no parameters (Void), a simple `AssertExcept
 4.  **Refactoring for Testability:** Highly recommend that the developer refactor the microflow to return a value (such as a status boolean or the created object) to make it directly testable.
 5.  **Exemption for Setups/Teardowns:** These checks and warnings are not required if the void microflow is executed purely as a setup or teardown data utility.
 6.  **Exception Only as a Last Resort:** Only use an exception assertion if the microflow has zero side effects and operates purely as a state check or utility logic.
+
+---
+
+## 🎯 TESTCASE-LEVEL VALIDATION FEEDBACK ASSERTIONS
+
+MTA supports asserting validation feedback messages at the **TestCase level** (rather than inside a single teststep) because validation feedback represents an aggregate, client-side/session state resulting from executing a transaction.
+
+You can configure two types of validation assertions directly on a `TestCaseKey`:
+
+### 1. Validation Feedback Compare (`CreateAssertValidationFeedbackMessageCompare`)
+This tool checks the content of a validation message on a specific entity member (attribute or association).
+
+*   **Step 1: Create Compare Assertion:** Call `CreateAssertValidationFeedbackMessageCompare` with:
+    *   `TestCaseKey`: The key of the parent test case.
+    *   `ModuleName` / `EntityName`: Fully qualified entity identifier (e.g., `"Sales"`, `"Order"`).
+    *   `MemberType`: `"Attribute"`, `"Association"`, or `"All"`.
+    *   `AttributeName`: Required if `MemberType` is `"Attribute"`.
+    *   `AsociationName`: *(Note spelling: single 's'!)* Required if `MemberType` is `"Association"`.
+    *   `ComparisonOperator`: `"Equals"`, `"NotEquals"`, `"Contains"`, or `"NotContains"`.
+    *   `ComparisonString`: The expected validation message text.
+    *   `Quantifier`: `"ForAll"` or `"AtLeastOne"`.
+    *   *Returns:* `AssertValidationFeedbackMessageCompareKey` (referred to as `VfCompareKey` in code).
+*   **Step 2: Configure Properties:** Call `SetAssertValidationFeedbackMessageCompareProperties` to update/manage thresholds, failure behaviors (`"ContinueTestRun"` or `"StopTestRun"`), or clear message criteria via `ActionWithComparisonString` (`"Set"`, `"Reset"`, or `"Omit"`).
+
+### 2. Validation Feedback Count (`CreateAssertValidationFeedbackMessageCount`)
+This tool verifies the total number of validation feedback messages generated during test case execution.
+
+*   **Step 1: Create Count Assertion:** Call `CreateAssertValidationFeedbackMessageCount` with:
+    *   `TestCaseKey`: The parent test case.
+    *   `ComparisonOperator`: `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, or `"LessThanEqualTo"`. *(Note: Case-sensitive underscores in "Greater_than" and "Less_than"!)*
+    *   `ComparisonNumber`: The expected count threshold.
+    *   *Returns:* `AssertValidationFeedbackMessageCountKey` (referred to as `VfCountKey` in code).
+*   **Step 2: Configure Properties:** Call `SetAssertValidationFeedbackMessageCountProperties` to update/manage the comparison number, operator, or failed action behaviors.
+
+### 🔄 Overriding Validation Assertions in Data Variations
+Validation feedback assertions can be integrated directly into TestCase variation matrices:
+*   **For Compare Assertions:** Call `AddTestCaseVariationItemAssertValidationFeedbackMessageCompare(TestCaseDataVariationKey, AssertValidationFeedbackMessageCompareKey)` to promote the assertion to the matrix, then override expected validation messages per scenario using `SetAssertValidationFeedbackMessageCompareProperties`.
+*   **For Count Assertions:** Call `AddTestCaseVariationItemAssertValidationFeedbackMessageCount(TestCaseDataVariationKey, AssertValidationFeedbackMessageCountKey)` to promote, then configure varying thresholds per scenario using `SetAssertValidationFeedbackMessageCountProperties`.
 

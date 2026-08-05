@@ -32,7 +32,7 @@ graph TD
 
 ## 🏢 TEST SUITE & CONTAINER ADMINISTRATION
 
-When establishing or restructuring test environments, you can programmatically provision and manage test suites and test cases.
+When establishing or restructuring test environments, you can programmatically provision, sequence, and manage test suites, test cases, and execution users.
 
 ### 1. Programmatic Suite Initialization Flow
 To create and initialize a new test suite from scratch, you **MUST** follow this canonical 4-step sequence:
@@ -42,8 +42,20 @@ To create and initialize a new test suite from scratch, you **MUST** follow this
     * `Name`: A concise, descriptive name (e.g., `"Billing Calculation Suite"`).
     * `Description`: A clear explanation of the suite's functional scope and objective.
     * `ExecutionCondition`: Set to `"Always"` or `"None"`.
-3.  **Resolve/Provision Execution User:** Call `GetExecutionUsers` to verify if a suitable backend execution user is configured. If none are present (or a new custom user is required), call `CreateExecutionUser` **first** to provision the user and obtain its `ExecutionUserKey`. It is impossible to create the test case first and then register the user.
-4.  **Provision the First Test Case:** Call `CreateTestCase` passing the `TestSuiteKey` as the parent container, and the resolved `ExecutionUserKey`. This begins the test case placement and spec definition lifecycle.
+3.  **Resolve/Provision/Configure Execution User:**
+    *   Call `GetExecutionUsers` to verify if a suitable backend execution user is configured.
+    *   If a new custom user is required, call `CreateExecutionUser` **first** to provision the user and obtain its `ExecutionUserKey`. Symmetrically, you can dynamically update/set an existing user's username using `SetUserNameForExecutionUser(ExecutionUserKey, Username)`.
+    *   *Note:* It is impossible to create the test case first and then register the user.
+4.  **Provision the First Test Case:** Call `CreateTestCase` passing the `TestSuiteKey` as the parent container, the resolved `ExecutionUserKey`, and `TestCaseBeforeKey = 0` (since it is the absolute first testcase in the new suite). This begins the testcase placement and spec definition lifecycle.
+
+### 2. Programmatic Test Suite Sequencing
+Test Suites within a Test Configuration can be reordered or sequenced dynamically:
+*   **Set Sequence:** Call `SetSequenceOfTestSuite` passing the target `TestSuiteKey` and the predecessor `TestSuiteBeforeKey`.
+*   **First Suite sequencing:** Symmetrically, to sequence a suite to the absolute first position in the Test Configuration, call `SetSequenceOfTestSuite` with the target `TestSuiteKey` and pass `0` for `TestSuiteBeforeKey`.
+
+### 3. Execution User Username Updates
+To modify the credentials or username associated with an active execution user (e.g., during multi-role permission testing or environmental switches):
+*   **Set Username:** Call `SetUserNameForExecutionUser` with the target `ExecutionUserKey` and the new `Username` string. Ensure the execution user exists before calling this setter.
 
 ### 2. Application & Configuration Lookup Getters
 Before creating suites or configurations, you can look up application keys and registered configurations using these lightweight getters:
@@ -112,12 +124,16 @@ For Mendix testing, seeding and managing data is a critical requirement of robus
 | Strategy | Implementation Pattern | Advantages | Disadvantages |
 | :--- | :--- | :--- | :--- |
 | **Option 0: In-Memory (Preferred for Backend)** | Create required objects in memory using `Create Object` steps, link them, and pass them directly as input parameters to the target microflow without ever calling `Persist`. | • **Extreme speed:** No database write overhead.<br>• **Zero database pollution:** No cleanup/teardown steps needed.<br>• **Perfect isolation:** Tests cannot corrupt each other's database state. | • Only works for Category A (Backend) tests.<br>• Cannot be used if the target microflow or any of its sub-microflows explicitly performs a Database Retrieve that cannot be satisfied by in-memory parameters. |
-| **Option A: In-Case (Self-Contained DB)** | Setup and Teardown are placed as preceding and succeeding steps inside the **same** Test Case, utilizing `Persist` to write to the DB and `Delete`+`Persist` to clean up. | • Perfect transaction isolation.<br>• Keeps test cases **completely independent and portable**.<br>• Allows direct memory-based piping between steps. | • Setup steps are repeated across test cases if multiple cases need the same data.<br>• Slower database write/delete overhead.<br>• Slower for suite-wide master data. |
+| **Option A: In-Case (Self-Contained DB)** | Setup and Teardown are placed as preceding and succeeding steps inside the **same** Test Case (Category A), or split across Case 1 (Setup), Case 2 (Execution UI cleanup), and Case 3 (Teardown) for Category B tests due to session isolation. Utilizes `Persist` to commit and `Delete`+`Persist` to clean up. | • Perfect transaction isolation.<br>• Keeps test cases **completely independent and portable**.<br>• Allows direct memory-based piping between steps in Category A. | • Setup steps are repeated across test cases if multiple cases need the same data.<br>• Slower database write/delete overhead.<br>• Slower for suite-wide master data. |
 | **Option B: Dedicated Master Data Suite** | Dedicated setup and teardown test cases—or a separate, dedicated **Master Data Test Suite**—run once to seed shared records. | • Seeds shared data once.<br>• Ideal for **static master data** (remains completely untouched/read-only during test execution).<br>• Slower setups run once, speeding up the overall suite.<br>• **Domain Model Change Resilience:** When the underlying Mendix domain model changes, it is significantly easier to modify a single master data suite than to update setup steps across dozens of individual test cases. | • Requires committing data to the DB (separate sessions).<br>• Cannot use memory-based piping; requires database retrieve filters.<br>• Introduces implicit test dependencies. |
 
 ### 🛠️ Strategic Implementation Rules:
 
 1.  **Independent by Default:** Always favor **Option A** for dynamic, test-specific transactional data. Keeping cases independent and portable makes refactoring, debugging, and execution via the single-testcase scope extremely fast and robust.
+1.1 **🚨 Category B Frontend Session Split Law:** Because the browser Playwright session and the backend runner session do not share memory or transactions, Category B tests **MUST** split Strategy Option A across the suite:
+    *   **Seeding (Case 1 Setup):** Must happen inside the Setup case, followed by a single `Persist` step, before the browser starts in Case 2.
+    *   **UI-Created Cleanup (Case 2 Execution):** Any data created natively by browser actions must be explicitly retrieved (analyzing maximum context such as unique references/identifiers), deleted, and committed with a single `Persist` step inside Case 2 before it exits.
+    *   **Teardown (Case 3 Teardown):** Setup data seeded in Case 1 must be deleted in Case 3 using cross-case output piping, followed by a single `Persist` step.
 2.  **The Master Data Trigger:** Transition to **Option B** only when setup data is structurally complex, large, or static (read-only).
 3.  **The Evolution Challenge:** The need for a Master Data Test Suite is rarely clear at the start of a project. However, deciding to use one heavily impacts how subsequent test cases acquire their data (shifting from "create-and-delete" steps to "retrieve-from-database" steps).
 4.  **🚨 Mandatory Dependency Documentation:** 
@@ -167,6 +183,12 @@ If you need to pass individual, non-persisted scalar values (like generated code
 1.  **In Test Case X:** Assign the output of an upstream step to an **MTA Suite Variable** (a dynamic variable registered in the Test Suite).
 2.  **In Test Case Y:** Access the variable using dynamic scalar value piping (`SelectValueForValue`), binding the variable as the provider for downstream steps.
 3.  **Critical Restriction:** Suite variables are strictly confined to cases running inside the **same Test Suite run**. For data across different Suites or manual test configurations, you must fall back to Database Persistence (Pattern A).
+
+#### Pattern C: Cross-Case Step Output Piping for Teardown Deletes
+For Category B (Frontend) teardowns, you can delete setup data in Case 3 (Teardown) by directly referencing the output keys of the `Create Object` steps from Case 1 (Setup) using MTA's cross-case step output binding:
+1.  **Piping Mechanics:** Configure the `Delete Object` steps in Case 3 with `TestStepOutputKey` pointing directly to the corresponding step keys of the `Create Object` steps in Case 1.
+2.  **Advantages:** This eliminates the need to write redundant `Retrieve Object` steps inside Case 3, ensuring clean, fast, and direct database deletions.
+3.  **Mandatory Persist Step:** Immediately following all such deletion steps in Case 3, you **MUST** execute a single `Persist` step to commit the teardown deletions to the database.
 
 ---
 
