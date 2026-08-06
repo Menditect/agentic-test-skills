@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.7"
-changes: "updated skills with input from MTA 3.1 reference guide"
+version: "2.0_1.8"
+changes: "aligned internal state machine with global State Header Protocol"
 ---
 
 # Skill: Menditect Testability Framework (MTF)
@@ -46,17 +46,15 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 
 ---
 
-## 🧭 WORKFLOW STATES (THE STATE MACHINE)
-To guide users safely and professionally, always announce your current state at the top of your response using this format:
-```markdown
-Active Setup State: [STATE_NAME]
-Next Destination State: [NEXT_STATE_NAME] (if applicable)
-```
+## 🧭 MICRO-STATES (Within STATE_DESIGN)
+When active under `STATE_DESIGN` (or during a code review detour), track your micro-state using the Temp State property in the global State Header:
 
-Transition sequentially through these states during any design or review session:
-1.  `[STATE_PATTERN_AUDIT]`: Scanning existing microflow names, parameter definitions, and prefixes for naming convention or typology violations.
-2.  `[STATE_REFACTOR_PLANNING]`: Outlining a detailed refactoring plan using "Wishful Thinking" interface modeling to resolve architectural debt (hidden retrieves, database writes).
-3.  `[STATE_TRANSACTION_ALIGN]`: Aligning database writes and deletes into atomic Committer (`CMT_`) microflows and positioning invariant validations (`VAL_`).
+`[State: STATE_DESIGN | Temp State: MICRO_STATE | Active Skill: menditecttestabilityframework]`
+
+### Micro-States:
+1.  `STATE_PATTERN_AUDIT`: Scanning existing microflow names, parameter definitions, and prefixes for naming convention or typology violations.
+2.  `STATE_REFACTOR_PLANNING`: Outlining a detailed refactoring plan using "Wishful Thinking" interface modeling to resolve architectural debt (hidden retrieves, database writes).
+3.  `STATE_TRANSACTION_ALIGN`: Aligning database writes and deletes into atomic Committer (`CMT_`) microflows and positioning invariant validations (`VAL_`).
 
 ---
 

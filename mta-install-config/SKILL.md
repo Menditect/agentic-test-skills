@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.1.3"
-changes: "added platform-agnostic cross-skill redirection rules for vague or onboarding requests"
+version: "1.1.4"
+changes: "aligned installation states as micro-states within macro state STATE_DISCOVERY"
 ---
 
 # MTA Installation & Configuration Skill
@@ -48,15 +48,12 @@ This skill is triggered by instructions or queries containing:
 
 ---
 
-## 🔄 CORE SETUP WORKFLOW STATES & HALT GATES
+## 🧭 MICRO-STATES (Within STATE_DISCOVERY)
+When active under the macro state `STATE_DISCOVERY` (for setup and installation), track your current micro-state using the Temp State property in the global State Header:
 
-To ensure safe, high-quality, and reliable setups, the AI assistant **MUST** announce its active setup state at the top of every response using this exact formatting:
-```markdown
-Active Setup State: [STATE_NAME]
-Next Destination State: [NEXT_STATE_NAME] (if halting or transitioning)
-```
+`[State: STATE_DISCOVERY | Temp State: MICRO_STATE | Active Skill: mta-install-config]`
 
-You must guide the user through these four sequential operational states, halting to verify success at each step:
+Guide the user through these four sequential setup micro-states, halting to verify success at each step:
 
 ### 1. `[STATE_INFRA_PROVISIONING]`
 *   **Purpose:** Guide backend MTA platform deployment and hardware/database sizing.

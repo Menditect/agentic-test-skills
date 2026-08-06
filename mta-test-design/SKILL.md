@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), or answering general testing/prompting questions"
-version: "3.2_2.2"
-changes: "improved skills for new users (added interactive selection gate and simplified starter prompts with secure token)"
+version: "3.2_2.3"
+changes: "aligned design states as micro-states under STATE_DESIGN and updated Handoff Blueprint with Session Compaction Block"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -29,9 +29,12 @@ This skill helps the user identify what to test by analyzing business requiremen
 
 ---
 
-## 🧭 Workflow States (THE STATE MACHINE - STATES 1-5)
+## 🧭 MICRO-STATES (Within STATE_DESIGN)
+When active under the macro state `STATE_DESIGN`, track your current micro-state using the Temp State property in the global State Header:
 
-To ensure high-quality test scoping, you MUST progress sequentially through these five states. Do not skip any state:
+`[State: STATE_DESIGN | Temp State: MICRO_STATE | Active Skill: mta-test-design]`
+
+You must progress sequentially through these five design micro-states. Do not skip any state:
 
 ### 1. `STATE_SCOPE_START` (State 1)
 *   **Action**: Ingest the business context and establish application alignment. This can be triggered by:
@@ -105,10 +108,26 @@ To ensure high-quality test scoping, you MUST progress sequentially through thes
 *   **Prompt Pre-Filling Requirement**: You **MUST** insert the user's exact selections (including their chosen Category, Workflow Mode, Configuration, Suite, and Case Name) directly into the metadata block of the **Standardized AI-Generated Handoff Blueprint** below, ensuring zero placeholders remain (unless TBD was explicitly selected).
 *   **Data Variation Focus & Risk Prioritization Rule**: For any tests utilizing data variations (such as boundary values or negative cases), the generated prompt **MUST** instruct the builder to focus strictly on relevant attributes that change the execution paths or behavior of the logic, and to prioritize creating variations for attributes with a high business value or risk (such as billing calculations, tax rates, or regulatory limits).
 *   **Standardized AI-Generated Handoff Blueprint (CRITICAL):**
-    You **MUST** output the final generated build instruction inside this exact standard markdown blueprint format to guarantee seamless ingestion by the `mta-build` skill:
+    You **MUST** output the final generated build instruction inside this exact standard markdown blueprint format, including the pre-filled **Session Compaction Block**, to guarantee seamless ingestion and state bootstrapping by the `mta-build` skill:
     ```markdown
     # 📋 MTA BUILD SPECIFICATION HANDOFF
-    
+
+    ### 💾 MTA STATE COMPACTION BLOCK (SESSION RESTORE)
+    <!-- Copy and paste this block into a new chat session to instantly restore your conversational state. -->
+    ```json
+    {
+      "MtaState": "STATE_CONSTRUCTION",
+      "TempState": "STATE_CASE_CREATION",
+      "TargetConfig": "[UserSelectedTestConfig]",
+      "TargetSuite": "[UserSelectedTestSuite]",
+      "TestCase": "[UserSelectedTestCaseName]",
+      "Category": "[Category A (Backend) | Category B (Frontend)]",
+      "WorkflowMode": "[Express with Build Plan | Full Express | Guided]",
+      "MtaBaseUrl": "[RetrievedUrl]",
+      "Context": "Specs approved for [Microflows/Pages Under Test]."
+    }
+    ```
+
     ## 1. Metadata
     *   **Target Application:** `[AppName]`
     *   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`

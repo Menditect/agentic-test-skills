@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "3.2_2.4"
-changes: "added mutual exclusivity of test suite and test case variations"
+version: "3.2_2.5"
+changes: "aligned run and analyze states as micro-states under STATE_RUN_ANALYZE and added Session Compaction Block exception"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -19,10 +19,12 @@ changes: "added mutual exclusivity of test suite and test case variations"
 
 > [!IMPORTANT]
 > ### ⚡ POWER-USER GUARDRAIL BYPASS EXCEPTION
-> You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly and unambiguously specifies **ALL THREE** of the following parameters:
-> 1. The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
-> 2. The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
-> 3. The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
+> You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly specifies:
+> 1. A pasted **Session Compaction Block** containing state properties, OR
+> 2. **ALL THREE** of the following parameters explicitly:
+>    - The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
+>    - The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
+>    - The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
 
 On the very first turn of a **brand-new Conversation ID** (defined strictly as having no prior MTA activity, state, or parameters recorded in the current session's chat history or compaction resumption summary), you are strictly prohibited from executing **ANY tools of any kind** (including Mendix model analysis commands or other MTA tools), **except** for loading this skill and `references/core-playbook.md` and calling `GetMtaUrl`.
 
@@ -69,13 +71,15 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 
 ---
 
-## 🧭 WORKFLOW STATES (THE STATE MACHINE - STATE 8 & QA_ASSISTANCE)
+## 🧭 MICRO-STATES (Within STATE_RUN_ANALYZE)
+When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-state using the Temp State property in the global State Header:
 
-This skill manages runtime execution, post-run logs, failure analysis, static audits, and developer onboarding tutorials. Transition through these states as described in **`references/core-playbook.md`**:
+`[State: STATE_RUN_ANALYZE | Temp State: MICRO_STATE | Active Skill: mta-run-analyze]`
 
-8.  `[STATE_EXECUTION_VERIFY]`: Triggering test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
+### Run & Analyze Micro-States:
+1.  `STATE_EXECUTION_VERIFY`: Triggering test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
     *   **MTA Premium Diagnostic Blueprint (CRITICAL):**
-        Whenever a test run execution fails during `[STATE_EXECUTION_VERIFY]`, you **MUST** retrieve and parse the logs, then format your diagnostic analysis using this exact standard markdown structure (do not use ad-hoc layouts):
+        Whenever a test run execution fails, you **MUST** retrieve and parse the logs, then format your diagnostic analysis using this exact standard markdown structure:
         ```markdown
         ### 🚨 MTA RUN FAILURE DIAGNOSTIC
         *   **Failing Test Case:** `[TestCaseName]`
@@ -85,7 +89,7 @@ This skill manages runtime execution, post-run logs, failure analysis, static au
         *   **Root Cause Analysis (RCA):** `[Concise, technical description of why the step failed]`
         *   **Surgical Fix Action:** `[The exact action, step refactoring, or parameter adjustment required to fix the test]`
         ```
--   `[STATE_QA_ASSISTANCE]`: Explaining existing test scripts to developers/testers, analyzing step sequencing, verifying pattern compliance, or answering conceptual questions.
+2.  `STATE_QA_ASSISTANCE`: Explaining existing test scripts to developers/testers, analyzing step sequencing, verifying pattern compliance, or answering conceptual/general questions.
 
 ---
 

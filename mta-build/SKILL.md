@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Category A, Category B, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "3.2_2.9"
-changes: "added mutual exclusivity of test suite and test case variations"
+version: "3.2_3.0"
+changes: "aligned workflow states as micro-states under STATE_CONSTRUCTION and added Session Compaction Block exception"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -19,10 +19,12 @@ changes: "added mutual exclusivity of test suite and test case variations"
 
 > [!IMPORTANT]
 > ### ⚡ POWER-USER GUARDRAIL BYPASS EXCEPTION
-> You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly and unambiguously specifies **ALL THREE** of the following parameters:
-> 1. The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
-> 2. The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
-> 3. The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
+> You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly specifies:
+> 1. A pasted **Session Compaction Block** containing state properties, OR
+> 2. **ALL THREE** of the following parameters explicitly:
+>    - The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
+>    - The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
+>    - The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
 
 On the very first turn of a **brand-new Conversation ID** (defined strictly as having no prior MTA activity, state, or parameters recorded in the current session's chat history or compaction resumption summary), you are strictly prohibited from executing **ANY tools of any kind** (including Mendix model analysis commands or other MTA tools), **except** for loading this skill and `references/core-playbook.md` and calling `GetMtaUrl`.
 
@@ -119,17 +121,20 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 
 ---
 
-## 🧭 WORKFLOW STATES (THE STATE MACHINE - STATES 1-7)
+## 🧭 MICRO-STATES (Within STATE_CONSTRUCTION)
+When active under the macro state `STATE_CONSTRUCTION`, track your current micro-state using the Temp State property in the global State Header:
 
-This skill manages active test planning, design, setup, and construction. Sequentially transition through these states as described in **`references/core-playbook.md`**:
+`[State: STATE_CONSTRUCTION | Temp State: MICRO_STATE | Active Skill: mta-build]`
 
-1.  `[STATE_DISCOVERY]`: Initial setup, category selection, and URL/application discovery.
-2.  `[STATE_PLACEMENT]`: Selection of environment/Test Configuration and Test Suite.
-3.  `[STATE_SPEC_APPROVAL]`: Drafting specification cards and obtaining user approval.
-4.  `[STATE_CASE_CREATION]`: Generating test case containers sequentially.
-5.  `[STATE_BROWSER_SETUP]`: Specifying browser settings (headless, viewport, language) for Category B tests.
-6.  `[STATE_BUILD_PLANNING]`: Designing chronological microflow-call lists, assertions, and piping boundaries.
-7.  `[STATE_CONSTRUCTION]`: Step-by-step creation, option binding, matrix refactoring, and sequence optimization.
+### Construction Micro-States:
+1.  `STATE_CASE_CREATION`: Generating test case containers sequentially.
+2.  `STATE_BROWSER_SETUP`: Specifying browser settings (headless, viewport, language) for Category B tests.
+3.  `STATE_BUILD_PLANNING`: Designing chronological microflow-call lists, assertions, and piping boundaries.
+4.  `STATE_STEP_CREATION`: Step-by-step creation of test steps and setting initial values.
+5.  `STATE_STEP_BINDING`: Configuring step option bindings and parameter mappings.
+6.  `STATE_ASSERT_CONSTRUCTION`: Creating assertions (attribute compare, counts, etc.) and checking for construction errors.
+
+When construction is successfully completed, prompt the user: *"The test cases and steps are fully built. Would you like to transition to execution (`STATE_RUN_ANALYZE`) and run the tests?"*
 
 ---
 
