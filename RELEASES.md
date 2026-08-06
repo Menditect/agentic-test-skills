@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [🚀 v1.8.1](releases/v1.8.1.md) | 2026-08-06 | Merge branch development |
+| [🚀 v1.8.1](releases/v1.8.1.md) | 2026-08-06 | updated module with agents.md and new publication mechanism |
 | [🚀 v1.8.0](releases/v1.8.0.md) | 2026-08-06 | Introduce agents.md with orchestration of states |
 | [🚀 v1.7.1](releases/v1.7.1.md) | 2026-08-05 | updated skills for datavariation strategy |
 | [🚀 v1.7.0](releases/v1.7.0.md) | 2026-08-05 | new version of skills, optimized for last MTA update |
