@@ -169,7 +169,7 @@ You **MUST** discover page and widget details using both MTA server-side tools a
 
 2.  **The "Lazy Model-Reading" Principle & Deep Page Inspection Query:**
     *   **The Default Rule:** If the technical widget names returned by `GetWidgets` are already descriptive and clear, you can draft high-quality Zero-Data step names directly from those names.
-    *   **🚨 The Deep Page Inspection Exception (MANDATORY):** Regardless of how descriptive the widget names are, you **MUST** ask the user if they would like to run a **Deep Page Inspection** before finalizing your frontend build plan.
+    *   **🚨 The Deep Page Inspection Exception (MANDATORY):** Regardless of how descriptive the widget names are, you **MUST** ask the user if they would like to run a **Deep Page Inspection** before finalizing your frontend execution plan.
         *   *Why:* Standard widget discovery (`GetWidgets`) only lists available fields. It does not provide the correct **fill/tab sequence order of input widgets** (which can affect dynamic visibility, validations, or event triggers), nor does it reveal the required **date formatting for DatePicker widgets** (which must match exactly to avoid formatting errors).
         *   *🚨 Navigation Structure Requirement:* When proposing a Deep Page Inspection and receiving user confirmation, you **MUST** always verify the Navigation structure from the Mendix model using local `mxcli` by executing `.\mxcli.bat -p "[Project]" -c "SHOW NAVIGATION"` (or by reading the `navigation.json` file in the Mendix source structure) before executing or finalizing the page inspection. Resolving the default home page and role-based home page configurations is the foundational starting point where every test execution begins, and is mandatory to ensure correct starting-page navigation and correct test design.
         *   *Action:* If the user approves, or if any of the fallback conditions are met, you must perform a deep model query. This can be achieved through:
@@ -339,7 +339,7 @@ To automate selecting "Premium Coverage" from a ComboBox named `comboBoxInsuranc
 ---
 
 ### 6. Verification Strategy: Frontend vs. Backend (Trade-off & Design Choice)
-When designing the assertion/verification step of a Category B (Frontend) test, you MUST understand and offer the user the choice between two distinct verification models in the build plan. It depends a lot on the usecase:
+When designing the assertion/verification step of a Category B (Frontend) test, you MUST understand and offer the user the choice between two distinct verification models in the execution plan. It depends a lot on the usecase:
 
 #### Option A: Frontend UI Assertion
 Verify the outcome directly on the frontend screen (e.g., locating and checking a row in a DataGrid2, or reading a textbox value).

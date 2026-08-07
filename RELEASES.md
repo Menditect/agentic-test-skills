@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.9.0](releases/v1.9.0.md) | 2026-08-07 | Merge branch development into main for release 1.9.0 |
 | [🚀 v1.8.3](releases/v1.8.3.md) | 2026-08-06 | fixed bug that caused errors in project |
 | [🚀 v1.8.2](releases/v1.8.2.md) | 2026-08-06 | fixed bug that created errors in project |
 | [🚀 v1.8.1](releases/v1.8.1.md) | 2026-08-06 | updated module with agents.md and new publication mechanism |

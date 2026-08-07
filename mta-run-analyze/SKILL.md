@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "3.2_2.5"
-changes: "aligned run and analyze states as micro-states under STATE_RUN_ANALYZE and added Session Compaction Block exception"
+version: "4.1"
+changes: "renamed Category A/B to Backend/Frontend in reference manuals, aligned with consolidated 5-state orchestration"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -78,16 +78,21 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 
 ### Run & Analyze Micro-States:
 1.  `STATE_EXECUTION_VERIFY`: Triggering test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
-    *   **MTA Premium Diagnostic Blueprint (CRITICAL):**
-        Whenever a test run execution fails, you **MUST** retrieve and parse the logs, then format your diagnostic analysis using this exact standard markdown structure:
+    *   **🚨 THE AUTOMATED SELF-REPAIR PROTOCOL (CRITICAL):**
+        If a test execution fails during runtime verification, you **MUST NOT** simply report the failure and wait. You **MUST** immediately initiate this automated self-repair loop in the same turn:
+        1. **Auto-Retrieve logs:** Immediately call `RetrieveTestRunResults` (and `GetAssertExceptionByTestStep` / `GetAssertValidationFeedbackMessageCompareByTestCase` if applicable) to programmatically pull the failure receipt.
+        2. **Run the 5-Step Reverse Tracer:** Analyze the 5 steps preceding the failing step in transaction memory to check if the error is a cascade from an upstream state modification or invalid validation.
+        3. **Formulate the Surgical Fix:** Map the root cause to a precise, actionable modification (e.g., updating a specific input attribute, correcting date format casing, or unskipping a cascading provider).
+        4. **Lock in Self-Repair State:** Update your State Header to: `[State: STATE_RUN_ANALYZE | Temp State: STATE_SELF_REPAIR | Active Skill: mta-run-analyze]`.
+        5. **Format the Premium Diagnostic Blueprint:** You **MUST** format your diagnostic analysis using this exact standard markdown structure to present your diagnosis and halt for click-to-proceed approval:
         ```markdown
-        ### 🚨 MTA RUN FAILURE DIAGNOSTIC
+        ### 🚨 MTA RUN FAILURE DIAGNOSTIC & SELF-REPAIR PLAN
         *   **Failing Test Case:** `[TestCaseName]`
         *   **Failing Step Index:** `[StepNumber] - [StepName]`
         *   **Failure Category:** `[e.g., AssertMismatch | Timeout | ClassNotFound | NetworkError]`
         *   **Mendix Exception Log:** `[Exact log snippet or exception trace]`
-        *   **Root Cause Analysis (RCA):** `[Concise, technical description of why the step failed]`
-        *   **Surgical Fix Action:** `[The exact action, step refactoring, or parameter adjustment required to fix the test]`
+        *   **Root Cause Analysis (RCA):** `[Concise, technical description pinpointed by the 5-Step Tracer]`
+        *   **Proposed Surgical Fix:** `[The exact step edit or attribute correction required to fix the test]`
         ```
 2.  `STATE_QA_ASSISTANCE`: Explaining existing test scripts to developers/testers, analyzing step sequencing, verifying pattern compliance, or answering conceptual/general questions.
 
