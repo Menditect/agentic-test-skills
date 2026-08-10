@@ -32,7 +32,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 
 3. For any Teststep inside Category A Backend Unit Tests (Single-Case with Rollback enabled):
    ├─► Do we need to configure execution settings for object actions (Create, Change, Delete, Persist, Assert, Retrievals)?
-   └─► **No!** All backend data actions inside a unit test should use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`). Do NOT call `SetExecutionSettingsOfTeststep` on them. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
+   └─► **By Default, No!** All backend data actions inside a unit test use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`) by default. You do NOT need to call `SetExecutionSettingsOfTeststep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
 
 ---
 
@@ -123,3 +123,5 @@ You **MUST** strictly adhere to the following architectural boundaries regarding
     Direct microflow execution teststeps (`CreateMicroflowCallTestStep`) execute in Mendix System context during MTA runs. They bypass backend test-level security constraints and are *never* restricted by backend execution users or `ApplySecurity` flags.
 5.  **Complete Frontend UI Isolation:** 
     Frontend browser tests (Category B) are completely isolated from backend Execution Users and `ApplySecurity` settings. Frontend browser tests require explicit UI-based user authentication (e.g., typing credentials into fields and clicking log in via Playwright/Frontend Testkit steps), which operates entirely independently of backend execution configurations.
+   * **Execution User (`ExecutionUserKey`):** In Frontend tests, **all test cases (Case 1 Setup, Case 2 Execution, Case 3 Teardown) MUST use `MxAdmin` as the backend Execution User at the test case level**. The user that logs in via the login step (e.g. `Start_MxFrontend_Test_With_Login`) in Case 2 is strictly the frontend user executing the test in the browser.
+   * **Apply Security (`ApplySecurityExecutor`):** Set to `"NONE"` at the test case level for Frontend tests. Frontend security access is evaluated natively by the Mendix Web Runtime during browser UI interactions.

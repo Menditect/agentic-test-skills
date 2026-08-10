@@ -42,6 +42,7 @@ You must progress sequentially through these three interactive planning micro-st
 *   **Model Audit Analysis**: Run `mxcli` (such as `SHOW MICROFLOWS -m <Module>` or `SHOW PAGES -m <Module>`) to inspect the target element's actual implementation and retrieve its MTF Typology.
 *   **Intended Purpose Verification**: Establish the intended use of the application. If the intended use or target component is unclear, **do NOT guess or assume**. Stop and ask the user to clarify.
 *   **Void Microflow Side-Effect Audit**: If the target microflow returns Void (no output parameter), halt and warn the user. Ask them to help identify database side-effects (creations, deletions, modifications) so that retrieve/count assertions can be designed instead of a basic exception-only check.
+*   **Mandatory Proposed Naming**: For new Test Suites, you **MUST** always propose a clear, descriptive Name and Description, and for new Test Cases, you **MUST** propose a clear, descriptive Name, while explicitly offering the option for the user to define their own custom Name and Description.
 *   **Halt Rule**: Transition to `PLAN_STEP_2` once placement and specifications are clearly captured and aligned.
 
 ### 2. `PLAN_STEP_2: Setup & Environment` (Micro-Step 2.2)

@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.1.2"
-changes: "enforced Step-by-Step Interactive Placement Discovery Law to save tokens"
+version: "4.1.3"
+changes: "updated default teststep execution settings for backend tests and name/description proposal rules"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -65,7 +65,7 @@ You **MUST** strictly follow the 14 Golden Rules defined in `references/core-pla
 5. **Atomic Multi-Case Session Construction**: In UI or multi-case tests, do not halt sequentially for browser setup or separate cases. Retrieve the `ExecutionPlanKey` once approved, and atomically construct all containers, set up browser options, and build chronological steps in a single execution sweep within `STATE_CONSTRUCTION`.
 6. **Execution Settings Distinction (Always vs. None)**: 
    *   **Frontend & Multi-Case Tests:** You **MUST** configure all setups, teardowns, and database seeding/cleanup steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. This guarantees database and browser cleanups execute reliably even if intermediate UI steps fail.
-   *   **Backend Unit Tests:** You **MUST** keep the default execution settings (`ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`) for all data steps, and you must NOT call `SetExecutionSettingsOfTeststep` on them. Since the entire testcase has rollback enabled (`RollbackTcseAfterExecution = "Yes"`), any failure will automatically roll back the transaction; stopping execution immediately is the desired and expected behavior.
+   *   **Backend Unit Tests:** You **MUST** use the default execution settings (`ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`) for all data steps by default. Do NOT call `SetExecutionSettingsOfTeststep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase has rollback enabled (`RollbackTcseAfterExecution = "Yes"`), skipping downstream steps upon failure is the standard expected behavior.
 7. **No redundant model reading**: Use widget names from `GetWidgets` whenever possible.
 8. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 9. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
