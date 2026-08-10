@@ -40,7 +40,7 @@ To support both advanced runtimes with local write capabilities and memory-only 
 | **Active Condition** | File-writing & run tools present in tool schema. | No write/run tools found (restricted sandbox / chat UI). |
 | **State Persistence** | Silently reads/writes to local `mta_state.json`. | Prepends State Header; user copy-pastes Compaction Block. |
 | **Specification Approval** | Automatically saves specs with `SetTestCaseSpecifications`. | Outputs formatted spec markdown; user saves in MTA Web UI. |
-| **Execution Plan Key** | Programmatically fetched and saved upon plan approval. | User retrieves `ExecutionPlanKey` from Web UI and pastes it. |
+| **Execution Plan Key** | Programmatically saved via `SaveExecutionPlan` and fetched upon plan approval. | User retrieves `ExecutionPlanKey` from Web UI and pastes it. |
 | **Step Construction** | Runs sequentially in background using direct MCP tools. | Generates step-by-step JSON payloads for user local execution. |
 | **Smoke Auditing** | Automatically runs `GetTestConstructionErrorsOfTestCase`. | Instructs user to view Web UI errors and paste back findings. |
 | **Chat Verbosity** | Ultra-clean. Zero session compaction blocks in chat. | Compaction blocks outputted at major state transitions. |

@@ -33,7 +33,7 @@ This guide outlines the precise operational checklists, evaluation questions, co
 ---
 
 ### 3. `STATE_CONSTRUCTION` (State 3)
-*   **Save Execution Plan & Retrieve Key (MANDATORY):** Immediately upon entering State 3, you **MUST** ensure the approved chronological execution plan has been saved to the MTA server and that you have retrieved a valid `ExecutionPlanKey`. You are strictly prohibited from constructing any steps until this key is present in your session context.
+*   **Save Execution Plan & Retrieve Key (MANDATORY):** Immediately upon entering State 3, you **MUST** save the approved chronological execution plan to the MTA server using the dedicated **`SaveExecutionPlan`** tool to retrieve a valid numeric `ExecutionPlanKey`. You are strictly prohibited from constructing any steps until this key is present in your session context.
 *   **🚨 "Start-and-Stop First" Boilerplate Rule (Frontend):** Before constructing any standard UI actions/assertions inside a Frontend execution test case, you **MUST** create the starting session step (e.g., `Start_MxFrontend_Test_With_Login` / `Start_MxFrontend_Test_Without_Login`) and stopping session step (`Stop_MxFrontendTest`) **first**, explicitly configuring both with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Subsequent UI steps are then built and sequenced *between* them.
 *   **Atomic Sequential Provisioning & Sequential Loops:** Construct steps strictly one-by-one in chronological forward order. You **MUST** wait for the return key of the predecessor step before initiating the tool call to build the successor step, guaranteeing that the `TestStepBeforeKey` parameter is perfectly bound.
 *   **Piping:** Proactively pipe memory outputs using select binders to link step outputs to subsequent inputs.
@@ -59,7 +59,7 @@ If a connection dropout, timeout, or validation error interrupts active construc
 *   **Mandatory Halt Gate:** You are **strictly prohibited** from transitioning directly from step creation/binding to test execution (`STATE_RUN_ANALYZE` / State 5). You **MUST** enter `STATE_SMOKE_AUDIT`, run the validation queries, present the detailed **MANDATORY Post-Construction Verification & Compliance Report**, and **HALT** for user approval before any run can be executed.
 
 #### 🤖 Dual-Track Smoke Audit Styles:
-*   **Agentic Track:** Call `GetTestConstructionErrorsOfTestCase(TestCaseKey)` directly. Check execution-setting properties and piping configurations programmatically using other lightweight getters. Generate and output the Post-Construction Smoke Audit Report.
+*   **Agentic Track:** Call **`GetExecutionPlan(ExecutionPlanKey)`** to retrieve the saved execution plan, then compare it step-by-step with the actual constructed steps (`GetTestSteps`) for the Plan Conformity Audit. Call `GetTestConstructionErrorsOfTestCase(TestCaseKey)` directly to retrieve compiler/configuration errors on the server. Check execution-setting properties and piping configurations programmatically using other lightweight getters. Generate and output the Post-Construction Smoke Audit Report.
 *   **Chat Track:** Instruct the user to run the compiler checks in the MTA Web console, verify that no errors are highlighted on their test cases, and copy-paste any highlighted error descriptions into the chat. Then compile and output the Post-Construction Smoke Audit Report based on their input.
 
 #### The Post-Construction Verification & Compliance Report Structure:

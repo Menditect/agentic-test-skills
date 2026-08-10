@@ -214,11 +214,11 @@ Immediately during the scoping and planning phase (transitioning from `STATE_BUI
 Immediately upon entering `STATE_CONSTRUCTION` after the execution plan is approved in `STATE_BUILD_PLANNING`, you **MUST** save the plan to obtain the unique `ExecutionPlanKey`:
 *   **Why:** Without this step, the approved step-by-step chronological execution plan is only documented in the chat and is completely lost to downstream teams or automated auditing tools. Furthermore, a valid `ExecutionPlanKey` acts as the mandatory gate to unlock active step construction in `STATE_CONSTRUCTION`.
 *   **Implementation Pattern:** 
-    1. Retrieve the existing `Objective` metadata from the testcase.
-    2. Format the approved chronological step-by-step execution plan as a clean markdown list.
-    3. Call the MTA saving tool (or `SetTestCaseSpecifications` with `ActionWithObjective = "Set"`, combining the original objective description and the full step-by-step approved execution plan under a heading like `### Approved Execution Plan`) to store the plan and retrieve the unique `ExecutionPlanKey`.
+    1. Format the approved chronological step-by-step execution plan as a clean markdown string.
+    2. Call the dedicated MTA tool **`SaveExecutionPlan`** (with the `ExecutionPlan` parameter set to the formatted execution plan string).
+    3. The tool will save the plan on the MTA server and return a unique numeric `ExecutionPlanKey` representing the saved execution plan. Keep this key in your active session state.
     
-    *Example Combined Objective / Stored Plan:*
+    *Example Formatted Execution Plan for SaveExecutionPlan:*
     ```markdown
     Verify that an administrator can successfully submit an invoice and trigger the calculation microflow.
     
@@ -230,5 +230,8 @@ Immediately upon entering `STATE_CONSTRUCTION` after the execution plan is appro
     5. Assert Invoice status is 'Submitted' (Step 104)
     ```
 
-*   **Key Validation Rule:** If the saving tool fails to return an `ExecutionPlanKey` or if the key is empty, you are **strictly prohibited** from constructing any steps in `STATE_CONSTRUCTION` or performing a smoke audit in `STATE_SMOKE_AUDIT`.
+*   **Retrieving an Execution Plan:**
+    To inspect or verify an execution plan that has been saved on the MTA server, call the dedicated **`GetExecutionPlan`** tool (passing the numeric `ExecutionPlanKey`). This is extremely useful for performing automated Plan Conformity Audits during `STATE_SMOKE_AUDIT`.
+
+*   **Key Validation Rule:** If the `SaveExecutionPlan` tool fails to return a valid, non-empty `ExecutionPlanKey`, you are **strictly prohibited** from constructing any steps in `STATE_CONSTRUCTION` or performing a smoke audit in `STATE_SMOKE_AUDIT`.
 *   **Audit Principle:** A test case on the MTA server with an empty objective, missing specifications, or a completely undocumented step sequence is an immediate audit failure. Always preserve these assets.
