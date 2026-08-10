@@ -12,11 +12,14 @@ This guide outlines the precise operational checklists, safety gates, and valida
 *   **First-Turn Tool Ban:** Run `GetMtaUrl` and present the interactive discovery template. Do NOT execute any other tools on a fresh turn.
 *   **🚨 Handoff Category Validation (MANDATORY):** If you receive a handoff prompt from the Test Design skill or a custom user prompt, you **MUST** immediately check for a clear, explicit category selection (`Category A (Backend)` or `Category B (Frontend)`). If the prompt is generic, ambiguous, or lacks an explicit category, you **MUST NOT** proceed. You **MUST** halt in `STATE_DISCOVERY` and force the user to choose the category before starting any planning or suite scanning.
 *   **Selection:** Lock the Test Category (Backend A vs Frontend B - **MANDATORY**) and Workflow Mode (Guided, Express-BP, Full Express).
-*   **⚡ Concurrency Law (Scan Phase Parallelization):** Once discovery parameters are established, all read-only lookup and scanning tools (such as `GetPages`, `GetWidgets`, `GetTestSuites`, etc.) MUST be executed in parallel to minimize prompt roundtrips and accelerate discovery.
+*   **🚨 Step-by-Step Interactive Placement Discovery Law (MANDATORY):** To save tokens and avoid massive context bloat, you are strictly prohibited from scanning all configurations, suites, and test cases in parallel or in a single turn. You **MUST** perform the scans sequentially and interactively as defined in [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md#41-step-by-step-interactive-placement-discovery-law-token-conservation), halting for user selection/creation after each level:
+    1. Scan & present Test Configurations -> User selects or creates one.
+    2. Scan & present Test Suites in that Configuration -> User selects or creates one.
+    3. Scan & present Test Cases in that Suite -> User selects, overwrites, or creates one.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md)
 
 ### 2. `STATE_PLACEMENT` (State 2)
-*   **Placement:** Resolve environment (Configuration) and Suite. Use smart defaults in Express modes or prompt in Guided Mode.
+*   **Placement:** Execute the sequential step-by-step discovery. Present the results of each scan and ask the user to select an existing container or specify a name to create a new one. Do not guess or assume placements.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md)
 
 ### 3. `STATE_SPEC_APPROVAL` (State 3)

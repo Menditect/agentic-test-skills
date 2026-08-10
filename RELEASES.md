@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.9.2](releases/v1.9.2.md) | 2026-08-10 | Merge branch development |
 | [🚀 v1.9.1](releases/v1.9.1.md) | 2026-08-10 | updated skills for new execution plan tools |
 | [🚀 v1.9.0](releases/v1.9.0.md) | 2026-08-07 | Release version 1.9.0 Dual-Track Persistence, 5-State Orchestration, Backend/Frontend Terminology Alignment, and Void... |
 | [🚀 v1.8.3](releases/v1.8.3.md) | 2026-08-06 | fixed bug that caused errors in project |

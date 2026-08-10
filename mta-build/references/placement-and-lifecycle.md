@@ -63,6 +63,20 @@ Before creating suites or configurations, you can look up application keys and r
 *   **`GetApplicationForApplicationInstanceToken`**: Programmatically fetches the associated application key, details, and environment configurations for a given active application instance connection token.
 *   **`GetTestConfigurationsForApplicationKey`**: Lists all active and available test configurations for the specified application key.
 
+### 4.1 ⚡ Step-by-Step Interactive Placement Discovery Law (Token Conservation)
+To prevent severe token bloat and context clutter, you are **strictly prohibited** from scanning all configurations, suites, and test cases simultaneously. Instead, you **MUST** resolve the test target placement in a strict step-by-step interactive sequence:
+1.  **Phase 1: Test Configuration Scan & Selection**
+    *   **Action:** Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`.
+    *   **Interactive Gate:** Present the list of existing Test Configurations. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.
+2.  **Phase 2: Test Suite Scan & Selection**
+    *   **Action:** Once the configuration is selected, call `GetTestSuites` for that configuration.
+    *   **Interactive Gate:** Present the list of existing Test Suites in that configuration. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.
+3.  **Phase 3: Test Case Scan & Selection**
+    *   **Action:** Once the suite is selected, call `GetTestCases` for that suite.
+    *   **Interactive Gate:** Present the list of existing Test Cases in that suite. Ask the user to select an existing one (to modify or overwrite) or specify a name to create a new one. **HALT** and wait for their response.
+
+By breaking the discovery down sequentially, you only load relevant child data, saving thousands of LLM tokens on every interactive session.
+
 ### 5. 🚨 CRITICAL GUARDRAIL: Large Payload Warning (`GetTestSuiteDetails`)
 The `GetTestSuiteDetails` tool retrieves a recursively expanded, highly verbose JSON representation detailing all test cases, steps, parameter bindings, attributes, and assertions under a given test suite.
 *   **The Guardrail Rule:** You are **strictly prohibited** from calling `GetTestSuiteDetails` during standard placement lookups, initial scoping, or standard workflows in both the `mta-build` and `mta-run-analyze` skills. Calling it unnecessarily will flood the context window, causing immediate token bloat and severe model performance degradation.

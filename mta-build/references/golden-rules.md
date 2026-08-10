@@ -29,10 +29,10 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
         *   **Sequencing Tool:** Concurrent and parallel execution of `SetSequenceOfTestStep` for teststeps in the **same parent Test Suite** is physically blocked by the server.
 *   **⚡ THE MAXIMUM PARALLELIZATION PROTOCOL (CONCURRENCY LAW):**
     To optimize performance, minimize execution latency, and reduce the number of conversation turns, you **MUST** run all tools that are permitted to run in parallel as much as possible in parallel. Do not execute them sequentially when concurrent execution is supported.
-    *   **1. Scan Phase & Design Phase Tools (MANDATORY Parallelization):**
-        *   All read-only lookup, scanning, and discovery tools are completely independent and MUST be executed in parallel during the discovery, placement, and planning phases.
-        *   *Parallel Candidates:* `GetPages`, `GetWidgets`, `GetTestSuites`, `GetTestCases`, `GetTestConfigurationsForApplicationKey`, `GetApplicationByName`.
-        *   *Actionable Example:* If you need to analyze a page structure and retrieve its widgets, do NOT make separate turns. You MUST invoke `GetPages` and `GetWidgets` in parallel in the same turn.
+    *   **1. Scan Phase & Design Phase Tools (MANDATORY Level-Specific Parallelization):**
+        *   While read-only lookups within the same level should run in parallel, you are **strictly prohibited** from scanning across different hierarchy levels (Configurations, Suites, Cases) simultaneously during discovery. You MUST adhere to the **Step-by-Step Interactive Placement Discovery Law** to conserve tokens.
+        *   *Parallel Candidates (Within Active Level Only):* Running `GetPages` and `GetWidgets` together to analyze a page, or calling lookup tools for the *currently active step only* in parallel.
+        *   *Actionable Example:* If you need to analyze a page structure and retrieve its widgets, do NOT make separate turns. You MUST invoke `GetPages` and `GetWidgets` in parallel in the same turn. But do NOT fetch test suites and test cases until the parent test configuration has been selected and locked by the user.
     *   **2. Independent Write & Configuration Operations (MANDATORY Parallelization):**
         *   Operations that modify independent objects, setup data variations, or configure independent settings do not have predecessor dependencies and MUST be parallelized.
         *   *Parallel Candidates:*
