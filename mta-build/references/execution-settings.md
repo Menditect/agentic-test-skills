@@ -32,7 +32,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 
 3. For any Teststep inside Category A Backend Unit Tests (Single-Case with Rollback enabled):
    ├─► Do we need to configure execution settings for object actions (Create, Change, Delete, Persist, Assert, Retrievals)?
-   └─► **By Default, No!** All backend data actions inside a unit test use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`) by default. You do NOT need to call `SetExecutionSettingsOfTeststep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
+   └─► **By Default, No!** All backend data actions inside a unit test use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`) by default. You do NOT need to call `SetExecutionSettingsOfTestStep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
 
 ---
 
@@ -50,7 +50,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 | **Step Level** | Backend Cleanup (Delete, Persist) - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Cleanup database state |
 | **Step Level** | Assertions & Exception/Count Asserts - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Default behavior is to continue execution on failed asserts |
 | **Step Level** | Retrievals for Assertions - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Retrieve steps used to prepare downstream assertions |
-| **Step Level** | All Object Actions (Create, Change, Delete, Persist, Asserts) - *Category A Unit Tests* | `"None"` | `"Stop"` | Default settings; do NOT call `SetExecutionSettingsOfTeststep` |
+| **Step Level** | All Object Actions (Create, Change, Delete, Persist, Asserts) - *Category A Unit Tests* | `"None"` | `"Stop"` | Default settings; do NOT call `SetExecutionSettingsOfTestStep` |
 | **Step Level** | Browser Close (`Teardown_Playwright` & `Stop_MxFrontendTest`) | `"Always"` | `"_Continue"` | Standard browser teardown and close steps |
 
 ---
@@ -66,9 +66,9 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 ## 🚨 CASCADING LAWS & CONFIGURATION RULES
 
 1. **Boilerplate & Backend Data Actions "Always" Rule:**
-   You **MUST** set the execution condition of **all boilerplate steps** as well as **all backend data actions** inside a Category B (Frontend) testcase to `"Always"` using `SetExecutionSettingsOfTeststep`. This guarantees setup/cleanup boundaries execute reliably, even if intermediate UI or validation steps in Case 2 fail.
+   You **MUST** set the execution condition of **all boilerplate steps** as well as **all backend data actions** inside a Category B (Frontend) testcase to `"Always"` using `SetExecutionSettingsOfTestStep`. This guarantees setup/cleanup boundaries execute reliably, even if intermediate UI or validation steps in Case 2 fail.
 2. **Options Object "Always" Requirement:**
-   Any Playwright or Frontend testkit create options object teststeps (such as `LocalStartOptions`, `NewBrowserContextOptions`, `StartMxFrontendTestOptions`) **MUST** have their execution setting set to `"Always"` via `SetExecutionSettingsOfTeststep`.
+   Any Playwright or Frontend testkit create options object teststeps (such as `LocalStartOptions`, `NewBrowserContextOptions`, `StartMxFrontendTestOptions`) **MUST** have their execution setting set to `"Always"` via `SetExecutionSettingsOfTestStep`.
 3. **The Cascading Provider Law (Backward Execution Cascade):**
    If a teststep's execution condition is set to `"Always"`, **all providing teststeps** (those supplying inputs/parameters to it) in the same test suite **MUST** be set to `"Always"` as well. This cascades backward through the entire dependency chain in the test suite to prevent compilation and unbound parameter execution errors.
 4. **The Cascading Consumer Law (Forward Skip Cascade):**
@@ -77,8 +77,8 @@ Use this decision tree to determine the correct settings for any Test Case or Te
    If a test case's execution condition is set to `"Skip"`, it does not run and cannot pass any outputs (such as an active browser context/session or newly created/modified records) to downstream test cases. Therefore, **all downstream test cases in the suite that depend on its outputs, browser session state, or database changes MUST also be set to `"Skip"`**. This cascades forward through the remaining test cases in the suite.
 6. **Deprecation of Suite-Level Settings:**
    Test suite-level execution settings are deprecated and removed. You **MUST NOT** use or refer to any suite-level execution condition tools (such as `SetTestSuiteExecutionCondition`). All execution controls are handled strictly at the individual teststep level.
-7. **Schema Requirements & Defaults for `SetExecutionSettingsOfTeststep`:**
-   Because all four fields of `SetExecutionSettingsOfTeststep` are strictly marked `required` in the schema, you **MUST** provide all of them:
+7. **Schema Requirements & Defaults for `SetExecutionSettingsOfTestStep`:**
+   Because all four fields of `SetExecutionSettingsOfTestStep` are strictly marked `required` in the schema, you **MUST** provide all of them:
    - `TestStepKey`: The key of the target teststep.
    - `ExecutionCondition`: Default is `"None"` for standard steps, `"Always"` for boilerplate/backend data steps.
    - `ExecutionDelayInMs`: Numeric delay (set to `0` if no delay is desired).
@@ -122,6 +122,4 @@ You **MUST** strictly adhere to the following architectural boundaries regarding
 4.  **Microflow Execution Bypass:** 
     Direct microflow execution teststeps (`CreateMicroflowCallTestStep`) execute in Mendix System context during MTA runs. They bypass backend test-level security constraints and are *never* restricted by backend execution users or `ApplySecurity` flags.
 5.  **Complete Frontend UI Isolation:** 
-    Frontend browser tests (Category B) are completely isolated from backend Execution Users and `ApplySecurity` settings. Frontend browser tests require explicit UI-based user authentication (e.g., typing credentials into fields and clicking log in via Playwright/Frontend Testkit steps), which operates entirely independently of backend execution configurations.
-   * **Execution User (`ExecutionUserKey`):** In Frontend tests, **all test cases (Case 1 Setup, Case 2 Execution, Case 3 Teardown) MUST use `MxAdmin` as the backend Execution User at the test case level**. The user that logs in via the login step (e.g. `Start_MxFrontend_Test_With_Login`) in Case 2 is strictly the frontend user executing the test in the browser.
-   * **Apply Security (`ApplySecurityExecutor`):** Set to `"NONE"` at the test case level for Frontend tests. Frontend security access is evaluated natively by the Mendix Web Runtime during browser UI interactions.
+    In Frontend tests, **all test cases (Case 1 Setup, Case 2 Execution, Case 3 Teardown) MUST use `MxAdmin` as the backend Execution User at the test case level**. The user that logs in via the login step (e.g. `Start_MxFrontend_Test_With_Login`) in Case 2 is strictly the frontend user executing the test in the browser. Apply Security (`ApplySecurityExecutor`) is set to `"NONE"` at the test case level.

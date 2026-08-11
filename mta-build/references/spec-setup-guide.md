@@ -10,12 +10,12 @@ This guide outlines the precise operational checklists, safety gates, and valida
 
 ### 1. `STATE_DISCOVERY` (State 1)
 *   **First-Turn Tool Ban:** Run `GetMtaUrl` and present the interactive discovery template. Do NOT execute any other tools on a fresh turn.
-*   **🚨 Handoff Category Validation (MANDATORY):** If you receive a handoff prompt from the Test Design skill or a custom user prompt, you **MUST** immediately check for a clear, explicit category selection (`Backend` or `Frontend`). If the prompt is generic, ambiguous, or lacks an explicit category, you **MUST NOT** proceed. You **MUST** halt in `STATE_DISCOVERY` and force the user to choose the category before starting any planning or suite scanning.
-*   **Selection:** Lock the Test Category (Backend vs Frontend - **MANDATORY**) and Workflow Mode (Guided, Express-BP, Full Express).
+*   **🚨 Handoff Category Validation (MANDATORY):** If you receive a handoff prompt from the Test Design skill or a custom user prompt, you **MUST** immediately check for a clear, explicit category selection (`Category A (Backend)` or `Category B (Frontend)`). If the prompt is generic, ambiguous, or lacks an explicit category, you **MUST NOT** proceed. You **MUST** halt in `STATE_DISCOVERY` and force the user to choose the category before starting any planning or suite scanning.
+*   **Selection:** Lock the Test Category (Backend A vs Frontend B - **MANDATORY**) and Workflow Mode (Guided, Express-BP, Full Express).
 *   **🚨 Step-by-Step Interactive Placement Discovery Law (MANDATORY):** To save tokens and avoid massive context bloat, you are strictly prohibited from scanning all configurations, suites, and test cases in parallel or in a single turn. You **MUST** perform the scans sequentially and interactively as defined in [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md#41-step-by-step-interactive-placement-discovery-law-token-conservation), halting for user selection/creation after each level:
     1. Scan & present Test Configurations -> User selects or creates one.
-    2. Scan & present Test Suites in that Configuration -> User selects an existing suite or creates a new one (propose a clear Name and Description, while offering the option for the user to define their own).
-    3. Scan & present Test Cases in that Suite -> User selects or overwrites an existing case or creates a new one (propose a clear Name, while offering the option for the user to define their own).
+    2. Scan & present Test Suites in that Configuration -> User selects or creates one.
+    3. Scan & present Test Cases in that Suite -> User selects, overwrites, or creates one.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md)
 
 ### 2. `STATE_PLACEMENT` (State 2)
@@ -25,8 +25,8 @@ This guide outlines the precise operational checklists, safety gates, and valida
 ### 3. `STATE_SPEC_APPROVAL` (State 3)
 *   **Mandatory Halt:** Draft detailed specs for all 3 cases and **HALT for user approval** in all modes.
 *   **🚨 Category Consistency Gate (MANDATORY):** You **MUST** run a strict consistency validation on your drafted specifications to ensure zero mixing of frontend and backend concerns.
-    *   *If Backend is locked:* Specifications and step descriptions are strictly prohibited from referencing pages, UI widgets, button clicks, browser navigation, or starting/stopping Playwright sessions.
-    *   *If Frontend is locked:* Specifications and step descriptions must focus on browser-level actions and UI assertions, restricting direct microflow calls exclusively to setup/teardown utility cases.
+    *   *If Category A (Backend) is locked:* Specifications and step descriptions are strictly prohibited from referencing pages, UI widgets, button clicks, browser navigation, or starting/stopping Playwright sessions.
+    *   *If Category B (Frontend) is locked:* Specifications and step descriptions must focus on browser-level actions and UI assertions, restricting direct microflow calls exclusively to setup/teardown utility cases.
     *   *If any mixing is detected:* You **MUST** reject the specifications, explain the mismatch to the user, and rollback to `STATE_DISCOVERY`.
 *   **Data Seeding Trigger:** If setup requires complex or multiple entities, proactively ask the user if they exist as static master data or should be created in-case.
 *   👉 **Read:** [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md) | [MTA Execution Settings Reference](execution-settings.md)

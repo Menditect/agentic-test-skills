@@ -67,13 +67,14 @@ For 1 or 2 alternate scenarios:
 3.  **Build Template Steps:** Build your teststeps sequentially.
 4.  **Register & Override:**
     *   Call `AddAttributeValueAsVariationItem` for the specific attribute to change ➔ Returns base `AttributeValueKey`.
+    *   Call `AddTestCaseVariationItemAttributeValue` for the specific attribute to change ➔ Returns base `AttributeValueKey`.
     *   Call `DuplicateTestCaseDataVariation` ➔ Returns new `TestCaseVariationKey`.
     *   **Configure Duplicated Metadata:** Set the name and description for the new variation:
         *   Call `TestCaseDataVariationName(NewTestCaseVariationKey, "duplicate-variation-name")`
         *   Call `TestCaseDataVariationDescription(NewTestCaseVariationKey, "Description of duplicated scenario...")`
     *   **MANDATORY:** Call `GetTestCaseDataVariationsDetails` to fetch the nested JSON structure.
     *   Extract the **unique, variation-specific `AttributeValueKey`** for that attribute within the duplicated variation.
-    *   Call `SetAttributeStringValue` (or appropriate setter) passing the **unique, variation-specific** `AttributeValueKey` (not the base template key) and the override value.
+    *   Call `SetStringAttributeValue` (or appropriate setter) passing the **unique, variation-specific** `AttributeValueKey` (not the base template key) and the override value.
 
 ---
 
@@ -81,21 +82,23 @@ For 1 or 2 alternate scenarios:
 For complex matrices (3+ scenarios):
 1.  **Enable:** Call `EnableTestCaseDataVariations` ➔ Returns template `TestCaseVariationKey`.
 2.  **Create Steps:** Build all teststeps sequentially in the test case.
-3.  **Register Inputs:** Call `AddAttributeValueAsVariationItem` for changing attributes ➔ Returns base `AttributeValueKey`.
+3.  **Register Inputs:** Call `AddTestCaseVariationItemAttributeValue` or `AddTestCaseVariationItemMicroflowParameterValue` for changing attributes/parameters ➔ Returns base `AttributeValueKey`.
 4.  **Register Assertions:** Call the appropriate registration tool for changing assertions:
     *   *Microflow Return Values:* `AddTestCaseVariationItemAssertMicroflowReturnValue(AssertMicroflowReturnValueCompareKey)`
+    *   *Object Attribute Comparisons:* `AddTestCaseVariationItemAssertAttributeValueCompare(AssertAttributeValueCompareKey)`
     *   *Object Counts:* `AddTestCaseVariationItemAssertObjectCount(AssertObjectCountKey)`
     *   *Exceptions:* `AddTestCaseVariationItemAssertException(AssertExceptionKey)`
-    *   *Validation Feedback Message Compare:* `AddTestCaseVariationItemAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey)`
-    *   *Validation Feedback Message Count:* `AddTestCaseVariationItemAssertValidationFeedbackMessageCount(AssertValidationFeedbackMessageCountKey)`
+    *   *Validation Feedback Message Compare:* `AddTestCaseVariationAssertValidationFeedbackCompare(AssertValidationFeedbackMessageCompareKey)`
+    *   *Validation Feedback Message Count:* `AddTestCaseVariationAssertValidationFeedbackCount(AssertValidationFeedbackMessageCountKey)`
 5.  **Duplicate:** Call `DuplicateTestCaseDataVariation` for each scenario ➔ Returns a new `TestCaseVariationKey`.
 6.  **Name Variation:** Call `TestCaseDataVariationName(TestCaseVariationKey, Name)`.
     *   *Format:* Lowercase alphanumeric with hyphens (e.g. `"blank-password"`). Never prepend `#` or use spaces.
 7.  **Describe:** Call `TestCaseDataVariationDescription(TestCaseVariationKey, Description)`.
 8.  **MANDATORY MAP RETRIEVAL:** Call `GetTestCaseDataVariationsDetails` to retrieve the complete mapping of scenarios and their unique keys.
-9.  **Override Inputs:** Call type-specific setter tools (e.g. `SetAttributeStringValue`) passing the **unique, variation-specific `AttributeValueKey`** extracted from the mapping in Step 8 (not the base `AttributeValueKey`!).
+9.  **Override Inputs:** Call type-specific setter tools (e.g. `SetStringAttributeValue`, `SetStringMicroflowParameterValue`) passing the **unique, variation-specific `AttributeValueKey`** extracted from the mapping in Step 8 (not the base `AttributeValueKey`!).
 10. **Override Assertions:** For each duplicated variation, call the appropriate type-specific assertion setter tool:
-    *   *Microflow Return Values:* Call `SetDecimalAssertMicroflowReturnValueCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`, `SetBooleanAssertMicroflowReturnValueCompare`, etc. with that variation's unique assertion key (obtained via `GetTestCaseDataVariationsDetails`).
+    *   *Microflow Return Values:* Call `SetDecimalAssertMicroflowReturnValueCompareCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`, `SetBooleanAssertMicroflowReturnValueCompare`, etc. with that variation's unique assertion key (obtained via `GetTestCaseDataVariationsDetails`).
+    *   *Object Attribute Comparisons:* Call `SetStringAssertAttributeValueCompare`, `SetBooleanAssertAttributeValueCompare`, etc. with that variation's unique assertion key.
     *   *Object Counts:* Call `SetAssertObjectCountProperties` passing that variation's unique `AssertObjectCountKey`, the comparison operator, expected count, and failed action.
     *   *Exceptions:* Call `SetAssertExceptionProperties` passing that variation's unique `AssertExceptionKey`, expected result, comparison string, and actions.
     *   *Validation Feedback Compare:* Call `SetAssertValidationFeedbackMessageCompareProperties` with that variation's unique `AssertValidationFeedbackMessageCompareKey`.
@@ -111,7 +114,7 @@ For complex matrices (3+ scenarios):
 > [!CAUTION]
 > **CRITICAL CONCEPT:** When you call `DuplicateTestCaseDataVariation`, each duplicated variation receives its own **unique and distinct `AttributeValueKey`** (or `MicroflowParameterValueKey`) for every registered attribute/parameter.
 >
-> Type-specific setter tools (e.g. `SetAttributeStringValue`, `SetAttributeBooleanValue`, `SetStringValueMicroflowParameterValue`, etc.) **only accept `AttributeValueKey` (or `MicroflowParameterValueKey`) and the value** as parameters. They do **NOT** accept `TestCaseVariationKey`.
+> Type-specific setter tools (e.g. `SetStringAttributeValue`, `SetBooleanAttributeValue`, `SetStringMicroflowParameterValue`, etc.) **only accept `AttributeValueKey` (or `MicroflowParameterValueKey`) and the value** as parameters. They do **NOT** accept `TestCaseVariationKey`.
 >
 > Therefore, if you repeatedly call a setter tool using the base/template key, you will only overwrite Variation #1 (the template) over and over! To configure other variations, you **MUST** first fetch and target their unique, variation-specific keys.
 
@@ -120,7 +123,7 @@ For complex matrices (3+ scenarios):
 2. ✅ **Duplicate:** Duplicate variations to generate all needed scenarios (returns `TestCaseVariationKey` for each).
 3. ✅ **MANDATORY RETRIEVAL:** Call `GetTestCaseDataVariationsDetails(TestCaseKey)` to fetch the current JSON configuration.
 4. ✅ **Map Keys:** Look inside the returned `TCVT_TestCaseVariations` list. Locate each variation by its key or name, navigate to its `ATVL_AttributeValues` list, and extract the unique `Key` corresponding to your attribute.
-5. ✅ **Override:** Call setter tools (e.g. `SetAttributeStringValue`) passing the **variation-specific key** extracted in Step 4.
+5. ✅ **Override:** Call setter tools (e.g. `SetStringAttributeValue`) passing the **variation-specific key** extracted in Step 4.
 
 ### 📋 Example Mapping Structure from `GetTestCaseDataVariationsDetails`
 Below is an example structure returning two variations. Note how each variation has its own unique `Key` for the `"Subject"` attribute:
@@ -157,8 +160,8 @@ Below is an example structure returning two variations. Note how each variation 
 ```
 
 **Setting Values:**
-*   ❌ **WRONG:** Call `SetAttributeStringValue(6494, "Meeting Invitation")` for Variation #1, and call `SetAttributeStringValue(6494, "NON_EXISTENT")` for Variation #2 (this only repeatedly overwrites Variation #1's value!).
-*   ✅ **CORRECT:** Call `SetAttributeStringValue(6494, "Meeting Invitation")` for Variation #1, and `SetAttributeStringValue(6495, "NON_EXISTENT")` for Variation #2.
+*   ❌ **WRONG:** Call `SetStringAttributeValue(6494, "Meeting Invitation")` for Variation #1, and call `SetStringAttributeValue(6494, "NON_EXISTENT")` for Variation #2 (this only repeatedly overwrites Variation #1's value!).
+*   ✅ **CORRECT:** Call `SetStringAttributeValue(6494, "Meeting Invitation")` for Variation #1, and `SetStringAttributeValue(6495, "NON_EXISTENT")` for Variation #2.
 
 ### 🚨 MANDATORY SELF-CHECK
 After setting all variation values, you **MUST** call `GetTestCaseDataVariationsDetails` again and verify:
@@ -183,7 +186,7 @@ Present variations inside the specifications (`ExpectedResult`) as a horizontal 
 ---
 
 ## 📅 DYNAMIC DATETIME OFFSET BINDING
-For dates, use relative offsets to prevent test decay. All 10 fields are strictly required by both the `SetAttributeCurrentDateTime` and `SetCurrentDateTimeValueMicroflowParameterValue` schemas (set unused offsets to `0`):
+For dates, use relative offsets to prevent test decay. All 10 fields are strictly required by both the `SetCurrentDateTimeAttributeValue` and `SetCurrentDateTimeValueMicroflowParameterValue` schemas (set unused offsets to `0`):
 *   `AttributeValueKey` (for attributes) or `MicroflowParameterValueKey` (for parameters)
 *   `EnableOffset = true`
 *   `OffsetYears`, `OffsetMonths`, `OffsetWeeks`, `OffsetDays`, `OffsetHours`, `OffsetMinutes`, `OffsetSeconds`, `OffsetMilliseconds`
@@ -273,7 +276,7 @@ When implementing the Empty Object Retrieve Pattern, you have two ways to config
  ##### Step 1: Create Dummy Object with Fixed Filter
  *   Call `CreateTestStepCreateObject` (for entity `"MyModule.Order"`) ➔ Returns `TestStepKey: 100`.
  *   Call `IncludeAttributeValueInTeststep` (Step `100`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 200`.
- *   Call `SetAttributeStringValue` (`200`, Value: `"VALID_MATCH"`). 
+ *   Call `SetStringAttributeValue` (`200`, Value: `"VALID_MATCH"`). 
      *   *Constraint:* ⚠️ **This must remain fixed across all variations (do NOT register this as a variation item).**
  
  ##### Step 2: Create Retrieve Step (Retrieve from Memory) with Matching Filter
@@ -282,14 +285,14 @@ When implementing the Empty Object Retrieve Pattern, you have two ways to config
  *   Call `GetSelectObjectForRetrieveOfTeststep` (`101`) ➔ Returns `SelectObjectForRetrieveKey: 300`.
  *   Call `SetTestStepOutputForSelectObjectForRetrieve` (`SelectObjectForRetrieveKey: 300`, `TestStepOutputKey = 100`).
  *   Call `IncludeAttributeValueInTeststep` (Step `101`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 201`.
- *   Call `SetAttributeStringValue` (`201`, Value: `"VALID_MATCH"`) ➔ ⚠️ **MUST match Step 1 initial value.**
+ *   Call `SetStringAttributeValue` (`201`, Value: `"VALID_MATCH"`) ➔ ⚠️ **MUST match Step 1 initial value.**
  
  ##### Step 3: Register Retrieve Attribute as Variation Item
  *   Call `AddAttributeValueAsVariationItem` (`AttributeValueKey: 201`) ➔ Returns dynamic variation key. 
      *   *Rule:* ⚠️ **Only register the Retrieve step's attribute, never the Create step's for this Standard Pattern.**
  
  ##### Step 4: Vary to Nullify (Scenario Variation `#2` - `empty-order`)
- *   On the duplicated variation key, call `SetAttributeStringValue` (`AttributeValueKey: 201`, Value: `"NON_EXISTENT"`).
+ *   On the duplicated variation key, call `SetStringAttributeValue` (`AttributeValueKey: 201`, Value: `"NON_EXISTENT"`).
 
 *At runtime:*
 *   **Variation #1 (valid-order):** Finds the dummy Order object in memory (since `"VALID_MATCH"` matches `"VALID_MATCH"`), successfully passing it downstream.
@@ -504,11 +507,13 @@ The workflow for establishing Test Suite Data Variations symmetrically mirrors t
     *   Call `TestSuiteDataVariationDescription(TemplateVariationKey, "Description of primary scenario...")`.
 3.  **Register Variation Items:** For any step attribute or assertion that needs to vary across scenarios, register it as a suite variation item.
     *   *Step Attributes:* Call `AddTestSuiteVariationItemAttributeValue(TestSuiteKey, AttributeValueKey)` ➔ Returns a base `AttributeValueKey`.
+    *   *Microflow Parameters:* Call `AddTestSuiteVariationItemMicroflowParameterValue(TestSuiteKey, MicroflowParameterValueKey)`.
     *   *Microflow Return Values:* Call `AddTestSuiteVariationItemAssertMicroflowReturnValue(TestSuiteKey, AssertMicroflowReturnValueCompareKey)`.
+    *   *Object Attribute Comparisons:* Call `AddTestSuiteVariationItemAssertAttributeValueCompare(TestSuiteKey, AssertAttributeValueCompareKey)`.
     *   *Exceptions:* Call `AddTestSuiteVariationItemAssertException(TestSuiteKey, AssertExceptionKey)`.
     *   *Object Counts:* Call `AddTestSuiteVariationItemAssertObjectCount(TestSuiteKey, AssertObjectCountKey)`.
-    *   *Validation Feedback Compare:* Call `AddTestSuiteVariationItemAssertValidationFeedbackMessageCompare(TestSuiteKey, AssertValidationFeedbackMessageCompareKey)`.
-    *   *Validation Feedback Count:* Call `AddTestSuiteVariationItemAssertValidationFeedbackMessageCount(TestSuiteKey, AssertValidationFeedbackMessageCountKey)`.
+    *   *Validation Feedback Compare:* Call `AddTestSuiteVariationAssertValidationFeedbackCompare(AssertValidationFeedbackMessageCompareKey)` (or `AddTestSuiteVariationItemAssertValidationFeedbackMessageCompare`).
+    *   *Validation Feedback Count:* Call `AddTestSuiteVariationAssertValidationFeedbackCount(AssertValidationFeedbackMessageCountKey)` (or `AddTestSuiteVariationItemAssertValidationFeedbackMessageCount`).
 4.  **Duplicate Variations:** For each alternate scenario, call `DuplicateTestSuiteDataVariation(TestSuiteDataVariationKey)` ➔ Returns a new unique `TestSuiteVariationKey`.
 5.  **Configure Duplicated Metadata:**
     *   Call `TestSuiteDataVariationName(NewTestSuiteVariationKey, Name)`.
@@ -517,7 +522,7 @@ The workflow for establishing Test Suite Data Variations symmetrically mirrors t
 7.  **Override Values Per Variation:** 
     *   Look inside the returned JSON tree from Step 6.
     *   Locate each variation and extract its **unique, variation-specific key** (e.g. `AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, etc.).
-    *   Call the standard type-specific setter tools (e.g., `SetAttributeStringValue` or `SetDecimalAssertMicroflowReturnValueCompare`) passing the **variation-specific key** and override value.
+    *   Call the standard type-specific setter tools (e.g., `SetStringAttributeValue` or `SetDecimalAssertMicroflowReturnValueCompare`) passing the **variation-specific key** and override value.
 
 > [!IMPORTANT]
 > Just like with TestCases, you **MUST** use the unique, variation-specific keys extracted via `GetTestSuiteDataVariationsDetails` when overriding values for duplicated variations. Never call setters using the base template key, as that would continuously overwrite Variation #1 (the template).

@@ -117,7 +117,8 @@ To filter retrieve operations, you **MUST NOT** use standard `SetAttribute<Type>
 ### 2. The 13 Specialized Retrieve Filter Tools:
 Depending on the attribute data type, you **MUST** call the corresponding specialized filtering tool on the `AttributeValueKey`:
 *   **String:** `SetFilterStringAttributeValue` (supports `Equals`, `NotEquals`, `Contains`, `NotContains`)
-*   **Integer / Long:** `SetFilterIntegerLongAttributeValue` / `SetFilterIntegerLongAttributeValueRange`
+*   **Integer:** `SetFilterIntegerAttributeValue` / `SetFilterIntegerAttributeValueRange`
+*   **Long:** `SetFilterLongAttributeValue` / `SetFilterLongAttributeValueRange`
 *   **Decimal:** `SetFilterDecimalAttributeValue` / `SetFilterDecimalAttributeValueRange`
 *   **Boolean:** `SetFilterBooleanAttributeValue`
 *   **DateTime:** `SetFilterDateTimeAttributeValue` / `SetFilterDateTimeAttributeValueRange` / `SetFilterCurrentDateTimeAttributeValue` (supports offsets)
@@ -144,18 +145,18 @@ To set attribute values on a **newly created object**, you do NOT need a separat
 If you are creating an object and want to set its initial state immediately:
 1. **Create the Object:** Call `CreateTestStepCreateObject` (returns `TestStepKey`).
 2. **Include Attributes:** Call `IncludeAttributeValueInTeststep` directly on the creation step's `TestStepKey` to get `AttributeValueKey`.
-3.  **Set Values:** Call type-specific setters (e.g., `SetAttributeStringValue`) on `AttributeValueKey`.
+3.  **Set Values:** Call type-specific setters (e.g., `SetStringAttributeValue`) on `AttributeValueKey`.
 
 #### ⚙️ Complete List of Typed Attribute Setter Tools
 When configuring included attributes on Create or Change steps, you **MUST** call the corresponding type-specific setter tool on the `AttributeValueKey` returned by `IncludeAttributeValueInTeststep`:
-*   **`SetAttributeStringValue`**: Sets a Mendix String attribute.
-*   **`SetAttributeIntegerValue`**: Sets a Mendix Integer attribute.
-*   **`SetAttributeLongValue`**: Sets a Mendix Long attribute.
-*   **`SetAttributeDecimalValue`**: Sets a Mendix Decimal attribute.
-*   **`SetAttributeBooleanValue`**: Sets a Mendix Boolean attribute.
-*   **`SetAttributeDateTimeValue`**: Sets a Mendix DateTime attribute to a specific timestamp.
-*   **`SetAttributeCurrentDateTime`**: Sets a Mendix DateTime attribute to the current runtime server timestamp.
-*   **`SetAttributeEnumerationValue`**: Sets a Mendix Enumeration attribute (pass the technical Name of the enumeration value, NOT the caption).
+*   **`SetStringAttributeValue`**: Sets a Mendix String attribute.
+*   **`SetIntegerAttributeValue`**: Sets a Mendix Integer attribute.
+*   **`SetLongAttributeValue`**: Sets a Mendix Long attribute.
+*   **`SetDecimalAttributeValue`**: Sets a Mendix Decimal attribute.
+*   **`SetBooleanAttributeValue`**: Sets a Mendix Boolean attribute.
+*   **`SetDateTimeAttributeValue`**: Sets a Mendix DateTime attribute to a specific timestamp.
+*   **`SetCurrentDateTimeAttributeValue`**: Sets a Mendix DateTime attribute to the current runtime server timestamp.
+*   **`SetEnumerationAttributeValue`**: Sets a Mendix Enumeration attribute (pass the technical Name of the enumeration value, NOT the caption).
 
 > [!TIP]
 > Always use direct initialization for new objects. It reduces teststeps, simplifies test cases, and runs faster.
@@ -163,16 +164,16 @@ When configuring included attributes on Create or Change steps, you **MUST** cal
 #### Option B: The Change Object Pipeline (Required for Retrieved or Post-Creation Updates)
 When you need to modify an object's state **later** in the test case (e.g., after a browser action or microflow has run) or when you are modifying an **existing retrieved object**, you MUST execute this exact sequence:
 1. **Create the Change step:** Call `CreateTestStepChangeObject` with the entity's fully qualified name (e.g., `Sales.Order`). This returns `TestStepKey`.
-2. **Retrieve the Select object:** Call `GetSelectObjectForChangeOfTeststep` with `TestStepKey` to get `SelectObjectForChangeKey`.
+2. **Retrieve the Select object:** Call `GetSelectObjectForChangeOfTestStep` with `TestStepKey` to get `SelectObjectForChangeKey`.
 3. **Pipe the Target Object:** Call `SetTestStepOutputForSelectObjectForChange` with:
    * `SelectObjectForChangeKey`: The key returned in Step 2.
    * `TestStepOutputKey`: The parent `TestStepKey` of the Create or Retrieve step that produced the target object (e.g., the step that created or retrieved `Order`).
-4. **Set Attribute Values (Optional):** To change specific attribute values, call `IncludeAttributeValueInTeststep` on the change `TestStepKey` to get `AttributeValueKey`, then call the type-specific setter tool (e.g., `SetAttributeStringValue`).
+4. **Set Attribute Values (Optional):** To change specific attribute values, call `IncludeAttributeValueInTeststep` on the change `TestStepKey` to get `AttributeValueKey`, then call the type-specific setter tool (e.g., `SetStringAttributeValue`).
 
 ### 2. The Delete Object Pipeline (Symmetric Multi-Step Sequence)
 To mark an object for deletion from the database, you MUST execute this exact sequence:
 1. **Create the Delete step:** Call `CreateTestStepDeleteObject` with the entity's fully qualified name (e.g., `Sales.Order`). This returns `TestStepKey`.
-2. **Retrieve the Select object:** Call `GetSelectObjectForDeleteOfTeststep` with `TestStepKey` to get `SelectObjectForDeleteKey`.
+2. **Retrieve the Select object:** Call `GetSelectObjectForDeleteOfTestStep` with `TestStepKey` to get `SelectObjectForDeleteKey`.
 3. **Pipe the Target Object:** Call `SetTestStepOutputForSelectObjectForDelete` with:
    * `SelectObjectForDeleteKey`: The key returned in Step 2.
    * `TestStepOutputKey`: The parent `TestStepKey` of the Create or Retrieve step that produced the target object.
@@ -199,7 +200,7 @@ When creating or deleting multiple objects in a single test case, you are **stri
 Rules for configuring execution settings for backend data actions—including database seeding (Create, Change, and Persist), database retrievals, assertions, and cleanup (Delete and Persist)—depend on the test category:
 
 1. **Category B (Frontend) & Multi-Case Backend Integration Tests:**
-   You **MUST** configure execution settings explicitly via `SetExecutionSettingsOfTeststep` according to these strict rules:
+   You **MUST** configure execution settings explicitly via `SetExecutionSettingsOfTestStep` according to these strict rules:
    * **Seeding and Teardown/Cleanup Steps (including Persist commits):**
      * `ExecutionCondition` = `"Always"` (to guarantee execution regardless of intermediate test failures, preventing database pollution).
      * `ResumeExecutionAfterException` = `"_Continue"` (note the leading underscore).
@@ -259,7 +260,7 @@ When a teststep creates a database record using `CreateTestStepCreateObject` and
 
 ## ⚙️ MICROFLOW CALL TEST STEP PARAMETER SETTERS
 
-When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7), you must configure and bind input parameters. Call `GetMicroflowCallTeststepDetails(TestStepKey)` to retrieve the parameter keys, then call the appropriate typed setter tool:
+When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7), you must configure and bind input parameters. Call `GetMicroflowCallTestStepDetails(TestStepKey)` to retrieve the parameter keys, then call the appropriate typed setter tool:
 *   **`SetStringMicroflowParameterValue`**: Binds a String microflow parameter.
 *   **`SetBooleanMicroflowParameterValue`**: Binds a Boolean microflow parameter.
 *   **`SetEnumerationMicroflowParameterValue`**: Binds an Enumeration microflow parameter (pass the technical value Name).
@@ -271,6 +272,9 @@ When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7),
 *   **`SetTestStepOutputForSelectObjectForMicroflowParameter`**: Pipes an upstream step's output (using its `TestStepKey`) into the microflow's object parameter.
 *   **`SetInputTypeMicroflowParameterValueToTestStep`**: Sets the input type/source mapping for microflow parameter values.
 *   **`GetSelectValueForValueByMicroflowParameterValue`**: Retrieves the select value for value mappings configured on a microflow parameter.
+*   **`AddInputListForMicroflowParameter`**: Adds an additional input selection object for list-datatype microflow parameters.
+*   **`RemoveInputListForMicroflowParameter`**: Removes an input selection object from list-datatype microflow parameters.
+*   **`GetSelectObjectForMicroflowParameter`**: Retrieves all select object keys configured for a microflow parameter on a teststep.
 
 > [!IMPORTANT]
 > **State Isolation Rule:** These setters are strictly allowed to execute only inside **`[STATE_CONSTRUCTION]`** and **`[STATE_STEP_BINDING]`**. Calling them in discovery or high-level planning is prohibited.
@@ -296,7 +300,7 @@ MTA uses specialized helper tools to process typed assertions. Depending on the 
 | :--- | :--- | :--- |
 | **Boolean** | `SetBooleanAssertMicroflowReturnValueCompare` | `ComparisonOperator` (`"Equals"`/`"NotEquals"`), `BooleanValue` (boolean). |
 | **DateTime** | `SetDateTimeAssertMicroflowReturnValueCompare`<br>`SetDateTimeAssertMicroflowReturnValueCompareRange` | `ValueDateTimeOption` (`"CurrentDateTime"`/`"SpecifiedDate"`), `ValueSpecifiedDateTime` (ISO string), offset parameters, and range limits. |
-| **Decimal** | `SetDecimalAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `DecimalValue` (exact). For range operators, use `MinimumDecimalValue` and `MaximumDecimalValue`. |
+| **Decimal** | `SetDecimalAssertMicroflowReturnValueCompareCompare` | `ComparisonOperator`, `DecimalValue` (exact). For range operators, use `MinimumDecimalValue` and `MaximumDecimalValue`. |
 | **Enumeration** | `SetEnumerationAssertMicroflowReturnValueCompare` | `ComparisonOperator` (`"Equals"`/`"NotEquals"`), `EnumerationValue` *(Use technical Value Name, NOT Caption)*. |
 | **Integer / Long** | `SetIntegerLongAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `IntegerLongValue` (exact). For range operators, use `MinimumIntegerLongValue` and `MaximumIntegerLongValue`. |
 | **String** | `SetStringAssertMicroflowReturnValueCompare` | `ComparisonOperator`, `SetStringValue` (boolean), `StringValue` (string), `SetTrimStringValue` (boolean), `TrimStringValue` (boolean). |
@@ -304,7 +308,7 @@ MTA uses specialized helper tools to process typed assertions. Depending on the 
 ### Overriding Assertions in Data Variations
 If your test case has data variations enabled, you can override expected assertion outcomes for different scenarios:
 1. **Register Assertion as Variation Item:** Call `AddTestCaseVariationItemAssertMicroflowReturnValue` with `AssertMicroflowReturnValueCompareKey`.
-2. **Configure Scenario Values per Variation:** For each duplicated variation, call the appropriate type-specific setter tool (e.g. `SetDecimalAssertMicroflowReturnValueCompare`) with that variation's specific assertion key (retrieved via `GetTestCaseDataVariationsDetails`).
+2. **Configure Scenario Values per Variation:** For each duplicated variation, call the appropriate type-specific setter tool (e.g. `SetDecimalAssertMicroflowReturnValueCompareCompare`) with that variation's specific assertion key (retrieved via `GetTestCaseDataVariationsDetails`).
 
 ---
 
@@ -351,6 +355,9 @@ Call the appropriate type-specific configuration setter tool on your `AalcKey`:
 If your test case has data variations enabled, you can promote individual attribute assertions to the variation matrix to test multiple data scenarios:
 1. **Promote Assertion:** Call `AddTestCaseVariationItemAssertAttributeValueCompare` with your `AalcKey`.
 2. **Set Scenario Values:** Call the type-specific setter tool (e.g. `SetStringAssertAttributeValueCompare`) passing the specific variation's assertion key retrieved via `GetTestCaseDataVariationsDetails`.
+
+> [!TIP]
+> To inspect existing included attribute assertions on a step, call `GetAssertAttributeValueComparesOfTeststep(TestStepKey)`.
 
 ---
 
@@ -578,7 +585,7 @@ MTA step bindings typically link entire objects downstream. However, when you ne
 To pipe a scalar value from Step A (the provider) to Step B (the consumer):
 
 1. **Configure Consumer Input Type:**
-   Set the input type of Step B's target attribute or microflow parameter to `"teststep"` (via `SetInputTypeAttributeValueToTeststep` or `SetInputTypeMicroflowParameterValueToTeststep`).
+   Set the input type of Step B's target attribute or microflow parameter to `"teststep"` (via `SetInputTypeAttributeValueToTestStep` or `SetInputTypeMicroflowParameterValueToTestStep`).
 2. **Retrieve the Configuration Key:**
    Call `GetSelectValueForValueByAttributeValue` or `GetSelectValueForValueByMicroflowParameterValue` to obtain the unique `SelectValueForValueKey` for that input.
 3. **Bind the Dynamic Value:**
@@ -593,7 +600,7 @@ To pipe a scalar value from Step A (the provider) to Step B (the consumer):
 #### Use Case A: Piping Microflow Return Values for Dynamic Test Suite Variables
 You can execute custom business logic microflows to calculate a value at runtime and pipe it into downstream parameters or variable assignments:
 1. **Calculate the value (Step 100):** Call `CreateMicroflowCallTestStep` executing `MyFirstModule.SUB_CalculateDaysBetween` ➔ Returns `TestStepKey: 100` (representing an Integer output).
-2. **Set Input Type on Downstream Parameter (Step 101):** Call `SetInputTypeMicroflowParameterValueToTeststep` on Step 101's input parameter `ExpectedDays`.
+2. **Set Input Type on Downstream Parameter (Step 101):** Call `SetInputTypeMicroflowParameterValueToTestStep` on Step 101's input parameter `ExpectedDays`.
 3. **Get Select Key:** Call `GetSelectValueForValueByMicroflowParameterValue` ➔ Returns `SelectValueForValueKey: 900`.
 4. **Bind calculated integer:** Call `SetOutputForSelectValueForValue` with:
    * `SelectValueForValueKey`: `900`
@@ -603,7 +610,7 @@ You can execute custom business logic microflows to calculate a value at runtime
 #### Use Case B: Piping Retrieved Database Attributes into Category B (Frontend) Steps
 In Frontend UI tests, you can retrieve a record from the database, extract one of its attributes, and pipe it directly as input to a Playwright action step (e.g., typing a retrieved Order ID into a search textbox):
 1. **Retrieve the Record (Step 200):** Call `CreateTestStepRetrieveObject` for `Sales.Order` ➔ Returns `TestStepKey: 200`.
-2. **Set Input Type on UI Action Step (Step 201):** Suppose Step 201 calls `ACT_Fill_TextBox_Input` with parameter `Value`. Call `SetInputTypeMicroflowParameterValueToTeststep` on the `Value` parameter.
+2. **Set Input Type on UI Action Step (Step 201):** Suppose Step 201 calls `ACT_Fill_TextBox_Input` with parameter `Value`. Call `SetInputTypeMicroflowParameterValueToTestStep` on the `Value` parameter.
 3. **Get Select Key:** Call `GetSelectValueForValueByMicroflowParameterValue` on the parameter ➔ Returns `SelectValueForValueKey: 901`.
 4. **Bind order attribute:** Call `SetOutputForSelectValueForValue` with:
    * `SelectValueForValueKey`: `901`
@@ -621,13 +628,13 @@ In multi-app test configurations, the `SelectValueForValue` pattern can bridge d
 #### Use Case D: Centralized Static Configuration (Maintainability Piping)
 To optimize test suite maintenance and prevent copy-paste duplication of static test parameters (such as a default test email address, target usernames, or static validation thresholds), define these values once in a single, early setup step, and distribute them to downstream actions and assertions:
 1. **Define the Value (Step 10):** Create a setup object or retrieve a configuration record (e.g., `LocalStartOptions` or a custom configuration object) and set its `DefaultEmail` attribute to `"testuser@example.com"` ➔ Returns `TestStepKey: 10`.
-2. **Set Input Type on Downstream Consumer (Step 50):** Suppose Step 50 is an action step `ACT_Fill_TextBox_Input` with parameter `Value`. Call `SetInputTypeMicroflowParameterValueToTeststep` on the `Value` parameter.
+2. **Set Input Type on Downstream Consumer (Step 50):** Suppose Step 50 is an action step `ACT_Fill_TextBox_Input` with parameter `Value`. Call `SetInputTypeMicroflowParameterValueToTestStep` on the `Value` parameter.
 3. **Get Select Key:** Call `GetSelectValueForValueByMicroflowParameterValue` on the parameter ➔ Returns `SelectValueForValueKey: 950`.
 4. **Pipe the Centralized Value:** Call `SetOutputForSelectValueForValue` with:
    * `SelectValueForValueKey`: `950`
    * `TestStepOutputKey`: `10` (the provider step)
    * `AttributeName`: `"DefaultEmail"` (pipes `"testuser@example.com"` into the form input).
-5. **Set Input Type on Downstream Assertion (Step 80):** Suppose Step 80 is an assertion step that verifies the email label in the UI. Call `SetInputTypeMicroflowParameterValueToTeststep` on its expected value parameter, get its unique `SelectValueForValueKey`, and call `SetOutputForSelectValueForValue` pointing to Step 10's output.
+5. **Set Input Type on Downstream Assertion (Step 80):** Suppose Step 80 is an assertion step that verifies the email label in the UI. Call `SetInputTypeMicroflowParameterValueToTestStep` on its expected value parameter, get its unique `SelectValueForValueKey`, and call `SetOutputForSelectValueForValue` pointing to Step 10's output.
 * *Why this is powerful:* If the email ever changes (e.g. to `"updateduser@example.com"`), you only need to modify Step 10's set attribute step. Both Step 50 (the action) and Step 80 (the assertion) will automatically update, guaranteeing 100% synchronized data state.
 
 ---
@@ -674,7 +681,7 @@ This tool functions across two distinct use cases with model-wide symmetry:
 When a microflow under test returns no parameters (Void), a simple `AssertException` is highly limited. To build a robust test, you must assert its **side effects**:
 
 1.  **Retrieve After Microflow Call:** Add a `Retrieve Object` step (or count) immediately after the `Microflow Call` step targeting the entity that the microflow (or its sub-flows) was designed to create, update, or associate.
-2.  **Assert Attributes/Counts:** Use attribute assertions (`SetAttributeStringValue`, `SetAttributeIntegerValue`, etc.) or count assertions (`CreateAssertObjectCount`) on that retrieve step to verify that values were correctly calculated or populated.
+2.  **Assert Attributes/Counts:** Use attribute assertions (`SetStringAttributeValue`, `SetIntegerAttributeValue`, etc.) or count assertions (`CreateAssertObjectCount`) on that retrieve step to verify that values were correctly calculated or populated.
 3.  **Sub-Microflow Complexity:** If the void microflow calls sub-microflows, deep-dive into those sub-flows to locate the exact entities being written or modified, as the logic is much harder to trace automatically.
 4.  **Refactoring for Testability:** Highly recommend that the developer refactor the microflow to return a value (such as a status boolean or the created object) to make it directly testable.
 5.  **Exemption for Setups/Teardowns:** These checks and warnings are not required if the void microflow is executed purely as a setup or teardown data utility.
@@ -713,8 +720,11 @@ This tool verifies the total number of validation feedback messages generated du
     *   *Returns:* `AssertValidationFeedbackMessageCountKey` (referred to as `VfCountKey` in code).
 *   **Step 2: Configure Properties:** Call `SetAssertValidationFeedbackMessageCountProperties` to update/manage the comparison number, operator, or failed action behaviors.
 
+> [!TIP]
+> To retrieve existing validation feedback message count assertions on a test case, call `GetAssertValidationFeedbackMessageCountByTestCase(TestCaseKey)`.
+
 ### 🔄 Overriding Validation Assertions in Data Variations
-Validation feedback assertions can be integrated directly into TestCase variation matrices:
-*   **For Compare Assertions:** Call `AddTestCaseVariationItemAssertValidationFeedbackMessageCompare(TestCaseDataVariationKey, AssertValidationFeedbackMessageCompareKey)` to promote the assertion to the matrix, then override expected validation messages per scenario using `SetAssertValidationFeedbackMessageCompareProperties`.
-*   **For Count Assertions:** Call `AddTestCaseVariationItemAssertValidationFeedbackMessageCount(TestCaseDataVariationKey, AssertValidationFeedbackMessageCountKey)` to promote, then configure varying thresholds per scenario using `SetAssertValidationFeedbackMessageCountProperties`.
+Validation feedback assertions can be integrated directly into TestCase or TestSuite variation matrices:
+*   **For Compare Assertions:** Call `AddTestCaseVariationAssertValidationFeedbackCompare` or `AddTestSuiteVariationAssertValidationFeedbackCompare` to promote the assertion to the matrix, then override expected validation messages per scenario using `SetAssertValidationFeedbackMessageCompareProperties`.
+*   **For Count Assertions:** Call `AddTestCaseVariationAssertValidationFeedbackCount` or `AddTestSuiteVariationAssertValidationFeedbackCount` to promote, then configure varying thresholds per scenario using `SetAssertValidationFeedbackMessageCountProperties`.
 

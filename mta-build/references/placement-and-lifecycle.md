@@ -70,10 +70,10 @@ To prevent severe token bloat and context clutter, you are **strictly prohibited
     *   **Interactive Gate:** Present the list of existing Test Configurations. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.
 2.  **Phase 2: Test Suite Scan & Selection**
     *   **Action:** Once the configuration is selected, call `GetTestSuites` for that configuration.
-    *   **Interactive Gate:** Present the list of existing Test Suites in that configuration. **For new test suites, you MUST always propose a clear, descriptive Name and Description, while offering the user the option to define their own custom Name and Description.** **HALT** and wait for their response.
+    *   **Interactive Gate:** Present the list of existing Test Suites in that configuration. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.
 3.  **Phase 3: Test Case Scan & Selection**
     *   **Action:** Once the suite is selected, call `GetTestCases` for that suite.
-    *   **Interactive Gate:** Present the list of existing Test Cases in that suite. **For new test cases, you MUST always propose a clear, descriptive Name, while offering the user the option to define their own custom Name.** **HALT** and wait for their response.
+    *   **Interactive Gate:** Present the list of existing Test Cases in that suite. Ask the user to select an existing one (to modify or overwrite) or specify a name to create a new one. **HALT** and wait for their response.
 
 By breaking the discovery down sequentially, you only load relevant child data, saving thousands of LLM tokens on every interactive session.
 

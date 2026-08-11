@@ -13,7 +13,7 @@ This reference contains the widget locator maps, nested repeating container stra
 *   **The Parent Context Rule:** All child widgets on a Mendix page require an `MxPageLocator` (returned by `Locate_MxPage`) or parent item locator passed as their `ParentContext` (`TestStepProvidePlaywrightPageKey`) to resolve selectors.
 *   **The Locate Page/Widget Tool Enforcement Rule:** For microflows that locate a page or a widget, the specialized locate page (`GenerateMicroflowCallTestStepLocatePage`) or locate widget (`GenerateMicroflowCallTestStepLocateWidget`) tool **MUST** be used. Calling these tools registers and sets the microflow to look for the page or widget in MTA. A manual reference to the CSS class of the page or the widget **DOES NOT WORK**. If an error occurs in calling the locate page or locate widget tool, you **MUST STOP AND ASK THE USER FOR INPUT**. Do **NOT** use any fallback strategy.
 *   **The BrowserType Enumeration Law (CRITICAL):** `BrowserType` is a Mendix **Enumeration**, NOT a standard string.
-    *   **Binding Tool:** You **MUST** call `SetEnumerationValueMicroflowParameterValue` to bind its value. Calling `SetStringValueMicroflowParameterValue` is incorrect and will cause an execution-time validation error.
+    *   **Binding Tool:** You **MUST** call `SetEnumerationMicroflowParameterValue` to bind its value. Calling `SetStringMicroflowParameterValue` is incorrect and will cause an execution-time validation error.
     *   **Literal Value Casing:** Allowed values are strictly PascalCase: `"Chromium"`, `"Firefox"`, or `"Webkit"`. Lowercase variants (like `"chromium"`) will fail validation.
 *   **The Data-Backed Selection Piping Rule (Dynamic Data & Retrieve Rule):** If a `ComboBox`, `ReferenceSelector`, or `ReferenceSetSelector` widget's datasource is dynamic data (retrieved from database entities) rather than a static enumeration, you **MUST** prioritize using **Dynamic Scalar Value Piping** (`SelectValueForValue`) for selecting/filtering the option instead of hardcoding a static string.
     *   **Data Created in Same Suite:** Pipe the identifier attribute (e.g., `Name`, `Code`, `Description`) directly from the upstream creation step.
@@ -259,11 +259,11 @@ When constructing Playwright UI steps in `STATE_CONSTRUCTION` (State 7), you MUS
 ### 1. The 3-Step Microflow Call & Binding Lifecycle
 Every standard action (e.g., `ACT_Fill_TextBox_Input`, `ACT_Click_Button`) or assertion (e.g., `ASR_Has_Value_TextBox_Input`) MUST follow this strict sequence:
 1.  **Create Step:** Call `CreateMicroflowCallTestStep` with the fully qualified name (e.g., `MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input`). This returns the unique `TestStepKey`.
-2.  **Get Parameters:** Call `GetMicroflowCallTeststepDetails(TestStepKey)` to retrieve the parameter value keys.
+2.  **Get Parameters:** Call `GetMicroflowCallTestStepDetails(TestStepKey)` to retrieve the parameter value keys.
 3.  **Bind Values:** Call the appropriate binder tool for each parameter:
-    *   *Strings:* `SetStringValueMicroflowParameterValue(MicroflowParameterValueKey, StringValue)`
+    *   *Strings:* `SetStringMicroflowParameterValue(MicroflowParameterValueKey, StringValue)`
     *   *Booleans:* `SetBooleanValueMicroflowParameterValue(MicroflowParameterValueKey, BooleanValue)`
-    *   *Enumerations:* `SetEnumerationValueMicroflowParameterValue(MicroflowParameterValueKey, EnumerationValue)` (This MUST be used for all Mendix enumerations like `BrowserType`).
+    *   *Enumerations:* `SetEnumerationMicroflowParameterValue(MicroflowParameterValueKey, EnumerationValue)` (This MUST be used for all Mendix enumerations like `BrowserType`).
     *   *Empty Objects:* `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey)`
     *   *Piped Objects (Locators / Browser):* `SetTestStepOutputForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey, TestStepOutputKey)` (Use this to pass the locator returned by a previous Locate Page or Locate Widget step).
 
@@ -296,14 +296,14 @@ To automate entering a username into the textbox of a login page:
     *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input", TestStepName="Fill TextBox 'Username' Input", TestStepBeforeKey=WidgetLocateStepKey, TestCaseKey=Case2Key)`
     *   *Returns:* `ActionStepKey` (e.g. `103`)
 4.  **Fetch Parameter Keys for the Action Step:**
-    *   *Action:* Call `GetMicroflowCallTeststepDetails(TestStepKey=ActionStepKey)`
+    *   *Action:* Call `GetMicroflowCallTestStepDetails(TestStepKey=ActionStepKey)`
     *   *Returns Details:*
         *   `TextBoxLocator` parameter ➔ `SelectObjectForMicroflowParameterKey` = `801` (numeric key)
         *   `Value` parameter ➔ `MicroflowParameterValueKey` = `802` (numeric key)
         *   `options` parameter ➔ `SelectObjectForMicroflowParameterKey` = `803` (numeric key)
 5.  **Bind Parameters of the Action Step:**
     *   *Pipe the Locator:* Call `SetTestStepOutputForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=801, TestStepOutputKey=WidgetLocateStepKey)`
-    *   *Set the Value:* Call `SetStringValueMicroflowParameterValue(MicroflowParameterValueKey=802, StringValue="admin")`
+    *   *Set the Value:* Call `SetStringMicroflowParameterValue(MicroflowParameterValueKey=802, StringValue="admin")`
     *   *Set Option to Empty:* Call `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=803)`
 
 ### 4. ComboBox Selection Sequence (Example)

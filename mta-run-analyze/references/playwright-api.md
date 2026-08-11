@@ -140,7 +140,7 @@ As the Menditect Playwright Connector is updated, certain parameters and option 
 
 ### 2. Deprecated Microflows & Binders
 *   **`SetTestSuiteExecutionCondition`** is deprecated.
-    *   *Alternative:* All execution conditions must be handled strictly at the teststep level via **`SetExecutionSettingsOfTeststep`** (see `core-playbook.md`). Suite-level constraints are removed to prevent cascading logic locks.
+    *   *Alternative:* All execution conditions must be handled strictly at the teststep level via **`SetExecutionSettingsOfTestStep`** (see `core-playbook.md`). Suite-level constraints are removed to prevent cascading logic locks.
 *   **`Navigate_Legacy`** is deprecated.
     *   *Replacement:* Use **`Navigate`** (supports custom timeouts and load-state conditions).
 
@@ -262,12 +262,12 @@ Create Case 1's Start Playwright step calling the microflow matching the executi
 ### Option-Building Protocol (All Modes)
 Before executing the setup microflow, build and configure context/start options:
 1.  Create the options object step (e.g., `MenditectPlaywrightConnector.LocalStartOptions` or `NewBrowserContextOptions`) using `CreateTestStepCreateObject`.
-2.  For each active attribute (e.g., `SlowMo`, `DefaultTimeout`, `Locale`), call `IncludeAttributeValueInTeststep` followed by its attribute setter (e.g., `SetAttributeDecimalValue` or `SetAttributeIntegerValue`).
+2.  For each active attribute (e.g., `SlowMo`, `DefaultTimeout`, `Locale`), call `IncludeAttributeValueInTeststep` followed by its attribute setter (e.g., `SetDecimalAttributeValue` or `SetIntegerAttributeValue`).
 3.  Bind the configured options step to the setup microflow parameter using `SetTestStepOutputForSelectObjectForMicroflowParameter`.
 
 ### 🌐 Login Preferences
 At the start of Case 2, call the correct startup microflow:
-*   *With Login:* `Start_MxFrontend_Test_With_Login`. Set `Username` and `Password` using `SetStringValueMicroflowParameterValue`.
+*   *With Login:* `Start_MxFrontend_Test_With_Login`. Set `Username` and `Password` using `SetStringMicroflowParameterValue`.
 *   *Without Login:* `Start_MxFrontend_Test_Without_Login`.
 
 ### 🎬 Tracing & Screenshots Configuration

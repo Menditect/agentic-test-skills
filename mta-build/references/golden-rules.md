@@ -93,7 +93,7 @@ All object creation, attribute configuration, and object retrieval steps used as
 *   **🚨 Proactive Output Piping Rule:** You **MUST** proactively pipe outputs from preceding teststeps (such as a returned object/locator from a Create, Retrieve, or Microflow execution step) into subsequent teststep inputs (such as a Change, Delete, or Microflow Parameter input) rather than repeating database queries or hardcoding static values. 
     - **Maintainability Piping for Static Attributes (HIGHLY RECOMMENDED):** To maximize test maintenance, prioritize using scalar piping (`SelectValueForValue`) even for static attributes (such as default usernames, test emails, or numeric thresholds). Instead of hardcoding the same static value across multiple teststeps, define the static value once in a single, early teststep (acting as a "Single Source of Truth") and pipe it downstream. If the value ever needs to change, it is modified in exactly one place and automatically propagates everywhere.
     - Use the target select object binders (`SetTestStepOutputForSelectObjectForChange`, `SetTestStepOutputForSelectObjectForDelete`, `SetTestStepOutputForSelectObjectForRetrieve`, or `SetTestStepOutputForSelectObjectForMicroflowParameter`) to programmatically link memory objects.
-    - Link primitive values and dynamic attributes dynamically using `SetInputTypeAttributeValueToTeststep` or `SetInputTypeMicroflowParameterValueToTeststep`.
+    - Link primitive values and dynamic attributes dynamically using `SetInputTypeAttributeValueToTestStep` or `SetInputTypeMicroflowParameterValueToTestStep`.
     - Memory-based piping is the primary, most robust way to reference records in MTA; querying the database should only be used as a fallback if memory references are unavailable.
 
 #### 💡 Test Maintenance & Variable Piping Best Practices
@@ -177,6 +177,6 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
     4.  **Downstream Object Count Assertion:** To check for object existence or correct record count, couple the `"All"` retrieve with an `AssertObjectCount` step downstream to programmatically verify the returned count (e.g., asserting that the list size is exactly `1`).
 *   **🚨 Default Assertion Failure Law (Continue on Failure):**
     To ensure comprehensive error reporting across test runs, the default execution behavior on any assertion failure is to **continue execution** rather than stopping:
-    1.  **Standard Teststep execution:** For standard assertions and retrieve steps used for assertions, set `ResumeExecutionAfterException` to `"_Continue"` (using `SetExecutionSettingsOfTeststep`).
+    1.  **Standard Teststep execution:** For standard assertions and retrieve steps used for assertions, set `ResumeExecutionAfterException` to `"_Continue"` (using `SetExecutionSettingsOfTestStep`).
     2.  **Assertion Tool settings:** For assertion property configurations (such as `CreateAssertMicroflowReturnValue`, `SetAssertExceptionProperties`, `SetAssertObjectCountProperties`), default the action failed assertion parameter (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"`.
     3.  **Bypass/Stop Override:** Only configure assertions to stop execution upon failure (`"Stop"` or `"StopTestRun"`) when explicitly requested in the prompt or by the user.

@@ -50,7 +50,7 @@ Asserts that the number of objects retrieved or present in a list matches an exp
 
 ### 4. Microflow Return Value Assertion (`CreateAssertMicroflowReturnValue`)
 Asserts that a microflow returns a value matching expected conditions.
-*   **Properties:** Configure using type-specific setters (e.g. `SetDecimalAssertMicroflowReturnValue`, `SetIntegerLongValueAssertMicroflowReturnValue`).
+*   **Properties:** Configure using type-specific setters (e.g. `SetDecimalAssertMicroflowReturnValueCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`).
 
 ---
 

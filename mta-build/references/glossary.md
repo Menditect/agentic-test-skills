@@ -54,8 +54,8 @@ Many MTA MCP tools require string inputs that represent Mendix enums or special 
 | :--- | :--- | :--- |
 | **`SetRetrieveSettingsOfTestStep`** | `RetrieveOption` | `"Database"`, `"Association"`, or `"Teststep"`<br>*(Note the specific PascalCase: `"Teststep"` has a lowercase "s")* |
 | **`SetRetrieveSettingsOfTestStep`** | `RetrieveSet` | `"Head"` or `"All"`<br>*(Retrieves the first object or the entire collection respectively)* |
-| **`SetExecutionSettingsOfTeststep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
-| **`SetExecutionSettingsOfTeststep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
+| **`SetExecutionSettingsOfTestStep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
+| **`SetExecutionSettingsOfTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
 | **`CreateAssertMicroflowReturnValue`** | `AMRC_ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"LessThan"`, `"Contains"` |
 | **`CreateAssertMicroflowReturnValue`** | `ASRT_ActionFailedAssert` | `"ContinueTestRun"` or `"StopTestRun"` |
 | **`SetOperationOfSelectObjectForAssociation`**| `Operation` | `"Add"`, `"Set"`, `"Remove"`, `"Clear"`, or `"Omit"` |
@@ -67,8 +67,8 @@ Many MTA MCP tools require string inputs that represent Mendix enums or special 
 
 ### 🛠️ Input Type Setter Distinction (No String Needed)
 When setting input types of attributes or microflow parameters to use dynamic values from upstream steps, you **DO NOT** pass `"teststep"` as a string manually. Instead, you **MUST** call the dedicated tool:
-*   **For attributes:** Call `SetInputTypeAttributeValueToTeststep`.
-*   **For microflow parameters:** Call `SetInputTypeMicroflowParameterValueToTeststep`.
+*   **For attributes:** Call `SetInputTypeAttributeValueToTestStep`.
+*   **For microflow parameters:** Call `SetInputTypeMicroflowParameterValueToTestStep`.
 *   *Why:* These specialized tools handle setting the internal input type enumeration value to `"teststep"` natively in the MTA engine.
 
 ---

@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.10.0](releases/v1.10.0.md) | 2026-08-11 | Merge branch development |
 | [🚀 v1.9.4](releases/v1.9.4.md) | 2026-08-11 | added Open Agent Skill Standard compatibility notice |
 | [🚀 v1.9.3](releases/v1.9.3.md) | 2026-08-10 | improved default settings for tests |
 | [🚀 v1.9.2](releases/v1.9.2.md) | 2026-08-10 | optimized scan of mta for existing tests |

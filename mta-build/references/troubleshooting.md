@@ -69,14 +69,14 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 *   **Error Payload:** `CompilationError: Parameter 'Options' on step 'ACT_CalculateInterest' (StepKey: 'step_mf_calc', Index: 2) requires an object of type 'Financials.InterestOptions', but the preceding step output 'out_interest_options' is located downstream at step 'Create_InterestOptions' (StepKey: 'step_opts_create', Index: 5).`
 *   **Root Cause:** Consuming microflow occurs before the creation of the required parameter object. Parameters evaluate sequentially.
 *   **Resolution:**
-    1.  **Reordering:** Call `SetSequenceOfTeststep` to move `step_opts_create` (and its attribute values) before `step_mf_calc`. *Note: If a step needs to be moved to the absolute first position of a testcase to fix the sequence, `SetSequenceOfTestStep` should be called with `TestStepBeforeKey = 0`.*
+    1.  **Reordering:** Call `SetSequenceOfTestStep` to move `step_opts_create` (and its attribute values) before `step_mf_calc`. *Note: If a step needs to be moved to the absolute first position of a testcase to fix the sequence, `SetSequenceOfTestStep` should be called with `TestStepBeforeKey = 0`.*
     2.  **Forward Reconstruction:** Recreate steps in forward order: Call `CreateTestStepCreateObject` first ➔ `IncludeAttributeValueInTeststep` ➔ `SetAttribute*Value` ➔ `CreateMicroflowCallTestStep` (binding parameter to the options output key).
 
 ### Pattern B: Missing Cross-TestCase Parameter Binding
 *   **Error Payload:** `ValidationError: Unbound Parameter 'Browser' on step 'Start_MxFrontendTest_With_Login' (Case 2, Step 1, StepKey: 'step_frontend_start'). A valid Playwright browser instance is required to initialize the page context, but the input value is empty.`
 *   **Root Cause:** Output keys (`TestStepOutputKey`) are encapsulated within their respective test cases. Browser returned from Case 1 must be explicitly mapped to Case 2.
 *   **Resolution:**
-    1.  Call `GetMicroflowCallTeststepDetails` with the consumer `TestStepKey` (see [glossary.md](glossary.md#parameter-naming-glossary)) (e.g. `201`) to get the parameter's `SelectObjectForMicroflowParameterKey` (e.g., `502`) corresponding to the `"Browser"` parameter.
+    1.  Call `GetMicroflowCallTestStepDetails` with the consumer `TestStepKey` (see [glossary.md](glossary.md#parameter-naming-glossary)) (e.g. `201`) to get the parameter's `SelectObjectForMicroflowParameterKey` (e.g., `502`) corresponding to the `"Browser"` parameter.
     2.  Call `SetTestStepOutputForSelectObjectForMicroflowParameter` with strictly numeric keys:
         ```json
         {
@@ -91,10 +91,14 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 ### Pattern C: Skipped Data Provider (Step-Level / Case-Level)
 *   **Error Payload:** `RuntimeCompilationError: Step 'ACT_CreateOrder' (StepKey: 'step_order_create', Case 2) requires parameter 'Customer' from step output 'out_customer_key' (StepKey: 'step_cust_create', Case 1), but the provider step is configured to skip (ExecutionSetting = "Skip" or parent TestCase ExecutionCondition = "Skip").`
 *   **Root Cause:** Downstream consumer is executed while its upstream data provider is skipped, breaking compilation.
-*   **Rule (The Cascading Consumer Rule):** If a teststep is set to `"Skip"` (or its parent testcase is skipped), it cannot provide output to receiving teststeps in the same test suite. Therefore, **all receiving teststeps (consumers of its outputs/parameters) must be set to `"Skip"` as well.** This cascades forward through the entire dependency chain in the test suite.
-*   **Resolution:**
-    1.  **Unskip the Provider:** Set the provider teststep's execution setting to `"None"` or `"Always"` via `SetExecutionSettingsOfTeststep`.
-    2.  **Cascade Skip Forward (Skip the Consumers):** Set all receiving/consuming teststeps to `"Skip"` as well via `SetExecutionSettingsOfTeststep`.
+*   **Rule (The Cascading Consumer Rule):** If a teststep is set to `"Skip"` (or its parent testcase is skipped), it cannot provide output to receiving teststeps in the same test suite. Therefore, **all receiving teststeps (consumers of its outputs/parameters) must be set to `"Skip"` as well.**
+    1.  **Unskip the Provider:** Set the provider teststep's execution setting to `"None"` or `"Always"` via `SetExecutionSettingsOfTestStep`.
+    2.  **Cascade Skip Forward (Skip the Consumers):** Set all receiving/consuming teststeps to `"Skip"` as well via `SetExecutionSettingsOfTestStep`.
+    3.  **Validate Cascade:** Verify no active consumer teststeps receive inputs from a skipped step.
+
+#### Fix Scenario B: Dependency Cascade for "Always" Execution
+If Step B's execution condition is set to `"Always"`:
+1.  **Cascade "Always" Backward (Make Providers "Always"):** Identify all steps that provide inputs to the `"Always"` step, and set their execution settings to `"Always"` as well via `SetExecutionSettingsOfTestStep` (with `ResumeExecutionAfterException = "_Continue"`).
     3.  **Localize the Provider:** Duplicate/recreate the object-creation step inside the same container before the consumer step to break the dependency on the skipped step.
 
 ### Pattern D: "Always" Condition on Dependent Consumer (Step-Level / Case-Level)
@@ -102,7 +106,7 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 *   **Root Cause:** A boundary/teardown/cleanup step is set to `"Always"` but its dependent provider step failed or was skipped, leaving the input unbound.
 *   **Rule (The Cascading Provider Rule):** If a teststep is set to `"Always"`, **all providing teststeps** (those supplying inputs/parameters to it) in the same test suite must also be set to `"Always"` to guarantee they execute and provide valid inputs. This cascades backward through the entire dependency chain in the test suite.
 *   **Resolution:**
-    1.  **Cascade "Always" Backward (Make Providers "Always"):** Identify all steps that provide inputs to the `"Always"` step, and set their execution settings to `"Always"` as well via `SetExecutionSettingsOfTeststep` (with `ResumeExecutionAfterException = "_Continue"`).
+    1.  **Cascade "Always" Backward (Make Providers "Always"):** Identify all steps that provide inputs to the `"Always"` step, and set their execution settings to `"Always"` as well via `SetExecutionSettingsOfTestStep` (with `ResumeExecutionAfterException = "_Continue"`).
     2.  **Break Input Dependency:** If a step does not actually need the input at runtime under failure scenarios, remove the dependency or set the parameter to empty if allowed.
 
 ### Pattern E: Invalid Association Binding Key
@@ -169,7 +173,7 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
     1.  **Option Configuration (MUST BE DONE FIRST):**
         Call `SetRetrieveSettingsOfTestStep(TestStepKey=RetrieveStepKey, RetrieveOption="Teststep", RetrieveSet="All")`. (Use `RetrieveSet="All"` for assertion-related retrieves to retrieve the entire list; `RetrieveSet="Head"` is reserved for parameter-retrieve workarounds). Ensure `"Teststep"` has a lowercase `"s"`. This activates the memory retrieve select-object on the server.
     2.  **Output Binding (MUST BE DONE SECOND):**
-        Retrieve the select object key using `GetSelectObjectForRetrieveOfTeststep(TestStepKey=RetrieveStepKey)` to obtain `SelectObjectForRetrieveKey`.
+        Retrieve the select object key using `GetSelectObjectForRetrieveOfTeststep(TestStepKey=RetrieveStepKey) to obtain `SelectObjectForRetrieveKey`.
     3.  **Strict Integer Linking & Producer Selection (MUST BE DONE THIRD):**
         Call `SetTestStepOutputForSelectObjectForRetrieve` with raw numeric keys (e.g. `SelectObjectForRetrieveKey: 800, TestStepOutputKey` (see [glossary.md](glossary.md#parameter-naming-glossary)): `ProducerStepKey`). 
         *   *Check producer:* If the microflow returns `Void`, ensure `ProducerStepKey` is the **original Create/Retrieve step** (not the microflow call). If the microflow returns the entity directly, link to the **microflow step**.
@@ -232,8 +236,31 @@ When `GetTestConstructionErrorsOfTestCase` returns errors or warnings, parse and
 *   **Resolution Sequence:**
     1.  Call `GetMicroflowCallTestStepDetails(TestStepKey=504)` to identify the unbound parameter's `SelectObjectForMicroflowParameterKey` (e.g., `802`).
     2.  If the parameter should be **linked to an upstream step**: Call `SetTestStepOutputForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=802, TestStepOutputKey=ProducerStepKey)` with raw integers.
-    3.  If the parameter should be **passed as empty/null**: Call `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=802)`.
-    4.  If the parameter should be a **static/literal value**: Call the appropriate `Set*ValueMicroflowParameterValue` tool (e.g., `SetBooleanValueMicroflowParameterValue`, `SetStringValueMicroflowParameterValue`) to set the literal value.
+    3.  If the parameter should be **unbound/empty**: Call `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=802)`.
+    4.  If the parameter should be a **static/literal value**: Call the appropriate `Set*ValueMicroflowParameterValue` tool (e.g., `SetBooleanValueMicroflowParameterValue`, `SetStringMicroflowParameterValue`) to set the literal value.
+    5.  If the parameter should be **unbound/empty**: Pass an empty string or omit binding.
+
+---
+
+### Quick Decision Flowchart
+
+```
+[Need to configure parameter binding?]
+       │
+       ├─► Is parameter an object type?
+       │     ├─► Passing upstream object ──► SetTestStepOutputForSelectObjectForMicroflowParameter
+       │     └─► Passing null/empty ───────► SetEmptyForSelectObjectForMicroflowParameter
+       │
+       └─► Is parameter a primitive type?
+             ├─► Dynamic value from step ──► SetInputTypeMicroflowParameterValueToTestStep + SetOutputForSelectValueForValue
+             └─► Static literal value ──────► Call tool directly by type:
+                                                - String ─────► SetStringMicroflowParameterValue
+                                                - Boolean ────► SetBooleanValueMicroflowParameterValue
+                                                - Enum ───────► SetEnumerationMicroflowParameterValue
+                                                - DateTime ───► SetDateTimeMicroflowParameterValue
+                                                - Integer ────► SetIntegerMicroflowParameterValue
+                                                - Decimal ────► SetDecimalMicroflowParameterValue
+```
 
 #### 2. Dangling Select Object (No Binding or Value Assigned)
 *   **Error / Warning Message:** `Validation warning: Orphaned SelectObject for parameter 'Customer' in test step 'ACT_Customer_Disable' (StepKey: 601) contains no value or binding.`
@@ -241,7 +268,7 @@ When `GetTestConstructionErrorsOfTestCase` returns errors or warnings, parse and
 *   **Resolution Sequence:** Set an explicit value or binding to the select object.
     *   To link: `SetTestStepOutputForSelectObjectForMicroflowParameter`
     *   To empty: `SetEmptyForSelectObjectForMicroflowParameter`
-    *   To literal: `Set*ValueMicroflowParameterValue` (e.g. `SetStringValueMicroflowParameterValue`)
+    *   To literal: `Set*ValueMicroflowParameterValue` (e.g. `SetStringMicroflowParameterValue`)
 
 #### 3. Type Mismatch on Parameter Binding
 *   **Error / Warning Message:** `Compilation issue: Type mismatch in test step 'ACT_ProcessOrder' (StepKey: 702). Parameter 'Order' expects entity 'Sales.Order', but receives entity 'Sales.Quote' from step 'Create_Quote' (StepKey: 401).`
@@ -256,7 +283,7 @@ When `GetTestConstructionErrorsOfTestCase` returns errors or warnings, parse and
 *   **Root Cause:** An attribute marked as mandatory or required in the Mendix domain model has not been included or set in the `CreateObject` or `ChangeObject` test step.
 *   **Resolution Sequence:**
     1.  Call `IncludeAttributeInTeststep(TestStepKey=201, AttributeQualifiedName="Administration.Account.Email")`.
-    2.  Set the value using the appropriate attribute setter (e.g., `SetAttributeStringValue(TestStepKey=201, AttributeQualifiedName="Administration.Account.Email", Value="test@example.com")`).
+    2.  Set the value using the appropriate attribute setter (e.g., `SetStringAttributeValue(TestStepKey=201, AttributeQualifiedName="Administration.Account.Email", Value="test@example.com")`).
 
 #### 5. Symmetrical Attribute Exclusion Warning (Clean-up Orphaned Filters/Values)
 *   **Error / Warning Message:** `Validation warning: Unused or invalid attribute 'Discount' configured on step 'Retrieve_Invoices' (StepKey: 301).`
