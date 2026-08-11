@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.2.1"
-changes: "updated terminology to Backend/Frontend, removed workflow modes, and enforced 3-step placement protocol"
+version: "4.2.2"
+changes: "enforced execution user resolution, backend execution settings, and 8-column matrix layout"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -22,8 +22,8 @@ changes: "updated terminology to Backend/Frontend, removed workflow modes, and e
 > You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly specifies:
 > 1. A pasted **Session Compaction Block** containing state properties, OR
 > 2. **ALL THREE** of the following parameters explicitly:
->    - The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
->    - The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
+>    - The **Test Configuration** name or key (e.g., `"in configuration 'Acceptance'"`)
+>    - The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"`)
 >    - The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
 
 On the very first turn of a **brand-new Conversation ID** (defined strictly as having no prior MTA activity, state, or parameters recorded in the current session's chat history or compaction resumption summary), you are strictly prohibited from executing **ANY tools of any kind** (including Mendix model analysis commands or other MTA tools), **except** for loading this skill and `references/core-playbook.md` and calling `GetMtaUrl`.
@@ -65,14 +65,17 @@ You **MUST** strictly follow the 14 Golden Rules defined in `references/core-pla
 5. **Atomic Multi-Case Session Construction**: In UI or multi-case tests, do not halt sequentially for browser setup or separate cases. Retrieve the `ExecutionPlanKey` once approved, and atomically construct all containers, set up browser options, and build chronological steps in a single execution sweep within `STATE_CONSTRUCTION`.
 6. **Execution Settings Distinction (Always vs. None)**: 
    *   **Frontend & Multi-Case Tests:** You **MUST** configure all setups, teardowns, and database seeding/cleanup steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. This guarantees database and browser cleanups execute reliably even if intermediate UI steps fail.
-   *   **Backend Unit Tests:** You **MUST** use the default execution settings (`ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`) for all data steps by default. Do NOT call `SetExecutionSettingsOfTestStep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase has rollback enabled (`RollbackTcseAfterExecution = "Yes"`), skipping downstream steps upon failure is the standard expected behavior.
+   *   **Backend Unit Tests:** You **MUST** set ALL test steps in a Backend Unit Test (including Create Object and setup steps) to `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. Do NOT call `SetExecutionSettingsOfTestStep` to set them to `"Always"` or `"_Continue"`. Since the entire testcase has rollback enabled (`RollbackTcseAfterExecution = "Yes"`), skipping downstream steps upon failure is the standard expected behavior.
 7. **No redundant model reading**: Use widget names from `GetWidgets` whenever possible.
 8. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 9. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
 10. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
-11. **🚫 STRICT DATA VARIATION PROMOTION & DUPLICATION PROHIBITION**: 
+11. **🚫 STRICT DATA VARIATION PROMOTION & DUAL RETRIEVE/FILTER LAW**: 
     *   **Proactive Variation Identification:** For all Backend tests, you **MUST** actively seek to use MTA **Data Variations** rather than designing or proposing separate, duplicate test cases that only modify input data. Proposing duplicate test cases with different inputs is a severe quality violation.
     *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix.
+    *   **Dual Retrieve/Filter Empty Object Law (Data Variations):** In MTA Data Variations, step structure and association setters are fixed across all variations. You **CANNOT** set or unset an association directly inside a Data Variation item. To dynamically vary between a valid object and an `empty` (NULL) object across variations:
+        1. *For Microflow Parameters:* Create a Retrieve/Filter step filtering on a target attribute (e.g. `LicensePlate`). Set filter = `'TEST_VAL'` for valid object variations, or `'NON_EXISTENT'` for null object variations. Pass the Retrieve step output to the microflow parameter.
+        2. *For Associations:* Create a Retrieve/Filter step for the associated parent entity filtering on an attribute (e.g. `Code`). Set filter = `'TEST_CODE'` for associated variations, or `'NON_EXISTENT'` for unassociated variations. Pass the Retrieve step output to the association setter step.
     *   **Mandatory User Alignment Gate:** If you are in doubt about whether different inputs warrant separate test cases or should be consolidated into a data variation matrix, **you MUST halt and ask the user for their preference BEFORE proposing a test specification or build plan.**
 12. **Untestable Component Escape Hatch**: If you identify a very large microflow or one with many sub-microflows that is impossible to test thoroughly or where data seeding is extremely difficult, stop and suggest both to yourself (the AI) and the user to load and consult the **`menditecttestabilityframework`** skill to learn how to refactor it for testability.
 13. **Void Microflow Build-Plan Guardrail (Prevent Warning Fatigue)**:

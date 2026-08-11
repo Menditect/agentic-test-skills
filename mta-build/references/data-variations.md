@@ -19,28 +19,36 @@ To prevent any confusion between system-generated defaults and our logical test 
 
 ---
 
-## 🎯 EMPTY OBJECT PATTERN: QUICK DECISION GUIDE
+## 🎯 EMPTY OBJECT & ASSOCIATION PATTERN: QUICK DECISION GUIDE
 
 > [!NOTE]
-> This guide outlines the conceptual patterns and decision logic for conditional null parameters across variations. For complete step-by-step tool-calling examples and real-world implementation sequences of empty object retrieves, see [api-helpers.md](api-helpers.md#empty-object-microflow-parameter-checklist).
+> This guide outlines the conceptual patterns and decision logic for conditional null parameters and conditional null associations across variations. For complete step-by-step tool-calling examples, see [api-helpers.md](api-helpers.md#empty-object-microflow-parameter-checklist).
 
-**Q: Do you need to conditionally pass null/empty objects to a microflow across variations?**
+**Q: In MTA Data Variations, can you set or unset an association directly inside individual variation items?**
 
-✅ **YES** ➔ You **MUST** use the **Empty Object Retrieve Pattern** with **Retrieve from Teststep**!
+❌ **NO!** Association step structures and setters are fixed across all Data Variations. You **cannot** set or unset an association directly inside a Data Variation item.
 
-**Step-by-Step (Alternative Same-Attribute Pattern when dummy attributes are not possible):**
-1. ✅ **Create object** with attribute(s) (e.g. `Subject`).
-2. ✅ **Include & register** the Create attribute as a variation item using `AddAttributeValueAsVariationItem`.
-3. ✅ **Retrieve from Teststep** (NOT Database!) with the matching filter attribute.
-4. ✅ **Set settings:** Call `SetRetrieveSettingsOfTestStep` with `RetrieveOption = "Teststep"` and `RetrieveSet = "Head"`.
-5. ✅ **Link retrieve to create** using `GetSelectObjectForRetrieveOfTeststep` & `SetTestStepOutputForSelectObjectForRetrieve`.
-6. ✅ **Include & register** the Retrieve filter attribute as a variation item (coordinates with the Create attribute).
-7. ✅ **For valid variations:** Set BOTH Create and Retrieve keys to matching values (e.g., `"Meeting Invitation"`).
-8. ✅ **For null variations:** Set the Retrieve filter value key to `"NON_EXISTENT"` (leaving the Create key as `"Meeting Invitation"`). This fails the retrieve in memory, passing a clean null object to the microflow.
-9. ✅ **Bind microflow parameter** to the **retrieve step output** (NOT the create step output).
+**Q: How do you conditionally pass a valid object vs. a null/empty object across variations (for a Microflow Parameter OR an Association)?**
 
-❌ **NEVER** use `RetrieveOption = "Database"` for this empty object pattern.
-❌ **NEVER** bind a microflow parameter directly to a Create step when implementing the empty object pattern.
+✅ **You MUST use the Retrieve / Filter Empty Object Pattern!**
+
+### 1. For Microflow Parameters (Passing Null Parameter):
+1. ✅ **Create object** in memory with a filterable attribute (e.g., `LicensePlate = 'TEST_CAR'`).
+2. ✅ **Add Retrieve Object step** filtering on `LicensePlate` equal to a variation item key.
+3. ✅ **For valid object variations:** Set Retrieve filter item = `'TEST_CAR'` (resolves to the created object).
+4. ✅ **For null object variations:** Set Retrieve filter item = `'NON_EXISTENT'` (fails retrieve in memory, resolving to `empty` / NULL).
+5. ✅ **Pipe microflow parameter** from the **Retrieve step output** (NOT the Create step output).
+
+### 2. For Associations (Passing Null Associated Object):
+1. ✅ **Create associated parent object** in memory with a filterable attribute (e.g., `Code = 'TEST_CODE'`).
+2. ✅ **Add Retrieve Object step** for parent entity filtering on `Code` equal to a variation item key.
+3. ✅ **For associated variations:** Set Retrieve filter item = `'TEST_CODE'` (resolves to valid parent object).
+4. ✅ **For unassociated variations:** Set Retrieve filter item = `'NON_EXISTENT'` (fails retrieve in memory, resolving to `empty` / NULL).
+5. ✅ **Pipe association setter** (`SetTestStepOutputForSelectObjectForAssociation`) from the **Retrieve step output** (NOT the Create step output). When the retrieve resolves to `empty`, the association is set to `empty` automatically!
+
+---
+❌ **NEVER** try to set or unset an association inside individual variation items.
+❌ **NEVER** bind a microflow parameter or association setter directly to a Create step when implementing the empty object pattern.
 
 ---
 

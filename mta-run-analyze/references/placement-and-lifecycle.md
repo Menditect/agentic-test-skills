@@ -65,9 +65,9 @@ Before creating suites or configurations, you can look up application keys and r
 
 ### 4.1 ⚡ Step-by-Step Interactive Placement Discovery Law (Token Conservation)
 To prevent severe token bloat and context clutter, you are **strictly prohibited** from scanning all configurations, suites, and test cases simultaneously. Instead, you **MUST** resolve the test target placement in a strict step-by-step interactive sequence:
-1.  **Phase 1: Test Configuration Scan & Selection**
-    *   **Action:** Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`.
-    *   **Interactive Gate:** Present the list of existing Test Configurations. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.
+1.  **Phase 1: Application Resolution & Test Configuration Scan**
+    *   **Action:** Determine the Application Name from `AGENTS.md` at the project level or in `mxcli` settings (`.gemini/settings.json` / `MENDIX_MPR_FILE`). If the Application Name is not present in `AGENTS.md`, execute `mxcli` to find the target `.mpr` project file (e.g. `.\mxcli.bat -p "<path_to_.mpr>" -c "SHOW SETTINGS"` or derive from the `.mpr` filename) to establish the Application Name. Call `GetApplicationByName` with this Application Name to retrieve the `ApplicationKey`. Then call `GetTestConfigurationsForApplicationKey` using the retrieved `ApplicationKey` (or call `GetApplicationForApplicationInstanceToken`).
+    *   **Interactive Gate:** Present the list of existing Test Configurations to the user and **HALT**. Stop right there and ask the user to select an existing Test Configuration (or specify a name to create a new one). Wait for their response before proceeding to query Test Suites.
 2.  **Phase 2: Test Suite Scan & Selection**
     *   **Action:** Once the configuration is selected, call `GetTestSuites` for that configuration.
     *   **Interactive Gate:** Present the list of existing Test Suites in that configuration. Ask the user to select an existing one or specify a name to create a new one. **HALT** and wait for their response.

@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), or answering general testing/prompting questions"
-version: "4.1.1"
-changes: "updated terminology to Backend/Frontend, removed workflow modes, and enforced 3-step placement protocol"
+version: "4.1.2"
+changes: "mandated explicit filter attributes, 8-column matrix layout, and 3-stage placement protocol"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -23,8 +23,6 @@ Or if an AI agent (like MAIA or another AI) has built or modified software in th
 Do NOT assume a specific test case or microflow target. 
 **Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_SCOPE_START`.
 
----
-
 This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
 
 ---
@@ -36,28 +34,32 @@ When active under the macro state `STATE_BUILD_PLANNING`, track your current pla
 
 You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan:
 
-### 1. `PLAN_STEP_1: Placement & Specs Alignment` (Micro-Step 2.1)
-*   **Action**: Capturing placement using the **Mandatory 3-Step Placement Protocol** (Config Scan ➔ Suite Scan ➔ Case Placement) and functional objectives (Objective, Preconditions, Expected Results) before drafting step actions.
-*   **Mandatory 3-Step Placement Protocol**: When assisting with placement, you **MUST** follow these three interactive steps sequentially:
-    1.  *Test Configuration Scan:* Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`. Present options and ask user to select or create one. **NEVER assume a Test Configuration.**
-    2.  *Test Suite Scan:* Call `GetTestSuites` for the selected configuration. Present options and ask user to select or create one.
-    3.  *Test Case Name & Placement:* Call `GetTestCases` for the selected suite. Present existing cases and ask user to select or specify a new Test Case name and position.
-*   **Vague Onboarding Guardrail:** If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
-*   **Model Audit Analysis**: Run `mxcli` (such as `SHOW MICROFLOWS -m <Module>` or `SHOW PAGES -m <Module>`) to inspect the target element's actual implementation and retrieve its MTF Typology.
-*   **Intended Purpose Verification**: Establish the intended use of the application. If the intended use or target component is unclear, **do NOT guess or assume**. Stop and ask the user to clarify.
+### 1. `PLAN_STEP_1: Target Analysis & Test Scoping` (Micro-Step 2.1)
+*   **Action**: Analyze the target element under test and define functional scope BEFORE proceeding to placement.
+*   **Model Audit Analysis**: Run `mxcli` (such as `SHOW MICROFLOWS -m <Module>` or `SHOW PAGES -m <Module>`) to inspect the target element's actual implementation, input parameters, return values, and MTF Typology.
+*   **Intended Purpose Verification**: Establish the intended use of the application and target component. If the intended use or target component is unclear, **do NOT guess or assume**. Stop and ask the user to clarify.
 *   **Void Microflow Side-Effect Audit**: If the target microflow returns Void (no output parameter), halt and warn the user. Ask them to help identify database side-effects (creations, deletions, modifications) so that retrieve/count assertions can be designed instead of a basic exception-only check.
-*   **Mandatory Proposed Naming**: For new Test Suites, you **MUST** always propose a clear, descriptive Name and Description, and for new Test Cases, you **MUST** propose a clear, descriptive Name, while explicitly offering the option for the user to define their own custom Name and Description.
-*   **Halt Rule**: Transition to `PLAN_STEP_2` once placement and specifications are clearly captured and aligned.
+*   **Boundary & Scenario Identification**: Identify critical boundary conditions, edge cases, and scenarios to test.
+*   **Mandatory Placement Proposal**: You **MUST** always end the target analysis by explicitly offering to help the user with test placement.
+*   **Halt Rule**: Transition to `PLAN_STEP_2` once target element analysis, risk assessment, and functional test scenarios are fully established.
 
-### 2. `PLAN_STEP_2: Setup & Environment` (Micro-Step 2.2)
-*   **Action**: Establish environmental configurations, execution roles, and browser-start dependencies.
-*   **Browser Setup Portability**: For **Frontend** tests, inspect existing cases in the suite to automatically derive the redirect login URL and Playwright options. If no cases exist in the suite, prompt the user for the relative login path (e.g., `/login.html`). Ensure browser setup is entirely portable as relative logical paths rather than absolute URLs.
-*   **Execution User Allocation**: For backend cases, verify or provision a valid Execution User.
-*   **Halt Rule**: Transition to `PLAN_STEP_3` once environmental setup is resolved.
+### 2. `PLAN_STEP_2: Strict Iterative Placement Protocol` (Micro-Step 2.2)
+*   **Action**: If the user asks for help with placement or does not know where to place the test, you **MUST** follow the strict 3-step placement pattern sequentially. You are **strictly prohibited** from pre-scanning suites or test cases in advance or assuming selections.
+*   **Mandatory 3-Step Placement Protocol (STRICT SEQUENTIAL SCANNING)**:
+    1.  *Stage 2.1 - Application Resolution & Test Configuration Scan:* Determine the Application Name needed for MTA MCP tools (e.g., `GetApplicationByName`). When `mxcli` is used, extract the Application Name directly from the target `.mpr` file path passed to `mxcli` via the `-p` parameter or defined in workspace settings (`.vscode/settings.json` under `MENDIX_MPR_FILE` / `.gemini/settings.json`). The MTA Application Name is the base filename of the `.mpr` file without the `.mpr` extension (e.g., `-p "C:\...\Menditect_CarRental_Insurance.mpr"` -> `"Menditect_CarRental_Insurance"`). Alternatively, check `AGENTS.md` at the project root or run `.\mxcli.bat -p "<path_to_.mpr>" -c "SHOW SETTINGS"`. Call `GetApplicationByName` with this Application Name string to retrieve the `ApplicationKey`. Then call `GetTestConfigurationsForApplicationKey` using the retrieved `ApplicationKey` (or call `GetApplicationForApplicationInstanceToken`). Present all available Test Configuration options to the user and **HALT**. Stop right there and ask the user to explicitly specify/select the Test Configuration. **NEVER assume a Test Configuration and NEVER call `GetTestSuites` or `GetTestCases` during this stage.**
+    2.  *Stage 2.2 - Test Suite Scan:* **ONLY AFTER** the user explicitly selects/specifies the Test Configuration, call `GetTestSuites` for that selected configuration. Present all available options to the user and **HALT**. Ask the user to explicitly select or specify the Test Suite. **NEVER call `GetTestCases` during this stage.**
+    3.  *Stage 2.3 - Test Case Name & Placement:* **ONLY AFTER** the user explicitly selects/specifies the Test Suite, call `GetTestCases` for that selected suite. Present existing test cases, propose a clear, descriptive Name and position for the new Test Case, and **HALT** for user confirmation or custom input.
+*   **Vague Onboarding Guardrail**: If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
+*   **Halt Rule**: Transition to `PLAN_STEP_3` once placement is fully resolved and confirmed across all three stages.
 
-### 3. `PLAN_STEP_3: Sequence Drafting & Risk Dialogue` (Micro-Step 2.3)
-*   **Action**: Propose the high-level step flow, discuss design trade-offs (frontend vs. backend assertions), and map data variations.
-*   **Right-Level Allocation (The \"Ice Cream Cone\" Check)**: Defend against the \"Ice Cream Cone\" Anti-Pattern. Push logic testing down the pyramid to Unit or Integration levels where possible.
+### 3. `PLAN_STEP_3: Setup & Sequence Drafting` (Micro-Step 2.3)
+*   **Action**: Establish environmental setup (query and assign execution user via `GetExecutionUsers`, relative login paths for frontend tests), propose high-level step sequence flow, discuss design trade-offs, map data variations, and run pre-approval self-audit.
+*   **Mandatory Execution User Resolution**: You **MUST** call `GetExecutionUsers` for the active ApplicationKey and TestConfigurationKey to fetch available execution users, and explicitly assign `EXUS_ExecutionUser` (e.g. `MxAdmin`) in Section 1 (Metadata) of the Execution Plan.
+*   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps (including Create Object and setup steps) **MUST** be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. You are strictly prohibited from applying `"Always"` or `"_Continue"` to setup steps in Backend Unit Tests.
+*   **🛑 Dual Retrieve/Filter Empty Object Law (Data Variations)**: In MTA Data Variations, step structures and association setters are fixed across all variations. You **CANNOT** set or unset an association directly inside a Data Variation item. To dynamically vary between a valid object and an `empty` (NULL) object across variations:
+    1. **For Microflow Parameters:** Create a Retrieve/Filter step filtering on a target attribute (e.g., `LicensePlate`). For valid object variations, set filter = `'TEST_VAL'`. For null object variations, set filter = `'NON_EXISTENT'`. Pass the Retrieve step output to the microflow parameter.
+    2. **For Associations:** Create a Retrieve/Filter step for the associated parent entity filtering on an attribute (e.g., `Code`). For associated variations, set filter = `'TEST_CODE'`. For unassociated variations, set filter = `'NON_EXISTENT'`. Pass the Retrieve step output to the association setter step.
+*   **Right-Level Allocation (The "Ice Cream Cone" Check)**: Defend against the "Ice Cream Cone" Anti-Pattern. Push logic testing down the pyramid to Unit or Integration levels where possible.
 *   **🚫 Strict Data Variation Consolidation**: Seek to use MTA **Data Variations** rather than separate, duplicate test cases that only modify input data. Design a single, reusable test case structure and enable Data Variations to define a variation matrix.
 *   **Mandatory Pre-Approval Self-Audit**: Before presenting the final consolidated Execution Plan, you **MUST** execute a mental self-audit against all skill rules and embed the **Self-Audit Validation Report** directly in your response.
 
@@ -92,21 +94,55 @@ You **MUST** output the final approved Execution Plan inside this exact standard
 *   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** `[Backend | Frontend]`
+*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin]`
 
-## 2. Risk & Purpose Alignment
+## 2. Test Case Documentation (MANDATORY)
+*   **Objective:** `[Clear statement of what the test case verifies and what risk it mitigates]`
+*   **Preconditions:** `[Prerequisites, environmental state, or seeded data required prior to execution]`
+*   **Expected Results:** `[Clear description or table of expected outcomes, return values, and assertions]`
+
+## 3. Risk & Purpose Alignment
 *   **Intended Application Use:** `[Briefly state what functional flow is being validated]`
 *   **Primary Technical Risk:** `[e.g., Database ACID violation on void commit]`
 *   **Primary Business Risk:** `[e.g., Billing discrepancy / financial leakage]`
 
-## 3. Verified Elements
+## 4. Verified Elements
 *   **Microflows/Pages Under Test:** `[e.g., Billing.ACT_CalculateInvoice]`
 *   **Entities & Attributes Involved:** `[e.g., Billing.Invoice, TotalAmount]`
 
-## 4. Chronological Step Sequence Plan
-*   **Step 1 (Setup/Seeding):** `[Describe action and exact parameters to pass/assert]`
-*   **Step 2 (Execution):** `[Describe microflow call or page navigation details]`
-*   **Step 3 (Assertion):** `[Describe attributes/values/object counts to assert on]`
-*   **Step 4 (Teardown/Cleanup):** `[Describe rollback or cleanup steps]`
+## 5. Chronological Step Sequence Plan
+*   **Step 1 (Setup/Seeding):** `[Describe action and exact parameters to pass/assert, execution settings: "None", "_Stop"]`
+*   **Step 2 (Execution):** `[Describe microflow call or page navigation details, execution settings: "None", "_Stop"]`
+*   **Step 3 (Retrieve / Filter for Empty Object Pattern - MANDATORY EXPLICIT ATTRIBUTE):** `[Specify exact Entity and Attribute name used for filtering, e.g., Filter Car.LicensePlate = 'TEST_VAL' for valid object or 'NON_EXISTENT' for empty/NULL object, execution settings: "None", "_Stop"]`
+*   **Step 4 (Assertion):** `[Describe attributes/values/object counts to assert on, execution settings: "None", "_Stop"]`
+*   **Step 5 (Teardown/Cleanup):** `[Describe rollback or cleanup steps]`
+
+### 📊 Data Variation Matrix (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+
+> [!IMPORTANT]
+> **Data Variation Matrix Formatting Rules:**
+> 1. **Horizontal Orientation:** Columns represent scenarios (`#1`, `#2`, ...), Rows represent attributes/assertions. Vertical variation tables are strictly prohibited.
+> 2. **Max 8-Column Limit & Splitting Law:** Tables are strictly capped at 8 columns total (1 attribute label column + up to 7 scenario columns) to prevent MTA dashboard UI truncation. For 8+ variations, split into consecutive horizontal tables retaining identical row labels.
+> 3. **Clean System Naming Standard:** System variation names must be lowercase alphanumeric with hyphens (e.g. `happy-path-diesel`). `#n` column header prefixes are strictly visual.
+> 4. **Mandatory Metadata List:** Always supply a dedicated list specifying the system Name and Description for every single variation.
+
+#### Table 1: Scenarios #1 to #7 (Primary Scenarios)
+
+| Attribute / Step | #1 (variation-name-1) | #2 (variation-name-2) | #3 (variation-name-3) |
+| :--- | :--- | :--- | :--- |
+| **`Entity.FilterAttribute`** | `'VALID_VAL'` | `'NON_EXISTENT'` | `'VALID_VAL'` |
+| **`Entity.TestAttribute`** | `100` | `100` | `0` |
+| **Assert Return Value** | `ExpectedVal1` | `empty` | `0` |
+
+*(If 8+ variations exist, add Table 2 for Variations #8 onwards following identical vertical row labels).*
+
+### 📝 System Registration Recipe & Metadata List
+*   **Variation #1 (`variation-name-1`):**
+    *   *Name:* `variation-name-1`
+    *   *Description:* `[Detailed functional description of inputs and expected outcomes]`
+*   **Variation #2 (`variation-name-2`):**
+    *   *Name:* `variation-name-2`
+    *   *Description:* `[Detailed functional description of inputs and expected outcomes]`
 ```
 
 ### 📋 Standard Self-Audit Validation Report Format
@@ -114,11 +150,11 @@ This report is embedded immediately preceding the Execution Plan in your final d
 
 ```markdown
 ### 🔍 PRE-APPROVAL SELF-AUDIT REPORT
-*   **[CHECK 1] Frontend Split Law**: Verified that setup/teardown steps are separated into Case 1 and Case 3, and data is committed with a single `Persist` step before Case 2 starts. ➔ **[PASS / NA]**
-*   **[CHECK 2] Step Execution Settings**: Verified that all Playwright options, browser setup/teardown, and data seeding steps are hardcoded to `Always` and `_Continue`. ➔ **[PASS / NA]**
-*   **[CHECK 3] Backend-First Deletes**: Verified that all deleted objects are retrieved backend-first before delete steps are called, and no UI-side browser commits are relied upon for auto-rollbacks. ➔ **[PASS]**
+*   **[CHECK 1] Frontend Split Law**: Verified that setup/teardown steps are separated into Case 1 and Case 3 for UI tests, or NA for Backend tests. ➔ **[PASS / NA]**
+*   **[CHECK 2] Step Execution Settings & Execution User**: Verified that `EXUS_ExecutionUser` is explicitly assigned, and for Backend Unit Tests ALL step execution settings are set to `"None"` / `"_Stop"`. ➔ **[PASS]**
+*   **[CHECK 3] Backend-First Deletes**: Verified that all deleted objects are retrieved backend-first before delete steps are called, and no UI-side browser commits are relied upon for auto-rollbacks. ➔ **[PASS / NA]**
 *   **[CHECK 4] Setup Portability**: Verified that all browser setup paths utilize relative logical paths (e.g., `/login.html`) rather than absolute URLs. ➔ **[PASS / NA]**
-*   **[CHECK 5] Data Piping Consistency**: Verified that outputs are correctly piped using predecessor output keys, with no memory-based piping attempting to cross separate test cases directly. ➔ **[PASS]**
+*   **[CHECK 5] Explicit Filter Attributes, Documentation & Variation Matrix Layout**: Verified that parameters/associations needing empty/NULL variations use the Retrieve/Filter pattern with an EXPLICITLY NAMED filter attribute (e.g., `Car.LicensePlate`), all documentation fields are populated, and the Data Variation Matrix adheres to horizontal orientation, max 8-column table splitting, clean hyphenated naming, and mandatory variation metadata lists. ➔ **[PASS]**
 ```
 
 *   **Halt Gate (MANDATORY)**: Display the copy-pasteable sign-off block to the user and **HALT**. Wait for the user to approve the plan or copy the compaction block to transition to the `mta-build` skill.

@@ -12,7 +12,7 @@ This reference file contains standardized, copy-pasteable build templates optimi
 >    * *Frontend:* For functional page and widget testing in a browser.
 >    * *Recommendation:* Pre-suggest the category determined during the Test Strategy phase.
 > 2. **3-Step Placement Protocol:** Execute the mandatory 3-step placement discovery sequence:
->    * *Step 1: Test Configuration Scan:* Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`. Present options and ask user to select or create one. **NEVER assume a Test Configuration.**
+>    * *Step 1: Application Resolution & Test Configuration Scan:* Determine the Application Name needed for MTA MCP tools (e.g., `GetApplicationByName`). When `mxcli` is used, extract the Application Name directly from the target `.mpr` file path passed to `mxcli` via the `-p` parameter or defined in workspace settings (`.vscode/settings.json` under `MENDIX_MPR_FILE` / `.gemini/settings.json`). The MTA Application Name is the base filename of the `.mpr` file without the `.mpr` extension (e.g., `-p "C:\...\Menditect_CarRental_Insurance.mpr"` -> `"Menditect_CarRental_Insurance"`). Call `GetApplicationByName` with this Application Name to retrieve the `ApplicationKey`. Then call `GetTestConfigurationsForApplicationKey` using the retrieved `ApplicationKey` (or `GetApplicationForApplicationInstanceToken`). Present all available Test Configuration options to the user and **HALT**. Stop right there and ask the user to explicitly select a Test Configuration. **NEVER assume a Test Configuration.**
 >    * *Step 2: Test Suite Scan:* Call `GetTestSuites` for the selected configuration. Present options and ask user to select or create one.
 >    * *Step 3: Test Case Placement:* Call `GetTestCases` for the selected suite. Present existing cases and ask user to select or specify a new Test Case name and position.
 > 
@@ -36,6 +36,7 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** Backend
+*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin]`
 
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
@@ -47,16 +48,20 @@ Use this template when testing deterministic business logic, calculations, or va
 1.  **Step 1**: Create options parameter block in memory (if required).
     *   *Type*: Create Object
     *   *Entity*: `[ModuleName].[ParameterEntityName]`
-    *   *Execution*: `"Always"`, `_Continue`
-2.  **Step 2**: Execute target microflow.
+    *   *Execution*: `"None"`, `"_Stop"`
+2.  **Step 2 (Retrieve / Filter for Empty Object Pattern - MANDATORY EXPLICIT ATTRIBUTE)**: Retrieve/Filter parameter object or associated object using an explicitly specified attribute name.
+    *   *Type*: Retrieve Object
+    *   *Filter Attribute*: `[ModuleName].[EntityName].[AttributeName]` = `'TEST_VAL'` for valid object variations, or `'NON_EXISTENT'` for empty/NULL object variations.
+    *   *Execution*: `"None"`, `"_Stop"`
+3.  **Step 3**: Execute target microflow.
     *   *Type*: Call Microflow
     *   *Microflow*: `[ModuleName].[ElementName]`
-    *   *Parameters*: Pipe parameters from Step 1.
-    *   *Execution*: `"None"`, `"Stop"`
-3.  **Step 3**: Assert returned output.
+    *   *Parameters*: Pipe parameters from Step 1 or Step 2.
+    *   *Execution*: `"None"`, `"_Stop"`
+4.  **Step 4**: Assert returned output.
     *   *Type*: Assert Microflow Return Value
     *   *Assertion*: Assert that return value equals `[Expected Value]`.
-    *   *Execution*: `"None"`, `"Stop"`
+    *   *Execution*: `"None"`, `"_Stop"`
 ```
 
 ### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases
