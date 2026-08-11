@@ -153,74 +153,39 @@ As the Menditect Playwright Connector is updated, certain parameters and option 
 
 This section contains the official browser setup protocols, options prompting choices, validation gates, headless mappings, and the technical guidelines to configure virtual browser sessions during **`STATE_BROWSER_SETUP`** (State 5).
 
-### 🚨 State 5 Unified Browser Setup Prompt (Mandatory Halt in Guided Mode)
-In Guided Mode, you **MUST** offer the user a choice between two configuration approaches and **HALT** for their response:
+### 🌐 State 5 Unified Browser Setup Protocol
+When configuring browser options in **`STATE_BROWSER_SETUP`**, present the configuration options to the user and confirm their settings:
 
 ```markdown
 ### 🌐 Playwright Browser Setup (State 5)
-Before building the test, we need to configure Playwright browser options. Would you prefer to configure them all at once (Option A), or walk through the core settings step-by-step (Option B)?
-
-* **Option A (All-in-One List):** Present and configure all 11 configurations (Core & Advanced) at once.
-* **Option B (Step-by-Step Approach):** Ask the **6 Core configuration** questions one-by-one, then present the **5 Advanced/Optional** options as a single list at the end.
-```
-
-Depending on the user's choice, present the corresponding configuration prompt and **HALT** for their inputs:
-
-#### Option A (All-in-One List)
-Present exactly the following prompt to configure all 11 options:
-```markdown
-### 🌐 Playwright Browser Setup (Option A: All-in-One)
-Please configure or confirm the following 11 options:
+Please configure or confirm the following browser options:
 
 **Core Options:**
-1. **Execution User:** (Default: `MxAdmin` - technical background server-side runner. **Role:** This is the background account that runs Playwright connector microflows on the Mendix server to trigger and manage the browser session. It is **NOT** the client-side end-user [e.g. Admin, Customer] logged into the browser, which is configured separately via credentials in Case 2's startup step.)
+1. **Execution User:** (Default: `MxAdmin` - technical background server-side runner)
 2. **Browser Environment (Location):**
-   - `1. Locally` (Requires driver JAR in Mendix userlib; setup via `Start_Frontend_Test_Locally`)
-   - `2. Playwright Server` (setup via `Start_Frontend_Test_With_Playwright_Server`)
-   - `3. Azure Workspaces` (setup via `Start_Frontend_Test_With_Azure_Playwright_Workspaces`)
-   - *(Note: BrowserStack is ⚠️ Not Recommended - runs are often flaky)*
+   - `1. Locally` (Requires driver JAR in Mendix userlib)
+   - `2. Playwright Server`
+   - `3. Azure Workspaces`
 3. **Browser Type:** (Chromium, Firefox, or Webkit; Default: Chromium)
-4. **Headless Mode:** (Headed vs. Headless; Default: Headed locally, Headless on server/Azure)
+4. **Headless Mode:** (Headed vs. Headless; Default: Headed locally)
 5. **Target URL:** (Default: `http://localhost:8080` or matching selected MTA Environment)
 6. **Login Preference:** (With Login [requires username/password] vs. Without Login; Default: Without Login)
 
 **Advanced Options:**
-7. **Tracing Configuration (Trace):** (Enable Tracing? Default: `true` - captures screenshots & DOM snapshots automatically)
+7. **Tracing Configuration (Trace):** (Enable Tracing? Default: `true`)
 8. **SlowMo:** (Action delay in ms; default: `100` ms locally, `0` ms on server)
 9. **DefaultTimeout:** (Max wait time in ms; default: `30000` ms)
 10. **Locale:** (Browser page locale/language; default: system language)
 11. **TimezoneId:** (Browser page timezone; default: system timezone)
 ```
 
-#### Option B (Step-by-Step Approach)
-Ask the following **6 Core configuration** questions one-by-one:
-1. **Execution User:** (Default: `MxAdmin` - technical background server-side runner. **Role:** This account runs Playwright connector microflows on the Mendix server to trigger and manage the browser session. It is **NOT** the client-side end-user [e.g. Admin, Customer] logged into the browser, which is configured separately via credentials in Case 2's startup step.)
-2. **Browser Environment (Location):** (Locally, Playwright Server, or Azure Workspaces)
-3. **Browser Type:** (Chromium, Firefox, or Webkit; Default: Chromium)
-4. **Headless Mode:** (Headed vs. Headless; Default: Headed locally, Headless on server/Azure)
-5. **Target URL:** (Default: `http://localhost:8080`)
-6. **Login Preference:** (With Login [requires username/password] vs. Without Login; Default: Without Login)
+### 🚨 Browser Setup Validation Gate
+Present the complete, finalized browser setup options list to the user and **HALT** for their explicit validation and approval before calling any step-creation tools to construct Case 1 (Setup) and Case 3 (Teardown) steps.
 
-Once those 6 questions are complete, present the **5 Advanced/Optional** options as a single list for confirmation or overrides:
-```markdown
-### 🌐 Playwright Browser Setup (Option B: Advanced Options)
-I have saved your core settings. We will apply these advanced options unless you specify overrides:
-7. **Tracing Configuration (Trace):** Enabled (`true` - captures screenshots & snapshots automatically)
-8. **SlowMo:** (default: `100` ms locally, `0` ms on server)
-9. **DefaultTimeout:** (default: `30000` ms)
-10. **Locale:** (default: browser default language)
-11. **TimezoneId:** (default: browser default timezone)
-```
-
-### 🚨 Browser Setup Validation Gate (Mandatory HALT in Guided Mode for Category B)
-In Guided Mode, you **MUST** present the complete, finalized browser setup options list to the user and **HALT** for their explicit validation and approval before calling any step-creation tools to construct Case 1 (Setup) and Case 3 (Teardown) steps.
-*   **Guided Mode:** Compile this list using the user's customized choices and HALT for approval.
-*   **Express-BP and Full Express Modes:** Bypasses this HALT entirely. The assistant automatically applies standard pre-approved defaults (running Locally, browser Chromium, headless false, default timeout 30000ms, SlowMo 100ms, tracing true, without login) and constructs the Setup and Teardown cases silently in one smooth action.
-
-*Example Validation Prompt (Guided Mode Only):*
+*Example Validation Prompt:*
 ```markdown
 **Active State:** `STATE_BROWSER_SETUP`
-**Next Destination State:** `STATE_BUILD_PLANNING` (or `STATE_CONSTRUCTION` in Full Express)
+**Next Destination State:** `STATE_BUILD_PLANNING`
 
 ### 🌐 Playwright Browser Setup: Final Validation
 Please review and confirm the resolved browser setup configuration:

@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.1.4"
-changes: "aligned installation states as micro-states within macro state STATE_DISCOVERY"
+version: "1.1.5"
+changes: "updated terminology to Backend/Frontend"
 ---
 
 # MTA Installation & Configuration Skill
@@ -42,7 +42,7 @@ This skill is triggered by instructions or queries containing:
 *Immediately before responding to any user setup or installation query, the AI assistant MUST mentally run this 5-point self-audit checklist to guarantee execution accuracy:*
 1.  **Did I verify the active Git branch?** If the active branch is `main` (or any mainline), I **must** immediately stop and warn the user to switch to `development` before recommending or making skill edits.
 2.  **Did I output the State Header?** I **must** prefix the top of my response with the current `Active Setup State` and `Next Destination State` headers.
-3.  **Did I respect module optionality?** I **must** explicitly clarify that *Menditect Commons* is optional and *Playwright/Frontend Testkit* are strictly required for Frontend Category B tests only.
+3.  **Did I respect module optionality?** I **must** explicitly clarify that *Menditect Commons* is optional and *Playwright/Frontend Testkit* are strictly required for Frontend tests only.
 4.  **Did I enforce the Playwright Driver-Bundle Version Law?** I **must** refuse to guess or assume a Playwright `.jar` driver version.
 5.  **Did I include Success Verification?** I **must** provide the concrete success checking checklist for the current state before declaring it complete.
 
@@ -91,10 +91,10 @@ Guide the user through these four sequential setup micro-states, halting to veri
     *   Running `git status` verifies that all proxies, actions, and system files under `modules/javasource` are untracked and successfully ignored.
     *   Startup console logs print a successful connection handshake from the startup hook.
 
-### 3. `[STATE_PLAYWRIGHT_SETUP]` (Frontend Category B Only)
+### 3. `[STATE_PLAYWRIGHT_SETUP]` (Frontend Only)
 *   **Purpose:** Guide Playwright Connector setup and browser hosting selection.
 *   **Halt Gate (Interactive Assessment):**
-    *   **CRITICAL:** Ask the user if they intend to run Frontend (Category B) web tests. **If they are only running Backend (Category A) microflow tests, completely skip this state and proceed directly to State 4.**
+    *   **CRITICAL:** Ask the user if they intend to run Frontend web tests. **If they are only running Backend microflow tests, completely skip this state and proceed directly to State 4.**
 *   **Key Requirements:**
     *   Provide download links for **Playwright Connector (Component 214764)** and **Frontend Test Kit (Component 206637)**.
     *   **The Version Verification Step:** Instruct the developer to look at the marketplace properties or release notes for their Playwright Connector to find the required Playwright version, then download the exact matching `driver-bundle-{version}.jar` from Maven Central into `/userlib`.

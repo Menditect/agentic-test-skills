@@ -18,7 +18,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
        ├─► Yes: Set Case ExecutionCondition to "None" (standard default), ResumeExecutionAfterException to "Stop".
        └─► No: (Backend Unit Test consisting of a single microflow execution): Set RollbackTcseAfterExecution to "Yes". For all other cases, set it to "No".
 
-2. For any Teststep inside Category B (Frontend) tests:
+2. For any Teststep inside Frontend tests:
    ├─► Is it a Boilerplate step (Options Objects, Start Frontend Session [Start_MxFrontend_Test_...], Stop Frontend Session [Stop_MxFrontendTest], Playwright Teardown [Teardown_Playwright])?
    │   └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
    ├─► Is it a Backend Data Action?
@@ -30,7 +30,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
    └─► Is it a Standard UI Interaction (Clicks, Fills, standard UI Assertions)?
        └─► Set Step ExecutionCondition to "None" (standard default), ResumeExecutionAfterException to "Stop" (Note: If any standard UI interaction step functions as an assertion, it should default to continuing on failure unless explicitly requested to stop).
 
-3. For any Teststep inside Category A Backend Unit Tests (Single-Case with Rollback enabled):
+3. For any Teststep inside Backend Unit Tests (Single-Case with Rollback enabled):
    ├─► Do we need to configure execution settings for object actions (Create, Change, Delete, Persist, Assert, Retrievals)?
    └─► **By Default, No!** All backend data actions inside a unit test use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`) by default. You do NOT need to call `SetExecutionSettingsOfTestStep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
 
@@ -46,11 +46,11 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 | **Step Level** | Options Objects (`LocalStartOptions`, etc.) | `"Always"` | `"_Continue"` | Options must exist to start browser |
 | **Step Level** | Setup & Startup steps (`Start_Frontend...` & `Start_MxFrontend_Test_...`) | `"Always"` | `"_Continue"` | Crucial browser setup/startup steps |
 | **Step Level** | Standard UI Interactions (Clicks, Fills) | `"None"` | `"Stop"` | Normal UI verification flow |
-| **Step Level** | Backend Data Seeding (Create, Change, Persist) - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Setup database state |
-| **Step Level** | Backend Cleanup (Delete, Persist) - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Cleanup database state |
-| **Step Level** | Assertions & Exception/Count Asserts - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Default behavior is to continue execution on failed asserts |
-| **Step Level** | Retrievals for Assertions - *Category B / Multi-Case* | `"Always"` | `"_Continue"` | Retrieve steps used to prepare downstream assertions |
-| **Step Level** | All Object Actions (Create, Change, Delete, Persist, Asserts) - *Category A Unit Tests* | `"None"` | `"Stop"` | Default settings; do NOT call `SetExecutionSettingsOfTestStep` |
+| **Step Level** | Backend Data Seeding (Create, Change, Persist) - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Setup database state |
+| **Step Level** | Backend Cleanup (Delete, Persist) - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Cleanup database state |
+| **Step Level** | Assertions & Exception/Count Asserts - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Default behavior is to continue execution on failed asserts |
+| **Step Level** | Retrievals for Assertions - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Retrieve steps used to prepare downstream assertions |
+| **Step Level** | All Object Actions (Create, Change, Delete, Persist, Asserts) - *Backend Unit Tests* | `"None"` | `"Stop"` | Default settings; do NOT call `SetExecutionSettingsOfTestStep` |
 | **Step Level** | Browser Close (`Teardown_Playwright` & `Stop_MxFrontendTest`) | `"Always"` | `"_Continue"` | Standard browser teardown and close steps |
 
 ---
@@ -66,7 +66,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 ## 🚨 CASCADING LAWS & CONFIGURATION RULES
 
 1. **Boilerplate & Backend Data Actions "Always" Rule:**
-   You **MUST** set the execution condition of **all boilerplate steps** as well as **all backend data actions** inside a Category B (Frontend) testcase to `"Always"` using `SetExecutionSettingsOfTestStep`. This guarantees setup/cleanup boundaries execute reliably, even if intermediate UI or validation steps in Case 2 fail.
+   You **MUST** set the execution condition of **all boilerplate steps** as well as **all backend data actions** inside a Frontend testcase to `"Always"` using `SetExecutionSettingsOfTestStep`. This guarantees setup/cleanup boundaries execute reliably, even if intermediate UI or validation steps in Case 2 fail.
 2. **Options Object "Always" Requirement:**
    Any Playwright or Frontend testkit create options object teststeps (such as `LocalStartOptions`, `NewBrowserContextOptions`, `StartMxFrontendTestOptions`) **MUST** have their execution setting set to `"Always"` via `SetExecutionSettingsOfTestStep`.
 3. **The Cascading Provider Law (Backward Execution Cascade):**

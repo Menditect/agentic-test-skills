@@ -26,7 +26,7 @@ When designing, building, or reviewing visual test sequences or managing the MTA
 *   **Web Browser:** Use a modern Chromium-based browser (Chrome, Edge, Opera, Brave).
 *   **Browser Zoom:** Browser window zoom must be set to **100%**.
 *   > [!IMPORTANT]
-    > Using non-standard scaling or zoom levels can cause visual offset errors in canvas click alignments during Category B (Frontend) web tests.
+    > Using non-standard scaling or zoom levels can cause visual offset errors in canvas click alignments during Frontend web tests.
 
 ---
 

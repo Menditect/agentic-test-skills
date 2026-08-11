@@ -199,7 +199,7 @@ When creating or deleting multiple objects in a single test case, you are **stri
 #### ⚙️ Teststep Execution Settings for Database Actions
 Rules for configuring execution settings for backend data actions—including database seeding (Create, Change, and Persist), database retrievals, assertions, and cleanup (Delete and Persist)—depend on the test category:
 
-1. **Category B (Frontend) & Multi-Case Backend Integration Tests:**
+1. **Frontend & Multi-Case Backend Integration Tests:**
    You **MUST** configure execution settings explicitly via `SetExecutionSettingsOfTestStep` according to these strict rules:
    * **Seeding and Teardown/Cleanup Steps (including Persist commits):**
      * `ExecutionCondition` = `"Always"` (to guarantee execution regardless of intermediate test failures, preventing database pollution).
@@ -208,7 +208,7 @@ Rules for configuring execution settings for backend data actions—including da
      * `ExecutionCondition` = `"Always"` (to guarantee the retrieve runs and reports database state on failure).
      * `ResumeExecutionAfterException` = `"Stop"` (to halt immediately if verification fails, while still capturing the state).
 
-2. **Category A Backend Unit Tests (Single-Case with Rollback enabled):**
+2. **Backend Unit Tests (Single-Case with Rollback enabled):**
    You **MUST NOT** explicitly configure execution settings for object action teststeps (Create, Change, Delete, Persist, Assert, Retrievals). Leave them to use their standard default settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`). This avoids unnecessary steps and configuration complexity. Since the entire case database transaction rolls back automatically on failure, immediately skipping remaining steps upon any exception is correct and expected.
 
 #### 🚨 Critical Persist Edge Cases & Workarounds (MUST FOLLOW):
@@ -283,7 +283,7 @@ When executing microflows via `CreateMicroflowCallTestStep` (State 6 & State 7),
 
 ## 🎯 MTA CORE MICROFLOW RETURN VALUE ASSERTIONS
 
-For Category A (Backend) testing, return values are verified by creating a typed assertion on the step key using this 2-step technical framework:
+For Backend testing, return values are verified by creating a typed assertion on the step key using this 2-step technical framework:
 
 ### Step 1: Create the Base Assertion
 First, instantiate the assertion block on your microflow step:
@@ -607,7 +607,7 @@ You can execute custom business logic microflows to calculate a value at runtime
    * `TestStepOutputKey`: `100`
    * `AttributeName`: `""` (since `SUB_CalculateDaysBetween` returns a direct scalar Integer, no attribute name is needed!)
 
-#### Use Case B: Piping Retrieved Database Attributes into Category B (Frontend) Steps
+#### Use Case B: Piping Retrieved Database Attributes into Frontend Steps
 In Frontend UI tests, you can retrieve a record from the database, extract one of its attributes, and pipe it directly as input to a Playwright action step (e.g., typing a retrieved Order ID into a search textbox):
 1. **Retrieve the Record (Step 200):** Call `CreateTestStepRetrieveObject` for `Sales.Order` ➔ Returns `TestStepKey: 200`.
 2. **Set Input Type on UI Action Step (Step 201):** Suppose Step 201 calls `ACT_Fill_TextBox_Input` with parameter `Value`. Call `SetInputTypeMicroflowParameterValueToTestStep` on the `Value` parameter.

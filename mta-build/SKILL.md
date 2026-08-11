@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.2.0"
-changes: "documented and aligned all 166 MTA MCP tools, parameter setters, and data variations"
+version: "4.2.1"
+changes: "updated terminology to Backend/Frontend, removed workflow modes, and enforced 3-step placement protocol"
 ---
 
 # MTA Build, Design, & Optimization Skill

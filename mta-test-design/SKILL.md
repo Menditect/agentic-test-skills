@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), or answering general testing/prompting questions"
-version: "4.1"
-changes: "unified track State Headers, and refined void microflow warnings to prevent fatigue"
+version: "4.1.1"
+changes: "updated terminology to Backend/Frontend, removed workflow modes, and enforced 3-step placement protocol"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -37,7 +37,11 @@ When active under the macro state `STATE_BUILD_PLANNING`, track your current pla
 You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan:
 
 ### 1. `PLAN_STEP_1: Placement & Specs Alignment` (Micro-Step 2.1)
-*   **Action**: capturing placement (Target Configuration, Test Suite) and functional objectives (Objective, Preconditions, Expected Results) before drafting step actions.
+*   **Action**: Capturing placement using the **Mandatory 3-Step Placement Protocol** (Config Scan ➔ Suite Scan ➔ Case Placement) and functional objectives (Objective, Preconditions, Expected Results) before drafting step actions.
+*   **Mandatory 3-Step Placement Protocol**: When assisting with placement, you **MUST** follow these three interactive steps sequentially:
+    1.  *Test Configuration Scan:* Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`. Present options and ask user to select or create one. **NEVER assume a Test Configuration.**
+    2.  *Test Suite Scan:* Call `GetTestSuites` for the selected configuration. Present options and ask user to select or create one.
+    3.  *Test Case Name & Placement:* Call `GetTestCases` for the selected suite. Present existing cases and ask user to select or specify a new Test Case name and position.
 *   **Vague Onboarding Guardrail:** If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
 *   **Model Audit Analysis**: Run `mxcli` (such as `SHOW MICROFLOWS -m <Module>` or `SHOW PAGES -m <Module>`) to inspect the target element's actual implementation and retrieve its MTF Typology.
 *   **Intended Purpose Verification**: Establish the intended use of the application. If the intended use or target component is unclear, **do NOT guess or assume**. Stop and ask the user to clarify.

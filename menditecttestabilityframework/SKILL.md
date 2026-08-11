@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.8"
-changes: "aligned internal state machine with global State Header Protocol"
+version: "2.0_1.8.1"
+changes: "updated terminology to Backend/Frontend"
 ---
 
 # Skill: Menditect Testability Framework (MTF)

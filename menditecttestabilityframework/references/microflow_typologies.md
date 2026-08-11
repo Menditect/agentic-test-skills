@@ -60,7 +60,7 @@ graph TD
         *   **Rule (`RULE`)**: Evaluates complex conditions, returning a Boolean or Enumeration.
 
 > [!TIP]
-> **Return Values for Testability**: Unit microflows (such as `FTN_`, `VAL_`, `OPR_`) should always return a value (e.g., returning the mutated object, the calculated decimal, or a validation boolean). This makes it trivial to assert on the returned outcome directly in Category A unit tests using `Assert Microflow Return Value`, verifying business invariants and logical branches reliably.
+> **Return Values for Testability**: Unit microflows (such as `FTN_`, `VAL_`, `OPR_`) should always return a value (e.g., returning the mutated object, the calculated decimal, or a validation boolean). This makes it trivial to assert on the returned outcome directly in Backend unit tests using `Assert Microflow Return Value`, verifying business invariants and logical branches reliably.
 
 ---
 

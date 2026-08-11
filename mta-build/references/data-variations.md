@@ -7,7 +7,7 @@ This reference defines the sequence, parameters, and naming rules for creating d
 > [!TIP]
 > **⚡ SPEED OPTIMIZATION: Headless Backend Case for Frontend Variations**
 > If you have extensive data-driven variations (e.g., testing 5+ input validation or calculation scenarios on a form), do **NOT** run them all via browser screens. Doing so is extremely slow and fragile.
-> Instead, create a separate **Category A (Backend) Test Case** to execute those variations directly and headlessly via the underlying microflows. Keep the Category B (Frontend) UI testcase restricted to a **single "Happy Path"** to verify widget rendering and wiring. (See [placement-and-lifecycle.md](placement-and-lifecycle.md) for full architecture and trade-offs).
+> Instead, create a separate **Backend Test Case** to execute those variations directly and headlessly via the underlying microflows. Keep the Frontend UI testcase restricted to a **single "Happy Path"** to verify widget rendering and wiring. (See [placement-and-lifecycle.md](placement-and-lifecycle.md) for full architecture and trade-offs).
 
 ---
 

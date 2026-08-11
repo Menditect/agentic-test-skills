@@ -43,15 +43,15 @@ When both risk profiles have been scored, locate the intersection to determine t
 
 | Typology | Technical Risk | Business Risk | Recommended MTF Level | MTA Category | Target Outcome |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `VAL_` / `RULE_` | ACID/Data | Compliance / Financial | **Unit Test** | **Category A (Backend)** | Direct microflow call with boundary parameters. Assert precise outcomes. |
-| `OPR_` / `FTN_` | ACID/Data | Financial / Operational | **Unit Test** | **Category A (Backend)** | Verify memory attribute modifications or calculation formulas. |
-| `ORC_` / `CMT_` | Control Flow | Operational / Revenue | **Integration Test** | **Category A (Backend)** | Execute parent process. Assert the **TestLogger** footprint to verify called units. |
-| `PUB_` / `CON_` | Boundary | Operational | **Integration / API Test** | **Category A (Backend)** | Verify request payload mapping and responses using mock services. |
-| `ACT_` / Pages | Client Cache | Brand / Drop-off | **Functional UI Test** | **Category B (Frontend)** | Open Playwright, type, click, and assert visual outcomes on pages. |
+| `VAL_` / `RULE_` | ACID/Data | Compliance / Financial | **Unit Test** | **Backend** | Direct microflow call with boundary parameters. Assert precise outcomes. |
+| `OPR_` / `FTN_` | ACID/Data | Financial / Operational | **Unit Test** | **Backend** | Verify memory attribute modifications or calculation formulas. |
+| `ORC_` / `CMT_` | Control Flow | Operational / Revenue | **Integration Test** | **Backend** | Execute parent process. Assert the **TestLogger** footprint to verify called units. |
+| `PUB_` / `CON_` | Boundary | Operational | **Integration / API Test** | **Backend** | Verify request payload mapping and responses using mock services. |
+| `ACT_` / Pages | Client Cache | Brand / Drop-off | **Functional UI Test** | **Frontend** | Open Playwright, type, click, and assert visual outcomes on pages. |
 
 > [!WARNING]
 > **Avoid the "Ice Cream Cone" Anti-Pattern**: 
-> In low-code applications, it is tempting to build primarily high-level UI tests (Category B) because they are visual and simple to script. However, UI tests are slow, expensive, and fragile. Always shift testing down the pyramid to **Unit and Integration tests (Category A)** for core calculations, rules, and process workflows. Use UI tests *only* for frontend-specific risks like visibility, navigation, and custom widgets.
+> In low-code applications, it is tempting to build primarily high-level UI tests (Frontend) because they are visual and simple to script. However, UI tests are slow, expensive, and fragile. Always shift testing down the pyramid to **Unit and Integration tests (Backend)** for core calculations, rules, and process workflows. Use UI tests *only* for frontend-specific risks like visibility, navigation, and custom widgets.
 
 > [!TIP]
 > **Pragmatic Best-Effort Testing for Legacy Apps**: 
@@ -80,7 +80,7 @@ When both risk profiles have been scored, locate the intersection to determine t
        (Yes)        (No)                       (Yes)        (No)
          │           │                           │           │
          ▼           ▼                           ▼           ▼
-    Category B   Category A                  Category A   Verify if test
+     Frontend     Backend                     Backend     Verify if test
      (UI Test)  (API/Backend)             (Unit/Integration)  is needed
 ```
 
@@ -92,7 +92,7 @@ When outputting your risk analysis in `STATE_RISK_ASSESSMENT`, you MUST present 
 
 | Changed Element | Typology | Technical Risk Profile | Business Risk Profile | Recommended Test Level | MTA Category |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[Module].[Element_Name]` | `[ACT/ORC/VAL]` | *[e.g., UI Sync / Page Render]* | *[e.g., User Abandonment / Brand]* | **[Unit/Integration/UI]** | **Category [A/B]** |
+| `[Module].[Element_Name]` | `[ACT/ORC/VAL]` | *[e.g., UI Sync / Page Render]* | *[e.g., User Abandonment / Brand]* | **[Unit/Integration/UI]** | **[Backend/Frontend]** |
 
 ---
 
@@ -132,7 +132,7 @@ When deciding between Menditect Test Automation (MTA) and free/open-source tools
 | **AI Test Generation** | **None**: All tests must be designed and built manually. | **Generic LLM**: Standard code generation prompts, lacking real-time model and schema context. | **Native AI-Assisted (MAIA)**: Auto-generates fully configured test steps, assertions, and data matrices natively. |
 | **Mendix Version Support** | **Highly Coupled**: Module version must be upgraded and maintained alongside the Mendix runtime version. | **Fragile**: Highly sensitive to underlying DOM/class variations across different Mendix releases. | **All Major Versions (9, 10, 11)**: Fully native support across Mendix 9, 10, and 11, shielding test code from platform upgrades. |
 | **Mendix DOM Awareness** | *N/A (No UI execution capability)* | **Blind**: Selectors are bound to fragile HTML class names (`.mx-name-textBox1`) that change across Mendix versions. | **Aware**: Targets widgets by their logical Mendix model names. Adapts selector translations under the hood automatically during platform upgrades. |
-| **Test Seeding Velocity** | **Manual/Custom**: Must write custom microflows to create/delete test objects in the database, bloating the project model. | **Slow & Fragile**: Must navigate the UI to seed data, or call exposed custom REST APIs (which creates security risks). | **Instant & Hybrid**: Category A database-level steps (Create, Change, Retrieve, Persist, Microflows) seed data instantly, followed immediately by Category B browser steps. |
+| **Test Seeding Velocity** | **Manual/Custom**: Must write custom microflows to create/delete test objects in the database, bloating the project model. | **Slow & Fragile**: Must navigate the UI to seed data, or call exposed custom REST APIs (which creates security risks). | **Instant & Hybrid**: Backend database-level steps (Create, Change, Retrieve, Persist, Microflows) seed data instantly, followed immediately by Frontend browser steps. |
 | **Data-Driven Matrix** | **None**: Must duplicate test microflows or write complex iteration loops inside microflows. | **External Scripting**: Requires writing complex JSON/CSV parsing and parallel loop code in JavaScript/TypeScript. | **Native Matrix**: Define a test sequence once, and map it to a **Data Variation Matrix** without copying steps or model files. |
 | **Failure Diagnostics** | **Basic**: Stack traces of Java exceptions from microflows inside the Mendix console. | **Standard**: Browser screenshot or trace file. No visibility into what happened inside the Mendix server. | **Deep Integration**: Correlates browser failure screenshots directly with server-side microflow execution logs, entity changes, and TestLogger output. |
 | **Model Bloat Impact** | **High**: Each new test requires building and maintaining `.mpr` microflows, slowing down startup, deployment, and builds. | **Low**: Code sits outside Mendix. However, maintenance cost is high due to DOM fragility. | **Zero**: Tests are stored and managed outside the `.mpr` application model, keeping the core runtime lean and fast. |
@@ -149,15 +149,15 @@ When deciding between Menditect Test Automation (MTA) and free/open-source tools
 #### Case 2: Multi-Row Grid Sorting & Complex Calculations (MTA vs. Mendix Unit Testing Module)
 *   **The Scenario**: You need to verify a billing validation microflow (`VAL_CalculateBilling`) across 15 different customer tiers, VAT rates, and discount conditions.
 *   **The Unit Testing Module Experience**: You must create 15 individual test microflows, or write a complex microflow that sets up a massive in-memory list, loops through it, handles exceptions manually, and asserts. This pollutes your `.mpr` project file with test boilerplate, slowing down your deployment pipeline.
-*   **The MTA Advantage**: You build a single MTA Category A test step calling `VAL_CalculateBilling`. You then define a **Data Variation Matrix** with 15 rows in the MTA UI. MTA runs the step 15 times with different data vectors, tracking results, metrics, and failures separately. The Mendix project file remains 100% clean of test-specific microflows.
+*   **The MTA Advantage**: You build a single MTA Backend test step calling `VAL_CalculateBilling`. You then define a **Data Variation Matrix** with 15 rows in the MTA UI. MTA runs the step 15 times with different data vectors, tracking results, metrics, and failures separately. The Mendix project file remains 100% clean of test-specific microflows.
 
 #### Case 3: Hybrid checkout verification (MTA vs. Playwright)
 *   **The Scenario**: You want to test the checkout page. To load the page, the user must have an active shopping cart containing 5 distinct items with specific stock quantities, discount vouchers, and an active account with a pre-validated shipping address.
 *   **The Playwright Experience**: To seed this state in Playwright, you must either:
     1.  Script the browser to search, select, and add all 5 items to the cart, apply the voucher, and fill the shipping form (taking ~30–45 seconds per test run, with high risk of timeout flakiness).
     2.  Write a custom REST API in your Mendix app that receives a JSON payload and generates the cart in the database (introducing security risk and custom backend code to maintain).
-*   **The MTA Advantage**: MTA combines **Category A and Category B** in one seamless execution.
-    - **Step 1 (Category A - Headless)**: Instantly creates the customer account, coupon, and cart records directly in the database using high-speed, headless microflows/object creation steps (takes < 100ms).
-    - **Step 2 (Category B - Browser)**: Instructs the browser to open directly at the checkout URL, verifying the page state, dynamic fields, and user interactions (takes 2 seconds).
+*   **The MTA Advantage**: MTA combines **Backend and Frontend** in one seamless execution.
+    - **Step 1 (Backend - Headless)**: Instantly creates the customer account, coupon, and cart records directly in the database using high-speed, headless microflows/object creation steps (takes < 100ms).
+    - **Step 2 (Frontend - Browser)**: Instructs the browser to open directly at the checkout URL, verifying the page state, dynamic fields, and user interactions (takes 2 seconds).
     - This hybrid approach achieves unmatched execution speed and absolute stability.
 

@@ -25,9 +25,9 @@ Before any MCP tool can lookup test configurations, suites, or cases, the Mendix
 
 ---
 
-## 🎨 Part 2: Pages & Widgets Ingestion (Frontend Category B Guide)
+## 🎨 Part 2: Pages & Widgets Ingestion (Frontend Guide)
 
-MTA cannot automatically discover or guess page elements or widgets. To enable Frontend Category B locators and step mapping, you **MUST** configure page/widget ingestion manually:
+MTA cannot automatically discover or guess page elements or widgets. To enable Frontend locators and step mapping, you **MUST** configure page/widget ingestion manually:
 
 ### 1. Add Descriptive Page Classes in Mendix Studio Pro
 To ensure Playwright can reliably locate and target your inputs, buttons, and grid rows, make pages highly testable:

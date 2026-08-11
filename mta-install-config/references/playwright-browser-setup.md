@@ -1,10 +1,10 @@
 # Playwright Browser Hosting & Test Kit Configuration Guide
 
-This guide describes how to configure your Mendix project to host and execute Playwright-driven Frontend (Category B) Tests with MTA.
+This guide describes how to configure your Mendix project to host and execute Playwright-driven Frontend Tests with MTA.
 
 > [!NOTE]
-> The Playwright Connector and Frontend Test Kit are **strictly required for Frontend (Category B) testing**. 
-> If you are only running Backend (Category A) microflow or unit tests, you can completely skip this setup.
+> The Playwright Connector and Frontend Test Kit are **strictly required for Frontend testing**. 
+> If you are only running Backend microflow or unit tests, you can completely skip this setup.
 
 ---
 
@@ -69,5 +69,5 @@ To verify that the Playwright browser setup step was successful, complete this c
 1.  **Java ClassPath Audit:** Verify that your project's `/userlib` folder contains exactly **one** `driver-bundle-{version}.jar` and that its version corresponds exactly to the requirement in your Playwright Connector's marketplace properties.
 2.  **No-Crash App Startup:** Compile and boot your App Under Test in Studio Pro. Verify that the console startup logs show **no** Java execution or classloader failures such as:
     *   `java.lang.ClassNotFoundException: com.microsoft.playwright...`
-3.  **Local Headless Spawn Test:** Run a basic local Category B test case. Verify that your system launches a background browser process (e.g. `node.exe` with Playwright scripts) and executes without throwing a platform/operating-system permissions block.
+3.  **Local Headless Spawn Test:** Run a basic local Frontend test case. Verify that your system launches a background browser process (e.g. `node.exe` with Playwright scripts) and executes without throwing a platform/operating-system permissions block.
 

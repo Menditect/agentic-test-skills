@@ -339,7 +339,7 @@ To automate selecting "Premium Coverage" from a ComboBox named `comboBoxInsuranc
 ---
 
 ### 6. Verification Strategy: Frontend vs. Backend (Trade-off & Design Choice)
-When designing the assertion/verification step of a Category B (Frontend) test, you MUST understand and offer the user the choice between two distinct verification models in the execution plan. It depends a lot on the usecase:
+When designing the assertion/verification step of a Frontend test, you MUST understand and offer the user the choice between two distinct verification models in the execution plan. It depends a lot on the usecase:
 
 #### Option A: Frontend UI Assertion
 Verify the outcome directly on the frontend screen (e.g., locating and checking a row in a DataGrid2, or reading a textbox value).
@@ -356,4 +356,4 @@ Verify the outcome by retrieving the object from the database using MTA backend 
 > Always present this trade-off clearly to the user during the build planning state (`STATE_BUILD_PLANNING`) so they can make an informed, use-case-specific choice! For complex data tables, strongly recommend **Option B (Backend Assertion)** to maximize execution speed and script maintainability.
 > 
 > **⚡ PRO-TIP FOR DATA VARIATIONS:**
-> If testing multiple inputs or validation variations on a form, do **NOT** automate these variations via the frontend. Use the **Headless Backend Variation Pattern** (create a separate Category A (Backend) test case to execute the validations directly and headlessly via the underlying microflows). Keep the frontend UI test case focused purely on a single happy path. (See [placement-and-lifecycle.md](placement-and-lifecycle.md) for details).
+> If testing multiple inputs or validation variations on a form, do **NOT** automate these variations via the frontend. Use the **Headless Backend Variation Pattern** (create a separate Backend test case to execute the validations directly and headlessly via the underlying microflows). Keep the frontend UI test case focused purely on a single happy path. (See [placement-and-lifecycle.md](placement-and-lifecycle.md) for details).

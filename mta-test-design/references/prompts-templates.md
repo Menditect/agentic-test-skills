@@ -8,27 +8,22 @@ This reference file contains standardized, copy-pasteable build templates optimi
 > ### 🛡️ THE MTA HANDOFF VERIFICATION GATE & PRE-FILLING RULE
 > Before compiling or outputting any build prompt using these templates, the Test Design agent **MUST halt** and present the user with the Interactive Selection Gate:
 > 1. **Test Category Selection:** Ask the user to confirm the category:
->    * *Category A (Backend):* For direct microflow testing without a browser.
->    * *Category B (Frontend):* For functional page and widget testing in a browser.
+>    * *Backend:* For direct microflow testing without a browser.
+>    * *Frontend:* For functional page and widget testing in a browser.
 >    * *Recommendation:* Pre-suggest the category determined during the Test Strategy phase.
-> 2. **Workflow Mode Selection:** Ask the user to select their desired build workflow:
->    * *Express with Build Plan:* High speed. HALTs to approve specs and steps list before building.
->    * *Full Express Mode:* Maximum speed. HALTs only once to approve specs.
->    * *Guided Mode:* Full control. HALTs at every step and binding during construction.
-> 3. **Placement Discovery Setup:** Ask the user to choose their placement path:
->    * *Direct Path:* User inputs the exact target Configuration, Suite, and desired Test Case Name.
->    * *Scan/Explore Path:* Proactively ask the Test Design agent to run MTA scan tools right now to list available active configurations and suites so they can pick.
->    * *Auto-Default Path:* The prompt instructs the builder to automatically create a default suite named `[ModuleName]_Suite` under the default active configuration.
->    * *Builder Discovery Path (TBD):* Specify placement as `"TBD (Scan and confirm during build)"`. This instructs the build skill to run its standard interactive discovery (Phase 0) when it receives the prompt.
+> 2. **3-Step Placement Protocol:** Execute the mandatory 3-step placement discovery sequence:
+>    * *Step 1: Test Configuration Scan:* Call `GetTestConfigurationsForApplicationKey` or `GetApplicationForApplicationInstanceToken`. Present options and ask user to select or create one. **NEVER assume a Test Configuration.**
+>    * *Step 2: Test Suite Scan:* Call `GetTestSuites` for the selected configuration. Present options and ask user to select or create one.
+>    * *Step 3: Test Case Placement:* Call `GetTestCases` for the selected suite. Present existing cases and ask user to select or specify a new Test Case name and position.
 > 
-> **Zero-Halt Handoff:** Once selections are made, you **MUST** pre-fill these exact parameters into the metadata block of the generated prompt (e.g. `Target Configuration`, `Target Suite`, `MTA Category`, `Workflow Mode`). This removes vague placeholders, enabling a seamless, zero-halt bridge directly into the `mta-build` skill.
+> **Zero-Halt Handoff:** Once selections are made, you **MUST** pre-fill these exact parameters into the metadata block of the generated prompt (`Target Configuration`, `Target Suite`, `MTA Category`). This removes vague placeholders, enabling a seamless, zero-halt bridge directly into the `mta-build` skill.
 
 > [!IMPORTANT]
 > **Low-Code Custom-Logic Rule**: When generating build prompts using these templates, you **MUST** ensure that the objectives and chronological plans focus *solely* on verifying unique, custom business rules, math formulas, validations, or custom UI-specific visibility constraints. Under no circumstance should you include test steps or assertions that verify standard Mendix platform features (e.g., verifying that standard layout templates render, or checking if standard Committer steps write to the database).
 
 ---
 
-## 🧪 Template 1: Unit Test (MTA Category A - Backend)
+## 🧪 Template 1: Unit Test (Backend)
 
 Use this template when testing deterministic business logic, calculations, or validations (`VAL_`, `RULE_`, `FTN_`, `OPR_`).
 
@@ -37,11 +32,10 @@ Use this template when testing deterministic business logic, calculations, or va
 
 ## 1. Metadata
 *   **Target Application:** `[AppName]`
-*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
-*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Target Configuration:** `[UserSelectedTestConfig]`
+*   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
-*   **MTA Category:** Category A (Backend)
-*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
+*   **MTA Category:** Backend
 
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
@@ -67,7 +61,7 @@ Use this template when testing deterministic business logic, calculations, or va
 
 ### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases
 
-To achieve extremely high coverage in Category A Unit Tests, you **MUST** formulate build plans and prompts for multiple test cases covering these critical execution profiles.
+To achieve extremely high coverage in Backend Unit Tests, you **MUST** formulate build plans and prompts for multiple test cases covering these critical execution profiles.
 
 > [!IMPORTANT]
 > **Data Variation Focus & Risk Prioritization**: When defining and designing data variations, always focus strictly on the relevant attributes that directly change the execution path or logical outcome of the code. Avoid wasting variations on static or non-impactful attributes. If applicable, prioritize and expand variations for attributes carrying high business value or operational risk (such as billing calculations, tax rates, or regulatory limits).
@@ -89,13 +83,13 @@ You **MUST** cover these critical execution profiles:
 
 ---
 
-## 🔗 Template 2: Integration Test (MTA Category A - Backend)
+## 🔗 Template 2: Integration Test (Backend)
 
 Use this template when testing multi-step processes or transactional orchestrations (`ORC_`, `CMT_`, `VAL_ORC_`) utilizing **TestLogger** foot-printing.
 
 > [!IMPORTANT]
-> **🧠 THE IN-MEMORY PREFERENCE PRINCIPLE (CATEGORY A):**
-> - **Preferred Standard:** For all Category A (Backend) tests, the **highly preferred method is to run everything entirely in memory** without database writes (`Persist` steps) or database cleanups. 
+> **🧠 THE IN-MEMORY PREFERENCE PRINCIPLE (BACKEND):**
+> - **Preferred Standard:** For all Backend tests, the **highly preferred method is to run everything entirely in memory** without database writes (`Persist` steps) or database cleanups. 
 > - **Seeding & Setup:** Create required objects in memory using `Create Object` steps, link them, and pass them directly as input parameters to the target microflow. Do **NOT** use `Persist` steps unless:
 >   1. The target microflow or any of its sub-microflows explicitly performs a **Database Retrieve** (`[By Database]`) that cannot be satisfied by passing in-memory object lists or associations.
 >   2. You need to pass state across separate test cases in the same suite (since in-memory state is isolated at the individual Test Case boundary).
@@ -106,11 +100,10 @@ Use this template when testing multi-step processes or transactional orchestrati
 
 ## 1. Metadata
 *   **Target Application:** `[AppName]`
-*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
-*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Target Configuration:** `[UserSelectedTestConfig]`
+*   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
-*   **MTA Category:** Category A (Backend)
-*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
+*   **MTA Category:** Backend
 
 #### 1. High-Level Specifications
 *   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
@@ -138,7 +131,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 
 ---
 
-## 🖥️ Template 3: Functional UI Test (MTA Category B - Frontend)
+## 🖥️ Template 3: Functional UI Test (Frontend)
 
 Use this template when testing screen layouts, button clicks, client-cache synchronization, and navigational flows (`ACT_` triggered from pages).
 
@@ -147,11 +140,10 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 
 ## 1. Metadata
 *   **Target Application:** `[AppName]`
-*   **Target Configuration:** `[UserSelectedTestConfig | TBD (Scan and confirm during build)]`
-*   **Target Suite:** `[UserSelectedTestSuite | TBD (Scan and confirm during build)]`
+*   **Target Configuration:** `[UserSelectedTestConfig]`
+*   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
-*   **MTA Category:** Category B (Frontend)
-*   **Workflow Mode:** `[Express with Build Plan | Full Express | Guided]`
+*   **MTA Category:** Frontend
 
 #### 1. High-Level Specifications
 *   **Case 1: SETUP**
@@ -183,9 +175,9 @@ Use this template when testing screen layouts, button clicks, client-cache synch
     1.  Call `Teardown_Playwright`.
 ```
 
-### 🖥️ Frontend Risk-Focus Strategy for Category B Tests
+### 🖥️ Frontend Risk-Focus Strategy for Frontend Tests
 
-To ensure that frontend tests are highly valuable and not just duplicating backend logic, the prompts for Category B tests **MUST** focus strictly on aspects and risks unique to the frontend that *cannot* be verified via direct backend microflow or unit tests. These include:
+To ensure that frontend tests are highly valuable and not just duplicating backend logic, the prompts for Frontend tests **MUST** focus strictly on aspects and risks unique to the frontend that *cannot* be verified via direct backend microflow or unit tests. These include:
 
 1.  **Conditional Visibility & Editability**:
     - Verifying that fields, containers, or buttons are correctly hidden, visible, enabled, or disabled on screen based on the user's role or other data selections (e.g., verifying a "Submit" button is disabled until all required fields are filled).
@@ -222,11 +214,11 @@ To help new users get started successfully with MTA and the AI coding assistant,
 
 2.  **For Backend Unit Testing:**
     > "I want to build a backend unit test in MTA using App Instance Token '[AppInstanceToken]'. Generate boundary tests for microflow '[ModuleName].[MicroflowName]'"
-    *   *Why this works:* It immediately locks Category A (Backend), specifies the target element, and triggers the automated boundary-value analysis (BVT) coverage guidelines.
+    *   *Why this works:* It immediately locks Backend, specifies the target element, and triggers the automated boundary-value analysis (BVT) coverage guidelines.
 
 3.  **For Frontend Functional Testing (Happy Paths):**
     > "I want to build a frontend happy flow in MTA using App Instance Token '[AppInstanceToken]'. Build a test script to '[achieve functional goal X]'"
-    *   *Why this works:* It establishes the environment and token, locks Category B (Frontend), and provides the functional user story for UI actions and assertions.
+    *   *Why this works:* It establishes the environment and token, locks Frontend, and provides the functional user story for UI actions and assertions.
 
 ---
 
@@ -236,15 +228,15 @@ Based on the capabilities of the MTA skills, users can also use these advanced p
 
 #### 🧪 1. For Microflows returning complex Calculations or Decisions:
 > "I want to build a backend test case for microflow [ModuleName].[MicroflowName] with data variations. Here is the spec table: [paste data matrix/table]"
-*   *Outcome:* Triggers the creation of a Category A (Backend) data-driven test case using the "In-Memory Preference Principle" and automatically sets up duplicated variations with names and descriptions.
+*   *Outcome:* Triggers the creation of a Backend data-driven test case using the "In-Memory Preference Principle" and automatically sets up duplicated variations with names and descriptions.
 
 #### 🛠️ 2. For Page Security and Dynamic Visibility Checks:
 > "Build a frontend test case to verify that the button '[ButtonCaption]' on page [ModuleName].[PageName] is only visible to user role '[RoleName]'"
-*   *Outcome:* Locks Category B (Frontend), targets the specific layout rule, and builds the dual-user setup/execution step sequence.
+*   *Outcome:* Locks Frontend, targets the specific layout rule, and builds the dual-user setup/execution step sequence.
 
 #### 📈 3. For Complex Multi-Step Integration Flows (Transactional):
 > "I need an integration test for the orchestration microflow [ModuleName].[OrchestrationMicroflowName]. Show me a plan using TestLogger footprints first."
-*   *Outcome:* Instructs the AI to build a Category A transactional integration test and map the exact expected sequence of sub-microflow calls.
+*   *Outcome:* Instructs the AI to build a Backend transactional integration test and map the exact expected sequence of sub-microflow calls.
 
 #### 🐛 4. For Debugging Runtime Failures:
 > "My test case '[TestCaseName]' failed. Here is the execution log output: [paste log snippet]. Help me troubleshoot and fix the test case."
