@@ -53,15 +53,26 @@ Use this template when testing deterministic business logic, calculations, or va
     *   *Type*: Retrieve Object
     *   *Filter Attribute*: `[ModuleName].[EntityName].[AttributeName]` = `'TEST_VAL'` for valid object variations, or `'NON_EXISTENT'` for empty/NULL object variations.
     *   *Execution*: `"None"`, `"_Stop"`
-3.  **Step 3**: Execute target microflow.
+3.  **Step 3 (Retrieve / Microflow Output Object Count Assertion)**: Assert expected object count on Step 2 output before passing to downstream step.
+    *   *Type*: Assert Object Count
+    *   *Target Step*: Step 2
+    *   *Operator*: `"Equals"`
+    *   *Value*: `1` (for single object) or `N` (for expected list length)
+    *   *Execution*: `"None"`, `"_Stop"`
+4.  **Step 4**: Execute target microflow.
     *   *Type*: Call Microflow
     *   *Microflow*: `[ModuleName].[ElementName]`
     *   *Parameters*: Pipe parameters from Step 1 or Step 2.
     *   *Execution*: `"None"`, `"_Stop"`
-4.  **Step 4**: Assert returned output.
+5.  **Step 5**: Assert returned output.
     *   *Type*: Assert Microflow Return Value
     *   *Assertion*: Assert that return value equals `[Expected Value]`.
     *   *Execution*: `"None"`, `"_Stop"`
+
+#### 3. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
+*   **Applied Pattern:** `Retrieve / Microflow Output Object Count Assertion Pattern`
+    *   **Target Step(s):** Step 2 (Retrieve Object) -> Step 3 (Assert Object Count = 1) -> Step 4 (Call Microflow)
+    *   **Explanation for User:** Asserting that Step 2 returns exactly 1 object before passing it as input parameter to Step 4 prevents downstream silent null pointer exceptions, unhandled errors, and confusing execution failures.
 ```
 
 ### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases

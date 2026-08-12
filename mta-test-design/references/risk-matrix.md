@@ -37,6 +37,17 @@ Focus testing strictly on **custom business constraints**:
 
 ---
 
+### 🛡️ 1.2 Downstream Input Object Consumption Risk & Object Count Assertions
+
+When designing test steps where an object or list produced by a `Retrieve Object` step or returned by a `Microflow Call` step is passed as input to a subsequent test step (e.g. Microflow parameter, Change Object, Delete Object, Persist Object):
+
+| Risk Scenario | Potential Downstream Failure | Mandatory MTA Pattern & Mitigation |
+| :--- | :--- | :--- |
+| **Missing / Null Retrieved Record** | Downstream microflow fails with unhandled Null Pointer Exception or silent logic skip. | **`Assert Object Count` (=1)**: Insert an `Assert Object Count` step immediately following Retrieve before passing object downstream. |
+| **Unexpected List Result Size** | Downstream step processes wrong number of items or fails list size guardrails. | **`Assert Object Count` (=N)**: Insert an `Assert Object Count` step immediately following Retrieve/Microflow call before passing list downstream. |
+
+---
+
 ## 📐 2. The Alignment Matrix
 
 When both risk profiles have been scored, locate the intersection to determine the **MTF Test Level** and **MTA Category**:

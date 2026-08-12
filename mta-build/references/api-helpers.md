@@ -441,13 +441,14 @@ If a microflow `Sales.ProcessOrder` returns an `Order` object, and you want to a
      - `SelectObjectForRetrieveKey`: `800`
      - `TestStepOutputKey`: 400 (links the retrieve step directly to the microflow execution step 400 in memory).
 
-5. **Programmatically Assert Object Count:**
-   Verify that exactly `1` object was successfully retrieved:
+5. **Programmatically Assert Object Count (MANDATORY DOWNSTREAM INPUT BEST PRACTICE):**
+   Verify that exactly `1` object (or expected count $N$ for lists) was successfully returned/retrieved before downstream step consumption:
+   - *Best Practice Rule:* Whenever an object/list retrieved or returned by a microflow is consumed by a downstream step, an `Assert Object Count` step MUST be created immediately following the producer step to prevent downstream silent null pointer exceptions.
    - Call `CreateAssertObjectCount(TestStepKey = 401)` ➔ Returns `AssertObjectCountKey: 700`.
    - Call `SetAssertObjectCountProperties` with:
      - `AssertObjectCountKey`: `700`
      - `ComparisonOperator`: `"Equals"`
-     - `ExpectedObjectCount`: `1`
+     - `ExpectedObjectCount`: `1` (or N for list inputs)
      - `ActionFailedAssert`: `"ContinueTestRun"` (🚨 **CRITICAL RULE:** The default behavior for failed assertions is to continue execution. Only stop execution if explicitly requested in the prompt or by the user).
 
 6. **Programmatically Assert Attributes Downstream (AALC):**

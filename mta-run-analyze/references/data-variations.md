@@ -101,7 +101,7 @@ For complex matrices (3+ scenarios):
     *   *Object Attribute Comparisons:* Call `SetStringAssertAttributeValueCompare`, `SetBooleanAssertAttributeValueCompare`, etc. with that variation's unique assertion key.
     *   *Object Counts:* Call `SetAssertObjectCountProperties` passing that variation's unique `AssertObjectCountKey`, the comparison operator, expected count, and failed action.
     *   *Exceptions:* Call `SetAssertExceptionProperties` passing that variation's unique `AssertExceptionKey`, expected result, comparison string, and actions.
-    *   *Validation Feedback Compare:* Call `SetAssertValidationFeedbackMessageCompareProperties` with that variation's unique `AssertValidationFeedbackMessageCompareKey`.
+    *   *Validation Feedback Compare:* Call `SetAssertValidationFeedbackMessageCompareProperties` with that variation's unique `AssertValidationFeedbackMessageCompareKey`. **(Happy Path Variation Pattern):** For variations where NO validation message is expected (happy path items), set `ComparisonOperator = "NotEquals"` and `ComparisonString = "__NO_VALIDATION_MESSAGE__"` (or any impossible dummy text) so the variation passes cleanly without requiring an error message to be present.
     *   *Validation Feedback Count:* Call `SetAssertValidationFeedbackMessageCountProperties` with that variation's unique `AssertValidationFeedbackMessageCountKey`.
 11. **Verify Sync:** Call `GetTestCaseDataVariationsDetails` again to verify all variation values are correctly set and synchronized.
 

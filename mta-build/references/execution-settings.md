@@ -31,8 +31,8 @@ Use this decision tree to determine the correct settings for any Test Case or Te
        └─► Set Step ExecutionCondition to "None" (standard default), ResumeExecutionAfterException to "Stop" (Note: If any standard UI interaction step functions as an assertion, it should default to continuing on failure unless explicitly requested to stop).
 
 3. For any Teststep inside Backend Unit Tests (Single-Case with Rollback enabled):
-   ├─► **STRICT RULE:** ALL test steps inside a Backend Unit Test (including Create Object, Retrieve, Change, Delete, Call Microflow, and Assert steps) **MUST** use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`.
-   └─► **PROHIBITION:** You are strictly prohibited from calling `SetExecutionSettingsOfTestStep` to set Backend Unit Test setup steps to `"Always"` or `"_Continue"`. Since the entire testcase rolls back on failure (`RollbackTcseAfterExecution = "Yes"`), skipping downstream steps immediately upon any step failure is the required behavior.
+   ├─► Do we need to configure execution settings for object actions (Create, Change, Delete, Persist, Assert, Retrievals)?
+   └─► **By Default, No!** All backend data actions inside a unit test use the default execution settings (`ExecutionCondition` = `"None"`, `ResumeExecutionAfterException` = `"Stop"`) by default. You do NOT need to call `SetExecutionSettingsOfTestStep` on them unless the user explicitly specifies custom execution settings. Since the entire testcase rolls back on failure, skipping downstream steps immediately is expected and desired.
 
 ---
 
