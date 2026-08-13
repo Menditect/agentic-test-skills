@@ -535,4 +535,28 @@ The workflow for establishing Test Suite Data Variations symmetrically mirrors t
 > *   **Local Variation Precedence & Scope Isolation:** If a testcase has local variations enabled (`EnableTestCaseDataVariations`), it is completely decoupled from the Test Suite's global variations. Its steps will **only** run against its local test case variation matrix, completely ignoring the suite-level variations. No Cartesian product expansion or overlapping parameter blending is supported.
 > *   **Global Variation Scope:** Only test cases whose step attributes/assertions are explicitly registered at the Test Suite level (using `AddTestSuiteVariationItem*`) are driven by the Test Suite's global variations.
 
+---
+
+## 🔍 STATE_SMOKE_AUDIT: Data Variation Matrix Verification Workflow
+
+During `STATE_SMOKE_AUDIT` (State 4), you **MUST** perform an itemized, cell-by-cell audit of all registered Data Variations against Section 7 (`Data Variation Matrix`) of the saved Execution Plan.
+
+### 📋 Step-by-Step Audit Execution Protocol:
+1. **Retrieve Saved Execution Plan:** Call `GetExecutionPlan(ExecutionPlanKey)` to obtain the approved Section 7 Data Variation Matrix.
+2. **Retrieve Server Variation Details:**
+   - For Test Case variations: Call `GetTestCaseDataVariationsDetails(TestCaseKey)`.
+   - For Test Suite variations: Call `GetTestSuiteDataVariationsDetails(TestSuiteKey)`.
+3. **Traverse the JSON Tree & Compare Every Item:**
+   For every scenario/variation present in the JSON tree (`TCVT_TestCaseVariations` or `TSVT_TestSuiteVariations`):
+   - **System Name & Description:** Verify `Name` and `Description` match the plan.
+   - **Attribute Values (`ATVL_AttributeValues`):** Verify every attribute's target value matches the expected matrix cell value (including `"NON_EXISTENT"` for empty object patterns).
+   - **Microflow Parameters (`MPVL_MicroflowParameterValues`):** Verify every parameter value matches the plan.
+   - **Assert Return Values (`AMRV_AssertMicroflowReturnValues`):** Verify assert return values match expected outcomes.
+   - **Assert Attribute Comparisons (`AAVC_AssertAttributeValueCompares`):** Verify comparison rules and target values.
+   - **Assert Object Counts (`AOCN_AssertObjectCounts`):** Verify target counts match expected matrix values.
+   - **Assert Exceptions (`AEXC_AssertExceptions`):** Verify exception comparison strings match expected error messages.
+   - **Validation Feedback Messages (`AVFM_AssertValidationFeedbackMessages`):** Verify feedback message strings and target widget/attribute keys.
+4. **Report Audit Results:** Record cell-by-cell pass/fail results in Section 1 (Plan Conformity Audit - Section 7) of the Post-Construction Smoke Audit Report. Any cell value mismatch or missing variation item MUST be reported and resolved before proceeding to execution (`STATE_RUN_ANALYZE`).
+
+
 

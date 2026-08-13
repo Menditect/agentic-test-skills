@@ -139,13 +139,13 @@ To directly manipulate domain model objects in database or transaction memory an
 
 ### 1. Direct Initialization vs. The Change Object Pipeline
 
-To set attribute values on a **newly created object**, you do NOT need a separate `Change Object` step. You can initialize them directly on the creation step itself.
+To set attribute values and associations on a **newly created object**, you MUST initialize them directly on the creation step itself. Creating a separate `Change Object` step immediately following a `Create Object` step to configure initial attributes or associations is strictly **PROHIBITED** (anti-pattern).
 
-#### Option A: Direct Initialization on Creation (Preferred for New Objects)
+#### Option A: Direct Attribute & Association Initialization on Creation (Mandatory for New Objects)
 If you are creating an object and want to set its initial state immediately:
 1. **Create the Object:** Call `CreateTestStepCreateObject` (returns `TestStepKey`).
-2. **Include Attributes:** Call `IncludeAttributeValueInTeststep` directly on the creation step's `TestStepKey` to get `AttributeValueKey`.
-3.  **Set Values:** Call type-specific setters (e.g., `SetStringAttributeValue`) on `AttributeValueKey`.
+2. **Include Attributes & Set Values:** Call `IncludeAttributeValueInTeststep` directly on the creation step's `TestStepKey` to get `AttributeValueKey`, then call type-specific setters (e.g., `SetStringAttributeValue`).
+3. **Set Associations:** Call `CreateSelectObjectForAssociation` directly on the creation step's `TestStepKey` with `AssociationName`, then call `SetTestStepOutputForSelectObjectForAssociation` to link the target associated object.
 
 #### ⚙️ Complete List of Typed Attribute Setter Tools
 When configuring included attributes on Create or Change steps, you **MUST** call the corresponding type-specific setter tool on the `AttributeValueKey` returned by `IncludeAttributeValueInTeststep`:
@@ -159,7 +159,7 @@ When configuring included attributes on Create or Change steps, you **MUST** cal
 *   **`SetEnumerationAttributeValue`**: Sets a Mendix Enumeration attribute (pass the technical Name of the enumeration value, NOT the caption).
 
 > [!TIP]
-> Always use direct initialization for new objects. It reduces teststeps, simplifies test cases, and runs faster.
+> Always use direct initialization on `Create Object` steps for new objects (attributes AND associations). It eliminates redundant teststeps, improves test execution speed, and keeps the test case clean.
 
 #### Option B: The Change Object Pipeline (Required for Retrieved or Post-Creation Updates)
 When you need to modify an object's state **later** in the test case (e.g., after a browser action or microflow has run) or when you are modifying an **existing retrieved object**, you MUST execute this exact sequence:
@@ -443,7 +443,7 @@ If a microflow `Sales.ProcessOrder` returns an `Order` object, and you want to a
 
 5. **Programmatically Assert Object Count (MANDATORY DOWNSTREAM INPUT BEST PRACTICE):**
    Verify that exactly `1` object (or expected count $N$ for lists) was successfully returned/retrieved before downstream step consumption:
-   - *Best Practice Rule:* Whenever an object/list retrieved or returned by a microflow is consumed by a downstream step, an `Assert Object Count` step MUST be created immediately following the producer step to prevent downstream silent null pointer exceptions.
+   - *Best Practice Rule:* Whenever an object/list retrieved (via `Retrieve Object`) or returned by a microflow (`Microflow Call`) is consumed by a downstream step, an `Assert Object Count` step MUST be created immediately following the producer step to prevent downstream silent null pointer exceptions. *(Note: Do NOT apply `Assert Object Count` to `Create Object` test steps, as in-memory created objects are guaranteed to exist).*
    - Call `CreateAssertObjectCount(TestStepKey = 401)` ➔ Returns `AssertObjectCountKey: 700`.
    - Call `SetAssertObjectCountProperties` with:
      - `AssertObjectCountKey`: `700`

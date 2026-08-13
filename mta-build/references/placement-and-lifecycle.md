@@ -225,7 +225,7 @@ Immediately during the scoping and planning phase (transitioning from `STATE_BUI
 *   **Required Parameter Bindings:** Ensure `ActionWithName`, `ActionWithObjective`, `ActionWithPreconditions`, and `ActionWithExpectedResult` are set to `"Set"`.
 
 #### 2. Saving the Approved Execution Plan (Transition to STATE_CONSTRUCTION)
-Immediately upon entering `STATE_CONSTRUCTION` after the execution plan is approved in `STATE_BUILD_PLANNING`, you **MUST** save the plan to obtain the unique `ExecutionPlanKey`:
+Upon receiving explicit user approval for the **Placement & Target Summary** (**Gate 2 Approval**) at the end of `STATE_BUILD_PLANNING`, you **MUST** execute `SaveExecutionPlan` before entering `STATE_CONSTRUCTION` to obtain the unique `ExecutionPlanKey`:
 *   **Why:** Without this step, the approved step-by-step chronological execution plan is only documented in the chat and is completely lost to downstream teams or automated auditing tools. Furthermore, a valid `ExecutionPlanKey` acts as the mandatory gate to unlock active step construction in `STATE_CONSTRUCTION`.
 *   **Implementation Pattern:** 
     1. Format the approved chronological step-by-step execution plan as a clean markdown string.

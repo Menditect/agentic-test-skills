@@ -158,30 +158,28 @@ Before building, map the exact qualified names of the required frontend testkit 
 2.  **Live Programmatic Search (Fallback Only):** If the testkit is modified, execute an `mxcli` command through the wrapper script:
     *   `.\mxcli.bat -p "[MendixProject.mpr]" -c "SHOW MICROFLOWS IN MenditectMxFrontendTestKit"`
 
-### PROTOCOL D: Complete Widget Extraction & Lazy Model-Reading (Token Optimization Law)
-You **MUST** discover page and widget details using both MTA server-side tools and local model queries, but you **MUST** do so lazily and selectively to avoid massive token overhead (which can waste ~20,000+ tokens per session). Follow this strict division of responsibilities and optimization logic:
+### PROTOCOL D: Mandatory Upfront GetPages/GetWidgets & Immediate Detailed Execution Plan (Frontend Plan Law)
+When creating or updating an Execution Plan for Frontend testing, you **MUST** follow this strict sequential division of responsibilities:
 
-1.  **MTA Server-Side Discovery (Definitive Registry & Default Source):**
-    Always call `GetPages` and `GetWidgets` first. These tools provide the definitive database keys, registry, and nesting flags:
+1.  **Mandatory Upfront Server Discovery (`GetPages` & `GetWidgets` First):**
+    You **MUST** call read-only MTA MCP tools `GetPages` and `GetWidgets` **first** before drafting the Execution Plan. These tools provide the definitive database keys, registry, and nesting flags:
     *   `Key`: Database identifier (used in step parameters).
     *   `Name` & `WidgetType`: Technical names and types (e.g., `Button_BookThisCar`, `DatePicker_PickupDate`, `actionButton24`).
     *   `InListDataSource`: Boolean flag to determine if **Law 1** or **Law 2** applies.
 
-2.  **The "Lazy Model-Reading" Principle & Deep Page Inspection Query:**
-    *   **The Default Rule:** If the technical widget names returned by `GetWidgets` are already descriptive and clear, you can draft high-quality Zero-Data step names directly from those names.
-    *   **🚨 The Deep Page Inspection Exception (MANDATORY):** Regardless of how descriptive the widget names are, you **MUST** ask the user if they would like to run a **Deep Page Inspection** before finalizing your frontend execution plan.
-        *   *Why:* Standard widget discovery (`GetWidgets`) only lists available fields. It does not provide the correct **fill/tab sequence order of input widgets** (which can affect dynamic visibility, validations, or event triggers), nor does it reveal the required **date formatting for DatePicker widgets** (which must match exactly to avoid formatting errors).
-        *   *🚨 Navigation Structure Requirement:* When proposing a Deep Page Inspection and receiving user confirmation, you **MUST** always verify the Navigation structure from the Mendix model using local `mxcli` by executing `.\mxcli.bat -p "[Project]" -c "SHOW NAVIGATION"` (or by reading the `navigation.json` file in the Mendix source structure) before executing or finalizing the page inspection. Resolving the default home page and role-based home page configurations is the foundational starting point where every test execution begins, and is mandatory to ensure correct starting-page navigation and correct test design.
-        *   *Action:* If the user approves, or if any of the fallback conditions are met, you must perform a deep model query. This can be achieved through:
-            1.  **Locally via `mxcli`:** Running a command like `.\mxcli.bat -p "[Project]" -c "SHOW PAGE [PageQualifiedName]"` to extract structural details.
-            2.  **Directly in Studio Pro via MAIA (using `pg_read_page`):** MAIA uses the dedicated `pg_read_page(moduleName, pageName)` tool in Mendix Studio Pro to perform deep page inspection. This tool accepts `moduleName` and `pageName` and returns the complete page JSON structure with its layout, widgets, properties, and configuration. This is used to resolve exact input tab sequence (fill order) and DatePicker format properties.
-            3.  **Page Structure Editing via MAIA (using `pg_write_page`):** If a test requires adjusting a page's layout or properties during setup, MAIA can call `pg_write_page(moduleName, pageName, content)` to write back the full page structure and return a success/error status.
-            *   *Fallback Trigger Scenarios:*
-                *   *Deep Page Inspection approved:* The user approved/requested a deep structural check.
-                *   *Generic/Unclear Names:* `GetWidgets` returned generic names (e.g., `actionButton24`), requiring visual caption extraction.
-                *   *DatePicker Configuration:* You need to verify custom date format strings. These formats are explicitly stored in the widget's `dateformPattern` or `format` property in the page's `.xml` or `.json` definition, which you can read using `mxcli SHOW PAGE [PageQualifiedName]` or MAIA's `pg_read_page` tool.
-                *   *Tab/Form Fill Sequencing:* You need to determine the correct logical form-filling order.
-                *   *Microflow Trigger / Custom Widgets:* You need to analyze microflows triggered by page elements.
+2.  **Immediate Presentation of Detailed Execution Plan:**
+    Using the retrieved `GetPages` and `GetWidgets` data, you **MUST immediately present a comprehensive, fully detailed Execution Plan** containing:
+    *   All chronological test steps (separated into Case 1 Setup, Case 2 Action, and Case 3 Teardown under the Frontend 3-Case Split Law).
+    *   All configurable step options and properties (e.g. execution settings `ExecutionCondition` / `ResumeExecutionAfterException`, locator strategies, widget names/types, test step outputs, values, assertions).
+    *   The complete 10-key Playwright Browser Settings table.
+
+3.  **Deferred Second-Pass Deep Model Inspection (Conditional Only):**
+    Deep model inspection (via local `mxcli` commands or MAIA `pg_read_page`) is strictly **deferred** until AFTER the initial detailed Execution Plan has been presented to the user.
+    *   **When to run Deep Inspection:** Run deep model inspection as a secondary pass ONLY if deep structural details are still necessary (or explicitly requested by the user) to resolve:
+        *   *Input Form Fill / Tab Sequencing:* Finding exact tab/fill order when `GetWidgets` list order is ambiguous.
+        *   *DatePicker Format Strings:* Reading custom `dateformPattern` / `format` string properties.
+        *   *Navigation Home Page Structure:* Executing `SHOW NAVIGATION` via `mxcli` to resolve role-based home pages.
+    *   *Deep Inspection Tools:* Execute locally via `mxcli` (e.g. `.\mxcli.bat -p "[Project]" -c "SHOW PAGE [PageQualifiedName]"`) or via MAIA in Studio Pro (`pg_read_page(moduleName, pageName)`).
 
 ### PROTOCOL E: Fully Qualified Name (FQN) to Registry Resolution (Mapping Law)
 To resolve the discrepancy between Mendix model-level Fully Qualified Names (FQN, e.g. `"Sales.Order_Detail"`) and the MTA server's flat registry fields:

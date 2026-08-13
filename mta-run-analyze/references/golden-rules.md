@@ -39,7 +39,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
             *   Adding variation items: Calling `AddAttributeValueAsVariationItem` for multiple attributes/values.
             *   Duplicating variations: Calling `DuplicateTestCaseDataVariation` for different test cases/variations.
             *   Configuring execution settings of different steps or test cases: Calling `SetExecutionSettingsOfTestStep` or `SetExecutionSettingsOfTestCase` across separate targets.
-            *   Setting metadata: Calling `SetTestStepNameDescription`, `TestCaseDataVariationName`, or `TestCaseDataVariationDescription` on independent entities.
+            *   Setting metadata & pattern annotations: Calling `SetTestStepNameDescription` (to set step names or pattern description annotations `[Pattern: <Name> - <Rationale>]`), `TestCaseDataVariationName`, or `TestCaseDataVariationDescription` on independent entities.
 *   **🚨 THE `SetSequenceOfTestStep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to three strict safety gates:
     1.  *Same-Case Validation:* Both `TestStepKey` and `TestStepBeforeKey` MUST reside within the exact same parent Test Case. Linking across case boundaries is strictly prohibited.
     2.  *No Self-Reference or Loops:* Never pass the same key for both parameters, and never point a step's predecessor to a downstream step (which creates circular references and crashes the runner).
@@ -84,7 +84,7 @@ All step names must follow this structured template:
 
 ### 3. The Options & Parameter Placement Protocol & Proactive Output Piping
 All object creation, attribute configuration, and object retrieval steps used as parameters **MUST ALWAYS** be placed chronologically *before* the teststep that calls the consuming microflow.
-*   **The Flow:** `Create Object` ➔ `Include Attribute` ➔ `Set Attribute Value` ➔ `Create Microflow Call Step` ➔ `Link to Microflow Parameter`.
+*   **The Flow:** `Create Object` ➔ `Set Attributes & Associations directly on Create Object step` ➔ `Create Microflow Call Step` ➔ `Link to Microflow Parameter`.
 
 ```
 [Create Option Step] (BeforeKey = predecessor) ➔ [Include Attribute Step] (BeforeKey = OptionStep) ➔ [Set Value Step] (BeforeKey = IncludeStep) ➔ [Consuming Microflow Step] (BeforeKey = SetValueStep) ➔ Link parameter to Option Output.

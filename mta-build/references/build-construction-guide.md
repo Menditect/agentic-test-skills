@@ -59,18 +59,26 @@ If a connection dropout, timeout, or validation error interrupts active construc
 *   **Mandatory Halt Gate:** You are **strictly prohibited** from transitioning directly from step creation/binding to test execution (`STATE_RUN_ANALYZE` / State 5). You **MUST** enter `STATE_SMOKE_AUDIT`, run the validation queries, present the detailed **MANDATORY Post-Construction Verification & Compliance Report**, and **HALT** for user approval before any run can be executed.
 
 #### 🤖 Dual-Track Smoke Audit Styles:
-*   **Agentic Track:** Call **`GetExecutionPlan(ExecutionPlanKey)`** to retrieve the saved execution plan, then compare it step-by-step with the actual constructed steps (`GetTestSteps`) for the Plan Conformity Audit. Call `GetTestConstructionErrorsOfTestCase(TestCaseKey)` directly to retrieve compiler/configuration errors on the server. Check execution-setting properties and piping configurations programmatically using other lightweight getters. Generate and output the Post-Construction Smoke Audit Report.
+*   **Agentic Track:** Call **`GetExecutionPlan(ExecutionPlanKey)`** to retrieve the saved execution plan. Call `GetTestConstructionErrorsOfTestCase(TestCaseKey)` directly to retrieve compiler/configuration errors on the server. Call `GetTestSteps` to audit created steps. Call `GetTestCaseDataVariationsDetails` (or `GetTestSuiteDataVariationsDetails`) to perform a cell-by-cell audit of every registered variation item and override value against Section 7 of the Execution Plan. Generate and output the Post-Construction Smoke Audit Report.
 *   **Chat Track:** Instruct the user to run the compiler checks in the MTA Web console, verify that no errors are highlighted on their test cases, and copy-paste any highlighted error descriptions into the chat. Then compile and output the Post-Construction Smoke Audit Report based on their input.
 
 #### The Post-Construction Verification & Compliance Report Structure:
-Your report **MUST** contain three distinct sections:
-1. **Plan Conformity Audit (Execution Plan vs. Reality):** Compare the approved execution plan (State 2) line-by-line with the actual created steps. List each approved step and state whether it was successfully built, mapped, and configured (e.g. `[Execution Plan Step 1] ➔ Built as Step Key [X]`).
-2. **MTA Server Validation Audit (Compiler Check):** Show retrieved compiler or configuration errors. Report the output. If any compilation errors are found, they **MUST** be resolved before proceeding.
+Your report **MUST** contain four distinct sections:
+1. **100% Entire Execution Plan Content Audit (Execution Plan vs. Reality - ALL 8 SECTIONS):** Compare the approved execution plan (State 2) section-by-section with the actual created assets on MTA:
+    *   **Section 1 (Metadata & Placement):** App, Test Configuration, Test Suite, Test Case Name, Category, Execution User (`EXUS_ExecutionUser`).
+    *   **Section 2 (Documentation):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`).
+    *   **Section 3 (Risk Alignment):** Technical Risk, Business Risk, Intended Use.
+    *   **Section 4 (Verified Elements):** Target microflows, pages, entities, attributes referenced.
+    *   **Section 5 (Step Sequence Audit):** Compare approved steps line-by-line with created steps (`GetTestSteps`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`), and `[Pattern: ...]` annotations.
+    *   **Section 6 (Playwright Settings):** Verify all 10 browser setting keys/values configured on suite/setup case.
+    *   **Section 7 (Data Variation Matrix & Content Audit):** **Mandatory Cell-by-Cell Verification**: Call `GetTestCaseDataVariationsDetails` (or `GetTestSuiteDataVariationsDetails`) and verify every variation system name, description, input attribute value, microflow parameter, return value assertion, object count, exception string, and validation feedback string against Section 7 matrix.
+    *   **Section 8 (Applied Testing Patterns & Rationale):** Verify pattern explanations match pattern annotations written into step descriptions via `SetTestStepNameDescription`.
+2. **MTA Server Validation Audit (Compiler Check):** Show retrieved compiler or configuration errors from `GetTestConstructionErrorsOfTestCase`. Report the output. If any compilation errors are found, they **MUST** be resolved before proceeding.
 3. **Rules & Best Practices Checklist (Skill Conformity):** Verify and confirm that:
     * **Piping Integrity:** Every consumer step references its producer's returned memory outputs (like created object keys) dynamically, with zero hardcoding.
     * **Execution topology:** All setup, teardown, and database-seeding steps are set to `"Always"` execution with `"_Continue"` exception handling.
     * **Empty Object retrieves:** Any conditional null parameter retrieves use `RetrieveOption = "Teststep"`.
-    * **Data Matrix Conformity:** Every created Data Variation has its `Name` and `Description` explicitly configured.
+    * **Data Matrix Conformity:** Every created Data Variation has its `Name` and `Description` explicitly configured, and all variation item values match the Execution Plan matrix cell-by-cell.
     * **Zero Data in Names:** Step names are purely action-descriptive with zero raw test data in the titles, conforming to the `[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]` template.
     * **Single Persist Check:** No redundant per-step `Persist` steps exist; creations/deletions of multiple objects are committed via a single grouped `Persist` step at the end.
     * **No Sequential Batching Violations:** No steps were created in parallel in a single turn; sequential steps were built one-by-one waiting for their predecessor keys.
@@ -82,6 +90,11 @@ Your report **MUST** contain three distinct sections:
     * **Cascading Provider Check:** If a teardown/cleanup step is `"Always"`, all of its upstream input provider steps are also set to `"Always"`.
     * **Order of Operations Check:** Memory retrieves called `SetRetrieveSettingsOfTestStep(RetrieveOption = "Teststep")` before attempting to retrieve or set select objects.
     * **Integer Piping Datatype Check:** All binding and piping keys passed in tool payloads (e.g. `TestStepOutputKey`) are raw, unquoted integers, never quoted strings.
+4. **Direct MTA Web Navigation Links:** Provide direct clickable markdown links (plain text without emojis) to the constructed/verified MTA assets using the official MTA URL pattern `[MtaBaseUrl]/p/[ObjectType]/[Key]`:
+    * **Test Configuration:** `[ConfigName]([MtaBaseUrl]/p/testconfiguration/[ConfigKey])`
+    * **Test Suite:** `[SuiteName]([MtaBaseUrl]/p/testsuite/[SuiteKey])`
+    * **Test Case(s):** `[TestCaseName]([MtaBaseUrl]/p/testcase/[CaseKey])`
+    * **Saved Execution Plan:** `[ExecutionPlanKey]([MtaBaseUrl]/p/executionplan/[ExecutionPlanKey])`
 
 *   👉 **Read:** [MTA Golden Rules Reference](golden-rules.md) | [MTA API Helpers Reference](api-helpers.md) | [MTA Data Variations Reference](data-variations.md) | [MTA Troubleshooting Guide](troubleshooting.md)
 

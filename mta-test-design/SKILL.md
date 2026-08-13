@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), or answering general testing/prompting questions"
-version: "4.1.4"
-changes: "authorized read-only MTA Get tools in placement stage and added SaveExecutionPlan sign-off protocol"
+version: "4.1.5"
+changes: "high level fixes for deeper analysis, link generation and workflow"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -32,78 +32,82 @@ When active under the macro state `STATE_BUILD_PLANNING`, track your current pla
 
 `[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_X | Active Skill: mta-test-design]`
 
-You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan:
+You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan with dual user approval gates:
 
-### 1. `PLAN_STEP_1: Scoping & Test Specification Drafting (Part 1)`
-*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft chronological step sequence.
+### 1. `PLAN_STEP_1: Scoping & Test Specification Drafting (Part 1 - Gate 1 Approval)`
+*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan (including specification, chronological step sequence with pattern annotations, risk matrix, data variations, self-audit report, omitting placement details).
 *   **Model Audit Analysis**: Run `mxcli` (such as `SHOW MICROFLOWS -m <Module>` or `SHOW PAGES -m <Module>`) to inspect the target element's actual implementation, input parameters, return values, and MTF Typology.
+*   **🚨 Mandatory GetPages & GetWidgets Upfront Execution (Frontend Plans)**: When building an Execution Plan for Frontend tests, you **MUST** call the read-only MTA MCP tools `GetPages` and `GetWidgets` **first** before drafting the plan. Use their output as the primary source of truth for page keys, custom CSS classes, widget keys, widget types, and list data source flags.
+*   **🚨 Immediate Detailed Execution Plan Presentation (Frontend Plans)**: You **MUST** immediately present a fully detailed Execution Plan with all test steps (Case 1 Setup, Case 2 Action, Case 3 Teardown) and all configurable step options/properties (execution conditions, locator strategies, widget names/types, test step outputs, values, assertions) alongside the Playwright Browser Settings table.
+*   **🚨 Deferred Deep Model Inspection (Second Pass Only)**: Deep model inspection (via local `mxcli` commands or MAIA `pg_read_page`) is strictly **deferred** until AFTER presenting the initial detailed plan, and is executed ONLY if deep structural details (e.g. input widget fill/tab sequence, DatePicker format strings, navigation defaults) are still necessary or requested by the user.
 *   **Intended Purpose Verification**: Establish the intended use of the application and target component. If the intended use or target component is unclear, **do NOT guess or assume**. Stop and ask the user to clarify.
 *   **Void Microflow Side-Effect Audit**: If the target microflow returns Void (no output parameter), halt and warn the user. Ask them to help identify database side-effects (creations, deletions, modifications) so that retrieve/count assertions can be designed instead of a basic exception-only check.
 *   **Universal Validation Feedback Audit**: Inspect ANY microflow under test (regardless of prefix or typology such as `ACT_`, `ORC_`, `SUB_`, `CMT_`) for "Validation feedback" action activities. Always evaluate whether `AssertValidationFeedbackMessageCompare` (for specific member messages) or `AssertValidationFeedbackMessageCount` (for message thresholds) are required.
 *   **Boundary & Scenario Identification**: Identify critical boundary conditions, edge cases, and scenarios to test.
 *   **Zero Placement & Browser Setting Assumptions**: You are **strictly prohibited** from asking placement questions, making placement assumptions, or asking Playwright browser setting questions during Step 1 drafting. Mark Part 2 (Placement) and Part 3 (Playwright Settings) as `[Pending Placement Stage]`.
-*   **Halt Rule**: Present Part 1 of the Execution Plan draft for user review and transition to `PLAN_STEP_2`.
+*   **🚨 Gate 1 Halt Rule (Execution Plan Approval)**: Present the complete Execution Plan draft for user review and **HALT**. You **MUST** ask for explicit user approval of the Execution Plan before moving to placement discovery. Do NOT proceed to `PLAN_STEP_2` until the user explicitly approves the Execution Plan draft (or requests plan revisions).
 
-### 2. `PLAN_STEP_2: Placement Resolution Procedure (Part 2)`
-*   **Action**: Interactively scan and resolve placement parameters for the test case.
+### 2. `PLAN_STEP_2: Placement & Settings Discovery (Part 2 - User Input Phase)`
+*   **Action**: Interactively scan and resolve placement parameters and execution settings based on user input.
+*   **Mandatory Placement Prompt & Interactive Scanning Offer:** Immediately after receiving Execution Plan approval (Gate 1), ask the user where the test case should be placed (Test Configuration & Test Suite). In your prompt, you **MUST** explicitly state to the user:
+    > *"Where would you like to place this test case? You can specify the target Test Configuration and Test Suite directly, or I can interactively scan your app under test right now to retrieve and display all available Test Configurations and Test Suites for you."*
 *   **Mandatory AI Configuration Creation Prohibition Warning**: You **MUST** display this mandatory warning message before asking any placement questions:
     > ⚠️ **Important Notice:** The AI Assistant is **strictly prohibited from creating new Test Configurations**. If a new Test Configuration is needed, you must manually create it inside the MTA web application first.
-*   **Read-Only MTA `Get*` Discovery Authorization:** Note that executing read-only MTA `Get*` tools (`GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetExecutionUsers`, etc.) is **ALWAYS authorized in ANY state** (including Turn 1) to retrieve data and present choices to the user.
+*   **Read-Only MTA `Get*` Discovery Authorization:** Executing read-only MTA `Get*` tools (`GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetExecutionUsers`, etc.) is **ALWAYS authorized in ANY state** (including Turn 1) to retrieve data and present choices to the user.
 *   **Mandatory 3-Step Placement Protocol (STRICT SEQUENTIAL SCANNING)**:
     1.  *Stage 2.1 - Application Resolution & Test Configuration Scan:* Determine the Application Name needed for MTA MCP tools (e.g., `GetApplicationByName`). When `mxcli` is used, extract the Application Name directly from the target `.mpr` file path passed to `mxcli` via the `-p` parameter or defined in workspace settings (`.vscode/settings.json` under `MENDIX_MPR_FILE` / `.gemini/settings.json`). The MTA Application Name is the base filename of the `.mpr` file without the `.mpr` extension (e.g., `-p "C:\...\Menditect_CarRental_Insurance.mpr"` -> `"Menditect_CarRental_Insurance"`). Alternatively, check `AGENTS.md` at the project root or run `.\mxcli.bat -p "<path_to_.mpr>" -c "SHOW SETTINGS"`. Call `GetApplicationByName` with this Application Name string to retrieve the `ApplicationKey`. Then call `GetTestConfigurationsForApplicationKey` using the retrieved `ApplicationKey` (or call `GetApplicationForApplicationInstanceToken`). Present all available Test Configuration options to the user and **HALT**. Stop right there and ask the user to explicitly specify/select the Test Configuration. **NEVER assume a Test Configuration and NEVER call `GetTestSuites` or `GetTestCases` during this stage.**
     2.  *Stage 2.2 - Test Suite Scan:* **ONLY AFTER** the user explicitly selects/specifies the Test Configuration, call `GetTestSuites` for that selected configuration. Present all available options to the user and **HALT**. Ask the user to explicitly select or specify the Test Suite. **NEVER call `GetTestCases` during this stage.**
     3.  *Stage 2.3 - Test Case Name & Placement:* **ONLY AFTER** the user explicitly selects/specifies the Test Suite, call `GetTestCases` for that selected suite. Present existing test cases, propose a clear, descriptive Name and position for the new Test Case, and **HALT** for user confirmation or custom input.
-*   **Vague Onboarding Guardrail**: If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
-*   **Halt Rule**: Transition to `PLAN_STEP_3` once placement is fully resolved and confirmed across all three stages.
-
-### 3. `PLAN_STEP_3: Playwright / Browser Settings Finalization & Execution Plan Sign-Off (Part 3)`
-*   **Action**: Asked and finalized **AFTER** placement is provided in Step 2.
 *   **Existing Test Suite Conflict Check (3 Options)**:
-    If placing a Frontend test into an existing Test Suite that already contains Frontend tests, ask the user to choose between 3 options, explaining why the question is asked and the consequences of each choice:
-    *   **Option 1: Inherit Existing Suite Settings (Recommended for unified suites)**
-        *   *Action:* Adopt the existing Playwright browser settings configured in the target suite. Place new test steps after existing action steps, before teardown.
-        *   *Consequence:* Uses the suite's current browser configuration.
-    *   **Option 2: Override Suite Settings with New Settings**
-        *   *Action:* Update the entire suite's Playwright settings to the newly specified settings.
-        *   *Consequence:* ALL existing Frontend tests in the suite will execute using these new browser settings, which may alter their execution behavior.
-    *   **Option 3: Create Dedicated New 3-Test-Case Frontend Pattern**
-        *   *Action:* Create a brand-new, isolated 3-case pattern set (*Setup*, *Action*, *Teardown*) in the suite placed below existing tests.
-        *   *Consequence:* Completely isolates browser settings for this test without affecting existing tests in the suite.
+    If placing a Frontend test into an existing Test Suite that already contains Frontend tests, ask the user to choose between 3 options: Option 1 (Inherit Suite Settings), Option 2 (Override Suite Settings), Option 3 (Dedicated New 3-Test-Case Pattern).
 *   **New Test Suite Check (10-Setting Explicit Table)**:
-    If placing into a new Test Suite (or a suite with 0 frontend tests), present the explicit table displaying **ALL 10 Playwright Browser Settings**, showing both the **Default / Selected Value** AND **ALL Available Alternative Options** for every setting key:
-    1.  *Browser Environment:* `Locally` [Default] vs `Playwright Server`, `Azure Workspaces`
-    2.  *Browser Type:* `Chromium` [Default] vs `Firefox`, `WebKit`
-    3.  *Execution Mode:* `Headless` [Default] vs `Headed` (Visual browser window)
-    4.  *Viewport Dimensions:* `1280 x 720` [Default] vs `1920 x 1080` (FHD), `1366 x 768`, `375 x 812` (Mobile), Custom
-    5.  *Target Base URL / Launch Path:* `http://localhost:8080/index.html` [Derived] vs Custom URL / relative launch path
-    6.  *Action Delay (SlowMo):* `0 ms` (Server) / `100 ms` (Local) vs Custom delay in ms
-    7.  *Default Timeout:* `30,000 ms` [Default] vs `15,000 ms`, `60,000 ms`, Custom
-    8.  *Tracing (Trace):* `true` [Default] vs `false`
-    9.  *Browser Locale:* System Default (e.g. `en-US`) vs `nl-NL`, `de-DE`, `fr-FR`, etc.
-    10. *Virtual Timezone ID:* System Default (e.g. `Europe/Amsterdam`) vs `UTC`, `America/New_York`, etc.
-*   **Mandatory Execution User Resolution**: Call `GetExecutionUsers` for the active ApplicationKey and TestConfigurationKey to fetch available execution users, and explicitly assign `EXUS_ExecutionUser` (e.g. `MxAdmin`) in Section 1 (Metadata) of the Execution Plan.
+    If placing into a new Test Suite (or a suite with 0 frontend tests), present the explicit table displaying **ALL 10 Playwright Browser Settings**, showing both Default/Selected Value and ALL Alternative Options.
+*   **Mandatory Execution User Resolution**: Call `GetExecutionUsers` for active ApplicationKey and TestConfigurationKey, and assign `EXUS_ExecutionUser` (e.g., `MxAdmin`).
+*   **Vague Onboarding Guardrail**: If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
+*   **Transition Rule**: Once placement choices and settings inputs are collected from the user, transition to `PLAN_STEP_3` to present the Placement & Target Summary.
+
+### 3. `PLAN_STEP_3: Placement Summary Presentation & Execution Plan Sign-Off (Part 3 - Gate 2 Approval)`
+*   **Action**: Compile and display the dedicated **Placement & Target Summary Box** summarizing all resolved placement parameters and settings:
+
+```markdown
+> 📍 **PLACEMENT & TARGET SUMMARY**
+> * **Application Name:** `[AppName]`
+> * **Target Test Configuration:** `[UserSelectedTestConfig]`
+> * **Target Test Suite:** `[UserSelectedTestSuite]`
+> * **Test Case Name:** `[UserSelectedTestCaseName]`
+> * **Execution User:** `[UserSelectedExecutionUser, e.g. MxAdmin]`
+> * **MTA Category:** `[Backend | Frontend]`
+> * **Browser Settings (Frontend):** `[Environment / Mode / Browser Type / Viewport]`
+>
+> ❓ *Please confirm if this target placement and settings summary is correct so I can save the execution plan and proceed to test construction.*
+```
+
+*   **🚨 Gate 2 Halt Rule (Placement Summary Approval)**: Present the Placement & Target Summary Box and **HALT**. You **MUST** await explicit user approval/confirmation of the target placement summary. You are **strictly prohibited** from calling `SaveExecutionPlan` or entering `STATE_CONSTRUCTION` before receiving explicit user approval for the placement summary.
+*   **⚡ Mandatory `SaveExecutionPlan` & Plan Sign-Off Protocol:**
+    Upon receiving explicit user approval for the Placement & Target Summary (Gate 2), you **MUST** execute the tool call `SaveExecutionPlan` (passing the complete markdown text of the approved Execution Plan). This persists the plan on the server and returns the generated numeric `ExecutionPlanKey`. Populating this key into the Handoff Blueprint officially completes `STATE_BUILD_PLANNING` and authorizes transition to `STATE_CONSTRUCTION`.
 *   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps (including Create Object and setup steps) **MUST** be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. You are strictly prohibited from applying `"Always"` or `"_Continue"` to setup steps in Backend Unit Tests.
-*   **🛑 Retrieve / Microflow Output Object Count Assertion Law**: Whenever an object or list retrieved via a `Retrieve Object` step or returned by a `Microflow Call` step is passed as input to a subsequent test step (e.g. Microflow parameter, Change Object, Delete Object, Persist Object, etc.), an `Assert Object Count` step MUST be inserted immediately following the producer step before downstream consumption. Default expected object count is `1` (for single object parameters), unless the receiving parameter/step accepts a List (where default matches expected list count N >= 0). Asserting object count immediately provides fast-fail diagnostic clarity and prevents silent null-pointer exceptions or confusing downstream test failures.
+*   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Whenever an object is instantiated via a `Create Object` test step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` test step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**.
+*   **🛑 Retrieve / Microflow Output Object Count Assertion Law**: Whenever an object or list retrieved via a `Retrieve Object` step or returned by a `Microflow Call` step is passed as input to a subsequent test step (e.g. Microflow parameter, Change Object, Delete Object, Persist Object, etc.), an `Assert Object Count` step MUST be inserted immediately following the producer step before downstream consumption. Default expected object count is `1` (for single object parameters), unless the receiving parameter/step accepts a List (where default matches expected list count N >= 0). Asserting object count immediately provides fast-fail diagnostic clarity and prevents silent null-pointer exceptions or confusing downstream test failures. *(Note: This law applies EXCLUSIVELY to `Retrieve Object` and `Microflow Call` steps. It does **NOT** apply to `Create Object` test steps, as in-memory objects instantiated via `Create Object` are guaranteed to exist and do NOT need object count assertions).*
 *   **🛑 Dual Retrieve/Filter Empty Object Law (Data Variations)**: In MTA Data Variations, step structures and association setters are fixed across all variations. You **CANNOT** set or unset an association directly inside a Data Variation item. To dynamically vary between a valid object and an `empty` (NULL) object across variations:
     1. **For Microflow Parameters:** Create a Retrieve/Filter step filtering on a target attribute (e.g., `LicensePlate`). For valid object variations, set filter = `'TEST_VAL'`. For null object variations, set filter = `'NON_EXISTENT'`. Pass the Retrieve step output to the microflow parameter.
     2. **For Associations:** Create a Retrieve/Filter step for the associated parent entity filtering on an attribute (e.g., `Code`). For associated variations, set filter = `'TEST_CODE'`. For unassociated variations, set filter = `'NON_EXISTENT'`. Pass the Retrieve step output to the association setter step.
 *   **Right-Level Allocation (The "Ice Cream Cone" Check)**: Defend against the "Ice Cream Cone" Anti-Pattern. Push logic testing down the pyramid to Unit or Integration levels where possible.
 *   **🚫 Strict Data Variation Consolidation**: Seek to use MTA **Data Variations** rather than separate, duplicate test cases that only modify input data. Design a single, reusable test case structure and enable Data Variations to define a variation matrix.
 *   **Mandatory Pre-Approval Self-Audit**: Before presenting the final consolidated Execution Plan, you **MUST** execute a mental self-audit against all skill rules and embed the **Self-Audit Validation Report** directly in your response.
-*   **⚡ Mandatory `SaveExecutionPlan` & Plan Sign-Off Protocol:**
-    Upon receiving explicit user approval for the Execution Plan, you **MUST** execute the tool call `SaveExecutionPlan` (passing the complete markdown text of the approved Execution Plan). This persists the plan on the server and returns the generated numeric `ExecutionPlanKey`. Populating this key into the Handoff Blueprint officially completes `STATE_BUILD_PLANNING` and authorizes transition to `STATE_CONSTRUCTION`.
 *   **🔄 Execution Plan Revision & Build Plan Pattern Re-Audit Protocol**:
     Whenever the user requests a modification, addition, or refinement to an existing or draft Execution Plan (whether at the step level, parameter level, or data variation matrix level):
     1. 🚫 **No Localized Edits or Partial Table Outputs:** You are strictly prohibited from outputting localized text/table edits, isolated snippet changes, or showing ONLY the mutated Data Variation Matrix table in isolation. You MUST ALWAYS re-display the entire Execution Plan / Build Plan in its full, complete form.
     2. 🔍 **Build Plan Pattern Re-Audit Checklist:** Before presenting the updated Execution Plan, re-evaluate the step sequence against all build-plan patterns:
+       * **Direct Initialization on Create Object Pattern:** Does the step sequence contain a `Create Object` step? ➔ **REQUIREMENT:** All initial attributes AND associations MUST be set directly on the `Create Object` step itself. Do NOT include a separate `Change Object` step immediately following `Create Object` to initialize attribute or association values.
        * **Empty Object / Conditional Null Pattern:** Does the update add a null/empty object scenario or parameter? ➔ **REQUIREMENT:** The step sequence MUST include a `Retrieve/Filter` step (`RetrieveOption = "Teststep"`), filtering on an explicit attribute. Setting `empty` directly in a variation cell or parameter without a retrieve producer step is strictly prohibited.
-       * **Retrieve / Microflow Output Object Count Assertion Pattern:** Is an object or list retrieved via a Retrieve step or returned by a Microflow Call used as input for a subsequent test step? ➔ **REQUIREMENT:** An `Assert Object Count` step MUST immediately follow the producer step before downstream consumption (default expected count = `1` for single objects, or N for lists).
+       * **Retrieve / Microflow Output Object Count Assertion Pattern:** Is an object or list retrieved via a Retrieve step or returned by a Microflow Call used as input for a subsequent test step? ➔ **REQUIREMENT:** An `Assert Object Count` step MUST immediately follow the producer step before downstream consumption (default expected count = `1` for single objects, or N for lists). *(Excludes `Create Object` steps – do NOT place object count assertions after `Create Object` steps).*
        * **Backend-First Delete Pattern:** Does the update include an object deletion? ➔ **REQUIREMENT:** A Retrieve step MUST precede the Delete step.
        * **Void Microflow Side-Effect Pattern:** Does the target microflow return void? ➔ **REQUIREMENT:** Retrieve/Count assertion steps MUST be included to verify database side-effects.
        * **Validation Feedback Assertion Pattern:** Does the target microflow emit validation feedback or test negative input boundaries? ➔ **REQUIREMENT:** Include `AssertValidationFeedbackMessageCompare` (for specific member error text) or `AssertValidationFeedbackMessageCount` (e.g., `Count = 0` for happy path, `Count > 0` for invalid inputs). For Data Variations with happy paths, use `NotEquals` with `"__NO_VALIDATION_MESSAGE__"` to prevent happy path variations from failing.
        * **Frontend 3-Case Split Law:** Is this a UI test? ➔ **REQUIREMENT:** Separate steps into Case 1 (Setup), Case 2 (Action), and Case 3 (Teardown).
        * **Data Variation Matrix Formatting & Capping:** Does the matrix exceed 8 columns? ➔ **REQUIREMENT:** Split into 8-column horizontal tables.
        * **Backend Unit Execution Settings Law:** Are all steps in a Backend Unit Test configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`?
+       * **Test Step Description Pattern Annotations:** Do test steps implementing specific testing patterns contain the pattern annotation tag `[Pattern: <Name> - <Rationale>]` in Section 4 of the Execution Plan to be written into MTA step descriptions during construction?
     3. 📝 **Re-Run Pre-Approval Self-Audit:** Re-embed the updated `PRE-APPROVAL SELF-AUDIT REPORT` reflecting any step sequence adjustments.
     4. 🤖 **Automatic Pattern Registration:** If during conversation or skill editing a new pattern or rule is identified, automatically update this checklist so future plan revisions evaluate it seamlessly.
 
@@ -223,7 +227,8 @@ This report is embedded immediately preceding the Execution Plan in your final d
 *   **[CHECK 3] Backend-First Deletes**: Verified that all deleted objects are retrieved backend-first before delete steps are called, and no UI-side browser commits are relied upon for auto-rollbacks. ➔ **[PASS / NA]**
 *   **[CHECK 4] Setup Portability**: Verified that all browser setup paths utilize relative logical paths (e.g., `/login.html`) rather than absolute URLs. ➔ **[PASS / NA]**
 *   **[CHECK 5] Explicit Filter Attributes, Documentation & Variation Matrix Layout**: Verified that parameters/associations needing empty/NULL variations use the Retrieve/Filter pattern with an EXPLICITLY NAMED filter attribute (e.g., `Car.LicensePlate`), all documentation fields are populated, and the Data Variation Matrix adheres to horizontal orientation, max 8-column table splitting, clean hyphenated naming, and mandatory variation metadata lists. ➔ **[PASS]**
-*   **[CHECK 6] Retrieve / Microflow Output Object Count Assertion**: Verified that all objects/lists retrieved via Retrieve steps or returned by Microflow Calls and passed as downstream inputs have an explicit Assert Object Count step (=1 for single objects, N for lists) immediately following the producer step before downstream consumption. ➔ **[PASS / NA]**
+*   **[CHECK 6] Retrieve / Microflow Output Object Count Assertion**: Verified that all objects/lists retrieved via Retrieve steps or returned by Microflow Calls and passed as downstream inputs have an explicit Assert Object Count step (=1 for single objects, N for lists) immediately following the producer step before downstream consumption (and verified that no unnecessary object count assertions are placed after Create Object steps). ➔ **[PASS / NA]**
+*   **[CHECK 7] Mandatory GetPages/GetWidgets & Immediate Detailed Plan (Frontend)**: Verified that for Frontend execution plans, `GetPages` and `GetWidgets` were executed upfront to gather page keys, classes, and widget targets, and a fully detailed plan with all test steps and configurable options was presented immediately prior to any deep model inspection. ➔ **[PASS / NA]**
 ```
 
 *   **Track-Specific Transition Guideline:**
@@ -232,7 +237,7 @@ This report is embedded immediately preceding the Execution Plan in your final d
 
 ---
 
-## 🚫 THE 14 GOLDEN RULES OF TEST SCOPING
+## 🚫 THE 16 GOLDEN RULES OF TEST SCOPING
 
 1.  **Do Not Assume Frontend by Default**: Only recommend Frontend tests when there is clear UI/Client Cache risk (such as modified custom widgets or touchpoint `ACT_` logic). Prefer high-speed, highly stable Backend Unit and Integration tests for business calculations and process orchestration.
 2.  **Explicit Dual-Risk Alignment**: Every test proposed must clearly state both the **technical risk** (e.g., database ACID corruption) and the **business risk** (e.g., direct financial leakage) it is designed to mitigate.
@@ -269,9 +274,17 @@ This report is embedded immediately preceding the Execution Plan in your final d
     *   **🛑 Validation Feedback Compare in Data Variations (Happy Path Pattern):** In a Data Variation matrix, a `AssertValidationFeedbackMessageCompare` assertion applies to ALL variations. While negative variations expect `ComparisonOperator = "Equals"` and the specific error string, happy path variations emit NO validation feedback message. To prevent happy path variations from failing, set `ComparisonOperator = "NotEquals"` and `ComparisonString = "__NO_VALIDATION_MESSAGE__"` (or any impossible dummy text) for happy path variation items.
 14. **Rule 14: Mandatory Retrieve / Microflow Output Object Count Assertion Law:**
     *   **The Guardrail:** Whenever an object or list retrieved via a `Retrieve Object` step or returned/output by a `Microflow Call` step is passed as an input parameter to a downstream step (e.g. Microflow parameter, Change Object, Delete Object, Persist Object, etc.), you MUST always include an `Assert Object Count` step (`CreateAssertObjectCount` / `SetAssertObjectCountProperties`) immediately following the producer step before downstream consumption.
+    *   **Exclusion for Create Object Steps:** This rule applies EXCLUSIVELY to `Retrieve Object` and `Microflow Call` producer steps. You are strictly prohibited from adding `Assert Object Count` steps after `Create Object` test steps, as newly instantiated in-memory objects do not require existence validation.
     *   **Default Count Rules:** The default expected object count is `1` (for single object parameters), unless the receiving parameter/step accepts a List (where the default count matches expected list size N >= 0).
     *   **Diagnostic Rationale:** Asserting object count immediately provides fast-fail diagnostic clarity, ensuring that missing/null database records or unexpected result sizes are caught instantly before causing silent null pointer exceptions or misleading errors in downstream steps.
     *   **Mandatory User Notification:** When applying this pattern in an Execution Plan, you MUST explicitly include Section 6 (`Applied Testing Patterns & Rationale`) detailing which producer steps are asserted and explaining why this pattern prevents downstream test breakage.
+15. **Rule 15: Mandatory Test Step Description Pattern Annotation Law:**
+    *   **The Guardrail:** Whenever a test step implements a specific testing pattern (such as *Retrieve / Microflow Output Object Count Assertion*, *Backend-First Delete*, *Empty Object / Conditional Null Filter*, *Validation Feedback Assertion*, *Void Microflow Side-Effect*, etc.), you MUST explicitly specify a pattern annotation tag for that step in the Execution Plan (Section 4) using the standard format: `[Pattern: <Pattern Name> - <Short Rationale>]`.
+    *   **Construction Handoff:** During `STATE_CONSTRUCTION`, the agent building the test MUST call `SetTestStepNameDescription` to write this annotation directly into the test step's `Description` field in MTA.
+16. **Rule 16: Mandatory Upfront GetPages & GetWidgets First & Immediate Detailed Plan Law for Frontend:**
+    *   **Upfront Execution:** For building any Frontend Execution Plan, you **MUST** call `GetPages` and `GetWidgets` **first** to retrieve page keys, custom CSS classes, widget keys, widget types, and list flags.
+    *   **Immediate Detailed Output:** You **MUST** immediately present a comprehensive, fully detailed Execution Plan with all test steps (Case 1 Setup, Case 2 Action, Case 3 Teardown) and all configurable step options/properties (execution conditions, locator strategies, widget targets, outputs, inputs, values, assertions) alongside Playwright settings.
+    *   **Deferred Deep Model Inspection:** Deep model inspection (`mxcli` page queries or MAIA `pg_read_page`) is strictly **deferred** until AFTER presenting the initial detailed plan, and is executed ONLY if deep structural details (e.g. input fill/tab sequence, DatePicker format strings, navigation home page defaults) are still necessary or requested by the user.
 
 ---
 

@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.10.5](releases/v1.10.5.md) | 2026-08-13 | Merge branch development |
 | [🚀 v1.10.4](releases/v1.10.4.md) | 2026-08-13 | Redesign of workflow and extra frontend testing logic for browser settings |
 | [🚀 v1.10.3](releases/v1.10.3.md) | 2026-08-12 | Merge branch development |
 | [🚀 v1.10.2](releases/v1.10.2.md) | 2026-08-11 | release: v1.10.2 - Improved skillset |
