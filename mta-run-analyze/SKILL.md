@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "4.2.3"
-changes: "updated api helpers and step construction references"
+version: "4.2.4"
+changes: "authorized read-only MTA Get tools and updated diagnostic rules"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -15,23 +15,16 @@ changes: "updated api helpers and step construction references"
 > *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
 > *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
 
-🚨 **CRITICAL MTA GUARDRAIL: STOP AND ENFORCE INTERACTIVE DISCOVERY** 🚨
+🚨 **CRITICAL MTA GUARDRAIL: READ-ONLY CONTEXT DISCOVERY & EXECUTION TOOL GATING** 🚨
 
 > [!IMPORTANT]
-> ### ⚡ POWER-USER GUARDRAIL BYPASS EXCEPTION
-> You are permitted to bypass the first-turn HALT and the interactive discovery template if and ONLY if the user's initial prompt explicitly specifies:
-> 1. A pasted **Session Compaction Block** containing state properties, OR
-> 2. **ALL THREE** of the following parameters explicitly:
->    - The **Test Configuration** name or key (e.g., `"in mta-trial-2"` or `"use config 106"`)
->    - The **Test Suite** name or key (e.g., `"in suite 'Unit tests'"` or `"suite 225"`)
->    - The **Test Case** name or placement (e.g., `"create test case 'TC_ValidateLogin'"`)
+> ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
+> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetMtaUrl`, `GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetTestSteps`, `GetPages`, `GetWidgets`, `GetExecutionUsers`, `RetrieveTestRunResults`) at any time, including on the very first turn of a request.
+> Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
 
-On the very first turn of a **brand-new Conversation ID** (defined strictly as having no prior MTA activity, state, or parameters recorded in the current session's chat history or compaction resumption summary), you are strictly prohibited from executing **ANY tools of any kind** (including Mendix model analysis commands or other MTA tools), **except** for loading this skill and `references/core-playbook.md` and calling `GetMtaUrl`.
-
-You **MUST** adhere to the following strict chronological order of operations on the first turn of a brand-new Conversation ID:
-1. Load this MTA skill and `references/core-playbook.md`.
-2. Execute `GetMtaUrl` to retrieve the active workspace's MTA Base URL.
-3. Present the interactive discovery question template with the retrieved URL.
+> [!IMPORTANT]
+> ### ⚡ EXECUTION & MUTATING TOOL GATING
+> You are strictly prohibited from executing **execution or mutating MTA tools** (e.g. `ExecuteTestSuite`, `ExecuteTestCase`, `ExecuteTestConfiguration`, `CreateTestCase`, `Set*`, etc.) on the first turn or during discovery until the target execution parameters (Configuration, Suite, or Case) are explicitly confirmed by the user.
 
 ---
 
@@ -48,12 +41,12 @@ Hello! I can help you run tests, retrieve execution logs, or explain and analyze
 
 ---
 
-## 🚫 THE 10 CRITICAL MTA RED LINES (GOLDEN RULES)
+## 🚫 CRITICAL DIAGNOSTIC & EXECUTION RULES
 
-You **MUST** strictly follow the 10 Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active diagnostic boundaries:
+You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active diagnostic boundaries:
 1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual, general, or educational questions.
 2. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
-3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
+3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every MTA tool call.
 4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
 
 ---

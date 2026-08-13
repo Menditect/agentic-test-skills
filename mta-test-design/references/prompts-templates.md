@@ -6,17 +6,17 @@ This reference file contains standardized, copy-pasteable build templates optimi
 
 > [!IMPORTANT]
 > ### 🛡️ THE MTA HANDOFF VERIFICATION GATE & PRE-FILLING RULE
-> Before compiling or outputting any build prompt using these templates, the Test Design agent **MUST halt** and present the user with the Interactive Selection Gate:
-> 1. **Test Category Selection:** Ask the user to confirm the category:
->    * *Backend:* For direct microflow testing without a browser.
->    * *Frontend:* For functional page and widget testing in a browser.
->    * *Recommendation:* Pre-suggest the category determined during the Test Strategy phase.
-> 2. **3-Step Placement Protocol:** Execute the mandatory 3-step placement discovery sequence:
->    * *Step 1: Application Resolution & Test Configuration Scan:* Determine the Application Name needed for MTA MCP tools (e.g., `GetApplicationByName`). When `mxcli` is used, extract the Application Name directly from the target `.mpr` file path passed to `mxcli` via the `-p` parameter or defined in workspace settings (`.vscode/settings.json` under `MENDIX_MPR_FILE` / `.gemini/settings.json`). The MTA Application Name is the base filename of the `.mpr` file without the `.mpr` extension (e.g., `-p "C:\...\Menditect_CarRental_Insurance.mpr"` -> `"Menditect_CarRental_Insurance"`). Call `GetApplicationByName` with this Application Name to retrieve the `ApplicationKey`. Then call `GetTestConfigurationsForApplicationKey` using the retrieved `ApplicationKey` (or `GetApplicationForApplicationInstanceToken`). Present all available Test Configuration options to the user and **HALT**. Stop right there and ask the user to explicitly select a Test Configuration. **NEVER assume a Test Configuration.**
->    * *Step 2: Test Suite Scan:* Call `GetTestSuites` for the selected configuration. Present options and ask user to select or create one.
->    * *Step 3: Test Case Placement:* Call `GetTestCases` for the selected suite. Present existing cases and ask user to select or specify a new Test Case name and position.
+> Before compiling or outputting any build prompt using these templates, the Test Design agent **MUST follow the 3-step interactive planning loop**:
+> 1. **Step 1: Test Specification & Scope Drafting (Part 1):** Draft functional objectives, authentication/login requirement (*With vs Without Login* for Frontend), and step sequence WITHOUT asking placement questions or making placement assumptions.
+> 2. **Step 2: Placement Resolution Procedure (Part 2):** Display the mandatory warning notice:
+>    > ⚠️ **Important Notice:** The AI Assistant is **strictly prohibited from creating new Test Configurations**. If a new Test Configuration is needed, you must manually create it inside the MTA web application first.
+>    Then interactively scan Application (`GetApplicationByName` / `GetTestConfigurationsForApplicationKey`), Test Suite (`GetTestSuites`), and Test Case Name (`GetTestCases`).
+> 3. **Step 3: Playwright / Browser Settings Finalization (Part 3 - Frontend Only):**
+>    * Executed **AFTER** placement is provided in Step 2.
+>    * **Existing Suite Check:** If placing a Frontend test into an existing Test Suite that already contains Frontend tests, ask the user to choose between Option 1 (inherit existing suite settings), Option 2 (override suite Playwright settings), or Option 3 (create new 3-case pattern block in suite), explaining why and the consequences of each choice.
+>    * **New Suite Check:** If placing into a new Test Suite (or suite with 0 frontend tests), present the explicit table displaying **ALL 10 Playwright Settings**, showing both the **Default / Selected Value** AND **ALL Available Alternative Options** for every setting key.
 > 
-> **Zero-Halt Handoff:** Once selections are made, you **MUST** pre-fill these exact parameters into the metadata block of the generated prompt (`Target Configuration`, `Target Suite`, `MTA Category`). This removes vague placeholders, enabling a seamless, zero-halt bridge directly into the `mta-build` skill.
+> **Zero-Halt Handoff:** Once selections are made, you **MUST** pre-fill these exact parameters into the metadata block of the generated prompt (`Target Configuration`, `Target Suite`, `MTA Category`, `Playwright Settings`). This removes vague placeholders, enabling a seamless, zero-halt bridge directly into the `mta-build` skill.
 
 > [!IMPORTANT]
 > **Low-Code Custom-Logic Rule**: When generating build prompts using these templates, you **MUST** ensure that the objectives and chronological plans focus *solely* on verifying unique, custom business rules, math formulas, validations, or custom UI-specific visibility constraints. Under no circumstance should you include test steps or assertions that verify standard Mendix platform features (e.g., verifying that standard layout templates render, or checking if standard Committer steps write to the database).
@@ -160,6 +160,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** Frontend
+*   **Playwright Settings:** `[UserSelectedPlaywrightSettings]`
 
 #### 1. High-Level Specifications
 *   **Case 1: SETUP**
@@ -169,6 +170,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **Case 2: EXECUTION**
     *   *Name*: `[ModuleName].TC_UI_[ElementName]_Execute`
     *   *Objective*: Verify UI navigation, widget inputs, and page submission, mitigating client desync and brand abandonment.
+    *   *Authentication / Login Requirement:* `[With Login (username/password) | Without Login]`
     *   *Expected Result*: User lands on success page and success notification is displayed.
     *   *Execution*: `"None"`, `"Stop"`
 *   **Case 3: TEARDOWN**
@@ -189,6 +191,20 @@ Use this template when testing screen layouts, button clicks, client-cache synch
     7.  *[Cleanup - Always, _Continue]* Delete and persist seeded database records.
 *   **CASE 3 (Teardown)**:
     1.  Call `Teardown_Playwright`.
+
+#### 3. Playwright / Browser Settings (MANDATORY FRONTEND TABLE - ALL 10 KEYS)
+| Setting Key | Default / Selected Value | All Available Alternative Options |
+| :--- | :--- | :--- |
+| **1. Browser Environment** | `Locally` | `Playwright Server`, `Azure Workspaces` |
+| **2. Browser Type** | `Chromium` | `Firefox`, `WebKit` |
+| **3. Execution Mode** | `Headless` | `Headed` (Visual browser window) |
+| **4. Viewport Dimensions** | `1280 x 720` | `1920 x 1080`, `1366 x 768`, `375 x 812` (Mobile), Custom |
+| **5. Target Base URL / Path** | `http://localhost:8080/index.html` | Custom URL string or relative launch path |
+| **6. Action Delay (SlowMo)** | `0 ms` (Server) / `100 ms` (Local) | Custom delay in milliseconds |
+| **7. Default Timeout** | `30,000 ms` | `15,000 ms`, `60,000 ms`, Custom timeout in ms |
+| **8. Tracing (Trace)** | `true` (Enabled) | `false` (Disabled) |
+| **9. Browser Locale** | System Default (`en-US`) | `nl-NL`, `de-DE`, `fr-FR`, or valid BCP-47 tag |
+| **10. Virtual Timezone ID** | System Default (`Europe/Amsterdam`) | `UTC`, `America/New_York`, `Asia/Tokyo`, or valid IANA ID |
 ```
 
 ### 🖥️ Frontend Risk-Focus Strategy for Frontend Tests
