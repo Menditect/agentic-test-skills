@@ -692,6 +692,11 @@ When a microflow under test returns no parameters (Void), a simple `AssertExcept
 
 ## 🎯 TESTCASE-LEVEL VALIDATION FEEDBACK ASSERTIONS
 
+> [!IMPORTANT]
+> ### 🚫 Backend / Microflow Testing ONLY
+> MTA TestCase-level Validation Feedback assertions (`CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`) apply **EXCLUSIVELY to Backend Microflow unit/integration tests**.
+> **Do NOT use these tools for Frontend / UI tests.** In Frontend UI tests, validation feedback is displayed on browser pages as DOM text elements and MUST be asserted using standard UI widget text assertions (e.g., `ASR_Widget_Has_Text`, `ASR_Has_Text_Dialog_Body`, or element text locators).
+
 MTA supports asserting validation feedback messages at the **TestCase level** (rather than inside a single teststep) because validation feedback represents an aggregate, client-side/session state resulting from executing a transaction.
 
 You can configure two types of validation assertions directly on a `TestCaseKey`:

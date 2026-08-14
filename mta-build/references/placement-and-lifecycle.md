@@ -230,7 +230,8 @@ Upon receiving explicit user approval for the **Placement & Target Summary** (**
 *   **Implementation Pattern:** 
     1. Format the approved chronological step-by-step execution plan as a clean markdown string.
     2. Call the dedicated MTA tool **`SaveExecutionPlan`** (with the `ExecutionPlan` parameter set to the formatted execution plan string).
-    3. The tool will save the plan on the MTA server and return a unique numeric `ExecutionPlanKey` representing the saved execution plan. Keep this key in your active session state.
+    3. The tool will save the plan on the MTA server and return a unique numeric `ExecutionPlanKey` representing the saved execution plan. You **MUST** immediately write `execution_plan_key`, `test_configuration`, `test_suite`, and planned `test_cases` into `mta_state.json`.
+    4. Upon executing `CreateTestSuite` or `CreateTestCase` during container provisioning, immediately record the returned numeric MTA database keys (`TestSuiteKey`, `TestCaseKey`) into `mta_state.json` under `test_suite.key` and `test_cases[].key`.
     
     *Example Formatted Execution Plan for SaveExecutionPlan:*
     ```markdown

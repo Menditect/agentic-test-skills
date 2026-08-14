@@ -78,6 +78,23 @@ For 1 or 2 alternate scenarios:
 
 ---
 
+## 🚨 EXHAUSTIVE MATRIX CELL RECONCILIATION LAW ($M \times N$ GRID RECONCILIATION)
+
+> [!CAUTION]
+> **CRITICAL LAW: COLUMN DUPLICATION IS NOT VALUE ASSIGNMENT**
+> 
+> Calling `DuplicateTestCaseDataVariation` (or `DuplicateTestSuiteDataVariation`) **ONLY allocates a new variation column container**. It snapshot-copies whatever baseline values existed in the source variation at that moment.
+> 
+> **THE DELTA OVERRIDE FALLACY:** You are **strictly prohibited** from calling `DuplicateTestCaseDataVariation` and then only updating the 1 or 2 attributes you consider "changed" while assuming all other cells are correct. Retying on column copy inheritance leaves unverified, stale, or draft values in duplicated columns.
+> 
+> **MANDATORY $M \times N$ GRID RECONCILIATION RULE:**
+> Treat the variation table as a full $M \times N$ grid ($M$ variation item rows $\times$ $N$ scenario columns).
+> After duplicating columns, you **MUST**:
+> 1. Call `GetTestCaseDataVariationsDetails` to fetch the unique cell keys (`AttributeValueKey`, `MicroflowParameterValueKey`, Assert keys) for every single cell $(i, j)$ in the matrix.
+> 2. Compare the live MTA value of **EVERY SINGLE CELL $(i, j)$** against the Execution Plan matrix.
+> 3. Call the appropriate type-specific setter tool for **EVERY cell $(i, j)$** where the MTA value does not explicitly match the Execution Plan cell.
+> 4. Execute a final `GetTestCaseDataVariationsDetails` call to verify that 100% of cells in the matrix match the target specification.
+
 ## 🧪 COMPLEX CASE: FULL 11-STEP WORKFLOW
 For complex matrices (3+ scenarios):
 1.  **Enable:** Call `EnableTestCaseDataVariations` ➔ Returns template `TestCaseVariationKey`.
@@ -94,16 +111,16 @@ For complex matrices (3+ scenarios):
 6.  **Name Variation:** Call `TestCaseDataVariationName(TestCaseVariationKey, Name)`.
     *   *Format:* Lowercase alphanumeric with hyphens (e.g. `"blank-password"`). Never prepend `#` or use spaces.
 7.  **Describe:** Call `TestCaseDataVariationDescription(TestCaseVariationKey, Description)`.
-8.  **MANDATORY MAP RETRIEVAL:** Call `GetTestCaseDataVariationsDetails` to retrieve the complete mapping of scenarios and their unique keys.
-9.  **Override Inputs:** Call type-specific setter tools (e.g. `SetStringAttributeValue`, `SetStringMicroflowParameterValue`) passing the **unique, variation-specific `AttributeValueKey`** extracted from the mapping in Step 8 (not the base `AttributeValueKey`!).
-10. **Override Assertions:** For each duplicated variation, call the appropriate type-specific assertion setter tool:
+8.  **MANDATORY MAP RETRIEVAL:** Call `GetTestCaseDataVariationsDetails` to retrieve the complete mapping of scenarios and their unique cell keys.
+9.  **Exhaustive Cell Setter Iteration ($M \times N$ Grid):** Iterate through **EVERY cell $(i, j)$** across all variation item rows $i$ and scenario columns $j$. Call type-specific setter tools (e.g. `SetStringAttributeValue`, `SetStringMicroflowParameterValue`) passing the **unique, variation-specific cell key** extracted from the mapping in Step 8 (not the base template key!) for every cell that requires value setting according to the Execution Plan matrix.
+10. **Exhaustive Assertion Setter Iteration:** For each duplicated variation column, call the appropriate type-specific assertion setter tool for EVERY assertion item row:
     *   *Microflow Return Values:* Call `SetDecimalAssertMicroflowReturnValueCompareCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`, `SetBooleanAssertMicroflowReturnValueCompare`, etc. with that variation's unique assertion key (obtained via `GetTestCaseDataVariationsDetails`).
     *   *Object Attribute Comparisons:* Call `SetStringAssertAttributeValueCompare`, `SetBooleanAssertAttributeValueCompare`, etc. with that variation's unique assertion key.
     *   *Object Counts:* Call `SetAssertObjectCountProperties` passing that variation's unique `AssertObjectCountKey`, the comparison operator, expected count, and failed action.
     *   *Exceptions:* Call `SetAssertExceptionProperties` passing that variation's unique `AssertExceptionKey`, expected result, comparison string, and actions.
     *   *Validation Feedback Compare:* Call `SetAssertValidationFeedbackMessageCompareProperties` with that variation's unique `AssertValidationFeedbackMessageCompareKey`. **(Happy Path Variation Pattern):** For variations where NO validation message is expected (happy path items), set `ComparisonOperator = "NotEquals"` and `ComparisonString = "__NO_VALIDATION_MESSAGE__"` (or any impossible dummy text) so the variation passes cleanly without requiring an error message to be present.
     *   *Validation Feedback Count:* Call `SetAssertValidationFeedbackMessageCountProperties` with that variation's unique `AssertValidationFeedbackMessageCountKey`.
-11. **Verify Sync:** Call `GetTestCaseDataVariationsDetails` again to verify all variation values are correctly set and synchronized.
+11. **Verify Sync:** Call `GetTestCaseDataVariationsDetails` again to audit the full $M \times N$ matrix and verify all variation values are 100% synchronized against the Execution Plan.
 
 ---
 

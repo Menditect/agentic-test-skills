@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence."
-version: "4.2.5"
-changes: "high level fixes for deeper analysis, link generation and workflow"
+version: "4.2.6"
+changes: "positioning added to state.json, extra check on data variation duplicate logic and seeding, delete set to always"
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -48,6 +48,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 2. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every MTA tool call.
 4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
+5. **State File Key Resolution Law**: Before executing any test case, test suite, or configuration, check `mta_state.json` to load the exact numeric `key` for the target test case (`test_cases[].key`), test suite (`test_suite.key`), or execution plan (`execution_plan_key`). If `mta_state.json` is missing keys, use read-only discovery tools (`GetTestSuites`, `GetTestCases`) to locate the entity on the MTA server, and immediately update `mta_state.json`.
 
 ---
 
