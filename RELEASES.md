@@ -29,7 +29,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 | [🚀 v1.6.4](releases/v1.6.4.md) | 2026-07-10 | better separation of frontend and backend test creation |
 | [🚀 v1.6.3](releases/v1.6.3.md) | 2026-07-10 | updated skills with improved handling of new execution users |
 | [🚀 v1.6.2](releases/v1.6.2.md) | 2026-07-10 | release: v1.6.2 - updated skills with input from MTA 3.1 reference guide |
-| [🚀 v1.6.1](releases/v1.6.1.md) | 2026-07-10 | release: v1.6.1 - updated skills and synced with MTA 3.1 reference guide |
+| [🚀 v1.6.1](releases/v1.6.1.md) | 2026-08-20 | fixed publish script |
 | [🚀 v1.6.0](releases/v1.6.0.md) | 2026-07-09 | added new installation skill and improved existing skills |
 | [🚀 v1.5.5](releases/v1.5.5.md) | 2026-07-09 | Added void microflow side-effect warning and analysis rules with testability refactoring guidelines |
 | [🚀 v1.5.4](releases/v1.5.4.md) | 2026-07-09 | Updated state machine to ask for user validation when leaving the QA _Assistance state |
