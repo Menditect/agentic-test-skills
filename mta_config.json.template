@@ -1,0 +1,4 @@
+{
+  "mta_base_url": "MtaUrl",
+  "mcp_endpoint": "MtaUrl/tools/mcp"
+}
