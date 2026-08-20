@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.2.6"
-changes: "positioning added to state.json, extra check on data variation duplicate logic and seeding, delete set to always"
+version: "4.2.7"
+changes: "deep analysis to fix inconsistencies: updated golden rules to 22, fixed duplicate rule 14, cleaned up void microflow sub-bullets, and updated 8-section smoke audit checklist"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -30,7 +30,7 @@ changes: "positioning added to state.json, extra check on data variation duplica
 
 ---
 
-## 🚫 THE 17 CRITICAL MTA RED LINES (GOLDEN RULES)
+## 🚫 THE 22 CRITICAL MTA RED LINES (GOLDEN RULES)
 
 You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active construction boundaries:
 1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
@@ -58,32 +58,32 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 13. **Void Microflow Build-Plan Guardrail (Prevent Warning Fatigue)**:
     *   **The Guardrail:** If asked to build a test for a void microflow (no return value/output parameters) as the main component under test (excluding setup/teardown utility cases), you **MUST** evaluate its complexity. Only raise warnings or prompt for downstream database retrieve checks if the microflow is complex (e.g., has sub-microflows) or commits/modifies multiple critical domain model entities. If the void microflow is trivial or stateless (e.g., writes a single log line or changes a single status boolean), do NOT raise warnings or halt.
     *   **Sub-Microflow Warning:** If a complex void microflow is being tested and sub-microflows are present, highlight that deep, careful side-effect analysis is even more complex and critical.
-14. **Real-Time Test Case Placement Key Persistence**: Upon executing `CreateTestSuite` or `CreateTestCase`, you **MUST** immediately write the returned numeric MTA database keys (`test_suite.key`, `test_cases[].key`, `test_suite_key`, `test_configuration_key`, `execution_plan_key`, `status: "Created"`) into `mta_state.json`. In `STATE_SMOKE_AUDIT` and `STATE_RUN_ANALYZE`, always read `mta_state.json` to load these created keys for `GetTestConstructionErrorsOfTestCase(key)`, `GetTestSteps(key)`, and `ExecuteTestCase(key)`.
     *   **The Action:** In `STATE_BUILD_PLANNING` for complex void microflows, you must issue a prominent warning advising that an exception-only assertion is highly limited. Propose adding downstream database Retrieve steps (for Backend) or page inspection steps (for Frontend) to verify the actual expected state changes or entity modifications.
     *   **Testability Refactoring Suggestion:** Proactively advise the user that they can refactor the Mendix microflow to return a value (such as the primary record created or a status flag) to simplify test verification.
-14. **Allowed Operational States for Parameter Setters & AALC Assertions**:
+14. **Real-Time Test Case Placement Key Persistence**: Upon executing `CreateTestSuite` or `CreateTestCase`, you **MUST** immediately write the returned numeric MTA database keys (`test_suite.key`, `test_cases[].key`, `test_suite_key`, `test_configuration_key`, `execution_plan_key`, `status: "Created"`) into `mta_state.json`. In `STATE_SMOKE_AUDIT` and `STATE_RUN_ANALYZE`, always read `mta_state.json` to load these created keys for `GetTestConstructionErrorsOfTestCase(key)`, `GetTestSteps(key)`, and `ExecuteTestCase(key)`.
+15. **Allowed Operational States for Parameter Setters & AALC Assertions**:
     *   You are strictly prohibited from calling `MicroflowParameterValue` setters and `AssertAttributeValueCompare` (AALC) builders during planning, discovery, or placement states.
     *   These tools are exclusively permitted inside **`[STATE_CONSTRUCTION]`**, **`[STATE_STEP_BINDING]`**, or **`[STATE_ASSERT_CONSTRUCTION]`**.
-15. **Incremental Construction Success Verification Checklist**:
+16. **Incremental Construction Success Verification Checklist**:
     *   **The Guardrail:** During step building inside `[STATE_CONSTRUCTION]`, you **MUST** verify step creation success incrementally using MTA MCP tools.
     *   **The Action:** Immediately after creating or configuring a complex step block (such as after setting parameters via `MicroflowParameterValue` tools, creating `AssertAttributeValueCompare` builders, or adding custom associations), you **MUST** call `GetTestConstructionErrorsOfTestCase` targeting the active testcase key. 
     *   **The Failure Gate:** If any validation error, option-binding, mapping, or coordinate failure is returned, you **MUST NOT** proceed to construct subsequent steps. You **MUST** stop, analyze the validation errors, and fix the active step before building further.
-16. **Strict Block on Construction for Incomplete Placement or Playwright Settings**:
+17. **Strict Block on Construction for Incomplete Placement or Playwright Settings**:
     *   You are **strictly prohibited** from entering `STATE_CONSTRUCTION` or calling construction tools (`CreateTestStep`, etc.) if placement parameters (Test Configuration, Test Suite, Test Case Name) or Frontend Playwright browser settings are missing, unconfirmed, or incomplete.
     *   Part 1 (Test Specification), Part 2 (Placement), and Part 3 (Playwright Settings for Frontend) of the Execution Plan **MUST** be 100% complete and explicitly approved by the user before construction can begin.
-17. **Playwright 3 Conflict Options Tool Execution Law (Frontend Construction)**:
+18. **Playwright 3 Conflict Options Tool Execution Law (Frontend Construction)**:
     *   *Option 1 (Inherit Existing Suite Settings):* Do NOT call Playwright configuration microflows on the suite. Construct new action steps after existing steps, before teardown.
     *   *Option 2 (Override Suite Settings):* Execute Playwright configuration microflow steps on the suite key to apply the new 10 Playwright settings before appending test steps.
     *   *Option 3 (New 3-Case Pattern Block):* Call `CreateTestCase` to provision a dedicated new 3-case set (*Setup*, *Action*, *Teardown*) in the suite below existing tests, apply Playwright configuration steps to the setup case, and construct action steps inside the new case.
-18. **Mandatory Test Step Description Pattern Annotation Law**:
+19. **Mandatory Test Step Description Pattern Annotation Law**:
     *   **The Guardrail:** During `STATE_CONSTRUCTION`, whenever you build a test step that implements a specific testing pattern (such as *Retrieve / Microflow Output Object Count Assertion*, *Backend-First Delete*, *Empty Object / Conditional Null Filter*, *Validation Feedback Assertion (Backend Only)*, *Void Microflow Side-Effect*, etc.), you **MUST** call `SetTestStepNameDescription` on that `TestStepKey`.
     *   **Tool Parameters:** Set `ActionWithName = "Omit"` (or `"Set"` if updating the step name), `ActionWithDescription = "Set"`, and `Description = "[Pattern: <Pattern Name> - <Short Rationale>]"`.
-    *   **Consistency:** The annotation string MUST match the pattern and rationale specified in Section 4 of the approved Execution Plan.
-19. **Direct Attribute & Association Initialization on Create Object Law**:
+    *   **Consistency:** The annotation string MUST match the pattern and rationale specified in Section 5 (Step Sequence) and Section 8 (Applied Testing Patterns & Rationale) of the approved Execution Plan.
+20. **Direct Attribute & Association Initialization on Create Object Law**:
     *   Whenever an object is instantiated via a `Create Object` test step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` test step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**.
-20. **Prohibition of Embedded Asserts on Create Object & Change Object Steps**:
+21. **Prohibition of Embedded Asserts on Create Object & Change Object Steps**:
     *   Embedded assertions (`Assert Attribute Value Compare` / `Assert Object Count`) are strictly **PROHIBITED** on `Create Object` and `Change Object` test steps. Initial attributes on `Create Object` and modified attributes on `Change Object` are set directly as step initializers/mutators, NOT as assertions. Assertions belong on `Retrieve Object` (Filter) steps, `Microflow Call` steps (for return values), or UI Action/Assertion steps.
-21. **Domain Model Attribute Length & Constraint Compliance Law**:
+22. **Domain Model Attribute Length & Constraint Compliance Law**:
     *   When configuring attribute values on test steps (`SetStringAttributeValue`, `SetInputTypeAttributeValueToTestStep`, etc.) or adding item attribute overrides in data variations, you **MUST** ensure string values do not exceed maximum length limits defined on the target entity attributes in the Mendix Domain Model. Inspect the entity via `mxcli` (`SHOW ENTITY`) whenever proposing or binding string attribute values.
 
 ---
@@ -104,7 +104,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Test case placement, hierarchy, lifecycles, database/memory piping, setups* | **`references/placement-and-lifecycle.md`** |
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Predecessor chaining, zero-data, golden rules, piping structures* | **`references/golden-rules.md`** |
-| *Auditing step sequences, validating 45 testing patterns/anti-patterns, auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating 54 testing patterns/anti-patterns, auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 
 > [!IMPORTANT]
 > **🚫 STRICT BACKEND VS FRONTEND ISOLATION:**
@@ -133,8 +133,8 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
    - *Milestone:* Run the programmatic server compiler checks (`GetTestConstructionErrorsOfTestCase`), perform a **100% Full-Content Audit of ALL 8 Sections of the saved Execution Plan** (`GetExecutionPlan`, `GetTestSteps`, `GetTestCaseDataVariationsDetails` / `GetTestSuiteDataVariationsDetails`), and output the Post-Construction Smoke Audit Report (unlocked only if a valid `ExecutionPlanKey` is present).
    - **Mandatory 8-Section Plan Conformity Audit:**
      1. **Section 1 (Metadata & Placement):** App, Config, Suite, Case Name, Category, Execution User (`EXUS_ExecutionUser`).
-     2. **Section 2 (Documentation):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`).
-     3. **Section 3 (Risk Alignment):** Technical Risk, Business Risk, Intended Use.
+     2. **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
+     3. **Section 3 (Documentation & Risk Alignment):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`), Technical Risk, Business Risk.
      4. **Section 4 (Verified Elements):** Target microflows, pages, entities, and attributes referenced across steps.
      5. **Section 5 (Step Sequence):** Line-by-line check of created steps (`GetTestSteps`) vs Section 5 (step types, sequence, predecessors, execution settings `"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`, pattern annotations).
      6. **Section 6 (Playwright Browser Settings):** Verify all 10 browser setting keys/values configured on suite/setup case.

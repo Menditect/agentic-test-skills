@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages dual-track capabilities, macro states, routing, and safety/resilience guardrails."
-version: "4.1.6"
-changes: "positioning added to state.json, extra check on data variation duplicate logic and seeding, delete set to always"
+version: "4.1.7"
+changes: "deep analysis to fix inconsistencies: standardized 8-section execution plan schema, harmonized rule counts and pattern citations"
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -139,7 +139,7 @@ Before executing any turn, drafting any proposal, or calling any tool, you **MUS
 
 *   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Whenever an object is instantiated via a `Create Object` step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**. [^PAT-06] [^ANTI-01]
 *   **🛑 Frontend Test Seeding & Delete Execution Condition Law**: In Frontend tests, database Seeding steps in Case 1 (Setup Test Case) and Delete/Cleanup steps in Case 3 (Teardown Test Case) **MUST ALWAYS** be configured with `ExecutionCondition = "_Always"` (or `"Always"`) and `ResumeExecutionAfterException = "_Continue"`. [^PAT-03] [^PAT-18]
-*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..41] [^ANTI-01..12]
+*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..42] [^ANTI-01..12]
 *   **🛑 Uniform Step Sequence Schema Law**: Every test step in Section 5 of an Execution Plan MUST strictly adhere to the uniform 8-field schema in exact field order (`Step Type`, `Target / Entity / Action`, `Input Source / Handles`, `Output Variable Handle`, `Parameters & Attribute Values`, `Embedded Step Assertions`, `Execution Settings`, `Step Description & Pattern Rationale`). [^PAT-12]
 
 ### 🔄 Execution Plan Iteration & Build Plan Pattern Re-Audit Guardrail

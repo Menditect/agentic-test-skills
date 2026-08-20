@@ -6,7 +6,7 @@
 ---
 
 ## 🎯 Purpose & AI Agent Usage Guidelines
-This reference serves as an authoritative **AI Lookup Table, Pre-Flight Verification Index, and Continuous Pattern Register**. All 45 rules are categorized into 3 operational tiers:
+This reference serves as an authoritative **AI Lookup Table, Pre-Flight Verification Index, and Continuous Pattern Register**. All 54 rules (42 Patterns + 12 Anti-Patterns) are categorized into 3 operational tiers:
 1. **Explicit Methodological Law**: Universal quality, architecture, and testing pyramid laws.
 2. **Explicit Platform Execution Law**: Permanent execution laws required by Mendix runtime and Playwright runner mechanics.
 3. **Temporary Tool API Quirk**: Current 166 MCP API endpoint mechanics (slated for deprecation upon the 54-tool MCP compression update).
@@ -25,7 +25,7 @@ Whenever a new testing pattern, recipe, rule, quirk, or anti-pattern (whether ex
 
 ---
 
-## 📊 Master AI Lookup Matrix (45 Rules)
+## 📊 Master AI Lookup Matrix (54 Rules: 42 Patterns + 12 Anti-Patterns)
 
 | Rule ID | Pattern / Rule Name | Classification | Source Location | Summary & Core Enforcement |
 | :--- | :--- | :--- | :--- | :--- |
@@ -88,7 +88,7 @@ Whenever a new testing pattern, recipe, rule, quirk, or anti-pattern (whether ex
 
 ## 🤖 AI Pre-Flight Plan Audit Checklist (Execution Protocol)
 
-Before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or constructing steps in `STATE_CONSTRUCTION`, the AI Agent MUST run this mental self-audit against the 45-rule lookup index:
+Before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or constructing steps in `STATE_CONSTRUCTION`, the AI Agent MUST run this mental self-audit against the 54-rule lookup index:
 
 ```markdown
 [ ] 1. DIRECT INITIALIZATION: Are all attributes/associations set directly on Create Object steps without subsequent Change Object steps? (PAT-06 / ANTI-01)

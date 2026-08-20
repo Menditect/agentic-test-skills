@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), or answering general testing/prompting questions"
-version: "4.1.6"
-changes: "positioning added to state.json, extra check on data variation duplicate logic and seeding, delete set to always"
+version: "4.1.7"
+changes: "deep analysis to fix inconsistencies: standardized 8-section execution plan schema, updated scoping rules to 17, and fixed section cross-references"
 ---
 
 # MTA Test Scoping & Design Skill
@@ -21,7 +21,7 @@ Or if an AI agent (like MAIA or another AI) has built or modified software in th
 
 …you MUST load and follow this skill FIRST, before `mta-build` or `mta-run-analyze`.
 Do NOT assume a specific test case or microflow target. 
-**Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_SCOPE_START`.
+**Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_BUILD_PLANNING (PLAN_STEP_1)`.
 
 This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
 
@@ -124,7 +124,7 @@ You must progress sequentially through these three interactive planning micro-st
        * **Frontend 3-Case Split Law:** Is this a UI test? ➔ **REQUIREMENT:** Separate steps into Case 1 (Setup), Case 2 (Action), and Case 3 (Teardown). Database Seeding steps in Case 1 (Setup) and Delete/Cleanup steps in Case 3 (Teardown) MUST ALWAYS have `ExecutionCondition = "_Always"` (or `"Always"`) and `ResumeExecutionAfterException = "_Continue"`. [^PAT-03] [^PAT-18]
        * **Data Variation Matrix Formatting & Capping:** Does the matrix exceed 8 columns? ➔ **REQUIREMENT:** Split into 8-column horizontal tables. [^PAT-16]
        * **Backend Unit Execution Settings Law:** Are all setup/create steps in a Backend Unit Test configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`, and assertion steps configured with `ResumeExecutionAfterException = "_Continue"`? [^PAT-17] [^ANTI-07]
-       * **Test Step Description Pattern Annotations:** Do test steps implementing specific testing patterns contain the pattern annotation tag `[Pattern: <Name> - <Rationale>]` in Section 4 of the Execution Plan to be written into MTA step descriptions during construction? [^PAT-12]
+       * **Test Step Description Pattern Annotations:** Do test steps implementing specific testing patterns contain the pattern annotation tag `[Pattern: <Name> - <Rationale>]` in Section 5 (Step Sequence) of the Execution Plan to be written into MTA step descriptions during construction? [^PAT-12]
        * **Prompt vs. MTA Skill Conflict Audit:** Did the plan explicitly compare the user prompt or raw input log against official MTA Skill Laws and populate Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts`)? Any conflict or anti-pattern in the prompt/input MUST be explicitly documented alongside its automatic skill correction.
     3. 📝 **Re-Run Pre-Approval Self-Audit:** Re-embed the updated `PRE-APPROVAL SELF-AUDIT REPORT` reflecting any step sequence adjustments.
     4. 🤖 **Automatic Pattern Registration:** If during conversation or skill editing a new pattern or rule is identified, automatically update this checklist, register it in `mta-patterns-and-antipatterns-reference.md`, and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files so future plan revisions evaluate it seamlessly.
@@ -142,7 +142,7 @@ You **MUST** output the final approved Execution Plan inside this exact standard
 ```json
 {
   "MtaState": "STATE_CONSTRUCTION",
-  "TempState": "STATE_CASE_CREATION",
+  "TempState": null,
   "TargetConfig": "[UserSelectedTestConfig]",
   "TargetSuite": "[UserSelectedTestSuite]",
   "TestCase": "[UserSelectedTestCaseName]",
@@ -313,7 +313,8 @@ You **MUST** output the final approved Execution Plan inside this exact standard
 | **9. Browser Locale** | System Default (`en-US`) | `nl-NL`, `de-DE`, `fr-FR`, or valid BCP-47 tag |
 | **10. Virtual Timezone ID** | System Default (`Europe/Amsterdam`) | `UTC`, `America/New_York`, `Asia/Tokyo`, or valid IANA ID |
 
-### 📊 Data Variation Matrix (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+### 📊 Data Variation Matrix
 #### Table 1: Scenarios #1 to #7 (Primary Scenarios)
 | Attribute / Step | #1 (variation-name-1) | #2 (variation-name-2) | #3 (variation-name-3) |
 | :--- | :--- | :--- | :--- |
@@ -325,7 +326,7 @@ You **MUST** output the final approved Execution Plan inside this exact standard
 *   **Variation #1 (`variation-name-1`):** *Description:* `[Inputs and expected outcomes]`
 *   **Variation #2 (`variation-name-2`):** *Description:* `[Inputs and expected outcomes]`
 
-## 7. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
+## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
 *   **Applied Pattern:** `Retrieve / Microflow Output Object Count Assertion Pattern`
     *   **Target Step(s):** `[e.g. Step 3 (Retrieve Car)]`
     *   **Explanation:** `[Asserts object count immediately after query before downstream consumption to prevent silent null pointers.]`
@@ -353,7 +354,7 @@ This report is embedded immediately preceding the Execution Plan in your final d
 
 ---
 
-## 🚫 THE 16 GOLDEN RULES OF TEST SCOPING
+## 🚫 THE 17 GOLDEN RULES OF TEST SCOPING
 
 1.  **Do Not Assume Frontend by Default**: Only recommend Frontend tests when there is clear UI/Client Cache risk (such as modified custom widgets or touchpoint `ACT_` logic). Prefer high-speed, highly stable Backend Unit and Integration tests for business calculations and process orchestration.
 2.  **Explicit Dual-Risk Alignment**: Every test proposed must clearly state both the **technical risk** (e.g., database ACID corruption) and the **business risk** (e.g., direct financial leakage) it is designed to mitigate.
@@ -395,9 +396,9 @@ This report is embedded immediately preceding the Execution Plan in your final d
     *   **Exclusion for Create Object Steps:** This rule applies EXCLUSIVELY to `Retrieve Object` and `Microflow Call` producer steps. You are strictly prohibited from adding `Assert Object Count` steps after `Create Object` test steps, as newly instantiated in-memory objects do not require existence validation.
     *   **Default Count Rules:** The default expected object count is `1` (for single object parameters), unless the receiving parameter/step accepts a List (where the default count matches expected list size N >= 0).
     *   **Diagnostic Rationale:** Asserting object count immediately provides fast-fail diagnostic clarity, ensuring that missing/null database records or unexpected result sizes are caught instantly before causing silent null pointer exceptions or misleading errors in downstream steps.
-    *   **Mandatory User Notification:** When applying this pattern in an Execution Plan, you MUST explicitly include Section 6 (`Applied Testing Patterns & Rationale`) detailing which producer steps are asserted and explaining why this pattern prevents downstream test breakage.
+    *   **Mandatory User Notification:** When applying this pattern in an Execution Plan, you MUST explicitly include Section 8 (`Applied Testing Patterns & Rationale`) detailing which producer steps are asserted and explaining why this pattern prevents downstream test breakage.
 15. **Rule 15: Mandatory Test Step Description Pattern Annotation Law:**
-    *   **The Guardrail:** Whenever a test step implements a specific testing pattern (such as *Retrieve / Microflow Output Object Count Assertion*, *Backend-First Delete*, *Empty Object / Conditional Null Filter*, *Validation Feedback Assertion (Backend Only)*, *Void Microflow Side-Effect*, etc.), you MUST explicitly specify a pattern annotation tag for that step in the Execution Plan (Section 4) using the standard format: `[Pattern: <Pattern Name> - <Short Rationale>]`.
+    *   **The Guardrail:** Whenever a test step implements a specific testing pattern (such as *Retrieve / Microflow Output Object Count Assertion*, *Backend-First Delete*, *Empty Object / Conditional Null Filter*, *Validation Feedback Assertion (Backend Only)*, *Void Microflow Side-Effect*, etc.), you MUST explicitly specify a pattern annotation tag for that step in the Execution Plan (Section 5) using the standard format: `[Pattern: <Pattern Name> - <Short Rationale>]`.
     *   **Construction Handoff:** During `STATE_CONSTRUCTION`, the agent building the test MUST call `SetTestStepNameDescription` to write this annotation directly into the test step's `Description` field in MTA.
 16. **Rule 16: Mandatory Upfront GetPages & GetWidgets First & Immediate Detailed Plan Law for Frontend:**
     *   **Upfront Execution:** For building any Frontend Execution Plan, you **MUST** call `GetPages` and `GetWidgets` **first** to retrieve page keys, custom CSS classes, widget keys, widget types, and list flags.
@@ -418,11 +419,11 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | --- | --- |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying 45 testing patterns/anti-patterns, or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying 54 testing patterns/anti-patterns, or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 
 ---
 
 ## 🔄 Downstream Handoff Trigger
 
-Once the user approves the generated prompt in `STATE_PROMPT_GENERATION`, output:
+Once the user approves the generated Execution Plan in `PLAN_STEP_3` (Gate 2), output:
 > 🚀 **Handoff Trigger**: Ready to transition to `mta-build`. Load the `mta-build` skill with the generated prompt to construct the test.

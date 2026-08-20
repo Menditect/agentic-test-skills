@@ -56,6 +56,6 @@ Asserts that a microflow returns a value matching expected conditions.
 
 ## 🔄 Construction Workflow Sequence
 1.  **Scope the TestCase:** Ensure configuration, suite, and name are aligned.
-2.  **Add Chronological Steps:** Create steps in exact logical sequence adhering to the **Uniform 8-Field Step Sequence Schema** (`Step Type`, `Target / Entity / Action`, `Input Source / Handles`, `Output Variable Handle`, `Parameters & Attribute Values`, `Embedded Step Assertions`, `Execution Settings`, `Step Description & Pattern Rationale`).
+2.  **Add Chronological Steps:** Create steps in exact logical sequence.
 3.  **Bind Assertions:** Bind assertions immediately to their corresponding target steps.
 4.  **Verify Success:** Call `GetTestConstructionErrorsOfTestCase` immediately after building a step block to check for mapping or schema-binding errors.

@@ -66,8 +66,8 @@ If a connection dropout, timeout, or validation error interrupts active construc
 Your report **MUST** contain four distinct sections:
 1. **100% Entire Execution Plan Content Audit (Execution Plan vs. Reality - ALL 8 SECTIONS):** Compare the approved execution plan (State 2) section-by-section with the actual created assets on MTA:
     *   **Section 1 (Metadata & Placement):** App, Test Configuration, Test Suite, Test Case Name, Category, Execution User (`EXUS_ExecutionUser`).
-    *   **Section 2 (Documentation):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`).
-    *   **Section 3 (Risk Alignment):** Technical Risk, Business Risk, Intended Use.
+    *   **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
+    *   **Section 3 (Documentation & Risk Alignment):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`), Technical Risk, Business Risk.
     *   **Section 4 (Verified Elements):** Target microflows, pages, entities, attributes referenced.
     *   **Section 5 (Step Sequence Audit):** Compare approved steps line-by-line with created steps (`GetTestSteps`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`), and `[Pattern: ...]` annotations.
     *   **Section 6 (Playwright Settings):** Verify all 10 browser setting keys/values configured on suite/setup case.
