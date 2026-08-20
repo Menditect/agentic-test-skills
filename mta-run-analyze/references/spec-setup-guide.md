@@ -9,7 +9,7 @@ This guide outlines the precise operational checklists, safety gates, and valida
 ## 📋 COMPACTED STATE-BY-STATE SETUP CHECKLIST
 
 ### 1. `STATE_DISCOVERY` (State 1)
-*   **First-Turn Tool Ban:** Run `GetMtaUrl` and present the interactive discovery template. Do NOT execute any other tools on a fresh turn.
+*   **First-Turn Discovery:** Read `MTA Url` directly from project `AGENTS.md`, `.vscode/settings.json`, or `mta_state.json` and present the interactive discovery template. Do NOT execute mutating tools on a fresh turn.
 *   **🚨 Handoff Category Validation (MANDATORY):** If you receive a handoff prompt from the Test Design skill or a custom user prompt, you **MUST** immediately check for a clear, explicit category selection (`Backend` or `Frontend`). If the prompt is generic, ambiguous, or lacks an explicit category, you **MUST NOT** proceed. You **MUST** halt in `STATE_DISCOVERY` and force the user to choose the category before starting any planning or suite scanning.
 *   **Selection:** Lock the Test Category (`Backend` vs `Frontend` - **MANDATORY**).
 *   **🚨 Step-by-Step Interactive Placement Discovery Law (MANDATORY):** To save tokens and avoid massive context bloat, you are strictly prohibited from scanning all configurations, suites, and test cases in parallel or in a single turn. You **MUST** perform the scans sequentially and interactively as defined in [MTA Placement & Lifecycle Guide](placement-and-lifecycle.md#41-step-by-step-interactive-placement-discovery-law-token-conservation), halting for user selection/creation after each level:

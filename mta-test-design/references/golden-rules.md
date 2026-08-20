@@ -10,7 +10,7 @@ This manual contains the detailed Golden Rules, zero-data naming templates, opti
 
 ## 🏆 THE GOLDEN RULES of MTA TEST CONSTRUCTION
 
-### 1. The Predecessor Chaining Law (Forward Chaining) [^PAT-10] [^PAT-29] [^ANTI-05]
+### 1. The Predecessor Chaining Law (Forward Chaining)
 To prevent step, case, or suite sequence corruption, elements must be created in chronological forward order:
 *   **The Predecessor 0 Rule (First Element in Empty Container):** For the absolute first element (step, case, or suite) in an empty container (empty testcase, empty suite, or empty test configuration), you **MUST** pass `0` for the predecessor parameter (`TestStepBeforeKey`, `TestCaseBeforeKey`, or `TestSuiteBeforeKey`) in the tool call. This explicitly indicates to the MTA backend that the element should be placed at the absolute beginning.
 *   **The Non-Empty Container Predecessor Sub-Rule (Subsequent Elements):** For non-empty suites, cases, or configurations, you **MUST** first query the existing elements (via `GetTestCases`, `GetTestSteps`, or `GetTestSuites`) to retrieve the last element's key, using it as the predecessor key to append chronologically. For subsequent elements created within the same turn cycle, you MUST use the actual non-zero numeric key returned by their immediate predecessor to chain them forward chronologically (e.g., Step B uses Step A's returned key as `TestStepBeforeKey`).
@@ -65,7 +65,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
 
 ---
 
-### 2. Zero Data in Step Names [^PAT-11]
+### 2. Zero Data in Step Names
 You **MUST NOT** mention the actual data values used (such as a specific username, password, order ID, status value, or country name) anywhere in the name of a teststep. Step names must describe *what* the step does functionally, not *which data value* it utilizes. Keeping data values out of step names is critical for test maintainability, clarity, and enabling data variations.
 
 All step names must follow this structured template:
@@ -82,7 +82,7 @@ All step names must follow this structured template:
 
 ---
 
-### 3. The Options & Parameter Placement Protocol & Proactive Output Piping [^PAT-06] [^PAT-09] [^ANTI-01] [^ANTI-04]
+### 3. The Options & Parameter Placement Protocol & Proactive Output Piping
 All object creation, attribute configuration, and object retrieval steps used as parameters **MUST ALWAYS** be placed chronologically *before* the teststep that calls the consuming microflow.
 *   **The Flow:** `Create Object` ➔ `Set Attributes & Associations directly on Create Object step` ➔ `Create Microflow Call Step` ➔ `Link to Microflow Parameter`.
 
@@ -155,7 +155,7 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
 
 ---
 
-### 4. The Test Case Session & Transaction Boundary Law [^PAT-03] [^PAT-18]
+### 4. The Test Case Session & Transaction Boundary Law
 *   **Isolated Sessions:** Each test case sets up its own distinct user session. Consequently, objects kept in memory can **ONLY** be used or retrieved within the same test case.
 *   **State Passing via DB:** If you need to pass objects or session state from one test case to another downstream case, the object **MUST** be written and stored in the database (use a `persist` teststep where needed).
 *   **Commit Simplification:** If a microflow explicitly commits an object to the database, a separate `persist` teststep is **NOT** required.
@@ -167,7 +167,7 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
 
 ---
 
-### 5. Retrieve-for-Asserting & Assertion Failure Default Laws (Aesthetics & Robustness) [^PAT-07] [^PAT-09] [^PAT-17] [^ANTI-07] [^ANTI-11]
+### 5. Retrieve-for-Asserting & Assertion Failure Default Laws (Aesthetics & Robustness)
 
 *   **🚨 Retrieve for Assertions Law (Strict Dynamic Filtering Preference):**
     When constructing a retrieve teststep for asserting or verifying data, you **MUST** adhere to these constraints:

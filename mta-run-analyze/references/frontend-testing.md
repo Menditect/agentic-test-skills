@@ -158,28 +158,48 @@ Before building, map the exact qualified names of the required frontend testkit 
 2.  **Live Programmatic Search (Fallback Only):** If the testkit is modified, execute an `mxcli` command through the wrapper script:
     *   `.\mxcli.bat -p "[MendixProject.mpr]" -c "SHOW MICROFLOWS IN MenditectMxFrontendTestKit"`
 
-### PROTOCOL D: Mandatory Upfront GetPages/GetWidgets & Immediate Detailed Execution Plan (Frontend Plan Law)
+### PROTOCOL D: Mandatory Frontend Execution Plan Quality Protocol (8 Mandatory Requirements)
 When creating or updating an Execution Plan for Frontend testing, you **MUST** follow this strict sequential division of responsibilities:
 
-1.  **Mandatory Upfront Server Discovery (`GetPages` & `GetWidgets` First):**
-    You **MUST** call read-only MTA MCP tools `GetPages` and `GetWidgets` **first** before drafting the Execution Plan. These tools provide the definitive database keys, registry, and nesting flags:
-    *   `Key`: Database identifier (used in step parameters).
-    *   `Name` & `WidgetType`: Technical names and types (e.g., `Button_BookThisCar`, `DatePicker_PickupDate`, `actionButton24`).
-    *   `InListDataSource`: Boolean flag to determine if **Law 1** or **Law 2** applies.
+1.  **MTA Sync Probe & Model Fallback:**
+    *   **Inquire First:** Ask the user if the MTA server configuration is up to date.
+    *   **If MTA is Up to Date:** Execute read-only MTA MCP tools `GetPages` and `GetWidgets` **first** to retrieve page keys, custom CSS classes, widget keys, widget types, and list data source flags (`InListDataSource`).
+    *   **If MTA is NOT Up to Date:** Query the local Mendix model directly via `mxcli` (`SHOW PAGES -m <Module>`, `SHOW PAGE <PageQualifiedName>`) to inspect pages, widgets, and layout structures.
+    *   **Page & Widget Summary:** Always display an explicit summary list of all pages and widgets involved under Section 4 ("Verified Elements") of the plan.
 
-2.  **Immediate Presentation of Detailed Execution Plan:**
-    Using the retrieved `GetPages` and `GetWidgets` data, you **MUST immediately present a comprehensive, fully detailed Execution Plan** containing:
-    *   All chronological test steps (separated into Case 1 Setup, Case 2 Action, and Case 3 Teardown under the Frontend 3-Case Split Law).
-    *   All configurable step options and properties (e.g. execution settings `ExecutionCondition` / `ResumeExecutionAfterException`, locator strategies, widget names/types, test step outputs, values, assertions).
-    *   The complete 10-key Playwright Browser Settings table.
+2.  **Seed Data Requirement Analysis:**
+    *   Inspect input fields, dropdowns, reference selectors, and list data sources on the target pages to analyze required domain entities and attributes.
 
-3.  **Deferred Second-Pass Deep Model Inspection (Conditional Only):**
-    Deep model inspection (via local `mxcli` commands or MAIA `pg_read_page`) is strictly **deferred** until AFTER the initial detailed Execution Plan has been presented to the user.
-    *   **When to run Deep Inspection:** Run deep model inspection as a secondary pass ONLY if deep structural details are still necessary (or explicitly requested by the user) to resolve:
-        *   *Input Form Fill / Tab Sequencing:* Finding exact tab/fill order when `GetWidgets` list order is ambiguous.
-        *   *DatePicker Format Strings:* Reading custom `dateformPattern` / `format` string properties.
-        *   *Navigation Home Page Structure:* Executing `SHOW NAVIGATION` via `mxcli` to resolve role-based home pages.
-    *   *Deep Inspection Tools:* Execute locally via `mxcli` (e.g. `.\mxcli.bat -p "[Project]" -c "SHOW PAGE [PageQualifiedName]"`) or via MAIA in Studio Pro (`pg_read_page(moduleName, pageName)`).
+3.  **Seed Data Strategy Choice (Create vs Retrieve):**
+    *   Present an explicit choice to the user:
+        *   *Choice A (Create):* Instantiate fresh seed objects in Case 1 (Setup) via `Create Object` and `Persist` steps.
+        *   *Choice B (Retrieve):* Fetch pre-existing database records via `Retrieve Object` steps.
+
+4.  **Multiple Seed Objects for Lists & Selection Widgets:**
+    *   Whenever an entity is displayed in a repeating container (Gallery, ListView, DataGrid2) or selection widget (DropDown, ComboBox, ReferenceSelector, ReferenceSetSelector), plan to create or retrieve **multiple seed objects** (at least 2-3 records) of that entity type to validate selection accuracy and list filtering.
+
+5.  **Login & Role-Based Navigation Check:**
+    *   **Anonymous Access Check:** If the starting page is configured as reachable by Anonymous users, no login is required (`Start_MxFrontend_Test_Without_Login`).
+    *   **Login Required:** If authentication is required, verify the target user role and query Mendix model navigation settings (`SHOW NAVIGATION` via `mxcli`) to trace role-based homepages and menu paths to navigate to the starting page.
+
+6.  **Dynamic Scalar Value Selection Piping:**
+    *   For selecting items from dropdowns, comboboxes, reference selectors, or lists, use **Dynamic Scalar Value Piping** (`SelectValueForValue`) referencing the output handle/attribute of upstream seed data steps instead of hardcoding static literal strings.
+
+7.  **Date-Time Offset & Format Pattern Inspection:**
+    *   For `DatePicker` / date-time widgets, set `CurrentDateTime` with an offset (e.g. `CurrentDateTime + 1 day`, `CurrentDateTime - 7 days`) as the preferred default option.
+    *   Inspect the Mendix model via `mxcli` or page XML for custom date format pattern configurations (`dateformPattern`).
+
+8.  **List Selection Filter Options Proposal:**
+    *   When selecting an item from a list or repeating container, propose the available Frontend Testkit filter strategies:
+        *   *Option 1:* Text Filter (`ELO_Filter_*_by_Text`)
+        *   *Option 2:* Position / Index Filter (`ELO_Nth_*_Item`)
+        *   *Option 3:* Dynamic Scalar Value Piping from seeded objects
+
+9.  **Immediate Presentation of Detailed Execution Plan:**
+    Using the retrieved discovery data, **immediately present a comprehensive, fully detailed Execution Plan** containing all test steps (Case 1 Setup, Case 2 Action, Case 3 Teardown) and configurable options alongside the 10-key Playwright Browser Settings table.
+
+10. **Deferred Second-Pass Deep Model Inspection (Conditional Only):**
+    Deep model inspection (via local `mxcli` commands or MAIA `pg_read_page`) is strictly **deferred** until AFTER the initial detailed Execution Plan has been presented to the user, and is executed ONLY if deep structural details are still necessary or explicitly requested.
 
 ### PROTOCOL E: Fully Qualified Name (FQN) to Registry Resolution (Mapping Law)
 To resolve the discrepancy between Mendix model-level Fully Qualified Names (FQN, e.g. `"Sales.Order_Detail"`) and the MTA server's flat registry fields:

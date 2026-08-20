@@ -19,7 +19,7 @@ changes: "positioning added to state.json, extra check on data variation duplica
 
 > [!IMPORTANT]
 > ### 🔍 ALWAYS AUTHORIZED READ-ONLY MTA `GET*` MCP TOOLS
-> You are **ALWAYS authorized and permitted** to execute read-only MTA `Get*` MCP tools (such as `GetPages`, `GetWidgets`, `GetTestSuites`, `GetTestConfigurationsForApplicationKey`, `GetApplicationByName`, `GetTestCases`, `GetTestSteps`, `GetMtaUrl`, `GetExecutionUsers`, etc.) in any state to inspect model data, discover targets, build context, or verify application state.
+> You are **ALWAYS authorized and permitted** to execute read-only MTA `Get*` MCP tools (such as `GetPages`, `GetWidgets`, `GetTestSuites`, `GetTestConfigurationsForApplicationKey`, `GetApplicationByName`, `GetTestCases`, `GetTestSteps`, `GetExecutionUsers`, etc.) in any state to inspect model data, discover targets, build context, or verify application state. To construct clickable MTA navigation links and resolve the MCP server endpoint (`[MtaUrl]/tools/mcp`), evaluate in order: (1) project-level `AGENTS.md` (`MTA Url`), (2) `mta_config.json` (`mta_base_url`), (3) `.vscode/settings.json` (`MTA_BASE_URL`), (4) `mta_state.json` (`mta_base_url`), or (5) prompt the user on turn 1.
 > *(Note: This exemption applies exclusively to read-only MTA MCP tools).*
 
 > [!IMPORTANT]
@@ -81,6 +81,10 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   **Consistency:** The annotation string MUST match the pattern and rationale specified in Section 4 of the approved Execution Plan.
 19. **Direct Attribute & Association Initialization on Create Object Law**:
     *   Whenever an object is instantiated via a `Create Object` test step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` test step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**.
+20. **Prohibition of Embedded Asserts on Create Object & Change Object Steps**:
+    *   Embedded assertions (`Assert Attribute Value Compare` / `Assert Object Count`) are strictly **PROHIBITED** on `Create Object` and `Change Object` test steps. Initial attributes on `Create Object` and modified attributes on `Change Object` are set directly as step initializers/mutators, NOT as assertions. Assertions belong on `Retrieve Object` (Filter) steps, `Microflow Call` steps (for return values), or UI Action/Assertion steps.
+21. **Domain Model Attribute Length & Constraint Compliance Law**:
+    *   When configuring attribute values on test steps (`SetStringAttributeValue`, `SetInputTypeAttributeValueToTestStep`, etc.) or adding item attribute overrides in data variations, you **MUST** ensure string values do not exceed maximum length limits defined on the target entity attributes in the Mendix Domain Model. Inspect the entity via `mxcli` (`SHOW ENTITY`) whenever proposing or binding string attribute values.
 
 ---
 
@@ -100,6 +104,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Test case placement, hierarchy, lifecycles, database/memory piping, setups* | **`references/placement-and-lifecycle.md`** |
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Predecessor chaining, zero-data, golden rules, piping structures* | **`references/golden-rules.md`** |
+| *Auditing step sequences, validating 45 testing patterns/anti-patterns, auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 
 > [!IMPORTANT]
 > **🚫 STRICT BACKEND VS FRONTEND ISOLATION:**

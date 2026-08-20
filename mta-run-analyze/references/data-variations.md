@@ -204,7 +204,7 @@ Setters for numeric and datetime fields do not accept nulls or blanks.
 
 ---
 
-### 2. The Empty Object Workaround (Retrieve Filter Pattern)
+## 2. The Empty Object Workaround (Retrieve Filter Pattern)
 MTA step bindings (SelectObjectForMicroflowParameter or `%SOMP%`) are global and static. They cannot be unset per-variation. To pass an empty/null object optionally, retrieve it via an XPath filter that varies to match nothing:
 
 ```

@@ -19,7 +19,7 @@ changes: "positioning added to state.json, extra check on data variation duplica
 
 > [!IMPORTANT]
 > ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
-> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetMtaUrl`, `GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetTestSteps`, `GetPages`, `GetWidgets`, `GetExecutionUsers`, `RetrieveTestRunResults`) at any time, including on the very first turn of a request.
+> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetTestSteps`, `GetPages`, `GetWidgets`, `GetExecutionUsers`, `RetrieveTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve the MCP server endpoint (`[MtaUrl]/tools/mcp`), evaluate in order: (1) project-level `AGENTS.md` (`MTA Url`), (2) `mta_config.json` (`mta_base_url`), (3) `.vscode/settings.json` (`MTA_BASE_URL`), (4) `mta_state.json` (`mta_base_url`), or (5) prompt the user on turn 1.
 > Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
 
 > [!IMPORTANT]
@@ -49,6 +49,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every MTA tool call.
 4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
 5. **State File Key Resolution Law**: Before executing any test case, test suite, or configuration, check `mta_state.json` to load the exact numeric `key` for the target test case (`test_cases[].key`), test suite (`test_suite.key`), or execution plan (`execution_plan_key`). If `mta_state.json` is missing keys, use read-only discovery tools (`GetTestSuites`, `GetTestCases`) to locate the entity on the MTA server, and immediately update `mta_state.json`.
+6. **Pattern Audit & Auto-Registration Protocol**: When analyzing existing test cases or auditing step sequences in `STATE_QA_ASSISTANCE`, verify step patterns against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-01..41] [^ANTI-01..12]. If a new pattern or anti-pattern is identified or learned, auto-register it in `mta-patterns-and-antipatterns-reference.md` and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files.
 
 ---
 

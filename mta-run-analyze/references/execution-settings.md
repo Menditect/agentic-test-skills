@@ -13,20 +13,20 @@ This manual contains the canonical reference for selecting and configuring the c
 Use this decision tree to determine the correct settings for any Test Case or Teststep:
 
 1. Is it a Boilerplate Frontend Test Case (Setup Case 1 or Teardown Case 3)?
-   ├─► Yes: Set Case ExecutionCondition to "_Always" (or "Always"), ResumeExecutionAfterException to "_Continue".
+   ├─► Yes: Set Case ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
    └─► No: Is it Case 2 (Execution)?
        ├─► Yes: Set Case ExecutionCondition to "None" (standard default), ResumeExecutionAfterException to "Stop".
        └─► No: (Backend Unit Test consisting of a single microflow execution): Set RollbackTcseAfterExecution to "Yes". For all other cases, set it to "No".
 
 2. For any Teststep inside Frontend tests:
    ├─► Is it a Boilerplate step (Options Objects, Start Frontend Session [Start_MxFrontend_Test_...], Stop Frontend Session [Stop_MxFrontendTest], Playwright Teardown [Teardown_Playwright])?
-   │   └─► Set Step ExecutionCondition to "_Always" (or "Always"), ResumeExecutionAfterException to "_Continue".
+   │   └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
    ├─► Is it a Backend Data Action?
    │   ├─► Setup Seeding (Case 1), Teardown Setup Cleanup (Case 3), and UI-Created Cleanup (Case 2) steps:
-   │   │   └─► Set Step ExecutionCondition to "_Always" (or "Always"), ResumeExecutionAfterException to "_Continue". (🚨 **CRITICAL RULE:** Seeding in Case 1 Setup and Delete in Case 3 Teardown MUST ALWAYS be set to `_Always` / `"Always"`).
+   │   │   └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue".
    │   │       *(This includes Create, Change, Retrieve, Delete, and Persist steps used to prepare data or clean up the database).*
    │   └─► Database Assertions, Assert Steps, & Retrievals used for Assertions:
-   │       └─► Set Step ExecutionCondition to "_Always" (or "Always"), ResumeExecutionAfterException to "_Continue" (🚨 **CRITICAL RULE:** Assertions and retrieve steps used for asserting must default to continuing on failure; only use "Stop" if explicitly requested in the prompt or by the user).
+   │       └─► Set Step ExecutionCondition to "Always", ResumeExecutionAfterException to "_Continue" (🚨 **CRITICAL RULE:** Assertions and retrieve steps used for asserting must default to continuing on failure; only use "Stop" if explicitly requested in the prompt or by the user).
    └─► Is it a Standard UI Interaction (Clicks, Fills, standard UI Assertions)?
        └─► Set Step ExecutionCondition to "None" (standard default), ResumeExecutionAfterException to "Stop" (Note: If any standard UI interaction step functions as an assertion, it should default to continuing on failure unless explicitly requested to stop).
 
@@ -40,18 +40,18 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 
 | Level | Component / Flow Type | ExecutionCondition | ResumeExecutionAfterException | Notes / Operational Role |
 | :--- | :--- | :--- | :--- | :--- |
-| **Case Level** | Case 1 (Setup/Startup/Login) | `"_Always"` / `"Always"` | `"_Continue"` | Guarantees browser starts, session is created, and seeding runs |
+| **Case Level** | Case 1 (Setup/Startup/Login) | `"Always"` | `"_Continue"` | Guarantees browser starts and session is created |
 | **Case Level** | Case 2 (Standard Actions/Assertions) | `"None"` | `"Stop"` | Standard verification; skips if Setup failed |
-| **Case Level** | Case 3 (Teardown/Cleanup) | `"_Always"` / `"Always"` | `"_Continue"` | Strictly mandatory to close browser & clean up data |
-| **Step Level** | Options Objects (`LocalStartOptions`, etc.) | `"_Always"` / `"Always"` | `"_Continue"` | Options must exist to start browser |
-| **Step Level** | Setup & Startup steps (`Start_Frontend...` & `Start_MxFrontend_Test_...`) | `"_Always"` / `"Always"` | `"_Continue"` | Crucial browser setup/startup steps |
+| **Case Level** | Case 3 (Teardown/Cleanup) | `"Always"` | `"_Continue"` | Strictly mandatory to close browser & clean up data |
+| **Step Level** | Options Objects (`LocalStartOptions`, etc.) | `"Always"` | `"_Continue"` | Options must exist to start browser |
+| **Step Level** | Setup & Startup steps (`Start_Frontend...` & `Start_MxFrontend_Test_...`) | `"Always"` | `"_Continue"` | Crucial browser setup/startup steps |
 | **Step Level** | Standard UI Interactions (Clicks, Fills) | `"None"` | `"Stop"` | Normal UI verification flow |
-| **Step Level** | Backend Data Seeding (Create, Change, Persist) - *Frontend / Multi-Case* | `"_Always"` / `"Always"` | `"_Continue"` | Setup database state (MUST ALWAYS be `_Always`) |
-| **Step Level** | Backend Cleanup (Delete, Persist) - *Frontend / Multi-Case* | `"_Always"` / `"Always"` | `"_Continue"` | Cleanup database state (MUST ALWAYS be `_Always`) |
-| **Step Level** | Assertions & Exception/Count Asserts - *Frontend / Multi-Case* | `"_Always"` / `"Always"` | `"_Continue"` | Default behavior is to continue execution on failed asserts |
-| **Step Level** | Retrievals for Assertions - *Frontend / Multi-Case* | `"_Always"` / `"Always"` | `"_Continue"` | Retrieve steps used to prepare downstream assertions |
+| **Step Level** | Backend Data Seeding (Create, Change, Persist) - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Setup database state |
+| **Step Level** | Backend Cleanup (Delete, Persist) - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Cleanup database state |
+| **Step Level** | Assertions & Exception/Count Asserts - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Default behavior is to continue execution on failed asserts |
+| **Step Level** | Retrievals for Assertions - *Frontend / Multi-Case* | `"Always"` | `"_Continue"` | Retrieve steps used to prepare downstream assertions |
 | **Step Level** | All Object Actions (Create, Change, Delete, Persist, Asserts) - *Backend Unit Tests* | `"None"` | `"Stop"` | Default settings; do NOT call `SetExecutionSettingsOfTestStep` |
-| **Step Level** | Browser Close (`Teardown_Playwright` & `Stop_MxFrontendTest`) | `"_Always"` / `"Always"` | `"_Continue"` | Standard browser teardown and close steps |
+| **Step Level** | Browser Close (`Teardown_Playwright` & `Stop_MxFrontendTest`) | `"Always"` | `"_Continue"` | Standard browser teardown and close steps |
 
 ---
 
