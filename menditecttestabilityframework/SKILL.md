@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.8.1"
-changes: "updated terminology to Backend/Frontend"
+version: "2.0_1.8.2"
+changes: "Harmonized micro-states under STATE_BUILD_PLANNING and STATE_QA_ASSISTANCE"
 ---
 
 # Skill: Menditect Testability Framework (MTF)
@@ -46,10 +46,10 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 
 ---
 
-## 🧭 MICRO-STATES (Within STATE_DESIGN)
-When active under `STATE_DESIGN` (or during a code review detour), track your micro-state using the Temp State property in the global State Header:
+## 🧭 MICRO-STATES (Within STATE_BUILD_PLANNING / STATE_QA_ASSISTANCE)
+When active under `STATE_BUILD_PLANNING` (or during an architecture consultation in `STATE_QA_ASSISTANCE`), track your micro-state using the Temp State property in the global State Header:
 
-`[State: STATE_DESIGN | Temp State: MICRO_STATE | Active Skill: menditecttestabilityframework]`
+`[State: STATE_BUILD_PLANNING | Temp State: MICRO_STATE | Active Skill: menditecttestabilityframework]`
 
 ### Micro-States:
 1.  `STATE_PATTERN_AUDIT`: Scanning existing microflow names, parameter definitions, and prefixes for naming convention or typology violations.

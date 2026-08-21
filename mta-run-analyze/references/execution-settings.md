@@ -82,7 +82,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
    - `TestStepKey`: The key of the target teststep.
    - `ExecutionCondition`: Default is `"None"` for standard steps, `"Always"` for boilerplate/backend data steps.
    - `ExecutionDelayInMs`: Numeric delay (set to `0` if no delay is desired).
-   - `ResumeExecutionAfterException`: Default is `"Stop"` for standard interaction steps, and `"_Continue"` for boilerplate, backend data seeding/cleanup, assertions, and retrieve steps used for asserting (note the leading underscore!). Only configure assertions to stop execution upon failure when explicitly specified.
+   - `ResumeExecutionAfterException`: In Backend Unit Tests, ALWAYS set to `"_Stop"` for ALL steps. In Frontend UI and Backend Integration tests, set to `"_Stop"` for standard UI interactions, and `"_Continue"` for boilerplate, setup seeding (Case 1), teardown cleanup (Case 3), and assertion steps.
 
 ---
 

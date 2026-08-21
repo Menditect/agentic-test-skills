@@ -486,8 +486,8 @@ When a microflow has object parameters that should sometimes be null across vari
 - [ ] **Step N+1: Retrieve from Teststep** (NOT Database!).
 - [ ] **Configure:** Call `SetRetrieveSettingsOfTestStep` with `RetrieveOption = "Teststep"` and `RetrieveSet = "Head"`.
 - [ ] **Link:** Call `SetTestStepOutputForSelectObjectForRetrieve(SelectKey, TestStepOutputKey = Step N Key)`.
-- [ ] **Include Filter:** Include filter attribute `X` on the retrieve step using `IncludeAttributeValueInTeststep`.
-- [ ] **Register BOTH:** Call `AddAttributeValueAsVariationItem` for BOTH the Create step's attribute `X` value key AND the Retrieve step's filter attribute `X` value key.
+- [ ] **Include Filter:** Include filter attribute `X` on the retrieve step using `IncludeAttributeInTeststep`.
+- [ ] **Register BOTH:** Call `AddTestCaseVariationItemAttributeValue` for BOTH the Create step's attribute `X` value key AND the Retrieve step's filter attribute `X` value key.
 - [ ] **Step N+2: Call microflow**, and bind its parameter to the **Step N+1 retrieve output** (NOT Step N Create output!).
 - [ ] **Variations:** For valid runs, set BOTH keys to matching values (e.g., `"Meeting Invitation"`). For null/empty scenarios, set Retrieve filter value key to `"NON_EXISTENT"` (leaving Create as `"Meeting Invitation"`).
 

@@ -36,7 +36,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     *   **2. Independent Write & Configuration Operations (MANDATORY Parallelization):**
         *   Operations that modify independent objects, setup data variations, or configure independent settings do not have predecessor dependencies and MUST be parallelized.
         *   *Parallel Candidates:*
-            *   Adding variation items: Calling `AddAttributeValueAsVariationItem` for multiple attributes/values.
+            *   Adding variation items: Calling `AddTestCaseVariationItemAttributeValue` or `AddTestSuiteVariationItemAttributeValue` for multiple attributes/values.
             *   Duplicating variations: Calling `DuplicateTestCaseDataVariation` for different test cases/variations.
             *   Configuring execution settings of different steps or test cases: Calling `SetExecutionSettingsOfTestStep` or `SetExecutionSettingsOfTestCase` across separate targets.
             *   Setting metadata & pattern annotations: Calling `SetTestStepNameDescription` (to set step names or pattern description annotations `[Pattern: <Name> - <Rationale>]`), `TestCaseDataVariationName`, or `TestCaseDataVariationDescription` on independent entities.
@@ -175,8 +175,7 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
     2.  **Hardcoded Filters Restriction:** Hardcoded or static filters on retrieve steps are **strictly restricted** and **only allowed as a last-resort fallback** if no other option exists.
     3.  **Avoid `"Head"`, retrieve `"All"`:** Avoid setting `RetrieveSet = "Head"` on assert retrieves. Always configure the retrieve set to `"All"`.
     4.  **Downstream Object Count Assertion:** To check for object existence or correct record count, couple the `"All"` retrieve with an `AssertObjectCount` step downstream to programmatically verify the returned count (e.g., asserting that the list size is exactly `1`).
-*   **🚨 Default Assertion Failure Law (Continue on Failure):**
-    To ensure comprehensive error reporting across test runs, the default execution behavior on any assertion failure is to **continue execution** rather than stopping:
-    1.  **Standard Teststep execution:** For standard assertions and retrieve steps used for assertions, set `ResumeExecutionAfterException` to `"_Continue"` (using `SetExecutionSettingsOfTestStep`).
-    2.  **Assertion Tool settings:** For assertion property configurations (such as `CreateAssertMicroflowReturnValue`, `SetAssertExceptionProperties`, `SetAssertObjectCountProperties`), default the action failed assertion parameter (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"`.
-    3.  **Bypass/Stop Override:** Only configure assertions to stop execution upon failure (`"Stop"` or `"StopTestRun"`) when explicitly requested in the prompt or by the user.
+*   **🚨 Assertion Failure & Execution Settings Laws by Test Category:**
+    1.  **Backend Unit Tests (Strict Universal `_Stop` Law - `PAT-17`):** For **ALL** teststeps in Backend Unit Tests (including setup, create, microflow call, retrieve, and assertions), set `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. Because Backend Unit Tests rely on MTA's automated database transaction rollback (`RollbackTcseAfterExecution = "Yes"`), any failure must halt execution immediately to preserve isolation and prevent downstream cascading errors. Setting `_Continue` on any step in a Backend Unit Test is strictly prohibited (`ANTI-07`).
+    2.  **Frontend UI & Backend Integration Tests (`_Continue` on Assertions - `PAT-33`):** For non-setup/non-teardown assertion steps in Frontend UI tests and multi-step Integration tests, set `ResumeExecutionAfterException = "_Continue"` (via `SetExecutionSettingsOfTestStep`) and set assertion parameters (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"` to provide full-suite error reporting across the entire test run.
+    3.  **Frontend Setup & Teardown Cases (Strict `_Always` / `_Continue` Law - `PAT-18`):** In Frontend tests, all setup steps in Case 1 (including `Start_MxFrontend_Test_*`, seeding, and `Persist`) and all teardown steps in Case 3 (including delete and `Stop_MxFrontendTest`) MUST use `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.

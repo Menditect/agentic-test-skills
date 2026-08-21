@@ -135,8 +135,8 @@ To prevent sequence corruption, maintain clean naming, and build robust dynamic 
 
 Before outputting your response or executing any tool call, mentally verify these eight questions to guarantee absolute compliance with the MTA skill:
 1. **Did I check my active track?** I MUST identify whether I am running on the **Agentic Track** or **Chat Track** based on available tools.
-2. **Did I announce the current state?** I MUST have `Active State: [STATE_NAME]` printed at the very start of my response.
-3. **If halting, did I announce the destination?** If I am halting for input, I MUST have `Next Destination State: [NEXT_STATE_NAME]` printed at the top.
+2. **Did I announce the current state?** I MUST have the single-line State Header `[State: CURRENT_STATE | Temp State: TEMP_STATE | Active Skill: ACTIVE_SKILL]` printed at the very start of my response.
+3. **If halting, did I announce the next state or prompt clearly?** Ensure the user knows the active milestone and next steps.
 4. **Did I output my Chain of Thought block?** If I am calling any MTA MCP tool, I MUST have the `> 🧠 **Tool Execution Reasoning:**` block printed *immediately before* the tool call block.
 5. **Did I let the user choose the category?** I MUST have obtained the explicit choice of **Backend** vs **Frontend** during discovery/scoping and not assumed it on my own.
 6. **Did I strictly format my MTA direct links?** Check that links strictly conform to the singular, lowercase, `/p/`-inclusive structure (e.g. `[BaseUrl]/p/testcase/[Key]`) with zero pluralization or trailing paths.

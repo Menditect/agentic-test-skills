@@ -194,7 +194,7 @@ If Step B's execution condition is set to `"Always"`:
 
 ## 🔍 RUNTIME FAILURE DIAGNOSTICS & PROACTIVE AUDITING GETTERS
 
-When a test case or suite fails during runtime execution verification (`[STATE_EXECUTION_VERIFY]` or `[STATE_QA_ASSISTANCE]`), you **MUST** leverage MTA's programmatic diagnostics and auditing getters to trace values, associations, and assertion structures. 
+When a test case or suite fails during runtime execution verification (`[State: STATE_RUN_ANALYZE]` or `[State: STATE_QA_ASSISTANCE]`), you **MUST** leverage MTA's programmatic diagnostics and auditing getters to trace values, associations, and assertion structures. 
 
 These tools let you inspect the internal states of executed teststeps in transaction memory without resorting to guess-work.
 
@@ -310,7 +310,7 @@ When building or fixing tests, running a full test configuration (`ExecuteTestCo
 *   **Why:** These tools isolate execution strictly to your active work, avoid noise or failures from other suites/cases, reduce execution queue times, and complete significantly faster.
 *   **When to suggest:**
     1. During `STATE_CONSTRUCTION` when doing dry runs or teststep verification (highly recommend `ExecuteTestCase`).
-    2. During `STATE_EXECUTION_VERIFY` as the primary method of verifying the newly built test case.
+    2. During `STATE_RUN_ANALYZE` as the primary method of verifying the newly built test case.
     3. During troubleshooting when verifying that an applied fix has resolved a specific error.
 
 ---

@@ -27,18 +27,15 @@ MTA allows you to target and measure test coverage metrics across Mendix microfl
 
 ## 🎯 Design Handoff Blueprint
 
-When finishing the test-design scoping phase (`STATE_PROMPT_GENERATION`), you **MUST** format the output as a clean, standardized, and build-ready handoff prompt for `mta-build`:
+When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the agent formats the output as a formal **Execution Plan Blueprint** adhering to the uniform 8-section schema:
 
-```markdown
-### 📋 MTA Test Case Specification & Handoff
-- **MTA Configuration:** `Configuration Name`
-- **MTA Test Suite:** `Test Suite Name`
-- **MTA Test Case:** `TC_TestCaseName`
-- **Verified Entities:** `ModuleName.EntityName`
-- **Scoping Profile:** [High/Medium/Low Risk]
+1. **Section 1: Test Case Metadata & Target Placement** (Category, Placement, Execution User, Playwright Settings)
+2. **Section 2: Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)** (Explicit audit of prompt against MTA Skill Laws)
+3. **Section 3: Scope, Purpose & Risk Alignment** (Functional Purpose, Technical Risk, Business Risk, Pyramid Level)
+4. **Section 4: Verified Model Elements & MTF Testability Check** (Entities, Microflows, Pages/Widgets)
+5. **Section 5: Chronological Teststep Execution Sequence** (Uniform 8-field schema per step)
+6. **Section 6: Playwright / Browser Settings (10 Keys)** (Playwright browser configuration on suite / setup case)
+7. **Section 7: Data Variation Matrix & Metadata** (Consolidated scenarios, $M \times N$ matrix, horizontal max 8-column layout)
+8. **Section 8: Applied Testing Patterns & Rationale** (Citation of canonical `PAT-xx` / `ANTI-xx` IDs and rationale)
 
-#### 🎬 Chronological Step Specifications
-1.  **Step 1:** [Detail action and target, e.g. "Create Object of ModuleName.Order"]
-2.  **Step 2:** [Detail action, e.g. "Call Microflow ModuleName.ACT_CalculateTotal"]
-3.  **Step 3:** [Detail assert, e.g. "Assert attribute Total equals 100.0"]
-```
+*   👉 **Read:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Master Pattern Index](mta-patterns-and-antipatterns-reference.md)

@@ -97,9 +97,9 @@ When both risk profiles have been scored, locate the intersection to determine t
 
 ---
 
-## 🏃 4. Risk Analysis Table Template (State 3)
+## 🏃 4. Risk Analysis Table Template (STATE_BUILD_PLANNING)
 
-When outputting your risk analysis in `STATE_RISK_ASSESSMENT`, you MUST present it using this exact Markdown format:
+When outputting your risk analysis in `STATE_BUILD_PLANNING`, you MUST present it using this exact Markdown format:
 
 | Changed Element | Typology | Technical Risk Profile | Business Risk Profile | Recommended Test Level | MTA Category |
 | :--- | :--- | :--- | :--- | :--- | :--- |

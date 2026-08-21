@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages dual-track capabilities, macro states, routing, and safety/resilience guardrails."
-version: "4.1.7"
-changes: "deep analysis to fix inconsistencies: standardized 8-section execution plan schema, harmonized rule counts and pattern citations"
+version: "4.2.0"
+changes: "Refactored master pattern index with 6 functional domains and canonical PAT-01..55 and ANTI-01..14 IDs; added automated pattern immutability and schema linter rule."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -139,7 +139,7 @@ Before executing any turn, drafting any proposal, or calling any tool, you **MUS
 
 *   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Whenever an object is instantiated via a `Create Object` step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**. [^PAT-06] [^ANTI-01]
 *   **🛑 Frontend Test Seeding & Delete Execution Condition Law**: In Frontend tests, database Seeding steps in Case 1 (Setup Test Case) and Delete/Cleanup steps in Case 3 (Teardown Test Case) **MUST ALWAYS** be configured with `ExecutionCondition = "_Always"` (or `"Always"`) and `ResumeExecutionAfterException = "_Continue"`. [^PAT-03] [^PAT-18]
-*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..42] [^ANTI-01..12]
+*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..55] [^ANTI-01..14]
 *   **🛑 Uniform Step Sequence Schema Law**: Every test step in Section 5 of an Execution Plan MUST strictly adhere to the uniform 8-field schema in exact field order (`Step Type`, `Target / Entity / Action`, `Input Source / Handles`, `Output Variable Handle`, `Parameters & Attribute Values`, `Embedded Step Assertions`, `Execution Settings`, `Step Description & Pattern Rationale`). [^PAT-12]
 
 ### 🔄 Execution Plan Iteration & Build Plan Pattern Re-Audit Guardrail
@@ -147,8 +147,11 @@ When modifying or updating an existing Execution Plan during `STATE_BUILD_PLANNI
 1. **Mandatory Full Build Plan Output:** You are strictly prohibited from outputting localized text edits, isolated snippet changes, or showing ONLY the mutated Data Variation Matrix table in isolation. You MUST ALWAYS re-display the entire Execution Plan / Build Plan in its full, complete form (including Metadata, Documentation, Risk Alignment, Chronological Step Sequence, Data Variation Matrix, and Self-Audit Report).
 2. **Mandatory Pattern Re-Audit:** Before presenting the updated Execution Plan, you MUST re-evaluate the full step sequence against all build-plan patterns (including Direct Initialization on Create Object, Empty Object Retrieve/Filter, Retrieve/Microflow Output Object Count Assertion [excluding Create Object steps], Backend-First Delete, Void Microflow Side-Effects, Validation Feedback Assertions (Backend Microflow Tests Only), Frontend 3-Case Split, Data Variation Formatting & Capping, Test Step Description Pattern Annotations, and Prompt vs. MTA Skill Conflict Audit). Making localized text/table edits in isolation without re-auditing and adjusting the underlying step sequence is strictly prohibited.
 
-### 🤖 Automatic Pattern Registration Rule
-Whenever a new testing pattern, recipe, rule, or law (explicit or implicit) is created, modified, or added to any skill or reference file (or when taught by the user via `/learn` or in conversation), the agent MUST automatically cross-register it in `mta-patterns-and-antipatterns-reference.md`, add footnote Rule ID cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files, and update the `Build Plan Pattern Re-Audit Checklist` in `mta-test-design/SKILL.md` and `AGENTS.md` to ensure it is immediately evaluated during future plan revisions.
+### 🤖 Automatic Pattern Registration & Immutability Linter Rule
+Whenever a new testing pattern, recipe, rule, or law (explicit or implicit) is created, modified, or added to any skill or reference file (or when taught by the user via `/learn` or in conversation):
+1. The agent MUST automatically cross-register it in `mta-patterns-and-antipatterns-reference.md`, add footnote Rule ID cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files, and update the `Build Plan Pattern Re-Audit Checklist` in `mta-test-design/SKILL.md` and `AGENTS.md` to ensure it is immediately evaluated during future plan revisions.
+2. The agent MUST execute `python scripts/lint-mta-patterns.py` to verify that table columns, rule IDs, names, categories, and classifications remain strictly intact, and that no rules have been deleted.
+3. If new rules were added, run `python scripts/lint-mta-patterns.py --update-baseline --sync` to synchronize the registry and mirror the master reference file to all skill folders.
 
 ---
 

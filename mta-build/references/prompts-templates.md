@@ -30,7 +30,7 @@ Use this template when testing deterministic business logic, calculations, or va
 ```markdown
 # 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
 
-## 1. Metadata
+## 1. Metadata & Placement
 *   **Target Application:** `[AppName]`
 *   **Target Configuration:** `[UserSelectedTestConfig]`
 *   **Target Suite:** `[UserSelectedTestSuite]`
@@ -38,41 +38,97 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **MTA Category:** Backend
 *   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin]`
 
-#### 1. High-Level Specifications
+## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
+| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
+| :--- | :--- | :--- | :--- |
+| `[Raw User Prompt Instruction]` | `[e.g. Direct Attribute Initialization on Create Object [^PAT-06]]` | `[Yes / None]` | `[Corrected step / parameter alignment]` |
+
+## 3. Test Case Documentation & Risk Alignment
 *   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
 *   **Objective:** Verify that `[ElementName]` correctly mitigates the technical risk of `[Technical Risk]` and business risk of `[Business Risk]`.
 *   **Preconditions:** None (isolated memory execution).
 *   **Expected Result:** The microflow returns `[Expected Return, e.g., true/false/calculated decimal]` for the specified input parameters.
+*   **Authentication Requirement:** NA (Backend Unit Test)
+*   **Technical Risk Profile:** `[e.g., ACID & Data Integrity]`
+*   **Business Risk Profile:** `[e.g., Financial & Calculation Accuracy]`
+*   **Recommended MTF Level:** Unit Test (Backend)
 
-#### 2. Chronological Build Plan (Step Sequence)
-1.  **Step 1**: Create options parameter block in memory (if required).
-    *   *Type*: Create Object
-    *   *Entity*: `[ModuleName].[ParameterEntityName]`
-    *   *Execution*: `"None"`, `"_Stop"`
-2.  **Step 2 (Retrieve / Filter for Empty Object Pattern - MANDATORY EXPLICIT ATTRIBUTE)**: Retrieve/Filter parameter object or associated object using an explicitly specified attribute name.
-    *   *Type*: Retrieve Object
-    *   *Filter Attribute*: `[ModuleName].[EntityName].[AttributeName]` = `'TEST_VAL'` for valid object variations, or `'NON_EXISTENT'` for empty/NULL object variations.
-    *   *Execution*: `"None"`, `"_Stop"`
-3.  **Step 3 (Retrieve / Microflow Output Object Count Assertion)**: Assert expected object count on Step 2 output before passing to downstream step.
-    *   *Type*: Assert Object Count
-    *   *Target Step*: Step 2
-    *   *Operator*: `"Equals"`
-    *   *Value*: `1` (for single object) or `N` (for expected list length)
-    *   *Execution*: `"None"`, `"_Stop"`
-4.  **Step 4**: Execute target microflow.
-    *   *Type*: Call Microflow
-    *   *Microflow*: `[ModuleName].[ElementName]`
-    *   *Parameters*: Pipe parameters from Step 1 or Step 2.
-    *   *Execution*: `"None"`, `"_Stop"`
-5.  **Step 5**: Assert returned output.
-    *   *Type*: Assert Microflow Return Value
-    *   *Assertion*: Assert that return value equals `[Expected Value]`.
-    *   *Execution*: `"None"`, `"_Stop"`
+## 4. Verified Elements & MTF Testability Check
+*   **Target Microflow:** `[ModuleName].[ElementName]`
+*   **Input Entity / Entities:** `[ModuleName].[ParameterEntityName]`
+*   **Return Type:** `[e.g. Boolean / Decimal / Object]`
 
-#### 3. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
-*   **Applied Pattern:** `Retrieve / Microflow Output Object Count Assertion Pattern`
-    *   **Target Step(s):** Step 2 (Retrieve Object) -> Step 3 (Assert Object Count = 1) -> Step 4 (Call Microflow)
-    *   **Explanation for User:** Asserting that Step 2 returns exactly 1 object before passing it as input parameter to Step 4 prevents downstream silent null pointer exceptions, unhandled errors, and confusing execution failures.
+## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
+1.  **Step 1**:
+    *   *Step Type*: Create Object
+    *   *Target / Entity / Action*: `[ModuleName].[ParameterEntityName]`
+    *   *Input Source / Handles*: Memory instantiation
+    *   *Output Variable Handle*: `out_param_obj`
+    *   *Parameters & Attribute Values*: `[Attribute1 = 'InitialVal']`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Direct Initialization on Create Object [^PAT-06] - Sets initial attributes directly on creation]`
+2.  **Step 2**:
+    *   *Step Type*: Retrieve Object
+    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
+    *   *Input Source / Handles*: Database
+    *   *Output Variable Handle*: `out_retrieved_obj`
+    *   *Parameters & Attribute Values*: Filter `[ModuleName].[EntityName].[FilterAttribute] = 'TEST_VAL'`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Dual Retrieve/Filter Empty Object [^PAT-07] - Enables NULL object variation via attribute filter]`
+3.  **Step 3**:
+    *   *Step Type*: Assert Object Count
+    *   *Target / Entity / Action*: `out_retrieved_obj` (Step 2)
+    *   *Input Source / Handles*: `out_retrieved_obj`
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: `Operator = "Equals"`, `Count = 1`
+    *   *Embedded Step Assertions*: `ObjectCount == 1`
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Retrieve Output Object Count Assertion [^PAT-08] - Validates object count before downstream consumption]`
+4.  **Step 4**:
+    *   *Step Type*: Call Microflow
+    *   *Target / Entity / Action*: `[ModuleName].[ElementName]`
+    *   *Input Source / Handles*: `out_param_obj`, `out_retrieved_obj`
+    *   *Output Variable Handle*: `out_result`
+    *   *Parameters & Attribute Values*: Pipe `out_param_obj` and `out_retrieved_obj`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Pure Unit Execution - Executes business microflow]`
+5.  **Step 5**:
+    *   *Step Type*: Assert Microflow Return Value
+    *   *Target / Entity / Action*: `out_result` (Step 4)
+    *   *Input Source / Handles*: `out_result`
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: `ComparisonOperator = "Equals"`, `ComparisonValue = [Expected Value]`
+    *   *Embedded Step Assertions*: `ReturnValue == [Expected Value]`
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Direct Return Assertion - Verifies calculation result]`
+
+## 6. Playwright / Browser Settings (10 Keys)
+*   **Status:** NA (Backend Unit Test - runs headlessly in memory)
+
+## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+### 📊 Data Variation Matrix
+#### Table 1: Scenarios #1 to #3
+| Attribute / Step | #1 (HappyPath) | #2 (BoundaryLow) | #3 (EmptyParam) |
+| :--- | :--- | :--- | :--- |
+| **`Entity.FilterAttribute`** | `'VALID_VAL'` | `'VALID_VAL'` | `'NON_EXISTENT'` |
+| **`Entity.Amount`** | `100` | `0` | `100` |
+| **Assert Return Value** | `true` | `false` | `false` |
+
+### 📝 System Registration Recipe & Metadata List
+*   **Variation #1 (`HappyPath`):** *Description:* Standard happy path with valid amount.
+*   **Variation #2 (`BoundaryLow`):** *Description:* Lower boundary zero amount testing.
+*   **Variation #3 (`EmptyParam`):** *Description:* Missing/null parameter object variation.
+
+## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
+*   **Applied Pattern:** `Retrieve / Microflow Output Object Count Assertion Pattern [^PAT-08]`
+    *   **Target Step(s):** Step 2 -> Step 3 -> Step 4
+    *   **Explanation:** Asserting that Step 2 returns exactly 1 object before passing to Step 4 prevents downstream silent null pointers and unhandled errors.
+*   **Applied Pattern:** `Direct Attribute Initialization on Create Object [^PAT-06]`
+    *   **Target Step(s):** Step 1
+    *   **Explanation:** Sets initial attributes directly on creation step, avoiding separate Change Object steps.
 ```
 
 ### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases
@@ -114,35 +170,82 @@ Use this template when testing multi-step processes or transactional orchestrati
 ```markdown
 # 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
 
-## 1. Metadata
+## 1. Metadata & Placement
 *   **Target Application:** `[AppName]`
 *   **Target Configuration:** `[UserSelectedTestConfig]`
 *   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** Backend
+*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin]`
 
-#### 1. High-Level Specifications
+## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
+| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
+| :--- | :--- | :--- | :--- |
+| `[Raw User Prompt Instruction]` | `[e.g. In-Memory Preference Principle [^PAT-16]]` | `[None]` | `[In-memory setup configured]` |
+
+## 3. Test Case Documentation & Risk Alignment
 *   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
 *   **Objective:** Verify that `[ElementName]` coordinates business components in the exact sequence, avoiding the operational risk of `[Operational Risk]` and transactional risk of `[ACID Risk]`.
 *   **Preconditions:** None (Isolated in-memory execution) or [Database state seeded - ONLY if database retrieve is required].
 *   **Expected Result:** Orchestration finishes successfully and the **TestLogger** footprint matches the expected baseline.
+*   **Authentication Requirement:** NA (Backend Integration Test)
+*   **Technical Risk Profile:** `Control Flow & Orchestration (Medium/High)`
+*   **Business Risk Profile:** `Operational Disruption (Medium)`
+*   **Recommended MTF Level:** Integration Test (Backend)
 
-#### 2. Chronological Build Plan (Step Sequence)
-1.  **Step 1 (Setup - Optional, ONLY if DB-retrieve is required)**: Seed database objects.
-    *   *Type*: Create and Persist database entities.
-    *   *Execution*: `"Always"`, `_Continue`
-2.  **Step 2 (Execution)**: Call parent orchestration microflow.
-    *   *Type*: Call Microflow
-    *   *Microflow*: `[ModuleName].[ElementName]`
-    *   *Parameters*: Pipe seeded in-memory parameter objects (if any).
-    *   *Execution*: `"None"`, `"Stop"`
-3.  **Step 3 (Assertion)**: Query TestLogger.
-    *   *Type*: Call Microflow `TestLogger.GetFootprint` or equivalent.
-    *   *Assertion*: Assert that called unit sequence equals the expected footprint baseline.
-    *   *Execution*: `"None"`, `"Stop"`
-4.  **Step 4 (Teardown - Optional, ONLY if Step 1 was executed)**: Clean up seeded records.
-    *   *Type*: Delete and Persist database entities.
-    *   *Execution*: `"Always"`, `_Continue`
+## 4. Verified Elements & MTF Testability Check
+*   **Target Microflow:** `[ModuleName].[ElementName]`
+*   **Underlying Microflows Called:** `[Module.Sub1]`, `[Module.Sub2]`
+*   **TestLogger Probe Configured:** Yes
+
+## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
+1.  **Step 1 (Setup - Optional, ONLY if DB-retrieve is required)**:
+    *   *Step Type*: Create Object & Persist
+    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
+    *   *Input Source / Handles*: Database
+    *   *Output Variable Handle*: `out_seeded_obj`
+    *   *Parameters & Attribute Values*: `[Attribute1 = 'Val1']`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Seeding Step - Prepares database record for sub-microflow retrieve]`
+2.  **Step 2 (Execution)**:
+    *   *Step Type*: Call Microflow
+    *   *Target / Entity / Action*: `[ModuleName].[ElementName]`
+    *   *Input Source / Handles*: `out_seeded_obj`
+    *   *Output Variable Handle*: `out_int_result`
+    *   *Parameters & Attribute Values*: Pipe `out_seeded_obj`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Orchestration Execution - Triggers parent workflow]`
+3.  **Step 3 (Assertion)**:
+    *   *Step Type*: Call Microflow (TestLogger Footprint)
+    *   *Target / Entity / Action*: `TestLogger.GetFootprint`
+    *   *Input Source / Handles*: None
+    *   *Output Variable Handle*: `out_footprint`
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: Assert footprint matches `[Expected Footprint]`
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: TestLogger Integration Footprint - Validates sub-process execution order]`
+4.  **Step 4 (Teardown - Optional, ONLY if Step 1 was executed)**:
+    *   *Step Type*: Delete Object & Persist
+    *   *Target / Entity / Action*: `out_seeded_obj` (Step 1)
+    *   *Input Source / Handles*: `out_seeded_obj`
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Backend Teardown Cleanup - Removes seeded database record]`
+
+## 6. Playwright / Browser Settings (10 Keys)
+*   **Status:** NA (Backend Integration Test - runs headlessly)
+
+## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+*   **Status:** Single scenario orchestration run (or define variations table if testing multiple paths).
+
+## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
+*   **Applied Pattern:** `TestLogger Footprint Verification [^PAT-01]`
+    *   **Target Step(s):** Step 3
+    *   **Explanation:** Asserts complete sub-process execution order without mocking internal components.
 ```
 
 ---
@@ -154,45 +257,122 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 ```markdown
 # 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
 
-## 1. Metadata
+## 1. Metadata & Placement
 *   **Target Application:** `[AppName]`
 *   **Target Configuration:** `[UserSelectedTestConfig]`
 *   **Target Suite:** `[UserSelectedTestSuite]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** Frontend
+*   **Execution User (`EXUS_ExecutionUser`):** `MxAdmin`
 *   **Playwright Settings:** `[UserSelectedPlaywrightSettings]`
 
-#### 1. High-Level Specifications
-*   **Case 1: SETUP**
-    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Setup`
-    *   *Objective*: Initialize browser environment.
-    *   *Execution*: `"Always"`, `_Continue`
-*   **Case 2: EXECUTION**
-    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Execute`
-    *   *Objective*: Verify UI navigation, widget inputs, and page submission, mitigating client desync and brand abandonment.
-    *   *Authentication / Login Requirement:* `[With Login (username/password) | Without Login]`
-    *   *Expected Result*: User lands on success page and success notification is displayed.
-    *   *Execution*: `"None"`, `"Stop"`
-*   **Case 3: TEARDOWN**
-    *   *Name*: `[ModuleName].TC_UI_[ElementName]_Teardown`
-    *   *Objective*: Close browser context safely.
-    *   *Execution*: `"Always"`, `_Continue`
+## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
+| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
+| :--- | :--- | :--- | :--- |
+| `[Raw User Prompt Instruction]` | `[e.g. Frontend 3-Case Split Law [^PAT-18]]` | `[Yes / None]` | `[Separated into Case 1, Case 2, Case 3]` |
 
-#### 2. Chronological Build Plan (Step Sequence)
-*   **CASE 1 (Setup)**:
-    1.  Create Playwright browser session (`Start_Playwright_Browser`).
-*   **CASE 2 (Execution)**:
-    1.  *[Seeding - Always, _Continue]* Create and persist backend records needed for the UI screen context.
-    2.  *[UI Startup - Always, _Continue]* Open browser to URL: `[PageLoginRedirectURL]`.
-    3.  *[UI Interaction - None, Stop]* Locate and fill text widget `'[WidgetCaption]'` with `[InputValue]`.
-    4.  *[UI Interaction - None, Stop]* Locate and click button `'[ButtonCaption]'`.
-    5.  *[UI Assertion - None, Stop]* Verify notification text equals `[SuccessMessage]`.
-    6.  *[UI Session Stop - Always, _Continue]* Call `Stop_MxFrontendTest`.
-    7.  *[Cleanup - Always, _Continue]* Delete and persist seeded database records.
-*   **CASE 3 (Teardown)**:
-    1.  Call `Teardown_Playwright`.
+## 3. Test Case Documentation & Risk Alignment
+*   **Case 1 (Setup):** `[ModuleName].TC_UI_[ElementName]_Setup` (Objective: Initialize browser & seed data, Execution: `_Always` / `_Continue`)
+*   **Case 2 (Execution):** `[ModuleName].TC_UI_[ElementName]_Execute` (Objective: Verify UI navigation, widget inputs, and page submission, Authentication: `[With Login | Without Login]`, Execution: `None` / `_Stop`)
+*   **Case 3 (Teardown):** `[ModuleName].TC_UI_[ElementName]_Teardown` (Objective: Close browser and clean up seeded records, Execution: `_Always` / `_Continue`)
+*   **Technical Risk Profile:** `Client Cache & UI Sync (Low/Medium)`
+*   **Business Risk Profile:** `Brand & User Drop-off (Low/Medium)`
+*   **Recommended MTF Level:** Functional UI Test (Frontend)
 
-#### 3. Playwright / Browser Settings (MANDATORY FRONTEND TABLE - ALL 10 KEYS)
+## 4. Verified Elements & MTF Testability Check
+*   **Target Page:** `[ModuleName].[PageName]` (CSS Class: `[PageClassName]`)
+*   **Target Widgets:** `[Widget1]`, `[Widget2]`, `[SubmitButton]`
+*   **Navigation Document:** Default / Role-Based Home Page checked via `SHOW NAVIGATION`
+
+## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
+### CASE 1: Setup & Data Seeding
+1.  **Step 101**:
+    *   *Step Type*: Create Playwright Options Object
+    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.LocalStartOptions`
+    *   *Input Source / Handles*: Memory instantiation
+    *   *Output Variable Handle*: `out_options`
+    *   *Parameters & Attribute Values*: `Headless = true`, `SlowMo = 0`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Configures browser startup]`
+2.  **Step 102**:
+    *   *Step Type*: Create Object & Persist (Data Seeding)
+    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
+    *   *Input Source / Handles*: Database
+    *   *Output Variable Handle*: `out_seeded_obj`
+    *   *Parameters & Attribute Values*: `[Attribute1 = 'SeedVal']`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Frontend Setup Seeding [^PAT-18] - Prepares database record for UI screen]`
+
+### CASE 2: UI Action & Execution
+3.  **Step 201**:
+    *   *Step Type*: Start Frontend Session (With/Without Login)
+    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login`
+    *   *Input Source / Handles*: `out_options`
+    *   *Output Variable Handle*: `out_browser_page`
+    *   *Parameters & Attribute Values*: `Username = 'admin'`, `Password = '1'`, `TargetUrl = '/index.html'`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Launches browser session]`
+4.  **Step 202**:
+    *   *Step Type*: Locate Page
+    *   *Target / Entity / Action*: `[ModuleName].[PageName]` (`PageClassName`)
+    *   *Input Source / Handles*: `out_browser_page`
+    *   *Output Variable Handle*: `out_page_locator`
+    *   *Parameters & Attribute Values*: `PageQualifiedName = '[ModuleName].[PageName]'`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Page Object Model Locator [^PAT-32] - Modularizes page container context]`
+5.  **Step 203**:
+    *   *Step Type*: Locate Widget & Fill Input
+    *   *Target / Entity / Action*: `[WidgetCaption]`
+    *   *Input Source / Handles*: `out_page_locator`
+    *   *Output Variable Handle*: `out_widget_locator`
+    *   *Parameters & Attribute Values*: `Value = 'TestInput'`
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Structural Locator Law 1 [^PAT-30] - 2-step widget locate and fill chain]`
+6.  **Step 204**:
+    *   *Step Type*: Locate Widget & Click Button
+    *   *Target / Entity / Action*: `[ButtonCaption]`
+    *   *Input Source / Handles*: `out_page_locator`
+    *   *Output Variable Handle*: `out_button_locator`
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Structural Locator Law 1 [^PAT-30] - 2-step widget locate and click chain]`
+7.  **Step 205**:
+    *   *Step Type*: Stop Frontend Test
+    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Stop_MxFrontendTest`
+    *   *Input Source / Handles*: `out_browser_page`
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Closes active browser session]`
+
+### CASE 3: Teardown & Cleanup
+8.  **Step 301**:
+    *   *Step Type*: Delete Object & Persist
+    *   *Target / Entity / Action*: `out_seeded_obj` (Case 1 Step 102 via cross-case piping)
+    *   *Input Source / Handles*: `out_seeded_obj`
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Cross-Case Output Piping Teardown [^PAT-20] - Cleans up seeded setup record]`
+9.  **Step 302**:
+    *   *Step Type*: Teardown Playwright
+    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Teardown_Playwright`
+    *   *Input Source / Handles*: None
+    *   *Output Variable Handle*: None
+    *   *Parameters & Attribute Values*: None
+    *   *Embedded Step Assertions*: None
+    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+    *   *Step Description & Pattern Rationale*: `[Pattern: Playwright Process Cleanup - Ensures zero orphan browser processes]`
+
+## 6. Playwright / Browser Settings (MANDATORY FRONTEND TABLE - ALL 10 KEYS)
 | Setting Key | Default / Selected Value | All Available Alternative Options |
 | :--- | :--- | :--- |
 | **1. Browser Environment** | `Locally` | `Playwright Server`, `Azure Workspaces` |
@@ -205,6 +385,17 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **8. Tracing (Trace)** | `true` (Enabled) | `false` (Disabled) |
 | **9. Browser Locale** | System Default (`en-US`) | `nl-NL`, `de-DE`, `fr-FR`, or valid BCP-47 tag |
 | **10. Virtual Timezone ID** | System Default (`Europe/Amsterdam`) | `UTC`, `America/New_York`, `Asia/Tokyo`, or valid IANA ID |
+
+## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+*   **Status:** Single happy-path UI verification (or headless backend variation pattern for validation matrices).
+
+## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
+*   **Applied Pattern:** `Frontend 3-Case Split Law [^PAT-18]`
+    *   **Target Step(s):** Case 1 Setup -> Case 2 Execution -> Case 3 Teardown
+    *   **Explanation:** Separates setup seeding, UI execution, and cleanup across 3 isolated test cases with `_Always` / `_Continue` settings on setup and teardown.
+*   **Applied Pattern:** `Structural Locator Law 1 [^PAT-30]`
+    *   **Target Step(s):** Steps 203, 204
+    *   **Explanation:** Enforces direct 2-step widget locate and action chains without intermediate wrappers.
 ```
 
 ### 🖥️ Frontend Risk-Focus Strategy for Frontend Tests

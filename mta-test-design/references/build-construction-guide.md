@@ -83,9 +83,9 @@ Your report **MUST** contain four distinct sections:
     * **Single Persist Check:** No redundant per-step `Persist` steps exist; creations/deletions of multiple objects are committed via a single grouped `Persist` step at the end.
     * **No Sequential Batching Violations:** No steps were created in parallel in a single turn; sequential steps were built one-by-one waiting for their predecessor keys.
     * **No Flaky Sleeps:** Zero sleep/delay steps exist in the test sequence.
-    * **Assertion Settings:** All standard assertions default to `"ContinueTestRun"` or `"_Continue"` exception handling to guarantee full error parsing.
+    * **Execution & Assertion Settings:** For Backend Unit tests, ALL steps (including asserts) use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"` (`PAT-17`). For Frontend UI and Backend Integration tests, assertions default to `"ContinueTestRun"` or `"_Continue"` exception handling (`PAT-33`).
     * **Date Format Casing:** All date-picker formats use uppercase `MM` for months (converting any lowercase `mm` used in date-only context to avoid minute fields overrides).
-    * **Single Assert Retrievals:** Retrieve steps used for asserting single objects have **zero attribute filters** configured on the retrieve step itself (verifying attributes via downstream steps to avoid cryptic "Object not found" failures).
+    * **Retrieve for Assertions:** Retrieve steps used for asserting objects configure explicit or piped dynamic attribute filters with `RetrieveSet = "All"`, coupled with an immediate downstream `Assert Object Count` step (`PAT-07`, `PAT-13`, `PAT-31`).
     * **Cascading Consumer Check:** No step executes on a skipped provider step (downstream consumers of skipped steps must also be set to `"Skip"`).
     * **Cascading Provider Check:** If a teardown/cleanup step is `"Always"`, all of its upstream input provider steps are also set to `"Always"`.
     * **Order of Operations Check:** Memory retrieves called `SetRetrieveSettingsOfTestStep(RetrieveOption = "Teststep")` before attempting to retrieve or set select objects.

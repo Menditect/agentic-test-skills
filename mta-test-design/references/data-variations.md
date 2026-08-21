@@ -30,7 +30,7 @@ To prevent any confusion between system-generated defaults and our logical test 
 
 **Step-by-Step (Alternative Same-Attribute Pattern when dummy attributes are not possible):**
 1. ✅ **Create object** with attribute(s) (e.g. `Subject`).
-2. ✅ **Include & register** the Create attribute as a variation item using `AddAttributeValueAsVariationItem`.
+2. ✅ **Include & register** the Create attribute as a variation item using `AddTestCaseVariationItemAttributeValue`.
 3. ✅ **Retrieve from Teststep** (NOT Database!) with the matching filter attribute.
 4. ✅ **Set settings:** Call `SetRetrieveSettingsOfTestStep` with `RetrieveOption = "Teststep"` and `RetrieveSet = "Head"`.
 5. ✅ **Link retrieve to create** using `GetSelectObjectForRetrieveOfTeststep` & `SetTestStepOutputForSelectObjectForRetrieve`.
@@ -66,7 +66,6 @@ For 1 or 2 alternate scenarios:
     *   Call `TestCaseDataVariationDescription(TemplateVariationKey, "Description of primary scenario...")`
 3.  **Build Template Steps:** Build your teststeps sequentially.
 4.  **Register & Override:**
-    *   Call `AddAttributeValueAsVariationItem` for the specific attribute to change ➔ Returns base `AttributeValueKey`.
     *   Call `AddTestCaseVariationItemAttributeValue` for the specific attribute to change ➔ Returns base `AttributeValueKey`.
     *   Call `DuplicateTestCaseDataVariation` ➔ Returns new `TestCaseVariationKey`.
     *   **Configure Duplicated Metadata:** Set the name and description for the new variation:
@@ -251,9 +250,9 @@ When implementing the Empty Object Retrieve Pattern, you have two ways to config
 > Immediately after calling `CreateTestStepRetrieveObject`, you **MUST** call the configuration tools in this exact order. Skipping or reordering these tools will trigger runtime validation crashes:
 > 1. ✅ **`SetRetrieveSettingsOfTestStep`** (Configure option, set, etc.) — ⚠️ **NEVER SKIP THIS STEP!**
 > 2. ✅ **`GetSelectObjectForRetrieveOfTeststep`** & **`SetTestStepOutputForSelectObjectForRetrieve`** (To bind retrieve source to the upstream step output)
-> 3. ✅ **`IncludeAttributeValueInTeststep`** (To add the filter attribute to the retrieve step)
+> 3. ✅ **`IncludeAttributeInTeststep`** (To add the filter attribute to the retrieve step)
 > 4. ✅ **`SetAttribute*Value`** (To set the initial matching filter value)
-> 5. ✅ **`AddAttributeValueAsVariationItem`** (Only if you are registering the filter attribute as a dynamic variation item)
+> 5. ✅ **`AddTestCaseVariationItemAttributeValue`** (Only if you are registering the filter attribute as a dynamic variation item)
 
 > [!NOTE]
 > For a complete, step-by-step 5-step tool call sequence, real-world example parameters, and detailed checklists implementing this workaround, see [api-helpers.md](api-helpers.md#empty-object-microflow-parameter-checklist) (Empty Object Microflow Parameter Checklist).
@@ -275,7 +274,7 @@ When implementing the Empty Object Retrieve Pattern, you have two ways to config
  
  ##### Step 1: Create Dummy Object with Fixed Filter
  *   Call `CreateTestStepCreateObject` (for entity `"MyModule.Order"`) ➔ Returns `TestStepKey: 100`.
- *   Call `IncludeAttributeValueInTeststep` (Step `100`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 200`.
+ *   Call `IncludeAttributeInTeststep` (Step `100`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 200`.
  *   Call `SetStringAttributeValue` (`200`, Value: `"VALID_MATCH"`). 
      *   *Constraint:* ⚠️ **This must remain fixed across all variations (do NOT register this as a variation item).**
  
@@ -284,11 +283,11 @@ When implementing the Empty Object Retrieve Pattern, you have two ways to config
  *   Call `SetRetrieveSettingsOfTestStep` (`101`, `RetrieveOption = "Teststep"`, `RetrieveSet = "Head"`) ➔ ⚠️ **Mandatory.**
  *   Call `GetSelectObjectForRetrieveOfTeststep` (`101`) ➔ Returns `SelectObjectForRetrieveKey: 300`.
  *   Call `SetTestStepOutputForSelectObjectForRetrieve` (`SelectObjectForRetrieveKey: 300`, `TestStepOutputKey = 100`).
- *   Call `IncludeAttributeValueInTeststep` (Step `101`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 201`.
+ *   Call `IncludeAttributeInTeststep` (Step `101`, Attribute: `"OrderNumber"`) ➔ Returns `AttributeValueKey: 201`.
  *   Call `SetStringAttributeValue` (`201`, Value: `"VALID_MATCH"`) ➔ ⚠️ **MUST match Step 1 initial value.**
  
  ##### Step 3: Register Retrieve Attribute as Variation Item
- *   Call `AddAttributeValueAsVariationItem` (`AttributeValueKey: 201`) ➔ Returns dynamic variation key. 
+ *   Call `AddTestCaseVariationItemAttributeValue` (`AttributeValueKey: 201`) ➔ Returns dynamic variation key. 
      *   *Rule:* ⚠️ **Only register the Retrieve step's attribute, never the Create step's for this Standard Pattern.**
  
  ##### Step 4: Vary to Nullify (Scenario Variation `#2` - `empty-order`)
