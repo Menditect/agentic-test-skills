@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.3.1"
-changes: "Consolidated canonical pattern descriptions reference and synchronized golden rules"
+version: "4.3.2"
+changes: "Enforced embedded step assertions requirement and prohibition of standalone assertion steps (PAT-08, PAT-14, ANTI-10)"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -81,8 +81,9 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   **Consistency:** The annotation string MUST match the pattern and rationale specified in Section 5 (Step Sequence) and Section 8 (Applied Testing Patterns & Rationale) of the approved Execution Plan.
 20. **Direct Attribute & Association Initialization on Create Object Law [^PAT-06] [^ANTI-01]**:
     *   Whenever an object is instantiated via a `Create Object` test step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` test step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**.
-21. **Prohibition of Embedded Asserts on Create Object & Change Object Steps [^PAT-14] [^ANTI-10]**:
-    *   Embedded assertions (`Assert Attribute Value Compare` / `Assert Object Count`) are strictly **PROHIBITED** on `Create Object` and `Change Object` test steps. Initial attributes on `Create Object` and modified attributes on `Change Object` are set directly as step initializers/mutators, NOT as assertions. Assertions belong on `Retrieve Object` (Filter) steps, `Microflow Call` steps (for return values), or UI Action/Assertion steps.
+21. **Embedded Step Assertion Scoping & Create/Change Prohibition Law [^PAT-14] [^ANTI-10]**:
+    *   All step-level assertions (`Assert Object Count`, `Assert Attribute Value Compare`, `Assert Microflow Return Value`, `Assert Exception`) MUST be configured as embedded child assertions directly attached to their parent `Retrieve Object` or `Microflow Call` steps (via Field 6). Declaring assertions as isolated, standalone test step containers is strictly **PROHIBITED**.
+    *   Furthermore, embedded assertions are strictly **PROHIBITED** on `Create Object` and `Change Object` test steps. Initial attributes on `Create Object` and modified attributes on `Change Object` are set directly as step initializers/mutators, NOT as assertions. Assertions belong on `Retrieve Object` (Filter) steps, `Microflow Call` steps (for return values), or UI Action/Assertion steps.
 22. **Domain Model Attribute Length & Constraint Compliance Law [^PAT-53]**:
     *   When configuring attribute values on test steps (`SetStringAttributeValue`, `SetInputTypeAttributeValueToTestStep`, etc.) or adding item attribute overrides in data variations, you **MUST** ensure string values do not exceed maximum length limits defined on the target entity attributes in the Mendix Domain Model. Inspect the entity via `mxcli` (`SHOW ENTITY`) whenever proposing or binding string attribute values.
 

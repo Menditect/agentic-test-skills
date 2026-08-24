@@ -99,11 +99,11 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-08`: Retrieve / Microflow Output Object Count Assertion
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Requires inserting an `Assert Object Count` step immediately following any `Retrieve Object from database` step or `Microflow Call` step that produces an object/list, before using that handle in downstream steps. This guarantees that expected objects exist prior to attribute assertion or parameter passing.
+* **Description:** Requires embedding an `Assert Object Count` assertion directly within Field 6 (`Embedded Step Assertions`) of any `Retrieve Object from database` step or `Microflow Call` step that produces an object or list, before that handle is consumed downstream. This guarantees that expected objects exist prior to parameter passing or attribute assertion. Prohibits declaring `Assert Object Count` as a separate standalone test step container.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-03` (Unasserted Retrieve / Microflow Output Consumer Piping).
   * **Related Anti-Patterns:** `ANTI-06` (Asserting Object Count after `Create Object` — which is invalid because created objects in-memory are guaranteed to exist).
-  * **Related Patterns:** `PAT-31` (Retrieve-for-Asserting Set & Count Law).
+  * **Related Patterns:** `PAT-14` (Prohibition of Embedded Asserts on Create/Change), `PAT-31` (Retrieve-for-Asserting Set & Count Law), `PAT-34` (Uniform 8-Field Step Sequence Schema).
 
 ---
 
@@ -134,10 +134,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-14`: Prohibition of Embedded Asserts on Create/Change Object Steps
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Prohibits setting embedded attribute assertion comparisons on `Create Object` or `Change Object` test steps. Initial and changed attribute values on these steps represent state mutations, not assertions. Assertions must be placed on downstream `Retrieve Object`, `Microflow Call`, or UI assertion steps.
+* **Description:** Mandates that all step-level assertions (`Assert Object Count`, `Assert Attribute Value Compare`, `Assert Microflow Return Value`, `Assert Exception`) must be configured as embedded child assertions directly within Field 6 (`Embedded Step Assertions`) of their parent `Retrieve Object` or `Microflow Call` test steps, and never declared as standalone test step containers. Furthermore, strictly prohibits configuring embedded attribute or count assertions on `Create Object` and `Change Object` steps (where field inputs represent state initialization and mutation, not assertions).
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-10` (Embedded Assertions on Create/Change Object Steps).
-  * **Related Patterns:** `PAT-06` (Direct Initialization on Create Object).
+  * **Related Patterns:** `PAT-06` (Direct Initialization on Create Object), `PAT-08` (Retrieve / Microflow Output Object Count Assertion), `PAT-34` (Uniform 8-Field Step Sequence Schema).
 
 ---
 
@@ -251,7 +251,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-03`: Unasserted Retrieve / Microflow Output Consumer Piping
 * **Scope:** Backend | **Classification:** Methodological Anti-Pattern
-* **Description:** The anti-pattern of piping the output handle of a `Retrieve Object` or `Microflow Call` directly into a downstream parameter or assertion without verifying existence via `Assert Object Count` first.
+* **Description:** The anti-pattern of piping the output handle of a `Retrieve Object` or `Microflow Call` directly into a downstream parameter or assertion without verifying existence via an embedded `Assert Object Count` on the producer step first.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-08` (Retrieve Output Object Count Assertion).
 
@@ -276,7 +276,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-06`: Asserting Object Count after `Create Object`
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Placing an `Assert Object Count` step on a `Create Object` step. In-memory created objects are guaranteed to exist, rendering count assertions redundant on creation steps.
+* **Description:** Placing an embedded `Assert Object Count` assertion on a `Create Object` step. In-memory created objects are guaranteed to exist, rendering count assertions redundant on creation steps.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-08` (Retrieve Output Object Count Assertion — which belongs on Retrieve or Microflow calls, not Create Object).
 
@@ -284,7 +284,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-10`: Embedded Assertions on Create/Change Object Steps
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Configuring embedded attribute assertion comparisons on `Create Object` or `Change Object` steps rather than treating field inputs on those steps strictly as state modifications.
+* **Description:** The anti-pattern of either (1) declaring assertions (`Assert Object Count`, `Assert Attribute Value Compare`, `Assert Microflow Return Value`, `Assert Exception`) as separate, standalone test step containers rather than embedding them directly in their parent step's Field 6, or (2) configuring embedded attribute assertion comparisons on `Create Object` or `Change Object` steps instead of treating field inputs on those steps strictly as state modifications.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-14` (Prohibition of Embedded Asserts on Create/Change Object Steps).
 
