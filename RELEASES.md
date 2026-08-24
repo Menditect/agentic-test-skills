@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [🚀 v1.13.0](releases/v1.13.0.md) | 2026-08-24 | Merge branch development for release v1.13.0 |
+| [🚀 v1.13.0](releases/v1.13.0.md) | 2026-08-24 | Patterns & workflow optimalization |
 | [🚀 v1.12.0](releases/v1.12.0.md) | 2026-08-21 | Refactor of pattern, custom linter for patterns. |
 | [🚀 v1.11.3](releases/v1.11.3.md) | 2026-08-20 | Merge branch development |
 | [🚀 v1.11.2](releases/v1.11.2.md) | 2026-08-20 | Merge branch development |
