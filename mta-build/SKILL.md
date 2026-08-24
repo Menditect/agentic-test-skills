@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, and active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication."
-version: "4.3.0"
-changes: "Restructured pattern reference into 6 functional domains with canonical PAT-01..55 and ANTI-01..14 IDs; added custom immutability linter checks and synchronized golden rules"
+version: "4.3.1"
+changes: "Consolidated canonical pattern descriptions reference and synchronized golden rules"
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -45,7 +45,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 7. **Mandatory GetPages & GetWidgets Upfront Execution (Frontend) [^PAT-35] [^PAT-36]**: Always call `GetPages` and `GetWidgets` first when building Frontend execution plans, and immediately present a fully detailed Execution Plan with all steps and configurable options before conducting any optional second-pass deep model inspection.
 8. **No raw Playwright bypasses [^PAT-05] [^ANTI-12]**: Rely exclusively on Menditect Frontend Testkit.
 9. **Strict State Isolation [^PAT-45]**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every tool call.
-10. **Strict Direct Link Formatting [^PAT-46]**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly.
+10. **Strict Direct Link Formatting [^PAT-46]**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly. Available `ObjectTypes`: `testconfiguration`, `testsuite`, `testcase`, `testrun`, `testsuiterun`, `testcaserun`.
 11. **🚫 STRICT DATA VARIATION PROMOTION & EXHAUSTIVE CELL RECONCILIATION LAW [^PAT-19] [^PAT-27] [^PAT-54] [^ANTI-08] [^ANTI-11]**: 
     *   **Proactive Variation Identification:** For all Backend tests, you **MUST** actively seek to use MTA **Data Variations** rather than designing or proposing separate, duplicate test cases that only modify input data. Proposing duplicate test cases with different inputs is a severe quality violation.
     *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix.
@@ -56,7 +56,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   **Mandatory User Alignment Gate:** If you are in doubt about whether different inputs warrant separate test cases or should be consolidated into a data variation matrix, **you MUST halt and ask the user for their preference BEFORE proposing a test specification or build plan.**
 12. **Untestable Component Escape Hatch [^PAT-26]**: If you identify a very large microflow or one with many sub-microflows that is impossible to test thoroughly or where data seeding is extremely difficult, stop and suggest both to yourself (the AI) and the user to load and consult the **`menditecttestabilityframework`** skill to learn how to refactor it for testability.
 13. **Void Microflow Build-Plan Guardrail (Prevent Warning Fatigue) [^PAT-04] [^ANTI-13]**:
-    *   **The Guardrail:** If asked to build a test for a void microflow (no return value/output parameters) as the main component under test (excluding setup/teardown utility cases), you **MUST** evaluate its complexity. Only raise warnings or prompt for downstream database retrieve checks if the microflow is complex (e.g., has sub-microflows) or commits/modifies multiple critical domain model entities. If the void microflow is trivial or stateless (e.g., writes a single log line or changes a single status boolean), do NOT raise warnings or halt.
+    *   **The Guardrail:** If asked to build a test for a void microflow (no return value/output parameters) as the main component under test (excluding setup/teardown utility cases), you **MUST** evaluate its complexity. Only raise warnings or prompt for downstream database retrieve checks if the microflow is complex (e.g., has sub-microflows) or commits/modifies multiple critical domain model entities. Use `RetrieveByAssociation` and the structure of the domain model to find the right objects. Warn the user if objects are modified that cannot be retrieved. If the void microflow is trivial or stateless (e.g., writes a single log line or changes a single status boolean), do NOT raise warnings or halt.
     *   **Sub-Microflow Warning:** If a complex void microflow is being tested and sub-microflows are present, highlight that deep, careful side-effect analysis is even more complex and critical.
     *   **The Action:** In `STATE_BUILD_PLANNING` for complex void microflows, you must issue a prominent warning advising that an exception-only assertion is highly limited. Propose adding downstream database Retrieve steps (for Backend) or page inspection steps (for Frontend) to verify the actual expected state changes or entity modifications.
     *   **Testability Refactoring Suggestion:** Proactively advise the user that they can refactor the Mendix microflow to return a value (such as the primary record created or a status flag) to simplify test verification.
