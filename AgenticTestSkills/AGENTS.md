@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages dual-track capabilities, macro states, routing, and safety/resilience guardrails."
-version: "4.3.0"
-changes: "Added PAT-41 anonymous role association and viewport navigation resolution to Frontend quality protocol; consolidated canonical pattern descriptions reference."
+version: "4.4.0"
+changes: "Added exploratory testing integration, promotion bridge, and isolated public repository structure under AgenticTestSkills."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -23,36 +23,39 @@ This package adheres strictly to the **Open Agent Skill Standard** (`.agent/skil
 
 ---
 
-## 🤖 THE DUAL-TRACK ARCHITECTURE (CAPABILITY PROBING)
+## 🤖 DUAL OPERATING MODES: AGENTIC MODE VS. CHAT MODE (CAPABILITY PROBING)
 
-On the very first turn of any user request, you **MUST** silently probe your environment's capabilities to determine your operational track:
+On the very first turn of any user request, you **MUST** silently probe your environment's capabilities to determine your operational mode:
 
-1.  **Agentic Track (Write-Enabled):** Unlocked if file-writing (`write_to_file`, `replace_file_content`) and command-execution (`run_command`) tools are registered in your tool schema.
+1.  **Agentic Mode (Write-Enabled):** Unlocked if file-writing (`write_to_file`, `replace_file_content`) and command-execution (`run_command`) tools are registered in your tool schema.
     *   *State Persistence & Session Isolation:* At the start of a new chat session or when beginning discovery for a new test request, you **MUST** re-initialize `test_configuration`, `test_suite`, and `test_cases` in `mta_state.json` to `null` defaults (`test_configuration: null`, `test_suite: null`, `test_cases: []`). You are **strictly prohibited** from reading or reusing `test_configuration`, `test_suite`, or `test_cases` values from `mta_state.json` that were created in earlier chat sessions. All placement discovery MUST happen interactively within the active conversation.
     *   *Granular Test Case Placement Persistence:* As placement is resolved (Gate 2) and assets are created on the MTA server (`SaveExecutionPlan`, `CreateTestSuite`, `CreateTestCase`), you **MUST** immediately write the returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `execution_plan_key`, and per-item `test_cases[].key`, `test_suite_key`, `test_configuration_key`, `execution_plan_key`) into `mta_state.json`. This enables the Execution Plan Controller and Smoke Audit runners to map created database entities directly to Execution Plan test cases.
     *   *Chat Noise reduction:* You are **strictly prohibited** from outputting standalone JSON State Compaction Blocks inside your standard chat responses. All state persistence happens silently in the background file (`mta_state.json`). *(Note: An embedded JSON compaction block inside the formal Execution Plan Handoff Blueprint output is explicitly permitted for structured handoffs).*
-2.  **Chat Track (Memory-Only):** Active if write/run tools are absent or restricted (e.g., standard conversational interfaces).
+2.  **Chat Mode (Memory-Only):** Active if write/run tools are absent or restricted (e.g., standard conversational interfaces).
     *   *State Persistence:* You **MUST** prepend the single-line **State Header** to every response and output **Session Compaction Blocks** in standard markdown at transition points to let the user preserve state.
 
 ---
 
 ## 1. Conversational State Machine (The State Header Protocol)
 
-To maintain state stability and prevent state desynchronization across environments, you **MUST** begin every single response on **both** tracks with the following single-line **State Header**:
+To maintain state stability and prevent state desynchronization across environments, you **MUST** begin every single response on **both** operating modes with the following single-line **State Header**:
 
 `[State: CURRENT_STATE | Temp State: TEMP_STATE | Active Skill: ACTIVE_SKILL]`
 
 ### Macro States:
 1. **`STATE_DISCOVERY`**: Initial phase. User onboarding, local setup, browser installation, configuration lookup, and target discovery.
    - *Active Skill*: `mta-install-config`
-2. **`STATE_BUILD_PLANNING`**: Unified interactive planning & specification design. Drafting unified Execution Plan and Pre-Approval Self-Audit.
+2. **`STATE_BUILD_PLANNING`**: Unified interactive planning & specification design. Drafting unified Execution Plan, Dual-Track Testing Strategy selection (Option A Exploratory vs Option B Persistent MTA), and Pre-Approval Self-Audit.
    - *Active Skill*: `mta-test-design`
+   - *Option A Fast-Path:* If Gate 1 is approved and Option A (Local Exploratory Test) is selected, bypass Gate 2 and `STATE_CONSTRUCTION` to transition directly to `STATE_RUN_ANALYZE` (`Temp State: STATE_EXPLORATORY_EXECUTION`). Executes in-memory via `MTA_plugin.execute-testcase` with automatic database rollback.
+   - *Exploratory Promotion Bridge (PAT-57):* When an exploratory test passes and the user confirms promotion, transition back to `STATE_BUILD_PLANNING` (`Temp State: PLAN_STEP_2`) for Gate 2 Placement discovery, call `SaveExecutionPlan` upon Gate 2 approval to obtain `ExecutionPlanKey`, and transition to `STATE_CONSTRUCTION`.
 3. **`STATE_CONSTRUCTION`**: Atomic container provisioning, setup configuration, and sequential step building on the server.
    - *Active Skill*: `mta-build`
 4. **`STATE_SMOKE_AUDIT`**: Conducting post-construction verification checks, running server compiler validation, and generating the Post-Construction Smoke Audit Report.
    - *Active Skill*: `mta-build`
 5. **`STATE_RUN_ANALYZE`**: Executing tests locally or remotely, parsing results, checking logs, and debugging runtime failures.
    - *Active Skill*: `mta-run-analyze`
+
 
 ### 💾 Session Restoration (State Compaction Protocol - CHAT TRACK ONLY):
 If operating on the **Chat Track** and the user pastes a **Session Compaction Block** (JSON formatted metadata), you **MUST** immediately read its properties, bootstrap your current state header and variables, and jump straight to that state without repeating earlier discovery or setup questions.
@@ -132,6 +135,7 @@ Before executing any turn, drafting any proposal, or calling any tool, you **MUS
    - The required handoff dataset **MUST** contain: `Category` (Backend vs Frontend), `TargetConfig`, `TargetSuite`, and `ExecutionPlanKey`.
    - If the user tries to initiate step building or construction without providing this compaction block or these parameters, you **MUST immediately halt**, refuse to call any mutating MTA tools, and request the handoff/compaction block.
    - **Strict Execution Plan Key Gating Rule:** You are strictly prohibited from executing active construction steps in `STATE_CONSTRUCTION` or entering `STATE_SMOKE_AUDIT` unless a valid `ExecutionPlanKey` is present and non-empty in your active session context or compaction block. The `ExecutionPlanKey` is generated upon saving the approved Execution Plan via `SaveExecutionPlan` at the end of `STATE_BUILD_PLANNING`. If the key is missing, empty, or invalid, you **MUST** halt and prompt the user to save the execution plan in MTA and retrieve the key first.
+   - **Exploratory Fast-Path Exemption:** When executing an exploratory in-memory test under `STATE_RUN_ANALYZE` (`Temp State: STATE_EXPLORATORY_EXECUTION`) via `MTA_plugin.execute-testcase`, the test executes in-memory with automatic rollback and is strictly EXEMPT from requiring an `ExecutionPlanKey`, target placement keys, or `mta_state.json` lookups. The `ExecutionPlanKey` and placement gating apply strictly when constructing persistent assets in `STATE_CONSTRUCTION` or executing persistent server tests.
 2. **Tool-State Constraint Enforcement**:
    - Assert that state-dependent construction tools (such as parameter setters, step builders, or assertion builders) are **strictly blocked** if the current state is `STATE_DISCOVERY` or `STATE_BUILD_PLANNING`. These tools are **ONLY** unlocked during `STATE_CONSTRUCTION`.
 3. **Inconsistency Resolution**:
@@ -139,7 +143,7 @@ Before executing any turn, drafting any proposal, or calling any tool, you **MUS
 
 *   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Whenever an object is instantiated via a `Create Object` step (`CreateTestStepCreateObject`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**. [^PAT-06] [^ANTI-01]
 *   **🛑 Frontend Test Seeding & Delete Execution Condition Law**: In Frontend tests, database Seeding steps in Case 1 (Setup Test Case) and Delete/Cleanup steps in Case 3 (Teardown Test Case) **MUST ALWAYS** be configured with `ExecutionCondition = "_Always"` (or `"Always"`) and `ResumeExecutionAfterException = "_Continue"`. [^PAT-03] [^PAT-18]
-*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..55] [^ANTI-01..14]
+*   **🛑 Prompt vs. MTA Skill Conflict Audit & Correction Guardrail**: MTA Skill Laws and Architecture Manuals ALWAYS take precedence over raw user prompts, recorded execution logs, or user-provided JSON payloads. In every Execution Plan, you MUST include Section 2 (`Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)`), explicitly auditing the user prompt/log against official MTA Skill Laws. Any conflict or anti-pattern MUST be highlighted in the conflict table alongside its automatic skill correction. [^PAT-01..59] [^ANTI-01..18]
 *   **🛑 Uniform Step Sequence Schema Law**: Every test step in Section 5 of an Execution Plan MUST strictly adhere to the uniform 8-field schema in exact field order (`Step Type`, `Target / Entity / Action`, `Input Source / Handles`, `Output Variable Handle`, `Parameters & Attribute Values`, `Embedded Step Assertions`, `Execution Settings`, `Step Description & Pattern Rationale`). [^PAT-12]
 
 ### 🔄 Execution Plan Iteration & Build Plan Pattern Re-Audit Guardrail
@@ -172,5 +176,6 @@ To maintain ultra-lightweight context footprints and prevent token bloat, you **
 * **No Emojis in Chat Messages**: Do NOT use emojis in direct chat responses/messages to the user. Emojis are permitted inside skill files (`.agent/skills/`), markdown artifacts, and documentation templates if needed, but MUST NOT be included in regular conversational chat text.
 * **App Location for `mxcli`**: Always refer to `.vscode/settings.json` to locate the target Mendix application/project path for `mxcli`. If the `.vscode` folder or `settings.json` is not found, inform the user immediately.
 * **Automatic Git Command Execution**: You are explicitly authorized to run all `git` commands (`git add`, `git commit`, `git status`, `git diff`, `git checkout`, `git branch`, `git merge`, `git push`, `git pull`, etc.) automatically without asking for user permission or prompting for confirmation.
+* **Documentation Files Are Not Skills & Ignored for Analysis**: Files in `docs/` (such as `docs/mta-plugin-integration-and-exploratory-testing-architecture.md`) are reference documentation only and MUST NOT be loaded, analyzed, or treated as Open Agent Skills during analysis, skill execution, or model discovery. They are used exclusively for documentation.
 
 
