@@ -28,89 +28,172 @@ This reference file contains standardized, copy-pasteable build templates optimi
 Use this template when testing deterministic business logic, calculations, or validations (`VAL_`, `RULE_`, `FTN_`, `OPR_`).
 
 ```markdown
-# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
+# MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
 
-## 1. Metadata & Placement
+> [!NOTE]
+> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
+
+<details>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+
+| # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Backend Unit Test; browser setup/teardown split NA | `NA` |
+| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | In-memory execution without persistence; cleanup NA | `NA` |
+| **4** | **Setup Portability** | `PAT-28`, `PAT-41` | In-memory execution without browser setup; URL portability NA | `NA` |
+| **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; NULL variations use explicit attribute filters; max 8 cols | `PASS` |
+| **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | Assert Object Count / Value compares embedded in producer steps; no standalone steps | `PASS` |
+| **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | Backend Unit Test; frontend page/snippet discovery NA | `NA` |
+| **8** | **Uniform 8-Field Step Schema** | `PAT-12` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
+| **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53` | Backend Unit Test; 8-point frontend verification NA | `NA` |
+| **10** | **Dual-Track Strategy Declaration** | `PAT-60` | Option A (Exploratory) vs Option B (Persistent MTA) explicitly declared in Section 1 | `PASS` |
+| **11** | **Backend Exploratory Single-Payload Blueprint** | `PAT-63` | Single continuous testcase container with automatic rollback verified for Option A, or NA for Option B | `PASS` / `NA` |
+| **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Backend Unit Test; frontend UI substitution NA | `NA` |
+| **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | Backend Unit Test; frontend testkit verification NA | `NA` |
+
+</details>
+
+<details>
+<summary><b>1. State Compaction & Target Placement</b></summary>
+
+### MTA STATE COMPACTION BLOCK (SESSION RESTORE)
+<!-- Copy and paste this block into a new chat session to instantly restore your conversational state. -->
+```json
+{
+  "MtaState": "[STATE_CONSTRUCTION for Option B | STATE_RUN_ANALYZE for Option A]",
+  "TempState": "[null for Option B | STATE_EXPLORATORY_EXECUTION for Option A]",
+  "TargetConfig": "[UserSelectedTestConfig | Pending Gate 2 for Option B | null for Option A]",
+  "TargetSuite": "[UserSelectedTestSuite | Pending Gate 2 for Option B | null for Option A]",
+  "TestCase": "[ModuleName].TC_Unit_[ElementName]_[Scenario]",
+  "Category": "Backend",
+  "MtaBaseUrl": "[RetrievedUrl]",
+  "ExecutionPlanKey": "[GeneratedExecutionPlanKey for Option B | null for Option A]",
+  "Context": "Backend Unit Test approved for [ElementName]"
+}
+```
+
 *   **Target Application:** `[AppName]`
 *   **Execution Strategy / Target Mode:** `[Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback) | Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)]`
 *   **Target Configuration:** `[UserSelectedTestConfig | Pending Gate 2 for Option B | Bypassed for Option A]`
 *   **Target Suite:** `[UserSelectedTestSuite | Pending Gate 2 for Option B | Bypassed for Option A]`
-*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **Test Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
 *   **MTA Category:** Backend
 *   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Gate 2 for Option B | Bypassed for Option A]`
 
-## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
-| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
-| :--- | :--- | :--- | :--- |
-| `[Raw User Prompt Instruction]` | `[e.g. Direct Attribute Initialization on Create Object [^PAT-06]]` | `[Yes / None]` | `[Corrected step / parameter alignment]` |
+</details>
 
-## 3. Test Case Documentation & Risk Alignment
-*   **Case Name:** `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
-*   **Objective:** Verify that `[ElementName]` correctly mitigates the technical risk of `[Technical Risk]` and business risk of `[Business Risk]`.
-*   **Preconditions:** None (isolated memory execution).
-*   **Expected Result:** The microflow returns `[Expected Return, e.g., true/false/calculated decimal]` for the specified input parameters.
-*   **Authentication Requirement:** NA (Backend Unit Test)
-*   **Technical Risk Profile:** `[e.g., ACID & Data Integrity]`
-*   **Business Risk Profile:** `[e.g., Financial & Calculation Accuracy]`
-*   **Recommended MTF Level:** Unit Test (Backend)
+<details>
+<summary><b>2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)</b></summary>
 
-## 4. Verified Elements & MTF Testability Check
-*   **Target Microflow:** `[ModuleName].[ElementName]`
-*   **Input Entity / Entities:** `[ModuleName].[ParameterEntityName]`
-*   **Return Type:** `[e.g. Boolean / Decimal / Object]`
+*(Explicitly audits the user prompt or raw input log against official MTA Skill Laws. Any conflicts, anti-patterns, or sub-optimal patterns in the user prompt/input are highlighted alongside their automatic skill corrections).*
 
-## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
-1.  **Step 1**:
-    *   *Step Type*: Create Object
-    *   *Target / Entity / Action*: `[ModuleName].[ParameterEntityName]`
-    *   *Input Source / Handles*: Memory instantiation
-    *   *Output Variable Handle*: `out_param_obj`
-    *   *Parameters & Attribute Values*: `[Attribute1 = 'InitialVal']`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Direct Initialization on Create Object [^PAT-06] - Sets initial attributes directly on creation]`
-2.  **Step 2**:
-    *   *Step Type*: Retrieve Object
-    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
-    *   *Input Source / Handles*: Database
-    *   *Output Variable Handle*: `out_retrieved_obj`
-    *   *Parameters & Attribute Values*: Filter `[ModuleName].[EntityName].[FilterAttribute] = 'TEST_VAL'`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Dual Retrieve/Filter Empty Object [^PAT-07] - Enables NULL object variation via attribute filter]`
-3.  **Step 3**:
-    *   *Step Type*: Assert Object Count
-    *   *Target / Entity / Action*: `out_retrieved_obj` (Step 2)
-    *   *Input Source / Handles*: `out_retrieved_obj`
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: `Operator = "Equals"`, `Count = 1`
-    *   *Embedded Step Assertions*: `ObjectCount == 1`
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Retrieve Output Object Count Assertion [^PAT-08] - Validates object count before downstream consumption]`
-4.  **Step 4**:
-    *   *Step Type*: Call Microflow
-    *   *Target / Entity / Action*: `[ModuleName].[ElementName]`
-    *   *Input Source / Handles*: `out_param_obj`, `out_retrieved_obj`
-    *   *Output Variable Handle*: `out_result`
-    *   *Parameters & Attribute Values*: Pipe `out_param_obj` and `out_retrieved_obj`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Pure Unit Execution - Executes business microflow]`
-5.  **Step 5**:
-    *   *Step Type*: Assert Microflow Return Value
-    *   *Target / Entity / Action*: `out_result` (Step 4)
-    *   *Input Source / Handles*: `out_result`
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: `ComparisonOperator = "Equals"`, `ComparisonValue = [Expected Value]`
-    *   *Embedded Step Assertions*: `ReturnValue == [Expected Value]`
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Direct Return Assertion - Verifies calculation result]`
+| # | User Prompt / Input Payload Element | MTA Skill Law Violation | Applied Automatic Correction |
+| :-: | :--- | :--- | :--- |
+| **1** | `[Raw User Prompt Instruction]` | `[e.g. Direct Attribute Initialization on Create Object [^PAT-06]]` | `[Corrected step / parameter alignment]` |
 
-## 6. Playwright / Browser Settings (10 Keys)
-*   **Status:** NA (Backend Unit Test - runs headlessly in memory)
+*(If no conflicts exist between the user prompt/input and MTA Skill Laws, state explicitly: "No conflicts detected. The prompt and input requirements align 100% with official MTA Skill Laws.")*
 
-## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
-### 📊 Data Variation Matrix
+</details>
+
+## 3. Test Case Scope & Dual-Risk Profile
+
+### Functional Specification Profile
+| Specification Property | Detail / Value |
+| :--- | :--- |
+| **Test Case Identifier** | `[ModuleName].TC_Unit_[ElementName]_[Scenario]` |
+| **Primary Objective** | Verify that `[ElementName]` correctly calculates outputs and mitigates operational and integrity risks |
+| **Preconditions** | None (Isolated in-memory execution) |
+| **Expected Result** | Returns `[Expected Return]` for specified input parameters and passes all embedded assertions |
+| **Authentication Scope** | NA (Backend Unit Test) |
+| **Recommended MTF Level** | Unit Test (Backend) |
+
+### Dual-Risk Alignment & Mitigation Profile
+| Risk Category | Evaluated Risk Profile & Severity | Applied Mitigation Strategy |
+| :--- | :--- | :--- |
+| **Technical Risk** | `[e.g., ACID & Database Integrity Violation]` *(Severity: High)* | In-memory execution with explicit rollback and atomic count verification |
+| **Business Risk** | `[e.g., Calculation Accuracy & Financial Leakage]` *(Severity: Critical)* | Boundary value variation matrix validating strict decimal precision thresholds |
+
+## 4. Verified Model Elements & Testability Profile
+
+| Model Type | Component Name | Verified Attributes, Values & Roles |
+| :--- | :--- | :--- |
+| **Microflow** | `[ModuleName].[ElementName]` | `[Business logic summary, inputs -> outputs]` |
+| **Entity** | `[ModuleName].[ParameterEntityName]` | • `[Attribute1]` *(Type)*<br>• `[Attribute2]` *(Type)* |
+| **Entity** | `[ModuleName].[EntityName]` | • `[FilterAttribute]` *(Type)*<br>• `[Amount]` *(Decimal)* |
+
+## 5. Chronological Step Sequence Plan
+
+### Test Case Container Settings: `[ModuleName].TC_Unit_[ElementName]_[Scenario]`
+*   **Rollback After Execution:** `RollbackTcseAfterExecution = Yes`
+*   **Validation Feedback Assertions (Backend Microflow Tests Only):**
+    *   *Compare Member:* `[Target Member, Operator, Comparison String (or NotEquals "__NO_VALIDATION_MESSAGE__" for happy paths)]`
+    *   *Message Count:* `Equals 0` *(Happy Path)*
+
+### Step Sequence Matrix
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | Case 1 | `Create Object` | `[ModuleName].[ParameterEntityName]` | Memory | `out_param_obj` | `None` / `_Stop` | Direct Initialization on Create Object [^PAT-06] |
+| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `out_retrieved_obj` | `None` / `_Stop` | Retrieve Filter & Count Assertion [^PAT-07], [^PAT-08] |
+| **3** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | Handles | `out_result` | `None` / `_Stop` | Pure Unit Execution & Direct Return Assertion [^PAT-09] |
+
+### Detailed Step Configurations & Assertions
+
+<details>
+<summary><b>Step 1: Create Object ([ModuleName].[ParameterEntityName])</b></summary>
+
+*   **1. Step Type:** `Create Object`
+*   **2. Target / Action:** `[ModuleName].[ParameterEntityName]`
+*   **3. Input Source / Handles:** `N/A (Memory instantiation)`
+*   **4. Output Variable Handle:** `out_param_obj`
+*   **5. Parameters & Initial Values:** `[Attribute1 = 'InitialVal']`
+*   **6. Embedded Step Assertions:** `None (Embedded assertions are strictly prohibited on Create Object steps)`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Direct Initialization on Create Object [^PAT-06] - Sets initial attributes directly on creation]`
+
+</details>
+
+<details>
+<summary><b>Step 2: Retrieve Object ([ModuleName].[EntityName])</b></summary>
+
+*   **1. Step Type:** `Retrieve Object`
+*   **2. Target / Action:** `[ModuleName].[EntityName] (Method: Database | Range: First)`
+*   **3. Input Source / Handles:** `N/A (Database)`
+*   **4. Output Variable Handle:** `out_retrieved_obj`
+*   **5. Parameters & Filters:** `Filter: [ModuleName].[EntityName].[FilterAttribute] = 'TEST_VAL'`
+*   **6. Embedded Step Assertions:** `Assert Object Count Equals 1`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Dual Retrieve/Filter Empty Object & Count Assertion [^PAT-07], [^PAT-08]]`
+
+</details>
+
+<details>
+<summary><b>Step 3: Microflow Call ([ModuleName].[ElementName])</b></summary>
+
+*   **1. Step Type:** `Microflow Call`
+*   **2. Target / Action:** `[ModuleName].[ElementName]`
+*   **3. Input Source / Handles:** `out_param_obj`, `out_retrieved_obj`
+*   **4. Output Variable Handle:** `out_result`
+*   **5. Parameters & Bindings:** `Pipe: out_param_obj, out_retrieved_obj`
+*   **6. Embedded Step Assertions:** `Assert Microflow Return Value: ComparisonOperator = "Equals", ComparisonValue = [Expected Value]`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Pure Unit Execution & Direct Return Assertion [^PAT-09]]`
+
+</details>
+
+## 6. Playwright / Browser Settings
+
+<details>
+<summary><b>Playwright & Browser Environment Settings (Backend Tests - NA)</b></summary>
+
+*   **Status:** NA (Backend Unit Test — executes in memory with zero browser overhead)
+
+</details>
+
+## 7. Data Variation Matrix & Metadata
+
+### Data Variation Matrix
 #### Table 1: Scenarios #1 to #3
 | Attribute / Step | #1 (HappyPath) | #2 (BoundaryLow) | #3 (EmptyParam) |
 | :--- | :--- | :--- | :--- |
@@ -118,18 +201,27 @@ Use this template when testing deterministic business logic, calculations, or va
 | **`Entity.Amount`** | `100` | `0` | `100` |
 | **Assert Return Value** | `true` | `false` | `false` |
 
-### 📝 System Registration Recipe & Metadata List
+<details>
+<summary><b>Scenario Registration Metadata & Variation Recipes</b></summary>
+
 *   **Variation #1 (`HappyPath`):** *Description:* Standard happy path with valid amount.
 *   **Variation #2 (`BoundaryLow`):** *Description:* Lower boundary zero amount testing.
 *   **Variation #3 (`EmptyParam`):** *Description:* Missing/null parameter object variation.
 
-## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
-*   **Applied Pattern:** `Retrieve / Microflow Output Object Count Assertion Pattern [^PAT-08]`
-    *   **Target Step(s):** Step 2 -> Step 3 -> Step 4
-    *   **Explanation:** Asserting that Step 2 returns exactly 1 object before passing to Step 4 prevents downstream silent null pointers and unhandled errors.
-*   **Applied Pattern:** `Direct Attribute Initialization on Create Object [^PAT-06]`
-    *   **Target Step(s):** Step 1
-    *   **Explanation:** Sets initial attributes directly on creation step, avoiding separate Change Object steps.
+</details>
+
+## 8. Applied Testing Patterns & Rationale
+
+<details>
+<summary><b>Applied Testing Patterns & Architecture Laws</b></summary>
+
+| Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
+| :--- | :--- | :--- | :--- |
+| **Direct Initialization on Create Object** | Step 1 | `PAT-06`, `ANTI-01` | Initial attributes set directly on creation step, preventing unnecessary Change Object steps |
+| **Dual Retrieve/Filter Empty Object** | Step 2 | `PAT-07` | Enables testing NULL/missing database objects in variation matrix via attribute filter |
+| **Retrieve Output Object Count Assertion** | Step 2 -> Step 3 | `PAT-08`, `ANTI-03` | Verifies database query count immediately before passing handle to downstream step, preventing silent null pointers |
+
+</details>
 ```
 
 ### 📈 Coverage Expansion Strategy: Boundary Values & Negative Cases
@@ -169,213 +261,470 @@ Use this template when testing multi-step processes or transactional orchestrati
 > - **Clean Up:** By avoiding database persistence, you eliminate the need for cleanup/teardown steps, resulting in extremely fast, stable, and self-contained tests that never pollute the database.
 
 ```markdown
-# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
+# MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
 
-## 1. Metadata & Placement
+> [!NOTE]
+> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
+
+<details>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+
+| # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Backend Integration Test; browser setup/teardown split NA | `NA` |
+| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | Seeded objects deleted via direct handle piping in teardown step with `_Always` / `_Continue` | `PASS` / `NA` |
+| **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Backend test; URL portability NA | `NA` |
+| **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; single orchestration run or matrix <= 8 cols | `PASS` |
+| **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | TestLogger footprint assertions embedded directly on microflow call step | `PASS` |
+| **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | Backend Integration Test; frontend page/snippet discovery NA | `NA` |
+| **8** | **Uniform 8-Field Step Schema** | `PAT-12` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
+| **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53` | Backend Integration Test; 8-point frontend verification NA | `NA` |
+| **10** | **Dual-Track Strategy Declaration** | `PAT-60` | Option A (Exploratory) vs Option B (Persistent MTA) explicitly declared in Section 1 | `PASS` |
+| **11** | **Backend Exploratory Single-Payload Blueprint** | `PAT-63` | Single continuous testcase container with automatic rollback verified for Option A, or NA for Option B | `PASS` / `NA` |
+| **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Backend Integration Test; frontend UI substitution NA | `NA` |
+| **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | Backend Integration Test; frontend testkit verification NA | `NA` |
+
+</details>
+
+<details>
+<summary><b>1. State Compaction & Target Placement</b></summary>
+
+### MTA STATE COMPACTION BLOCK (SESSION RESTORE)
+<!-- Copy and paste this block into a new chat session to instantly restore your conversational state. -->
+```json
+{
+  "MtaState": "[STATE_CONSTRUCTION for Option B | STATE_RUN_ANALYZE for Option A]",
+  "TempState": "[null for Option B | STATE_EXPLORATORY_EXECUTION for Option A]",
+  "TargetConfig": "[UserSelectedTestConfig | Pending Gate 2 for Option B | null for Option A]",
+  "TargetSuite": "[UserSelectedTestSuite | Pending Gate 2 for Option B | null for Option A]",
+  "TestCase": "[ModuleName].TC_Int_[ElementName]_[Scenario]",
+  "Category": "Backend",
+  "MtaBaseUrl": "[RetrievedUrl]",
+  "ExecutionPlanKey": "[GeneratedExecutionPlanKey for Option B | null for Option A]",
+  "Context": "Backend Integration Test approved for [ElementName]"
+}
+```
+
 *   **Target Application:** `[AppName]`
 *   **Execution Strategy / Target Mode:** `[Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback) | Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)]`
 *   **Target Configuration:** `[UserSelectedTestConfig | Pending Gate 2 for Option B | Bypassed for Option A]`
 *   **Target Suite:** `[UserSelectedTestSuite | Pending Gate 2 for Option B | Bypassed for Option A]`
-*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **Test Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
 *   **MTA Category:** Backend
 *   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Gate 2 for Option B | Bypassed for Option A]`
 
-## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
-| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
-| :--- | :--- | :--- | :--- |
-| `[Raw User Prompt Instruction]` | `[e.g. In-Memory Preference Principle [^PAT-16]]` | `[None]` | `[In-memory setup configured]` |
+</details>
 
-## 3. Test Case Documentation & Risk Alignment
-*   **Case Name:** `[ModuleName].TC_Int_[ElementName]_[Scenario]`
-*   **Objective:** Verify that `[ElementName]` coordinates business components in the exact sequence, avoiding the operational risk of `[Operational Risk]` and transactional risk of `[ACID Risk]`.
-*   **Preconditions:** None (Isolated in-memory execution) or [Database state seeded - ONLY if database retrieve is required].
-*   **Expected Result:** Orchestration finishes successfully and the **TestLogger** footprint matches the expected baseline.
-*   **Authentication Requirement:** NA (Backend Integration Test)
-*   **Technical Risk Profile:** `Control Flow & Orchestration (Medium/High)`
-*   **Business Risk Profile:** `Operational Disruption (Medium)`
-*   **Recommended MTF Level:** Integration Test (Backend)
+<details>
+<summary><b>2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)</b></summary>
 
-## 4. Verified Elements & MTF Testability Check
-*   **Target Microflow:** `[ModuleName].[ElementName]`
-*   **Underlying Microflows Called:** `[Module.Sub1]`, `[Module.Sub2]`
-*   **TestLogger Probe Configured:** Yes
+*(Explicitly audits the user prompt or raw input log against official MTA Skill Laws. Any conflicts, anti-patterns, or sub-optimal patterns in the user prompt/input are highlighted alongside their automatic skill corrections).*
 
-## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
-1.  **Step 1 (Setup - Optional, ONLY if DB-retrieve is required)**:
-    *   *Step Type*: Create Object & Persist
-    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
-    *   *Input Source / Handles*: Database
-    *   *Output Variable Handle*: `out_seeded_obj`
-    *   *Parameters & Attribute Values*: `[Attribute1 = 'Val1']`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Seeding Step - Prepares database record for sub-microflow retrieve]`
-2.  **Step 2 (Execution)**:
-    *   *Step Type*: Call Microflow
-    *   *Target / Entity / Action*: `[ModuleName].[ElementName]`
-    *   *Input Source / Handles*: `out_seeded_obj`
-    *   *Output Variable Handle*: `out_int_result`
-    *   *Parameters & Attribute Values*: Pipe `out_seeded_obj`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Orchestration Execution - Triggers parent workflow]`
-3.  **Step 3 (Assertion)**:
-    *   *Step Type*: Call Microflow (TestLogger Footprint)
-    *   *Target / Entity / Action*: `TestLogger.GetFootprint`
-    *   *Input Source / Handles*: None
-    *   *Output Variable Handle*: `out_footprint`
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: Assert footprint matches `[Expected Footprint]`
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: TestLogger Integration Footprint - Validates sub-process execution order]`
-4.  **Step 4 (Teardown - Optional, ONLY if Step 1 was executed)**:
-    *   *Step Type*: Delete Object & Persist
-    *   *Target / Entity / Action*: `out_seeded_obj` (Step 1)
-    *   *Input Source / Handles*: `out_seeded_obj`
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Backend Teardown Cleanup - Removes seeded database record]`
+| # | User Prompt / Input Payload Element | MTA Skill Law Violation | Applied Automatic Correction |
+| :-: | :--- | :--- | :--- |
+| **1** | `[Raw User Prompt Instruction]` | `[e.g. MTF Testing Pyramid Alignment [^PAT-01]]` | `[In-memory setup configured]` |
 
-## 6. Playwright / Browser Settings (10 Keys)
-*   **Status:** NA (Backend Integration Test - runs headlessly)
+*(If no conflicts exist between the user prompt/input and MTA Skill Laws, state explicitly: "No conflicts detected. The prompt and input requirements align 100% with official MTA Skill Laws.")*
 
-## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
+</details>
+
+## 3. Test Case Scope & Dual-Risk Profile
+
+### Functional Specification Profile
+| Specification Property | Detail / Value |
+| :--- | :--- |
+| **Test Case Identifier** | `[ModuleName].TC_Int_[ElementName]_[Scenario]` |
+| **Primary Objective** | Verify that `[ElementName]` coordinates business components in exact sequence, avoiding operational disruptions |
+| **Preconditions** | None (Isolated in-memory execution) or [Database state seeded - ONLY if database retrieve is required] |
+| **Expected Result** | Orchestration finishes successfully and TestLogger footprint matches expected baseline |
+| **Authentication Scope** | NA (Backend Integration Test) |
+| **Recommended MTF Level** | Integration Test (Backend) |
+
+### Dual-Risk Alignment & Mitigation Profile
+| Risk Category | Evaluated Risk Profile & Severity | Applied Mitigation Strategy |
+| :--- | :--- | :--- |
+| **Technical Risk** | `Control Flow & Orchestration (High)` | TestLogger sequence footprint assertion validating sub-process execution order |
+| **Business Risk** | `Operational Disruption (Medium)` | End-to-end integration validation across multi-step transactions |
+
+## 4. Verified Model Elements & Testability Profile
+
+| Model Type | Component Name | Verified Attributes, Values & Roles |
+| :--- | :--- | :--- |
+| **Microflow** | `[ModuleName].[ElementName]` | `[Main orchestration microflow under test]` |
+| **Microflow** | `[ModuleName].[SubMicroflow1]` | `[Sub-process 1 called in sequence]` |
+| **Microflow** | `[ModuleName].[SubMicroflow2]` | `[Sub-process 2 called in sequence]` |
+| **Microflow** | `TestLogger.GetFootprint` | Diagnostic footprint probe verifying exact invocation sequence |
+
+## 5. Chronological Step Sequence Plan
+
+### Test Case Container Settings: `[ModuleName].TC_Int_[ElementName]_[Scenario]`
+*   **Rollback After Execution:** `RollbackTcseAfterExecution = Yes`
+*   **Validation Feedback Assertions:** `Count Equals 0`
+
+### Step Sequence Matrix
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | Case 1 | `Create Object & Persist` | `[ModuleName].[EntityName]` | Database | `out_seeded_obj` | `Always` / `_Continue` | Seeding Step [^PAT-18] |
+| **2** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | `out_seeded_obj` | `out_int_result` | `None` / `_Stop` | Orchestration Execution |
+| **3** | Case 1 | `Microflow Call` | `TestLogger.GetFootprint` | None | `out_footprint` | `None` / `_Stop` | Diagnostic Probe Footprint [^PAT-08] |
+| **4** | Case 1 | `Delete Object & Persist` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` | Backend Teardown Cleanup [^PAT-20] |
+
+### Detailed Step Configurations & Assertions
+
+<details>
+<summary><b>Step 1: Create Object & Persist ([ModuleName].[EntityName])</b></summary>
+
+*   **1. Step Type:** `Create Object & Persist`
+*   **2. Target / Action:** `[ModuleName].[EntityName]`
+*   **3. Input Source / Handles:** `Database`
+*   **4. Output Variable Handle:** `out_seeded_obj`
+*   **5. Parameters & Attribute Values:** `[Attribute1 = 'Val1']`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Seeding Step [^PAT-18] - Prepares database record for sub-microflow retrieve]`
+
+</details>
+
+<details>
+<summary><b>Step 2: Microflow Call ([ModuleName].[ElementName])</b></summary>
+
+*   **1. Step Type:** `Microflow Call`
+*   **2. Target / Action:** `[ModuleName].[ElementName]`
+*   **3. Input Source / Handles:** `out_seeded_obj`
+*   **4. Output Variable Handle:** `out_int_result`
+*   **5. Parameters & Bindings:** `Pipe: out_seeded_obj`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Orchestration Execution - Triggers parent workflow]`
+
+</details>
+
+<details>
+<summary><b>Step 3: Microflow Call (TestLogger.GetFootprint)</b></summary>
+
+*   **1. Step Type:** `Microflow Call (TestLogger Footprint)`
+*   **2. Target / Action:** `TestLogger.GetFootprint`
+*   **3. Input Source / Handles:** `None`
+*   **4. Output Variable Handle:** `out_footprint`
+*   **5. Parameters & Bindings:** `None`
+*   **6. Embedded Step Assertions:** `Assert Microflow Return Value: ComparisonOperator = "Equals", ComparisonValue = [Expected Footprint]`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Diagnostic Probe Footprint [^PAT-08] - Validates sub-process execution order]`
+
+</details>
+
+<details>
+<summary><b>Step 4: Delete Object & Persist (out_seeded_obj)</b></summary>
+
+*   **1. Step Type:** `Delete Object & Persist`
+*   **2. Target / Action:** `out_seeded_obj (Step 1)`
+*   **3. Input Source / Handles:** `out_seeded_obj`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Bindings:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Backend Teardown Cleanup [^PAT-20] - Removes seeded database record]`
+
+</details>
+
+## 6. Playwright / Browser Settings
+
+<details>
+<summary><b>Playwright & Browser Environment Settings (Backend Tests - NA)</b></summary>
+
+*   **Status:** NA (Backend Integration Test — executes in memory)
+
+</details>
+
+## 7. Data Variation Matrix & Metadata
+
 *   **Status:** Single scenario orchestration run (or define variations table if testing multiple paths).
 
-## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
-*   **Applied Pattern:** `TestLogger Footprint Verification [^PAT-01]`
-    *   **Target Step(s):** Step 3
-    *   **Explanation:** Asserts complete sub-process execution order without mocking internal components.
+## 8. Applied Testing Patterns & Rationale
+
+<details>
+<summary><b>Applied Testing Patterns & Architecture Laws</b></summary>
+
+| Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
+| :--- | :--- | :--- | :--- |
+| **Diagnostic Footprint Verification** | Step 3 | `PAT-01`, `PAT-08` | Asserts complete sub-process execution order without mocking internal components |
+| **Direct Handle Piping & Teardown Cleanup** | Step 1, Step 4 | `PAT-06`, `PAT-20` | Seeds database entity when required and cleans up via direct handle piping |
+
+</details>
 ```
 
 ---
 
 ## 🖥️ Template 3: Functional UI Test (Frontend)
 
-Use this template when testing screen layouts, button clicks, client-cache synchronization, and navigational flows (`ACT_` triggered from pages).
+Use this template when testing screen layouts, button clicks, client-cache synchronization, and naviga```markdown
+# MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
 
-```markdown
-# 📋 MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
+> [!NOTE]
+> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Category:** Frontend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
-## 1. Metadata & Placement
+<details>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+
+| # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`_Always`), Case 2 Execute, Case 3 Teardown (`_Always`) | `PASS` |
+| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & settings configured per TestCase container; `EXUS_ExecutionUser` assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | Case 3 Teardown cleans up seeded records via cross-case handle piping | `PASS` |
+| **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` |
+| **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; list filters use dynamic scalar piping | `PASS` |
+| **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | Assertions embedded directly in producer steps / UI element operator steps | `PASS` |
+| **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | `GetPages`/`GetWidgets` or `DESCRIBE PAGE/SNIPPET/ENTITY` executed; exhaustive widget inventory | `PASS` |
+| **8** | **Uniform 8-Field Step Schema** | `PAT-12` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
+| **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53` | 8-point frontend verification (seed data, multiple seed items, navigation, scalar piping) | `PASS` |
+| **10** | **Dual-Track Strategy Declaration** | `PAT-60` | Option B (Persistent MTA Platform) explicitly declared in Section 1 | `PASS` |
+| **11** | **Frontend Persistent MTA Construction** | `PAT-62` | Direct 3-Case persistent MTA Platform construction; exploratory single-payload format NA | `PASS` |
+| **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | All UI actions/assertions drive the browser via Testkit microflows without backend domain substitution | `PASS` |
+| **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs | `PASS` |
+
+</details>
+
+<details>
+<summary><b>1. State Compaction & Target Placement</b></summary>
+
+### MTA STATE COMPACTION BLOCK (SESSION RESTORE)
+<!-- Copy and paste this block into a new chat session to instantly restore your conversational state. -->
+```json
+{
+  "MtaState": "STATE_CONSTRUCTION",
+  "TempState": null,
+  "TargetConfig": "[UserSelectedTestConfig | Pending Gate 2]",
+  "TargetSuite": "[UserSelectedTestSuite | Pending Gate 2]",
+  "TestCase": "[ModuleName].TC_UI_[ElementName]",
+  "Category": "Frontend",
+  "MtaBaseUrl": "[RetrievedUrl]",
+  "ExecutionPlanKey": "[GeneratedExecutionPlanKey]",
+  "Context": "Frontend UI Test approved for [PageName]"
+}
+```
+
 *   **Target Application:** `[AppName]`
-*   **Execution Strategy / Target Mode:** `[Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback) | Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)]`
-*   **Target Configuration:** `[UserSelectedTestConfig | Pending Gate 2 for Option B | Bypassed for Option A]`
-*   **Target Suite:** `[UserSelectedTestSuite | Pending Gate 2 for Option B | Bypassed for Option A]`
-*   **Test Case Name:** `[UserSelectedTestCaseName]`
+*   **Execution Strategy / Target Mode:** `Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)`
+*   **Target Configuration:** `[UserSelectedTestConfig | Pending Gate 2]`
+*   **Target Suite:** `[UserSelectedTestSuite | Pending Gate 2]`
+*   **Test Case Name:** `[ModuleName].TC_UI_[ElementName]`
 *   **MTA Category:** Frontend
-*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Gate 2 for Option B | Bypassed for Option A]`
+*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Gate 2]`
 *   **Playwright Settings:** `[UserSelectedPlaywrightSettings]`
 
-## 2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)
-| User Prompt / Execution Log Input | MTA Skill Law / Rule Citation | Conflict Detected? | Automatic Skill Correction Applied |
-| :--- | :--- | :--- | :--- |
-| `[Raw User Prompt Instruction]` | `[e.g. Frontend 3-Case Split Law [^PAT-18]]` | `[Yes / None]` | `[Separated into Case 1, Case 2, Case 3]` |
+</details>
 
-## 3. Test Case Documentation & Risk Alignment
-*   **Case 1 (Setup):** `[ModuleName].TC_UI_[ElementName]_Setup` (Objective: Initialize browser & seed data, Execution: `_Always` / `_Continue`)
-*   **Case 2 (Execution):** `[ModuleName].TC_UI_[ElementName]_Execute` (Objective: Verify UI navigation, widget inputs, and page submission, Authentication: `[With Login | Without Login]`, Execution: `None` / `_Stop`)
-*   **Case 3 (Teardown):** `[ModuleName].TC_UI_[ElementName]_Teardown` (Objective: Close browser and clean up seeded records, Execution: `_Always` / `_Continue`)
-*   **Technical Risk Profile:** `Client Cache & UI Sync (Low/Medium)`
-*   **Business Risk Profile:** `Brand & User Drop-off (Low/Medium)`
-*   **Recommended MTF Level:** Functional UI Test (Frontend)
+<details>
+<summary><b>2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)</b></summary>
 
-## 4. Verified Elements & MTF Testability Check
-*   **Target Page:** `[ModuleName].[PageName]` (CSS Class: `[PageClassName]`)
-*   **Target Widgets:** `[Widget1]`, `[Widget2]`, `[SubmitButton]`
-*   **Navigation Document:** Default / Role-Based Home Page checked via `SHOW NAVIGATION`
+*(Explicitly audits the user prompt or raw input log against official MTA Skill Laws. Any conflicts, anti-patterns, or sub-optimal patterns in the user prompt/input are highlighted alongside their automatic skill corrections).*
 
-## 5. Chronological Step Sequence Plan (Uniform 8-Field Schema)
-### CASE 1: Setup & Data Seeding
-1.  **Step 101**:
-    *   *Step Type*: Create Playwright Options Object
-    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.LocalStartOptions`
-    *   *Input Source / Handles*: Memory instantiation
-    *   *Output Variable Handle*: `out_options`
-    *   *Parameters & Attribute Values*: `Headless = true`, `SlowMo = 0`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Configures browser startup]`
-2.  **Step 102**:
-    *   *Step Type*: Create Object & Persist (Data Seeding)
-    *   *Target / Entity / Action*: `[ModuleName].[EntityName]`
-    *   *Input Source / Handles*: Database
-    *   *Output Variable Handle*: `out_seeded_obj`
-    *   *Parameters & Attribute Values*: `[Attribute1 = 'SeedVal']`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Frontend Setup Seeding [^PAT-18] - Prepares database record for UI screen]`
+| # | User Prompt / Input Payload Element | MTA Skill Law Violation | Applied Automatic Correction |
+| :-: | :--- | :--- | :--- |
+| **1** | `[Raw User Prompt Instruction]` | `[e.g. Frontend 3-Case Split Law [^PAT-18]]` | `[Separated into Case 1, Case 2, Case 3]` |
 
-### CASE 2: UI Action & Execution
-3.  **Step 201**:
-    *   *Step Type*: Start Frontend Session (With/Without Login)
-    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login`
-    *   *Input Source / Handles*: `out_options`
-    *   *Output Variable Handle*: `out_browser_page`
-    *   *Parameters & Attribute Values*: `Username = 'admin'`, `Password = '1'`, `TargetUrl = '/index.html'`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Launches browser session]`
-4.  **Step 202**:
-    *   *Step Type*: Locate Page
-    *   *Target / Entity / Action*: `[ModuleName].[PageName]` (`PageClassName`)
-    *   *Input Source / Handles*: `out_browser_page`
-    *   *Output Variable Handle*: `out_page_locator`
-    *   *Parameters & Attribute Values*: `PageQualifiedName = '[ModuleName].[PageName]'`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Page Object Model Locator [^PAT-32] - Modularizes page container context]`
-5.  **Step 203**:
-    *   *Step Type*: Locate Widget & Fill Input
-    *   *Target / Entity / Action*: `[WidgetCaption]`
-    *   *Input Source / Handles*: `out_page_locator`
-    *   *Output Variable Handle*: `out_widget_locator`
-    *   *Parameters & Attribute Values*: `Value = 'TestInput'`
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Structural Locator Law 1 [^PAT-30] - 2-step widget locate and fill chain]`
-6.  **Step 204**:
-    *   *Step Type*: Locate Widget & Click Button
-    *   *Target / Entity / Action*: `[ButtonCaption]`
-    *   *Input Source / Handles*: `out_page_locator`
-    *   *Output Variable Handle*: `out_button_locator`
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Structural Locator Law 1 [^PAT-30] - 2-step widget locate and click chain]`
-7.  **Step 205**:
-    *   *Step Type*: Stop Frontend Test
-    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Stop_MxFrontendTest`
-    *   *Input Source / Handles*: `out_browser_page`
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Start-and-Stop Boilerplate [^PAT-31] - Closes active browser session]`
+*(If no conflicts exist between the user prompt/input and MTA Skill Laws, state explicitly: "No conflicts detected. The prompt and input requirements align 100% with official MTA Skill Laws.")*
 
-### CASE 3: Teardown & Cleanup
-8.  **Step 301**:
-    *   *Step Type*: Delete Object & Persist
-    *   *Target / Entity / Action*: `out_seeded_obj` (Case 1 Step 102 via cross-case piping)
-    *   *Input Source / Handles*: `out_seeded_obj`
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Cross-Case Output Piping Teardown [^PAT-20] - Cleans up seeded setup record]`
-9.  **Step 302**:
-    *   *Step Type*: Teardown Playwright
-    *   *Target / Entity / Action*: `MenditectMxFrontendTestKit.Teardown_Playwright`
-    *   *Input Source / Handles*: None
-    *   *Output Variable Handle*: None
-    *   *Parameters & Attribute Values*: None
-    *   *Embedded Step Assertions*: None
-    *   *Execution Settings*: `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-    *   *Step Description & Pattern Rationale*: `[Pattern: Playwright Process Cleanup - Ensures zero orphan browser processes]`
+</details>
 
-## 6. Playwright / Browser Settings (MANDATORY FRONTEND TABLE - ALL 10 KEYS)
+## 3. Test Case Scope & Dual-Risk Profile
+
+### Functional Specification Profile
+| Specification Property | Detail / Value |
+| :--- | :--- |
+| **Case 1 (Setup)** | `[ModuleName].TC_UI_[ElementName]_Setup` *(Objective: Initialize browser & seed data, Execution: `_Always` / `_Continue`)* |
+| **Case 2 (Execution)** | `[ModuleName].TC_UI_[ElementName]_Execute` *(Objective: Verify UI navigation, widget inputs, and page submission, Authentication: `[With Login \| Without Login]`, Execution: `None` / `_Stop`)* |
+| **Case 3 (Teardown)** | `[ModuleName].TC_UI_[ElementName]_Teardown` *(Objective: Close browser and clean up seeded records, Execution: `_Always` / `_Continue`)* |
+| **Preconditions** | Application running at target base URL; test execution user provisioned |
+| **Expected Result** | Browser session launches, navigates to target page, fills inputs, asserts widget visibility/state, and tears down cleanly |
+| **Authentication Scope** | `[With Login (admin/1) | Without Login (Anonymous)]` |
+| **Recommended MTF Level** | Functional UI Test (Frontend) |
+
+### Dual-Risk Alignment & Mitigation Profile
+| Risk Category | Evaluated Risk Profile & Severity | Applied Mitigation Strategy |
+| :--- | :--- | :--- |
+| **Technical Risk** | `Client Cache & UI Sync (Medium)` | Full browser DOM automation testing real client-side state transitions |
+| **Business Risk** | `Brand & User Drop-off (Medium)` | Verifies critical UI user journey and form submission without platform errors |
+
+## 4. Verified Model Elements & Testability Profile
+
+### Model Components Summary
+| Model Type | Component Name | Verified Attributes, Values & Roles |
+| :--- | :--- | :--- |
+| **Page** | `[ModuleName].[PageName]` | • Page Key / CSS: `[PageKey]`<br>• Layout: Atlas Responsive Master Layout |
+| **Snippet(s)** | `[ModuleName].[SnippetName]` | • Snippet Key / Call: `[SnippetCall]` (or None if no nested snippets) |
+| **Domain Entity** | `[ModuleName].[EntityName]` | • Bound Attributes: `[Attr1 (String), Attr2 (Enum)]` |
+| **Navigation** | Default / Role-Based Home Page | Checked via `SHOW NAVIGATION` for target user role |
+
+### Input Widget Inventory (Exhaustive Discovery - PAT-67)
+| # | Widget Name | Widget Type | Container / Snippet / Tab | Data Source / Attribute Binding | Testkit Locator & Action Microflow |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **1** | `textBox_CustomerName` | `TextBox` | Main Page (`[ModuleName].[PageName]`) | `Customer.Name` (String 200) | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` |
+| **2** | `dropDown_Status` | `DropDown` | Main Page | `Customer.Status` (Enum) | `Locate_MxWidget_DropDown` ➔ `ACT_Select_DropDown_Option` |
+| **3** | `datePicker_BirthDate` | `DatePicker` | Snippet (`[ModuleName].[SnippetName]`) | `Customer.BirthDate` (DateTime) | `Locate_MxWidget_DatePicker` ➔ `ACT_Fill_DatePicker_Input` |
+| **4** | `btn_Save` | `ActionButton` | Main Page Footer | `ACT_SaveCustomer` (Microflow) | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` |
+
+## 5. Chronological Step Sequence Plan
+
+### Step Sequence Matrix
+
+#### Case 1: Setup & Data Seeding (`[ModuleName].TC_UI_[ElementName]_Setup` — Rollback: `No`, Execution: `_Always` / `_Continue`)
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **101** | Case 1 | `Create Object` | `LocalStartOptions` | Memory | `out_options` | `Always` / `_Continue` | Start-and-Stop Boilerplate [^PAT-28] |
+| **102** | Case 1 | `Create Object & Persist` | `[ModuleName].[EntityName]` | Database | `out_seeded_obj` | `Always` / `_Continue` | Frontend Setup Seeding [^PAT-18] |
+
+#### Case 2: UI Action & Execution (`[ModuleName].TC_UI_[ElementName]_Execute` — Rollback: `No`, Execution: `None` / `_Stop`)
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **201** | Case 2 | `Start Frontend Session` | `Start_MxFrontend_Test_With_Login` | `out_options` | `out_browser_page` | `Always` / `_Continue` | Start-and-Stop Boilerplate [^PAT-28] |
+| **202** | Case 2 | `Locate Page` | `[ModuleName].[PageName]` | `out_browser_page` | `out_page_locator` | `None` / `_Stop` | Page Object Model Locator [^PAT-29] |
+| **203** | Case 2 | `Locate Widget & Fill` | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` | `out_page_locator` | `out_widget_locator` | `None` / `_Stop` | Structural Locator Law 1 [^PAT-13], [^PAT-64] |
+| **204** | Case 2 | `Locate Widget & Click` | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` | `out_page_locator` | `out_button_locator` | `None` / `_Stop` | Structural Locator Law 1 [^PAT-13], [^PAT-64] |
+| **205** | Case 2 | `Stop Frontend Test` | `Stop_MxFrontendTest` | `out_browser_page` | `N/A` | `Always` / `_Continue` | Start-and-Stop Boilerplate [^PAT-28] |
+
+#### Case 3: Teardown & Cleanup (`[ModuleName].TC_UI_[ElementName]_Teardown` — Rollback: `No`, Execution: `_Always` / `_Continue`)
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **301** | Case 3 | `Delete Object & Persist` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` | Cross-Case Output Piping Teardown [^PAT-20], [^PAT-18] |
+| **302** | Case 3 | `Teardown Playwright` | `Teardown_Playwright` | None | `N/A` | `Always` / `_Continue` | Playwright Process Cleanup [^PAT-18] |
+
+### Detailed Step Configurations & Assertions
+
+<details>
+<summary><b>Step 101: Create Playwright Options Object (MenditectMxFrontendTestKit.LocalStartOptions)</b></summary>
+
+*   **1. Step Type:** `Create Playwright Options Object`
+*   **2. Target / Action:** `MenditectMxFrontendTestKit.LocalStartOptions`
+*   **3. Input Source / Handles:** `Memory instantiation`
+*   **4. Output Variable Handle:** `out_options`
+*   **5. Parameters & Initial Values:** `Headless = true, SlowMo = 0`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Start-and-Stop Boilerplate [^PAT-28] - Configures browser startup]`
+
+</details>
+
+<details>
+<summary><b>Step 102: Create Object & Persist ([ModuleName].[EntityName])</b></summary>
+
+*   **1. Step Type:** `Create Object & Persist`
+*   **2. Target / Action:** `[ModuleName].[EntityName]`
+*   **3. Input Source / Handles:** `Database`
+*   **4. Output Variable Handle:** `out_seeded_obj`
+*   **5. Parameters & Initial Values:** `[Attribute1 = 'SeedVal']`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Frontend Setup Seeding [^PAT-18] - Prepares database record for UI screen]`
+
+</details>
+
+<details>
+<summary><b>Step 201: Start Frontend Session (MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login)</b></summary>
+
+*   **1. Step Type:** `Start Frontend Session (With Login)`
+*   **2. Target / Action:** `MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login`
+*   **3. Input Source / Handles:** `out_options`
+*   **4. Output Variable Handle:** `out_browser_page`
+*   **5. Parameters & Initial Values:** `Username = 'admin', Password = '1', TargetUrl = '/index.html'`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Start-and-Stop Boilerplate [^PAT-28] - Launches browser session]`
+
+</details>
+
+<details>
+<summary><b>Step 202: Locate Page ([ModuleName].[PageName])</b></summary>
+
+*   **1. Step Type:** `Locate Page`
+*   **2. Target / Action:** `[ModuleName].[PageName]`
+*   **3. Input Source / Handles:** `out_browser_page`
+*   **4. Output Variable Handle:** `out_page_locator`
+*   **5. Parameters & Initial Values:** `PageQualifiedName = '[ModuleName].[PageName]'`
+*   **6. Embedded Step Assertions:** `None (Automatic internal page IsVisible check executed by Locate_Page)`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Page Object Model Locator [^PAT-29] - Modularizes page container context]`
+
+</details>
+
+<details>
+<summary><b>Step 203: Locate Widget & Fill Input (textBox_CustomerName)</b></summary>
+
+*   **1. Step Type:** `Locate Widget & Fill Input`
+*   **2. Target / Action:** `MenditectMxFrontendTestKit.Locate_MxWidget_TextBox` -> `MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input`
+*   **3. Input Source / Handles:** `out_page_locator`
+*   **4. Output Variable Handle:** `out_widget_locator`
+*   **5. Parameters & Initial Values:** `WidgetName = 'textBox_CustomerName'`, `Value = 'TestInput'`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Structural Locator Law 1 [^PAT-13] [^PAT-64] - 2-step widget locate and fill chain using verified closed-catalog testkit microflows]`
+
+</details>
+
+<details>
+<summary><b>Step 204: Locate Widget & Click Button (btn_Save)</b></summary>
+
+*   **1. Step Type:** `Locate Widget & Click Button`
+*   **2. Target / Action:** `MenditectMxFrontendTestKit.Locate_MxWidget_Button` -> `MenditectMxFrontendTestKit.ACT_Click_Button`
+*   **3. Input Source / Handles:** `out_page_locator`
+*   **4. Output Variable Handle:** `out_button_locator`
+*   **5. Parameters & Initial Values:** `WidgetName = 'btn_Save'`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **8. Step Description & Rationale:** `[Pattern: Structural Locator Law 1 [^PAT-13] [^PAT-64] - 2-step widget locate and click chain using verified closed-catalog testkit microflows]`
+
+</details>
+
+<details>
+<summary><b>Step 205: Stop Frontend Test (MenditectMxFrontendTestKit.Stop_MxFrontendTest)</b></summary>
+
+*   **1. Step Type:** `Stop Frontend Test`
+*   **2. Target / Action:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest`
+*   **3. Input Source / Handles:** `out_browser_page`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Initial Values:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Start-and-Stop Boilerplate [^PAT-28] - Closes active browser session]`
+
+</details>
+
+<details>
+<summary><b>Step 301: Delete Object & Persist (out_seeded_obj)</b></summary>
+
+*   **1. Step Type:** `Delete Object & Persist`
+*   **2. Target / Action:** `out_seeded_obj (Case 1 Step 102 via cross-case piping)`
+*   **3. Input Source / Handles:** `out_seeded_obj`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Initial Values:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Cross-Case Output Piping Teardown [^PAT-20] [^PAT-18] - Cleans up seeded setup record]`
+
+</details>
+
+<details>
+<summary><b>Step 302: Teardown Playwright (MenditectPlaywrightConnector.Teardown_Playwright)</b></summary>
+
+*   **1. Step Type:** `Teardown Playwright`
+*   **2. Target / Action:** `MenditectPlaywrightConnector.Teardown_Playwright`
+*   **3. Input Source / Handles:** `None`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Initial Values:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Playwright Process Cleanup [^PAT-18] - Ensures zero orphan browser processes]`
+
+</details>
+
+## 6. Playwright / Browser Settings
+
+<details>
+<summary><b>Playwright & Browser Environment Settings (Frontend UI Tests)</b></summary>
+
 | Setting Key | Default / Selected Value | All Available Alternative Options |
 | :--- | :--- | :--- |
 | **1. Browser Environment** | `Locally` | `Playwright Server`, `Azure Workspaces` |
@@ -389,16 +738,43 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **9. Browser Locale** | System Default (`en-US`) | `nl-NL`, `de-DE`, `fr-FR`, or valid BCP-47 tag |
 | **10. Virtual Timezone ID** | System Default (`Europe/Amsterdam`) | `UTC`, `America/New_York`, `Asia/Tokyo`, or valid IANA ID |
 
-## 7. Data Variation Matrix & Metadata (MANDATORY HORIZONTAL & MAX 8-COLUMN LAYOUT)
-*   **Status:** Single happy-path UI verification (or headless backend variation pattern for validation matrices).
+</details>
 
-## 8. Applied Testing Patterns & Rationale (MANDATORY PATTERN EXPLANATION)
-*   **Applied Pattern:** `Frontend 3-Case Split Law [^PAT-18]`
-    *   **Target Step(s):** Case 1 Setup -> Case 2 Execution -> Case 3 Teardown
-    *   **Explanation:** Separates setup seeding, UI execution, and cleanup across 3 isolated test cases with `_Always` / `_Continue` settings on setup and teardown.
-*   **Applied Pattern:** `Structural Locator Law 1 [^PAT-30]`
-    *   **Target Step(s):** Steps 203, 204
-    *   **Explanation:** Enforces direct 2-step widget locate and action chains without intermediate wrappers.
+## 7. Data Variation Matrix & Metadata
+
+### Data Variation Matrix (Horizontal Layout)
+#### Table 1: Scenarios #1 to #3
+| Target Step & Parameter | #1 (`standard-happy-flow`) | #2 (`special-character-input`) | #3 (`maximum-length-input`) |
+| :--- | :--- | :--- | :--- |
+| **System Variation Name** | `standard-happy-flow` | `special-character-input` | `maximum-length-input` |
+| **Business Scenario Description** | Standard valid UI form submission | Form submission with accent characters and punctuation | Form submission with upper boundary length input |
+| **Step 203: `txt_CustomerName`** | `'Jane Doe'` | `'Renée O\'Connor'` | `'Alexander Bartholomew Montgomery-Smith'` |
+| **Step 204: `txt_Email`** | `'jane.doe@example.com'` | `'renee.oconnor@example.com'` | `'alex.montgomery@example.com'` |
+| **Step 209: Assert Grid Row Exists** | `true` (`'Jane Doe'`) | `true` (`'Renée O\'Connor'`) | `true` (`'Alexander Bartholomew...'`) |
+
+<details>
+<summary><b>Scenario Registration Metadata & Variation Recipes</b></summary>
+
+*   **Variation #1 (`standard-happy-flow`):** *Description:* Standard valid UI form submission.
+*   **Variation #2 (`special-character-input`):** *Description:* Form submission with accent characters and punctuation.
+*   **Variation #3 (`maximum-length-input`):** *Description:* Form submission with upper boundary length input.
+
+</details>
+
+## 8. Applied Testing Patterns & Rationale
+
+<details>
+<summary><b>Applied Testing Patterns & Architecture Laws</b></summary>
+
+| Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
+| :--- | :--- | :--- | :--- |
+| **Frontend 3-Case Split Law** | Case 1 -> Case 2 -> Case 3 | `PAT-18`, `PAT-03` | Separates setup seeding, UI execution, and cleanup across 3 isolated test cases with `_Always` / `_Continue` settings on setup and teardown |
+| **Structural Locator Law 1** | Steps 203, 204 | `PAT-13`, `PAT-64` | Enforces direct 2-step widget locate and action chains using closed-catalog microflows |
+| **Start-and-Stop Boilerplate** | Steps 101, 201, 205, 302 | `PAT-28`, `PAT-18` | Controls clean browser instance lifecycle from initialization through safe process teardown |
+| **Closed Catalog Frontend Testkit Verification** | Steps 201, 202, 203, 204, 205, 302 | `PAT-64`, `ANTI-21` | All UI actions and teardowns use verified closed catalog microflows from MenditectMxFrontendTestKit and MenditectPlaywrightConnector |
+| **Frontend UI to Backend Microflow Substitution Prohibition** | Case 2 | `ANTI-20` | All UI interactions drive the browser via Testkit microflows without substituting backend domain microflows |
+
+</details>
 ```
 
 ### 🖥️ Frontend Risk-Focus Strategy for Frontend Tests
@@ -467,3 +843,16 @@ Based on the capabilities of the MTA skills, users can also use these advanced p
 #### 🐛 4. For Debugging Runtime Failures:
 > "My test case '[TestCaseName]' failed. Here is the execution log output: [paste log snippet]. Help me troubleshoot and fix the test case."
 *   *Outcome:* Triggers the `mta-run-analyze` diagnostic skill to parse the error codes and propose specific sequencing or attribute fixes.
+
+#### 📋 5. For Manual Test Plans & Live Test Data Provisioning (New Feature):
+> "I want to manually test the new feature '[FeatureName]' on page '[ModuleName].[PageName]'. Create a Manual Test Plan with live test data provisioning."
+*   *Outcome:* Triggers `PAT-68` to inspect the domain model and pages via `mxcli`, generates a structured Manual Test Plan (MTP) with executable `execute-testcase` data seeding recipes (`RollbackTcseAfterExecution = "false"`), navigation instructions, manual test checklist, and teardown manifest.
+
+#### ⚡ 6. For Ad-Hoc Live Test Data Seeding (Exploratory / Manual Testing):
+> "Seed 3 test customers with Gold tier and 2 open orders in module '[ModuleName]' so I can test the discount calculation manually in the browser."
+*   *Outcome:* Builds and executes a direct `MTA_plugin.execute-testcase` live payload (`RollbackTcseAfterExecution = "false"`), outputs the provisioned entity inventory, and sets up instant teardown tracking.
+
+#### 🧹 7. For Manual Test Data Teardown & Database Cleanup:
+> "Clean up the test data created for order '[OrderNumber]' / user '[Username]' during my manual test session."
+*   *Outcome:* Triggers `PAT-69` interactive cleanup inspection, retrieves matching records, shows the deletion breakdown, and executes deterministic teardown (`Oact: Delete`).
+

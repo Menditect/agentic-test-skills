@@ -27,7 +27,66 @@ The MTA Plugin module includes an embedded MCP server running directly inside th
 | Constant | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `MtaPluginModule.EnableMcpServer` | `Boolean` | `false` | Must be set to `true` in App Settings / Configuration to activate the `[RuntimeUrl]/plugin-mcp/` endpoint. |
-| `MtaPluginModule.McpServerAccessToken` | `String` | `""` | Optional. If set to a non-empty string, all incoming MCP requests must provide `Authorization: Bearer [Value]`. If left blank, token authentication is not enforced. |
+| `MtaPluginModule.McpServerAccessToken` | `String` | `""` | Optional on localhost, **MANDATORY on non-localhost / cloud environments**. When set, all incoming MCP requests must provide `Authorization: Bearer [Value]`. |
+
+### 🔐 Security & Bearer Token Configuration (Remote / Non-Localhost Environments)
+
+> [!WARNING]
+> The `MTA_plugin` MCP server (`execute-testcase`) is a powerful in-memory execution engine capable of invoking arbitrary microflows, creating/modifying/deleting domain entities, and committing transactions. **Whenever the plugin MCP server is exposed outside `localhost` (e.g., Mendix Cloud, Docker, staging environments, remote servers), you MUST configure a cryptographically strong Bearer token.**
+
+#### 1. Token Strength Requirements
+* **Minimum Length:** At least 32 characters (recommended: 64 characters / 256 bits of entropy).
+* **Entropy:** Cryptographically random character sequence (mix of uppercase, lowercase, digits, and special characters).
+* **Never use predictable values** like `secret`, `admin`, `test`, `token123`, or project names.
+
+#### 2. Generate a Secure Token
+Run one of the following commands in your terminal to generate a secure 256-bit token:
+
+* **Windows (PowerShell):**
+  ```powershell
+  -join ((65..90) + (97..122) + (48..57) + 33,35,36,37,38,42 | Get-Random -Count 64 | ForEach-Object {[char]$_})
+  ```
+  *Alternative (Base64):*
+  ```powershell
+  [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
+  ```
+
+* **Linux / macOS (Bash / OpenSSL):**
+  ```bash
+  openssl rand -base64 32
+  ```
+
+#### 3. Configure the Token in Mendix
+
+* **In Mendix Studio Pro (Local / Development Configurations):**
+  1. Go to **App** > **Settings** > **Configurations** tab.
+  2. Edit your target Configuration (e.g., `Default`, `Docker`).
+  3. In the **Constants** tab, set:
+     - `MtaPluginModule.EnableMcpServer`: `true`
+     - `MtaPluginModule.McpServerAccessToken`: `[Your Generated Secure Token]`
+
+* **In Mendix Developer Portal / Cloud Deployments:**
+  1. Open your App in the **Mendix Developer Portal** > **Environments** > **Environment Details**.
+  2. Navigate to **Model Options** > **Constants**.
+  3. Configure `MtaPluginModule.McpServerAccessToken` as an **Encrypted / Secret Constant**.
+  4. Set `MtaPluginModule.EnableMcpServer` to `true`.
+  5. Restart the environment.
+
+#### 4. Configure Client MCP Connection with Bearer Token
+When connecting an AI assistant or MCP client (MAIA, Claude Desktop, custom runner) to a secured remote endpoint, include the `Authorization` header:
+
+```json
+{
+  "mcpServers": {
+    "MTA_plugin": {
+      "url": "https://your-mendix-app.example.com/plugin-mcp/",
+      "headers": {
+        "Authorization": "Bearer <YOUR_STRONG_BEARER_TOKEN>"
+      }
+    }
+  }
+}
+```
 
 ### Transport & Client Connection
 * **Protocol:** Streamable HTTP / Server-Sent Events (SSE) with JSON-RPC 2.0 (`Accept: text/event-stream, application/json`).

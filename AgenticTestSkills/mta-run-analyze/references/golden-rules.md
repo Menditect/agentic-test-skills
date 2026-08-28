@@ -179,3 +179,11 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
     1.  **Backend Unit Tests (Strict Universal `_Stop` Law - `PAT-17`):** For **ALL** teststeps in Backend Unit Tests (including setup, create, microflow call, retrieve, and assertions), set `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. Because Backend Unit Tests rely on MTA's automated database transaction rollback (`RollbackTcseAfterExecution = "Yes"`), any failure must halt execution immediately to preserve isolation and prevent downstream cascading errors. Setting `_Continue` on any step in a Backend Unit Test is strictly prohibited (`ANTI-07`).
     2.  **Frontend UI & Backend Integration Tests (`_Continue` on Assertions - `PAT-33`):** For non-setup/non-teardown assertion steps in Frontend UI tests and multi-step Integration tests, set `ResumeExecutionAfterException = "_Continue"` (via `SetExecutionSettingsOfTestStep`) and set assertion parameters (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"` to provide full-suite error reporting across the entire test run.
     3.  **Frontend Setup & Teardown Cases (Strict `_Always` / `_Continue` Law - `PAT-18`):** In Frontend tests, all setup steps in Case 1 (including `Start_MxFrontend_Test_*`, seeding, and `Persist`) and all teardown steps in Case 3 (including delete and `Stop_MxFrontendTest`) MUST use `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+
+### 🔌 Execution Settings Wire Format vs. Plan Display Mapping
+| Execution Setting | User-Facing Plan Display | Wire / MCP Tool Value (`SetExecutionSettingsOfTestStep`) | Wire / MCP Tool Value (`SetExecutionSettingsOfTestCase`) |
+| :--- | :--- | :--- | :--- |
+| **Execution Condition** | `None` / `Always` / `Skip` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` |
+| **Resume After Exception** | `Stop` / `Continue` | `"_Stop"` / `"_Continue"` | `"_Stop"` / `"_Continue"` |
+| **Apply Security** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`ApplySecurity`) |
+| **Rollback After Run** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`RollbackTcseAfterExecution`) |

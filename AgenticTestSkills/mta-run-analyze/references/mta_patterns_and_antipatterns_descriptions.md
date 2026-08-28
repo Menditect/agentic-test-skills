@@ -3,7 +3,7 @@
 **🏠 Return to:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Build Skill](../../mta-build/SKILL.md) | [MTA Run & Analyze Skill](../../mta-run-analyze/SKILL.md) | [Patterns Reference Index](mta-patterns-and-antipatterns-reference.md)  
 *Metadata: Version 2.2.0 | Primary Audience: AI Coding Assistant (Antigravity, MAIA, Subagents)*
 
-This document provides a comprehensive analysis and detailed description of all **59 Patterns (PAT-01 through PAT-59)** and **18 Anti-Patterns (ANTI-01 through ANTI-18)** used in Menditect Test Automation (MTA).
+This document provides a comprehensive analysis and detailed description of all Patterns (`PAT-xx`) and Anti-Patterns (`ANTI-xx`) codified for Menditect Test Automation (MTA).
 
 For each rule, this document outlines its scope, category, detailed operational description, core purpose, and explicit relationships to other patterns and anti-patterns.
 
@@ -168,7 +168,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-21`: Single Persist Batching Law
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Requires grouping multiple in-memory object creations, changes, or deletions together and executing a single `Persist` step at the end of the logical block, rather than inserting a `Persist` step after every individual object manipulation. The delete teststeps must be ordered according to the delete rules as specified in the domain model.
+* **Description:** Requires grouping multiple in-memory object creations, changes, or deletions together and executing a single parameterless `Persist` step at the end of the logical block, rather than inserting a `Persist` step after every individual object manipulation. A `Persist` test step acts as a batch commit for all uncommitted objects in the current session; it must NOT have `EntityQualifiedName` or input handle bindings (`TCEX_RQ_Sfcr` / `Sfdr`). Furthermore, delete test steps preceding the `Persist` step must be ordered according to the delete rules and foreign key dependencies specified in the domain model.
 * **Related Rules:**
   * **Related Patterns:** `PAT-06` (Direct Initialization), `PAT-20` (Unshared Session Architecture).
 
@@ -290,6 +290,24 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-75`: Verified Entity Fixture Attribute Binding Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Requires verifying entity attribute names and data types against the Mendix Domain Model AST via `DESCRIBE ENTITY <Module.Entity>` before compiling in-memory entity fixtures (`Oact: Create` or `TCEX_RQ_AttributeValueRun`) whenever target entity attributes are not fully declared in the target microflow's AST. Prohibits assuming or guessing attribute names (e.g. `Code`, `Id`, `Name`), which cause Mendix runtime metamodel validation crashes.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-29` (Unverified / Assumed Entity Fixture Attributes).
+  * **Related Patterns:** `PAT-06` (Direct Attribute & Association Initialization on Create Object), `PAT-71` (Targeted Single-Pass Discovery), `PAT-73` (Chained Single-Payload Matrix Execution Law).
+
+---
+
+### `ANTI-29`: Unverified / Assumed Entity Fixture Attributes
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** The anti-pattern of guessing, assuming, or hallucinating synthetic attribute names (such as `Code`, `Id`, `Description`) when constructing entity creation steps or exploratory payloads without inspecting the entity's domain model AST. This causes Mendix JVM runtime exceptions (`Entity does not contain member`).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-75` (Verified Entity Fixture Attribute Binding Law).
+  * **Related Patterns:** `PAT-06` (Direct Initialization on Create Object).
+
+---
+
 ## ⚙️ Domain C: Execution Settings, Rollback & Exception Handling
 
 ### `PAT-03`: Frontend 3-Case Split Law
@@ -380,7 +398,16 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Description:** Requires explicitly auditing and verifying every cell $(i, j)$ in a Data Variation Matrix when copying or expanding variation columns, ensuring no default or unverified values are assumed.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-11` (Delta-Only Data Variation Override Assumptions).
-  * **Related Patterns:** `PAT-19` (Data Variation Consolidation), `PAT-27` (Capped 8-Column Matrix Layout).
+  * **Related Patterns:** `PAT-19` (Data Variation Consolidation), `PAT-27` (Capped 8-Column Matrix Layout), `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law).
+
+---
+
+### `PAT-77`: Mandatory Data Variation Container Metadata & Description Persistence Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Mandates calling `TestCaseDataVariationName(VariationKey, Name)` AND `TestCaseDataVariationDescription(VariationKey, Description)` (or `TestSuiteDataVariation*`) on Scenario #1 (the Template Variation) and every duplicated variation ($2..N$) immediately upon container creation or duplication. Guarantees that all scenario names and descriptions defined in Section 7 of the Execution Plan are strictly persisted in the MTA database rather than remaining ephemeral in markdown plans.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-31` (Unpersisted Variation Metadata & Description Omission Anti-Pattern).
+  * **Related Patterns:** `PAT-19` (Data Variation Consolidation), `PAT-27` (Capped 8-Column Matrix Layout), `PAT-54` (Exhaustive Matrix Cell Reconciliation Law), `PAT-57` (Exploratory Test Promotion Bridge), `PAT-70` (Data Script Conversion Bridge).
 
 ---
 
@@ -397,6 +424,15 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Description:** Assuming that duplicating a data variation column automatically retains parent cell values without explicitly checking and writing every individual cell value in the matrix.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-54` (Exhaustive $M \times N$ Matrix Cell Reconciliation Law).
+
+---
+
+### `ANTI-31`: Unpersisted Variation Metadata & Description Omission Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Omitting `TestCaseDataVariationDescription` (or `TestSuiteDataVariationDescription`) during persistent test construction or exploratory-to-persistent conversion, leaving scenario descriptions ephemeral in markdown plans while unpersisted in the MTA database.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law).
+  * **Related Patterns:** `PAT-54` (Exhaustive Matrix Cell Reconciliation Law).
 
 ---
 
@@ -614,10 +650,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-56`: Dual-Track Decision Gate & Exploratory-First Verification
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** When developing or modifying microflow logic locally and `MTA_plugin.execute-testcase` is active, prefer running an in-memory exploratory test with zero database placement and automatic JVM rollback (`RollbackTcseAfterExecution = "true"`) before creating persistent MTA server records. This provides sub-second execution feedback, eliminates container provisioning waste for broken logic, and guarantees verification prior to database persistence.
+* **Description:** When developing or modifying backend microflow or domain logic locally and `MTA_plugin.execute-testcase` is active, prefer running an in-memory exploratory test with zero database placement and automatic JVM rollback (`RollbackTcseAfterExecution = "true"`) before creating persistent MTA server records. This provides sub-second execution feedback, eliminates container provisioning waste for broken logic, and guarantees verification prior to database persistence. Note: Frontend UI tests are explicitly excluded from Option A exploratory testing per `PAT-62` and must directly construct persistent 3-Case MTA suites.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `ANTI-15` (Premature Container Provisioning).
-  * **Related Patterns:** `PAT-01` (MTF Testing Pyramid Alignment), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol).
+  * **Related Patterns:** `PAT-01` (MTF Testing Pyramid Alignment), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-62` (Frontend Persistent MTA Construction Law).
 
 ---
 
@@ -630,11 +666,11 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
-### `PAT-58`: Unified 3-Phase Lifecycle for Frontend Exploratory Execution
-* **Scope:** Frontend | **Classification:** Platform Execution Law
-* **Description:** When running Frontend UI exploratory tests via `execute-testcase`, compile all three phases (Phase 1: In-memory seed creation & browser launch; Phase 2: Frontend Testkit UI actions & assertions; Phase 3: Browser closure & automatic JVM database rollback) into a single continuous `TCEX_RQ_TestStepRun` array. Ensure `RollbackTcseAfterExecution = "true"` so database side-effects are rolled back automatically without requiring manual delete steps during exploratory runs.
+### `PAT-58`: Backend Exploratory Execution Lifecycle & Telemetry Analysis
+* **Scope:** Backend | **Classification:** Platform Execution Law
+* **Description:** When running Backend exploratory tests via `MTA_plugin.execute-testcase`, compile all setup, execution, and verification steps into a single continuous `TCEX_RQ_TestStepRun` array. Ensure `RollbackTcseAfterExecution = "true"` so database modifications are rolled back automatically in-memory upon completion. Telemetry (`TCEX_RS`) from step executions, return values, and validation feedback is analyzed and presented in the standardized exploratory execution report (`PAT-61`).
 * **Related Rules:**
-  * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-05` (Menditect Frontend Testkit Strict Default Law), `PAT-28` ("Start-and-Stop First" Boilerplate Session Law), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-63` (Backend Exploratory Single-Payload Blueprint Law).
 
 ---
 
@@ -686,18 +722,19 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-61`: Standard Exploratory Test Execution Report Format
 * **Scope:** General | **Classification:** Platform Execution Law
 * **Description:** Governs the mandatory standard format for presenting exploratory test execution results from `MTA_plugin.execute-testcase`. Every exploratory test execution response MUST use this uniform structure containing:
-  1. **Goal of the Test:** High-level business and technical verification intent.
-  2. **Execution Metadata:** Local DateTime stamp, unique Run ID (`TCEX-YYYYMMDD-HHMMSS-XXXX`), Total Duration (ms), Execution User, and Rollback Mode (`RollbackTcseAfterExecution = true`).
+  1. **Execution Metadata & Environment Details:** Collapsible section at the very top detailing Local DateTime stamp, unique Run ID (`TCEX-YYYYMMDD-HHMMSS-XXXX`), Total Wall-Clock Execution Time (ms), Execution User, Rollback Mode (`RollbackTcseAfterExecution = true`), and Execution Throughput.
+  2. **Goal of the Test:** High-level business and technical verification intent.
   3. **Overall Result (Tri-State):** Explicit outcome status:
      * `PASS`: All test steps, microflow executions, return values, and assertions succeeded.
      * `FAIL`: One or more steps completed execution, but assertions failed (e.g. return value mismatch, object count mismatch, or unexpected validation feedback).
      * `ERROR`: An unhandled exception or runtime crash occurred during execution (e.g. `NullPointerException`, Mendix Java runtime exception).
   4. **Test Case Level Summary:** High-level table of Input state, Actual Output returned, and Expected Result.
-  5. **Step Level Execution Breakdown:** Sequential table listing step index (#), Step Name/Type, Input (handles/passed values), Actual Output (return value/GUID/attributes), Expected Result & Assertions, Step Result (`PASS`/`FAIL`/`ERROR`/`SKIPPED`), and Duration (ms).
+  5. **Performance & Benchmark Profile (PAT-76):** Granular timing breakdown detailing Wall-Clock & Throughput Telemetry, Operations Breakdown by Step Category (Create/Change/Delete/Microflow/Assertions/Persist/Rollback), and Per-Scenario Latency Breakdown.
   6. **Error & Diagnostic Logs:** Included upon `FAIL` or `ERROR`, detailing exception class, error message, stack trace snippets, and root-cause diagnosis.
-  7. **Promotion Prompt:** Interactive prompt offering one-click promotion to persistent MTA storage if the test passed.
+  7. **Step Level Execution Breakdown & Latency Telemetry:** Collapsible section positioned at the very bottom containing the sequential table listing step index (#), Step Name/Type, Input (handles/passed values), Actual Output (return value/GUID/attributes), Expected Result & Assertions, Step Result (`PASS`/`FAIL`/`ERROR`/`SKIPPED`), and Duration (ms).
+  8. **Promotion Prompt:** Interactive prompt offering one-click promotion to persistent MTA storage if the test passed.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-58` (Unified 3-Phase Lifecycle for Frontend Exploratory Execution).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-58` (Unified 3-Phase Lifecycle for Frontend Exploratory Execution), `PAT-76` (Mandatory Exploratory Benchmark & Latency Telemetry Law).
 
 ---
 
@@ -707,6 +744,242 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-59` (Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic).
   * **Related Patterns:** `PAT-49` (Incremental Construction Success Verification).
+
+---
+
+### `PAT-62`: Frontend Persistent MTA Construction Law
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Frontend UI automation requires Playwright browser lifecycle management, session context isolation, and DOM locator mapping provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the persistent MTA Platform across the canonical 3-Case suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser settings. In-memory exploratory execution (`MTA_plugin.execute-testcase`) is reserved for backend microflow and domain logic testing.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-19` (Trial-and-Error Frontend Execution & Raw CSS Selector Bypass).
+  * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-05` (Menditect Frontend Testkit Strict Default Law), `PAT-13` (Structural Locator Laws), `PAT-20` (Unshared Session Architecture & Mandatory Persist Rule), `PAT-28` ("Start-and-Stop First" Boilerplate Session Law), `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law).
+
+---
+
+### `ANTI-19`: Trial-and-Error Frontend Execution & Raw CSS Selector Bypass
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Attempting to construct or debug frontend tests by guessing raw Playwright CSS selectors (`Page_Get_By_Selector`, `Locator_Get_By_Text`, `:first-child`, `>> nth=0`) and running live trial-and-error executions against the running runtime without first inspecting the Mendix widget model via `mxcli` or using official `MenditectMxFrontendTestKit` locator/ELO microflows. This causes session exhaustion, non-deterministic UI failures, and fragile tests that bypass Mendix model abstraction.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-62` (Frontend Persistent MTA Construction Law).
+  * **Related Anti-Patterns:** `ANTI-12` (Raw Playwright Connector Bypass Anti-Pattern).
+
+---
+
+### `PAT-63`: Backend Exploratory Single-Payload Blueprint Law
+* **Scope:** Backend | **Classification:** Methodological Law
+* **Description:** Governs the dedicated single-testcase Execution Plan schema and JSON message blueprint for Backend exploratory tests:
+  1. *Dedicated Single-TestCase Structure:* When exploratory testing (`execute-testcase`) is selected for Backend logic, format the Execution Plan as **1 single continuous test case** payload (`TCEX_RQ_TestStepRun` array) with `RollbackTcseAfterExecution = "true"`.
+  2. *Self-Contained Setup & Verification:* Include entity creation/retrieval, parameter setup, microflow calls, and assertions within the continuous step sequence.
+  3. *JSON Message Blueprint:* The exploratory plan MUST include the complete JSON payload preview mapping all steps directly to `TCEX_RQ_TestStepRun`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-20` (Frontend UI to Backend Domain Microflow Substitution Anti-Pattern).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-60` (Dual-Track Execution Strategy Explicit Declaration), `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-66` (Exhaustive Exploratory Matrix Execution Law).
+
+---
+
+### `ANTI-20`: Frontend UI to Backend Domain Microflow Substitution Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Substituting frontend user-facing UI interactions (clicks, text input, dropdown selections, UI assertions) with direct backend domain microflow calls (`ACT_*`, `SUB_*`, `CMT_*`) during frontend test planning or exploratory execution. In Frontend tests, domain microflows are strictly restricted to backend database seeding in setup or backend cleanup in teardown; all interactive UI steps MUST be driven via official `MenditectMxFrontendTestKit` microflows in the browser.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-63` (Exploratory Execution Plan Single-Payload Blueprint Law), `PAT-05` (Menditect Frontend Testkit Strict Default Law).
+  * **Related Anti-Patterns:** `ANTI-02` (Ice Cream Cone Heavy UI Testing Anti-Pattern), `ANTI-12` (Raw Playwright Connector Bypass Anti-Pattern).
+
+---
+
+### `PAT-64`: Closed Catalog Frontend Testkit Microflow Verification Law
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Mandates that all Frontend test step definitions (in Execution Plans, exploratory JSON blueprints, and persistent MTA test steps) MUST strictly use verified, existing microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` module catalogs. Prohibits inventing, guessing, or assuming unverified synthetic microflow names (e.g. `ACT_Playwright_*`, `Playwright_Click`, `Page_Click`, `SetText`). When designing frontend steps, the agent MUST inspect the testkit catalog in `frontend-testing.md` or `playwright-api.md` and use exact parameter names, data types, and return types.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+  * **Related Patterns:** `PAT-05` (Menditect Frontend Testkit Strict Default Law), `PAT-13` (Structural Locator Laws), `PAT-62` (Exploratory Frontend Testing via MxFrontendTestKit Structural Laws), `PAT-63` (Exploratory Execution Plan Single-Payload Blueprint Law).
+
+---
+
+### `ANTI-21`: Frontend Testkit Microflow Invention / Hallucination Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Inventing, assuming, or hallucinating synthetic helper microflow names (e.g. `ACT_Playwright_*`, `Playwright_Click`, `Page_Click`, `SetText`) that do not exist in the official `MenditectMxFrontendTestKit` or `MenditectPlaywrightConnector` modules. This occurs when test designs bypass catalog inspection and invent generic names, resulting in non-executable plans and broken JSON step payloads.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law).
+  * **Related Anti-Patterns:** `ANTI-12` (Raw Playwright Connector Bypass Anti-Pattern), `ANTI-20` (Frontend UI to Backend Domain Microflow Substitution Anti-Pattern).
+
+---
+
+### `PAT-65`: Execution Plan Visual Formatting & Markdown Component Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Mandates that every Execution Plan presented to the user (`# MTA EXECUTION PLAN SIGN-OFF`) strictly adheres to the standardized 8-section layout and required markdown components: (1) Pre-Approval Quality Audit Banner with 13-check collapsible checklist; (2) State Compaction & Target Placement collapsible details block; (3) Prompt vs. Skill Conflict Audit table; (4) Test Case Scope & Dual-Risk Profile open tables; (5) Chronological Step Sequence formatted with a clean summary matrix table (zero in-cell HTML or nested details blocks) followed by standalone collapsible per-step drilldowns (`<details><summary><b>Step N: ...</b></summary>`); (6) Playwright / Browser Settings details block; (7) Data Variation Matrix horizontal table; (8) Applied Testing Patterns & Rationale table citing canonical PAT/ANTI rule IDs. Embedding HTML blocks (`<details>`, `<summary>`, `<br>`) inside Markdown table cells is strictly prohibited, and all emojis/icons must be omitted from headers and plans.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-12` (Uniform Step Sequence Schema Law), `PAT-43` (Mandatory Dual-Gate Approval), `PAT-60` (Dual-Track Execution Strategy Explicit Declaration in Execution Plan).
+
+---
+
+### `PAT-66`: Exhaustive Exploratory Matrix Execution Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates that when Option A (Local Exploratory Testing) is selected, the assistant MUST automatically iterate through and execute `MTA_plugin.execute-testcase` for all rows `VAR_01` through `VAR_0N` defined in Section 7 (Data Variation Matrix) of the approved Execution Plan before compiling and presenting the final execution report. Executing only the baseline/template scenario when a multi-row data variation matrix exists is strictly prohibited.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-22` (Single-Scenario Exploratory Truncation Anti-Pattern).
+  * **Related Patterns:** `PAT-19` (Data Variation Consolidation Law), `PAT-54` ($M \times N$ Matrix Cell Value Reconciliation Law), `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-63` (Exploratory Execution Plan Single-Payload Blueprint Law).
+
+---
+
+### `ANTI-22`: Single-Scenario Exploratory Truncation Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing only the baseline/template variation via `MTA_plugin.execute-testcase` during local exploratory testing and halting without executing the remaining planned data variation rows defined in Section 7. This leaves planned boundary conditions, edge cases, and error scenarios unverified prior to reporting or promotion.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-66` (Exhaustive Exploratory Matrix Execution Law).
+  * **Related Anti-Patterns:** `ANTI-08` (Duplicate Test Case Proliferation Anti-Pattern), `ANTI-11` (Delta-Only Override Assumption Anti-Pattern).
+
+---
+
+### `PAT-67`: Exhaustive Page & Snippet Input Widget Discovery and Domain Reconciliation Law
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** When designing Frontend execution plans, especially when `GetWidgets` is unavailable or when inspecting complex Mendix pages, the agent MUST perform exhaustive, multi-level widget discovery to identify all form input controls, selection widgets, and interactive triggers:
+  1. *Recursive Page & Snippet Inspection:* First execute `mxcli` `DESCRIBE PAGE <Module.Page>` (or `GetWidgets` if MTA is up to date). If any `SnippetCall` references or nested container calls (e.g., `SnippetCall Administration.Account_Details`) are detected, immediately execute `DESCRIBE SNIPPET <Module.Snippet>` recursively for each snippet to uncover all embedded form fields.
+  2. *Domain Model Attribute Reconciliation:* Inspect the underlying domain entity via `DESCRIBE ENTITY <Module.Entity>` or `SHOW ENTITY <Module.Entity>` to compare domain attributes against discovered widgets, ensuring no essential input attributes or reference selectors were overlooked.
+  3. *Mandatory Input Widget Inventory:* In Section 4 ("Verified Model Elements & Testability Profile") of the Execution Plan, construct an explicit **Input Widget Inventory** table listing every input widget, its widget type (`TextBox`, `DropDown`, `DatePicker`, `CheckBox`, `ReferenceSelector`), its container/snippet/tab location, bound entity/attribute, and verified Testkit locator microflow.
+  4. *Complete Step Coverage in Step Sequence:* Ensure Section 5 (Chronological Step Sequence) and Section 7 (Data Variation Matrix) include explicit locate-and-fill steps for all discovered required and relevant form inputs rather than testing only a superficial subset of fields.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-23` (Shallow Page Inspection & Form Input Omission Anti-Pattern).
+  * **Related Patterns:** `PAT-05` (Menditect Frontend Testkit Strict Default Law), `PAT-13` (Structural Locator Laws), `PAT-40` (Multi-Object List & Dropdown Seeding), `PAT-42` (Date-Time Offset & Format Pattern Inspection), `PAT-53` (Domain Model Attribute Length & Constraint Verification), `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law).
+
+---
+
+### `ANTI-23`: Shallow Page Inspection & Form Input Omission Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Inspecting only the top-level widgets of a Mendix page (or relying strictly on keywords mentioned in the user prompt) without recursively inspecting nested snippets (`DESCRIBE SNIPPET`), tab containers, or domain model entity attributes (`DESCRIBE ENTITY`). This causes form input widgets embedded inside snippets or secondary containers to be missed in the Execution Plan, resulting in incomplete test scenarios, unpopulated required fields, and false validation failures.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-67` (Exhaustive Page & Snippet Input Widget Discovery and Domain Reconciliation Law).
+  * **Related Anti-Patterns:** `ANTI-19` (Trial-and-Error Frontend Execution & Raw CSS Selector Bypass), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+
+---
+
+### `PAT-68`: Live Test Data Provisioning & Manual Test Plan Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When developers or QA engineers perform manual exploratory or structured testing for new features, the agent leverages `MTA_plugin.execute-testcase` with `RollbackTcseAfterExecution = "false"` as a deterministic Test Data Management (TDM) and Manual Test Plan (MTP) execution engine. Instead of requiring human testers to manually click through dozens of setup forms (`ANTI-25`), the agent drafts executable provisioning recipes (`TCEX_RQ`) to instantiate domain graphs, link parent-child associations (`TCEX_RQ_Sfar`), configure user accounts with roles, or advance state via business microflows. The agent outputs a structured Manual Test Data Provisioning Report with top-collapsed execution metadata, created record identifiers, navigation routes, login credentials, step-by-step verification checklists, a ready-to-run teardown manifest, and bottom-collapsed step execution telemetry.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-25` (Manual UI Data Entry Slog Anti-Pattern).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate), `PAT-69` (Two-Phase Manual Data Seeding & Cleanup Inspection), `PAT-70` (Manual-to-Automated Test Promotion Bridge).
+
+---
+
+### `PAT-69`: Two-Phase Manual Data Seeding & Cleanup Inspection
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Protects the local development database from unintended state corruption during manual test data operations. 
+  1. *Two-Phase Mutating Execution:* Whenever data seeding involves executing custom business logic microflows (`MicroflowCall`) or mutating existing shared records, the agent first executes the payload in dry-run mode (`RollbackTcseAfterExecution = "true"`). Upon verifying zero exceptions and valid business returns, the agent prompts for confirmation and executes the live database commit (`RollbackTcseAfterExecution = "false"`).
+  2. *Interactive Cleanup Inspection:* Before executing batch deletes or mass teardowns (`Oact: Delete`), the agent runs a read-only query (`Oact: Retrieve`), presents the exact count and identifiers of candidate records to the user in chat, and deletes only upon explicit user confirmation.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-24` (Dirty Database Test Data Pollution Anti-Pattern).
+  * **Related Patterns:** `PAT-68` (Live Test Data Provisioning & Manual Test Plan Protocol), `PAT-18` (Idempotent Test Case Isolation Law).
+
+---
+
+### `PAT-70`: Data Script & Manual Scenario to MTA Conversion Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Governs converting live test data provisioning / seeding scripts (`TCEX_RQ`) and verified manual test scenarios into persistent MTA Platform assets. Strictly mandates the **Universal Execution Plan Law** (`PAT-43`): no data script may bypass the `# MTA EXECUTION PLAN SIGN-OFF` (Gate 1) and Placement Discovery (Gate 2). Whenever a data script is ready for persistent conversion, the agent MUST present an explicit 3-choice menu with clear educational explanations:
+  1. *Option 1: Standalone Data Seeding Test Case (Persistent Data Generator)* - Generates a Backend Execution Plan (1 Case: Data Seeding, direct attribute and association bindings, trailing `Persist`, **NO teardown steps in this test case** so records remain available in the database for manual QA, demos, or downstream tests; Section 6 Playwright is marked NA).
+  2. *Option 2: Automated Frontend Test Suite (3-Case UI Pattern)* - Transitions to `mta-test-design` to prompt for the target page, executes single-pass page AST discovery (`PAT-72`), presents the full 10-setting Playwright table, and generates a Frontend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Playwright UI Actions` using `MenditectMxFrontendTestKit`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`).
+  3. *Option 3: Automated Backend Integration Suite (3-Case Backend Pattern)* - Prompts for target backend logic, runs `DESCRIBE MICROFLOW` (`PAT-71`), and generates a Backend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Microflow Calls & Assertions`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`; Section 6 Playwright is marked NA).
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-16` (Unpromoted Exploratory Test Drift), `ANTI-14` (Execution Plan Bypass).
+  * **Related Patterns:** `PAT-02` (3-Test-Case Automated Pattern), `PAT-03` (Universal Teardown Cleanup Law), `PAT-21` (Dual-Requirement Persistence Law), `PAT-41` (Anonymous vs. Role Navigation Resolution), `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-68` (Live Test Data Provisioning & Manual Test Plan Protocol), `PAT-72` (Single-Pass Page AST Seed Derivation).
+
+---
+
+### `PAT-71`: Targeted Single-Pass Discovery & Semantic Path Tracing
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Maximizes model discovery performance and reduces planning latency by extracting the complete component structure in a single command. When a target microflow or page is specified, the agent executes `DESCRIBE MICROFLOW <Module.Name>` or `DESCRIBE PAGE <Module.Name>` on turn 1. The agent extracts input parameters, return types, variables, called sub-microflows, member expressions, and enum literals directly from the self-contained AST, and systematically traces the microflow control flow graph (cascading guard hierarchies, decision combinations, and formula calculations). The agent is strictly prohibited from executing secondary exploratory listing commands (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) when all required elements are present in the primary AST.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-26` (Redundant Exploratory Model Query Cascade).
+  * **Related Patterns:** `PAT-01` (MTF Testing Pyramid Alignment), `PAT-58` (Backend Exploratory Execution Lifecycle), `PAT-72` (Single-Pass Page AST Seed Derivation).
+
+---
+
+### `PAT-72`: Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Eliminates recursive CLI cascades when planning Frontend UI tests. The agent inspects the `DESCRIBE PAGE` AST in a single pass to derive the complete seed data profile: the root DataView entity, bound form input attributes (`TextBox`, `DropDown`, `DatePicker`), parent-child association dependencies (`ReferenceSelector`), and collection entities (`DataGrid2`/`ListView`). The agent automatically maps discovered widget types to verified `MenditectMxFrontendTestKit` microflows using a deterministic locator mapping table, avoiding trial-and-error reasoning and eliminating 3–5 separate `DESCRIBE ENTITY` queries. When MTA Server is connected and synchronized, the agent leverages `GetPages` and `GetWidgets` for sub-second zero-CLI discovery.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-23` (Shallow Page Inspection & Form Input Omission Anti-Pattern), `ANTI-26` (Redundant Exploratory Model Query Cascade).
+  * **Related Patterns:** `PAT-05` (Frontend Testkit Strict Default), `PAT-40` (Multi-Object List & Dropdown Seeding), `PAT-67` (Exhaustive Page & Snippet Input Widget Discovery).
+
+---
+
+### `PAT-73`: Chained Single-Payload Matrix Execution Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** In local exploratory testing (Option A), when an approved Execution Plan contains $N$ data variation scenarios (`VAR_01`..`VAR_0N`), the agent MUST compile all variations into a single `TCEX_RQ_TestStepRun` array dispatched in **1 single `execute-testcase` tool call** under the existing plugin schema. To prevent database pollution and cross-variation state contamination when testing microflows that create or commit data, each variation block in the sequence MUST follow the self-contained sandwich structure: Seed Data Object Instantiation (with disjoint synthetic keys) -> Microflow Call & Assertion -> Intra-Block Object Deletion (`Action: Delete` via `TCEX_RQ_Sfdr`). The entire batch executes in JVM memory in sub-second time (< 1s) and cleanly rolls back at test completion via `RollbackTcseAfterExecution = "Yes"`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-27` (Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern).
+  * **Related Patterns:** `PAT-58` (Backend Exploratory Execution Lifecycle), `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-66` (Exhaustive Exploratory Matrix Execution Law), `PAT-74` (Exploratory Single-Session Conflict Detection & Isolation Protocol).
+
+---
+
+### `PAT-74`: Exploratory Single-Session Conflict Detection & Isolation Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When designing or executing a chained single-payload matrix (`PAT-73`), the agent MUST audit the target microflow AST during discovery for potential single-session conflict vectors: (1) Database XPath queries or aggregate calculations (`COUNT`, `SUM`) where uncleaned records alter subsequent queries; (2) Unique constraint / duplicate existence checks where identical keys collide; (3) Singleton / application configuration mutations; (4) Non-transactional side-effects (e.g. Java actions calling unmanaged caches or external web services). For database-mutating flows, the agent MUST enforce intra-block object deletions (`Action: Delete` via `TCEX_RQ_Sfdr`) and disjoint synthetic keys (`VAR01-xxx`, `VAR02-xxx`). If non-transactional side-effects or unresolvable state leakage is detected (e.g. `VAR_01` passes but `VAR_02` fails due to persistent session state), the agent MUST trigger the **Session Isolation Fallback Protocol**, cleanly executing each variation in an independent dispatch session.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-28` (Cross-Variation State Contamination & Blind Chaining Anti-Pattern).
+  * **Related Patterns:** `PAT-18` (Idempotent Test Case Isolation Law), `PAT-71` (Targeted Single-Pass Discovery & Semantic Path Tracing), `PAT-73` (Chained Single-Payload Matrix Execution Law).
+
+---
+
+### `PAT-76`: Mandatory Exploratory Benchmark & Latency Telemetry Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** In local exploratory testing (Option A), whenever `MTA_plugin.execute-testcase` is invoked, the agent MUST extract, compute, and render the complete **3-Part Performance & Benchmark Profile** in the final test execution report (`PAT-61`): (1) *Wall-Clock & Throughput Telemetry* (Total Execution Time, Step Count, Execution Throughput in steps/second, and Database Commit Overhead); (2) *Operations Breakdown by Step Category Table* (explicit counts, aggregated time share, and avg duration per step category: `Oact: Create/Change/Delete/Persist` vs `MicroflowCall` logic vs transaction rollback); and (3) *Per-Scenario / Per-Step Latency Breakdown Table* (mapping elapsed time per variation block). The agent MUST compute concrete millisecond values from tool execution start/completion timestamps and runtime telemetry, and is strictly prohibited from omitting duration values or using uncalculated placeholder text.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-30` (Exploratory Performance & Latency Telemetry Omission Anti-Pattern).
+  * **Related Patterns:** `PAT-58` (Backend Exploratory Execution Lifecycle), `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-73` (Chained Single-Payload Matrix Execution Law).
+
+---
+
+### `ANTI-24`: Dirty Database Test Data Pollution Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Creating or modifying test data in local or shared development environments during manual testing sessions without establishing a structured teardown manifest or tracking mechanism (such as Root Object Cascades, Dedicated Test User Isolation, Time-Window Deltas, or Prefix Tagging). This leaves stale, orphan, or conflicting records in the database, corrupting future test runs and polluting demo environments.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-69` (Two-Phase Manual Data Seeding & Cleanup Inspection).
+  * **Related Patterns:** `PAT-03` (Universal Teardown Cleanup Law), `PAT-18` (Idempotent Test Case Isolation Law), `PAT-68` (Live Test Data Provisioning & Manual Test Plan Protocol).
+
+---
+
+### `ANTI-25`: Manual UI Data Entry Slog Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Forcing developers or QA testers to spend hours manually typing data into repetitive, multi-step UI forms just to establish complex prerequisite states for manual testing (e.g. creating 10 customers, 5 addresses, 20 order lines, and applying status transition buttons). This wastes engineering time and introduces human data-entry error into test setups.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-68` (Live Test Data Provisioning & Manual Test Plan Protocol).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate), `PAT-58` (Backend Exploratory Execution Lifecycle & Telemetry Analysis).
+
+---
+
+### `ANTI-26`: Redundant Exploratory Model Query Cascade
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Executing multiple broad, sequential CLI listing commands (such as running `SHOW MODULES`, `SHOW ENTITIES`, `SHOW MICROFLOWS`, or separate `DESCRIBE ENUMERATION` queries) when the target component name is already qualified and its AST self-contains all necessary parameter types, return signatures, subflow invocations, and enum branch cases. This introduces 40–60 seconds of unnecessary latency into test plan design.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-71` (Targeted Single-Pass Discovery & Semantic Path Tracing), `PAT-72` (Single-Pass Page AST Seed Derivation).
+  * **Related Patterns:** `PAT-67` (Exhaustive Page & Snippet Discovery).
+
+---
+
+### `ANTI-27`: Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing a variation matrix in local exploratory mode by invoking `MTA_plugin.execute-testcase` in multiple sequential agent conversation turns (e.g., 9 separate LLM round-trips for 9 scenarios). This introduces 25–40 seconds of unnecessary LLM latency for executions that take only milliseconds inside the Mendix JVM.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-73` (Chained Single-Payload Matrix Execution Law).
+  * **Related Patterns:** `PAT-66` (Exhaustive Exploratory Matrix Execution Law).
+
+---
+
+### `ANTI-28`: Cross-Variation State Contamination & Blind Chaining Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Chaining multiple data variations into a single session without performing pre-execution AST conflict audits or applying intra-block deletions and disjoint synthetic keys. This leads to duplicate key constraint exceptions, contaminated XPath database retrieve results in downstream variations, or false negative test failures.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-74` (Exploratory Single-Session Conflict Detection & Isolation Protocol).
+  * **Related Patterns:** `PAT-18` (Idempotent Test Case Isolation Law), `PAT-73` (Chained Single-Payload Matrix Execution Law).
+
+---
+
+### `ANTI-30`: Exploratory Performance & Latency Telemetry Omission Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Omitting per-step execution durations, using uncalculated approximations (such as `< 1000 ms` or `[X ms]`), or presenting exploratory test results without the complete 3-part performance benchmark breakdown (wall-clock throughput, operations category split, and per-scenario latency). This deprives developers and QA engineers of critical performance profiling and regression detection insights during local verification.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-76` (Mandatory Exploratory Benchmark & Latency Telemetry Law).
+  * **Related Patterns:** `PAT-61` (Standard Exploratory Test Execution Report Format), `PAT-73` (Chained Single-Payload Matrix Execution Law).
 
 ---
 
@@ -732,3 +1005,18 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-56`** (Dual-Track Decision Gate) | **`ANTI-15`** (Premature Container Provisioning) | Local exploratory testing first vs premature central container allocation |
 | **`PAT-57`** (Exploratory-to-Persistent Promotion) | **`ANTI-16`** (Unpromoted Exploratory Test Drift) | Frictionless test promotion vs leaving ephemeral tests uncommitted |
 | **`PAT-59`** (Zero Construction Error & Build Mismatch Diagnostic) | **`ANTI-18`** (Ignored Construction Errors & Cascading Build Failure) | Intercepting build errors, zero construction errors before execution vs blind building/running |
+| **`PAT-62`** (Frontend Persistent MTA Construction Law) | **`ANTI-19`** (Trial-and-Error Frontend Execution & Selector Bypass) | Direct 3-case persistent MTA Platform construction vs exploratory UI trial-and-error |
+| **`PAT-63`** (Backend Exploratory Single-Payload Blueprint) | **`ANTI-20`** (Frontend UI to Backend Microflow Substitution) | Single-payload exploratory plan for backend vs substituting backend microflows in UI tests |
+| **`PAT-64`** (Closed Catalog Frontend Testkit Microflow Verification Law) | **`ANTI-21`** (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern) | Using only verified MenditectMxFrontendTestKit catalog microflows vs inventing synthetic helper microflows |
+| **`PAT-66`** (Exhaustive Exploratory Matrix Execution Law) | **`ANTI-22`** (Single-Scenario Exploratory Truncation Anti-Pattern) | Iterating through all data variation rows vs stopping after baseline scenario |
+| **`PAT-67`** (Exhaustive Page & Snippet Input Widget Discovery and Domain Reconciliation Law) | **`ANTI-23`** (Shallow Page Inspection & Form Input Omission Anti-Pattern) | Recursive multi-level widget extraction & domain attribute reconciliation vs omitting nested snippet/tab form inputs |
+| **`PAT-68`** (Live Test Data Provisioning & Manual Test Plan Protocol) | **`ANTI-25`** (Manual UI Data Entry Slog Anti-Pattern) | Automated live data provisioning & manual test plans vs tedious manual UI form typing |
+| **`PAT-69`** (Two-Phase Manual Data Seeding & Cleanup Inspection) | **`ANTI-24`** (Dirty Database Test Data Pollution Anti-Pattern) | Dry-run verification & structured teardown manifests vs unmanaged database pollution |
+| **`PAT-70`** (Manual-to-Automated Test Promotion Bridge) | **`ANTI-16`** (Unpromoted Exploratory Test Drift) | Converting verified manual test setups to persistent MTA regression suites vs ephemeral testing |
+| **`PAT-71`** (Targeted Single-Pass Discovery & Semantic Path Tracing) | **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Single-pass AST discovery and control flow path tracing vs multi-query listing cascades |
+| **`PAT-72`** (Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping) | **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Direct seed graph derivation & Testkit locator mapping vs recursive entity/snippet CLI cascades |
+| **`PAT-73`** (Chained Single-Payload Matrix Execution Law) | **`ANTI-27`** (Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern) | Single-call chained payload matrix execution with intra-block teardown vs multi-turn sequential dispatch |
+| **`PAT-74`** (Exploratory Single-Session Conflict Detection & Isolation Protocol) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining Anti-Pattern) | AST conflict vector audit, intra-block teardown & fallback to isolated sessions vs blind chained execution |
+| **`PAT-75`** (Verified Entity Fixture Attribute Binding Law) | **`ANTI-29`** (Unverified / Assumed Entity Fixture Attributes) | Verifying domain model attributes before fixture compilation vs guessing non-existent entity members |
+| **`PAT-76`** (Mandatory Exploratory Benchmark & Latency Telemetry Law) | **`ANTI-30`** (Exploratory Performance & Latency Telemetry Omission Anti-Pattern) | Extracting and displaying full 3-part performance profile vs omitting durations or using uncalculated placeholders |
+

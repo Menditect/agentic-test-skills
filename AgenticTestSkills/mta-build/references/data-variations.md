@@ -44,17 +44,17 @@ To prevent any confusion between system-generated defaults and our logical test 
 
 ---
 
-## 🚨 MANDATORY VARIATION METADATA (NAME & DESCRIPTION) RULE
+## 🚨 MANDATORY VARIATION METADATA (NAME & DESCRIPTION) RULE [^PAT-77] [^ANTI-31]
 
-To ensure that all data variations can be identified, understood, and audited in the MTA dashboard, you **MUST** configure both the Name and Description for **every single variation** you create, including the baseline Template Variation (Variation #1) and any duplicated variations.
+To ensure that all data variations can be identified, understood, and audited in the MTA dashboard, you **MUST** configure both the Name and Description for **every single variation** you create (`PAT-77`), including the baseline Template Variation (Variation #1) and any duplicated variations ($2..N$). Leaving variation descriptions empty or unpersisted is strictly prohibited (`ANTI-31`).
 
 For **each** variation (both the template and duplicated ones):
 1.  **Set Name:** Call `TestCaseDataVariationName(TestCaseVariationKey, Name)`.
     *   *Format:* Lowercase alphanumeric with hyphens (e.g. `"standard-case"`, `"invalid-age-negative"`). Do not use spaces, uppercase characters, or special symbols like `#`.
-2.  **Set Description (MANDATORY - DO NOT FORGET):** Call `TestCaseDataVariationDescription(TestCaseVariationKey, Description)`.
+2.  **Set Description (MANDATORY - DO NOT FORGET [^PAT-77]):** Call `TestCaseDataVariationDescription(TestCaseVariationKey, Description)`.
     *   *Requirement:* Provide a complete, clear, and professional description explaining the exact functional scenario, inputs, and expected outcomes verified by this variation (e.g., `"Verifies that a registration with age 17 fails with validation error."`).
 
-This metadata is **mandatory for all workflows** (both the Simple Fast-Track and the Complex Workflow). Failing to set names and descriptions for all variations is a severe quality violation.
+This metadata is **mandatory for all workflows** (both the Simple Fast-Track and the Complex Workflow). Failing to set names and descriptions for all variations is a severe quality violation (`ANTI-31`).
 
 ---
 
@@ -209,6 +209,15 @@ MTA step bindings (SelectObjectForMicroflowParameter or `%SOMP%`) are global and
 ```
 [Step 1: Create Object] ➔ [Step 2: Retrieve Object with XPath [Attr = %Variation_Filter%] ] ➔ [Step 3: Call Microflow (bind param to Step 2 Output) ]
 ```
+
+> [!TIP]
+> **Exploratory Testing to Persistent MTA Bridge (`PAT-07`):**
+> When converting an exploratory test payload (`TCEX_RQ`) to a persistent MTA test, any variation row that sets `"UseEmptyObjectList": true` (or omits the parameter handle) MUST be converted into this **`PAT-07` Empty Object Retrieve Pattern**:
+> 1. Step 1 creates the base test entity.
+> 2. Step 2 retrieves the entity from Step 1 (`RetrieveOption = "Teststep"`) with an attribute filter (e.g. `OrderNumber = "ORD-001"` for populated variation vs. `"NON_EXISTENT"` for empty variation).
+> 3. Step 3 microflow parameter is bound to Step 2's output handle.
+
+
 
 ### 🔧 Choosing the Retrieve Source Option: Teststep vs. Database
 

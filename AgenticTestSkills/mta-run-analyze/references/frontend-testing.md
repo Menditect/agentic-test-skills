@@ -18,6 +18,7 @@ This reference contains the widget locator maps, nested repeating container stra
 *   **The Data-Backed Selection Piping Rule (Dynamic Data & Retrieve Rule):** If a `ComboBox`, `ReferenceSelector`, or `ReferenceSetSelector` widget's datasource is dynamic data (retrieved from database entities) rather than a static enumeration, you **MUST** prioritize using **Dynamic Scalar Value Piping** (`SelectValueForValue`) for selecting/filtering the option instead of hardcoding a static string.
     *   **Data Created in Same Suite:** Pipe the identifier attribute (e.g., `Name`, `Code`, `Description`) directly from the upstream creation step.
     *   **Pre-existing / External Data:** If the target data was not created in the same test suite, you **MUST** explicitly add a retrieve-from-database teststep (e.g. `CreateTestStepRetrieveObject` or equivalent database-retrieve microflow) early in the test case to fetch the record, and then use that retrieve step's output as the provider (`TestStepOutputKey`) for the downstream scalar value piping.
+*   **The Frontend Persistent MTA Construction Law (CRITICAL):** Frontend UI automation requires browser lifecycle management, session contexts, and DOM locator maps provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the MTA Platform across the standard 3-Case Suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser configurations. [^PAT-62]
 
 ---
 
@@ -98,25 +99,84 @@ When locating widgets, the `TestStepProvidePlaywrightPageKey` parent parameter d
 
 ---
 
-## 🗺️ WIDGETS & INPUTS REFERENCE MATRIX
+## 🛑 MANDATORY CLOSED CATALOG LAW: NO SYNTHETIC MICROFLOWS (`PAT-64`, `ANTI-21`)
 
-| MTA WidgetType | Locator Microflow | Standard Action / ELO | Standard Assertion |
+You are **strictly prohibited** from inventing, assuming, or hallucinating synthetic helper microflow names (such as `ACT_Playwright_*`, `Playwright_Click`, `Page_Click`, `SetText`, `OpenURL`, etc.) [^ANTI-21]. 
+
+All Frontend UI test steps (in Execution Plans and persistent MTA test step construction) MUST **strictly and exclusively** use verified microflows from the official closed catalogs of `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` [^PAT-64].
+
+---
+
+## 🗺️ COMPREHENSIVE MENDITECTMXFRONTENDTESTKIT MICROFLOW CATALOG
+
+### 1. Lifecycle & Session Management
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Pattern |
 | :--- | :--- | :--- | :--- |
-| **`TextBox`** | `Locate_MxWidget_TextBox` | `ACT_Fill_TextBox_Input`, `ACT_Clear...` | `ASR_Has_Value_TextBox_Input` |
-| **`DatePicker`**| `Locate_MxWidget_DatePicker` | `ACT_Fill_DatePicker_Input` | `ASR_Has_Value_DatePicker_Input` |
-| **`DropDown`** | `Locate_MxWidget_DropDown` | `ACT_SelectOption_DropDown_Select_By_Label`| `ASR_Has_Value_DropDown_Select` |
-| **`ReferenceSelector`**| `Locate_MxWidget_DropDown` or `Locate_MxWidget_ComboBox` | `ACT_SelectOption_DropDown_Select_By_Label` or ComboBox Strategy | `ASR_Has_Value_DropDown_Select` or ComboBox assertion |
-| **`ReferenceSetSelector`**| `Locate_MxWidget_Container` or `Locate_MxWidget_Button` | Click trigger/Add ➔ Select item(s) from overlay/Pop-up (using Scalar Piping) | `ASR_Is_Visible_MxLocator` (verify item in selected list) |
-| **`CheckBox`** | `Locate_MxWidget_CheckBox` | `ACT_Check_...`, `ACT_Uncheck_CheckBox_...`| `ASR_Is_Checked_CheckBox_Input` |
-| **`RadioButtons`**| `Locate_MxWidget_RadioButtons`| `ACT_Check_RadioButtons_Item_Input` | `ASR_Is_Checked_RadioButtons_Item` |
-| **`FileManager`** | `Locate_MxWidget_FileManager` | `ACT_Upload_File_...`, `ACT_Download_...` | `ASR_Has_Value_FileManager_Input`|
-| **`ActionButton`**| `Locate_MxWidget_Button` | `ACT_Click_Button`, `ACT_Hover_Button` | `ASR_Is_Visible_MxLocator` |
-| **`Dialog`** | `Locate_MxWidget_Dialog` | `ACT_Click_Dialog_OK_Button` | `ASR_Has_Text_Dialog_Body` |
-| **`Gallery`** | `Locate_MxWidget_Gallery` | `ELO_Filter_Gallery_Items_by_Text` | `ASR_Is_Selected_Gallery_Item` |
-| **`ListView`** | `Locate_MxWidget_ListView` | `ELO_Nth_ListView_Item` | `ASR_Is_Visible_MxLocator` |
-| **`DataGrid2`** | `Locate_MxWidget_DataGrid2` | `ACT_Click_DataGrid2_Cell` | `ASR_Is_Selected_DataGrid2_Row` |
-| **`DivContainer`**| `Locate_MxWidget_Container` | `ACT_Click_Container` | `ASR_Is_Visible_MxLocator` |
-| **ComboBox** | Locate_MxWidget_ComboBox | Open: ACT_Click_ComboBox_Trigger ➔ Fill: ACT_Fill_ComboBox_Input ➔ Close: ACT_Click_ComboBox_Trigger | ASR_Has_Value_ComboBox |
+| `MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login` | `Username: String`, `Password: String`, `Browser: Enum(BrowserType)`, `Headless: Boolean`, `Url: String`, `options: Object(StartMxFrontendTestOptions)` *(optional/empty)* | `MenditectPlaywrightConnector.Page` | Starts browser session, navigates to target URL, and authenticates using standard Mendix login form. [^PAT-28] [^PAT-41] |
+| `MenditectMxFrontendTestKit.Start_MxFrontend_Test_Without_Login` | `Browser: Enum(BrowserType)`, `Headless: Boolean`, `Url: String`, `options: Object(StartMxFrontendTestOptions)` *(optional/empty)* | `MenditectPlaywrightConnector.Page` | Starts browser session and navigates directly to target URL without login for anonymous-accessible flows. [^PAT-28] [^PAT-41] |
+| `MenditectMxFrontendTestKit.Stop_MxFrontendTest` | `Page: Object(MenditectPlaywrightConnector.Page)` | `Boolean` | Closes active browser page, browser context, and browser instance cleanly. [^PAT-28] |
+| `MenditectPlaywrightConnector.Teardown_Playwright` | *(None)* | `Boolean` | Shuts down Playwright node driver and cleans up any orphaned browser processes. Configured with `_Always` / `_Continue`. [^PAT-18] |
+
+### 2. Page & Container Context Locators
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Pattern |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.Locate_MxPage` | `Page: Object(MenditectPlaywrightConnector.Page)`, `ClassName: String` *(CSS class e.g. `mx-name-page_CustomerOverview` or custom class)* | `MenditectMxFrontendTestKit.MxPageLocator` | Wraps page root context for locating widgets directly on the screen. [^PAT-29] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_Container` | `ParentContext: Object(MxLocator)`, `WidgetName: String` *(e.g. `container_Summary`)* | `MenditectMxFrontendTestKit.MxContainerLocator` | Locates generic layout `DivContainer` or `Container` widgets. |
+
+### 3. Widget Locators (Law 1, Law 2, Law 3)
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Widget Target |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_TextBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxTextBoxLocator` | Text Box, Text Area, Input widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DatePicker` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDatePickerLocator` | Date Picker / Date Time widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DropDown` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDropDownLocator` | Standard Drop-down, Reference Selector |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_ComboBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxComboBoxLocator` | ComboBox widget (Law 3 open-fill-close) |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_Button` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxButtonLocator` | Action Button, Microflow Button, Save Button |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_CheckBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxCheckBoxLocator` | Check Box widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_RadioButtons` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxRadioButtonsLocator` | Radio Buttons widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_FileManager` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxFileManagerLocator` | File Manager / File Upload widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_Dialog` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDialogLocator` | Modal Pop-up / Confirmation Dialog |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_Gallery` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxGalleryLocator` | Gallery repeating container widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_ListView` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxListViewLocator` | List View repeating container widget |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DataGrid2` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDataGrid2Locator` | Data Grid 2 widget |
+
+### 4. Element Locators & Filters (Law 2 Repeating Containers)
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Usage |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.ELO_Filter_Gallery_Items_by_Text` | `GalleryLocator: Object(MxGalleryLocator)`, `Text: String` | `MenditectMxFrontendTestKit.MxGalleryItemLocator` | Filters gallery items by matching visible text content. [^PAT-13] [^PAT-52] |
+| `MenditectMxFrontendTestKit.ELO_Nth_Gallery_Item` | `GalleryLocator: Object(MxGalleryLocator)`, `Index: Integer` | `MenditectMxFrontendTestKit.MxGalleryItemLocator` | Selects gallery item by 0-based index. [^PAT-13] [^PAT-52] |
+| `MenditectMxFrontendTestKit.ELO_Filter_ListView_Items_by_Text` | `ListViewLocator: Object(MxListViewLocator)`, `Text: String` | `MenditectMxFrontendTestKit.MxListViewItemLocator` | Filters list view items by matching visible text. [^PAT-13] [^PAT-52] |
+| `MenditectMxFrontendTestKit.ELO_Nth_ListView_Item` | `ListViewLocator: Object(MxListViewLocator)`, `Index: Integer` | `MenditectMxFrontendTestKit.MxListViewItemLocator` | Selects list view item by 0-based index. [^PAT-13] [^PAT-52] |
+
+### 5. Widget Actions (`ACT_*`)
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Usage |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)`, `Value: String`, `options: Object(FillOptions)` *(optional)* | `Boolean` | Clears and types text into Text Box input. [^PAT-13] |
+| `MenditectMxFrontendTestKit.ACT_Clear_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)` | `Boolean` | Clears existing text from Text Box. |
+| `MenditectMxFrontendTestKit.ACT_Fill_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `Value: String | DateTime`, `options: Object(FillOptions)` *(optional)* | `Boolean` | Types formatted date into Date Picker input. [^PAT-42] |
+| `MenditectMxFrontendTestKit.ACT_SelectOption_DropDown_Select_By_Label` | `DropDownLocator: Object(MxDropDownLocator)`, `Label: String` | `Boolean` | Selects drop-down option matching label string. |
+| `MenditectMxFrontendTestKit.ACT_Click_Button` | `ButtonLocator: Object(MxButtonLocator)`, `options: Object(ClickOptions)` *(optional)* | `Boolean` | Clicks button or action trigger element. [^PAT-13] |
+| `MenditectMxFrontendTestKit.ACT_Hover_Button` | `ButtonLocator: Object(MxButtonLocator)` | `Boolean` | Hovers mouse cursor over target button. |
+| `MenditectMxFrontendTestKit.ACT_Click_ComboBox_Trigger` | `ComboBoxLocator: Object(MxComboBoxLocator)` | `Boolean` | Opens (step 2) or Closes (step 4) ComboBox dropdown. [^PAT-13] |
+| `MenditectMxFrontendTestKit.ACT_Fill_ComboBox_Input` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `Value: String` | `Boolean` | Types and auto-selects value in ComboBox input. [^PAT-13] |
+| `MenditectMxFrontendTestKit.ACT_Click_Container` | `ContainerLocator: Object(MxContainerLocator)` | `Boolean` | Clicks container or card element. |
+| `MenditectMxFrontendTestKit.ACT_Click_DataGrid2_Cell` | `DataGrid2Locator: Object(MxDataGrid2Locator)`, `RowIndex: Integer`, `ColumnIndex: Integer` | `Boolean` | Clicks cell in Data Grid 2. |
+| `MenditectMxFrontendTestKit.ACT_Click_Dialog_OK_Button` | `DialogLocator: Object(MxDialogLocator)` | `Boolean` | Confirms modal dialog OK button. |
+| `MenditectMxFrontendTestKit.ACT_Check_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `Boolean` | Sets check box to checked state. |
+| `MenditectMxFrontendTestKit.ACT_Uncheck_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `Boolean` | Sets check box to unchecked state. |
+| `MenditectMxFrontendTestKit.ACT_Check_RadioButtons_Item_Input` | `RadioButtonsLocator: Object(MxRadioButtonsLocator)`, `ItemValue: String` | `Boolean` | Selects specific radio button option. |
+| `MenditectMxFrontendTestKit.ACT_Upload_File_FileManager_Input` | `FileManagerLocator: Object(MxFileManagerLocator)`, `FilePath: String` | `Boolean` | Uploads file through File Manager input. |
+
+### 6. Widget & Locator Assertions (`ASR_*`)
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Assertion Verified |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.ASR_Has_Value_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts Text Box input matches expected string. |
+| `MenditectMxFrontendTestKit.ASR_Has_Value_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `ExpectedValue: String` | `Boolean` | Asserts Date Picker input contains formatted date. |
+| `MenditectMxFrontendTestKit.ASR_Has_Value_DropDown_Select` | `DropDownLocator: Object(MxDropDownLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected dropdown option matches expected value. |
+| `MenditectMxFrontendTestKit.ASR_Has_Value_ComboBox` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected ComboBox value matches expected label. |
+| `MenditectMxFrontendTestKit.ASR_Is_Visible_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts page element, button, text, or widget is visible on DOM. [^PAT-35] |
+| `MenditectMxFrontendTestKit.ASR_Is_Checked_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)`, `ExpectedChecked: Boolean` | `Boolean` | Asserts checkbox checked state. |
+| `MenditectMxFrontendTestKit.ASR_Is_Selected_Gallery_Item` | `GalleryItemLocator: Object(MxGalleryItemLocator)` | `Boolean` | Asserts gallery item has active selection state. |
+| `MenditectMxFrontendTestKit.ASR_Has_Text_Dialog_Body` | `DialogLocator: Object(MxDialogLocator)`, `ExpectedText: String` | `Boolean` | Asserts dialog message body contains expected text. |
 
 ---
 
@@ -161,7 +221,11 @@ Before building, map the exact qualified names of the required frontend testkit 
 ### PROTOCOL D: Mandatory Frontend Execution Plan Quality Protocol (8 Mandatory Requirements)
 When creating or updating an Execution Plan for Frontend testing, you **MUST** enforce these 8 requirements prior to plan presentation:
 
-1.  **MTA Sync Probe & Model Fallback:** Inquire first whether MTA is up to date; if yes, call read-only MTA MCP tools `GetPages` and `GetWidgets` **first** to discover page/widget keys and layout structures. If not, fallback to `mxcli` (`SHOW PAGES -m <Module>`). Always show a summary list of involved pages and widgets.
+1.  **Exhaustive Page & Snippet Widget Extraction (`PAT-67`, `ANTI-23`):** Inquire first whether MTA is up to date; if yes, call read-only MTA MCP tools `GetPages` and `GetWidgets` **first** to discover page/widget keys and layout structures. If not, fallback to `mxcli` using the 4-step discovery protocol:
+    *   *Step 1 (Page Inspection):* Execute `mxcli` `DESCRIBE PAGE <Module.Page>` to discover top-level widgets, data views, and all `SnippetCall` references.
+    *   *Step 2 (Recursive Snippet Inspection):* For every `SnippetCall <Module.Snippet>` detected, execute `DESCRIBE SNIPPET <Module.Snippet>` recursively to uncover all nested form input controls, dropdowns, date pickers, and buttons.
+    *   *Step 3 (Domain Model Reconciliation):* Inspect the underlying entity via `DESCRIBE ENTITY <Module.Entity>` or `SHOW ENTITY <Module.Entity>` to cross-reference attributes with discovered widgets, ensuring no required input fields or reference selectors were missed.
+    *   *Step 4 (Input Widget Inventory):* Construct an explicit **Input Widget Inventory** table in Section 4 of the Execution Plan cataloging all discovered form widgets, types, containers, data bindings, and Testkit locator microflows.
 2.  **Seed Data Requirement Analysis:** Inspect input fields, dropdowns, reference selectors, and list data sources on target pages to analyze required domain entities and attributes.
 3.  **Seed Data Strategy Choice (Create vs Retrieve):** Propose an explicit choice between creating fresh seed objects in Case 1 (Setup) vs retrieving pre-existing database records.
 4.  **Multiple Seed Objects for Lists & Selection Widgets:** Plan multiple seed objects (at least 2+ records) for entities displayed in repeating containers (Gallery, ListView, DataGrid2) or selection widgets (DropDown, ComboBox, ReferenceSelector).
@@ -346,3 +410,13 @@ Verify the outcome by retrieving the object from the database using MTA backend 
 > 
 > **⚡ PRO-TIP FOR DATA VARIATIONS:**
 > If testing multiple inputs or validation variations on a form, do **NOT** automate these variations via the frontend. Use the **Headless Backend Variation Pattern** (create a separate Backend test case to execute the validations directly and headlessly via the underlying microflows). Keep the frontend UI test case focused purely on a single happy path. (See [placement-and-lifecycle.md](placement-and-lifecycle.md) for details).
+
+---
+
+### 7. Frontend Execution Architecture: Persistent MTA Platform (`PAT-62`, `ANTI-20`)
+
+Frontend UI testing requires the full orchestration capabilities of the MTA Platform (Option B):
+1. **Persistent 3-Case Suite Lifecycle (`PAT-03`):** Frontend UI tests are constructed across 3 dedicated test cases: Case 1 (Setup Test Case: database seeding with `_Always` condition, browser launch with login/anonymous navigation), Case 2 (Action Test Case: TestKit UI interactions and assertions), and Case 3 (Teardown Test Case: browser shutdown via `Stop_MxFrontendTest` with `_Always` condition, database cleanup).
+2. **Prohibition of Backend Domain Microflow Substitution (`ANTI-20`):** In all Frontend tests, all UI actions (inputs, clicks, selections, and screen asserts) MUST strictly drive the browser via `MenditectMxFrontendTestKit` microflows. Substituting UI steps with backend domain microflows (`ACT_*`, `SUB_*`, `CMT_*`) is strictly **PROHIBITED**.
+3. **Mandatory Playwright Browser Teardown:** In Case 3 (Teardown), browser teardown microflows (`Stop_MxFrontendTest` and/or `Teardown_Playwright`) MUST ALWAYS be included and configured with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"` to guarantee that browser processes and windows are never orphaned even if intermediate UI assertions fail.
+4. **Closed Catalog Testkit Verification (`PAT-64`, `ANTI-21`):** All test steps must strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector`.

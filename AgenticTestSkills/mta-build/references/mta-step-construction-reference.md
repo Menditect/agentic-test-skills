@@ -29,7 +29,7 @@ This cheat-sheet provides a highly condensed, high-density technical summary of 
 | **Change Object** | `CreateTestStepChangeObject` | `SelectObjectStep`, `AttributeBindings` | Modifies attributes of a retrieved or created object. |
 | **Retrieve Object** | `CreateTestStepRetrieveObject` | `EntityName`, `XpathConstraint`, `AssociationFilter` | Retrieves an object from the AUT database or memory. |
 | **Delete Object** | `CreateTestStepDeleteObject` | `SelectObjectStep` | Deletes a test data object inside the AUT database. |
-| **Persist Object** | `CreateTestStepPersist` | `SelectObjectStep` | Commits changes made to an object to the database. |
+| **Persist Object** | `CreateTestStepPersist` | *(None / Standalone Batch Commit)* | Commits all uncommitted in-memory object changes to the database (PAT-21). |
 
 ---
 

@@ -11,7 +11,7 @@ The `MTA_plugin` MCP server runs inside the Mendix runtime JVM via the MTA Plugi
 * **Transport:** Streamable HTTP / Server-Sent Events (SSE) with JSON-RPC 2.0
 * **Module Constants:**
   * `MtaPluginModule.EnableMcpServer` (`Boolean`): Activates or disables the endpoint.
-  * `MtaPluginModule.McpServerAccessToken` (`String`): Optional Bearer token (`Authorization: Bearer [Token]`).
+  * `MtaPluginModule.McpServerAccessToken` (`String`): Bearer token (`Authorization: Bearer [Token]`). Optional on localhost, **mandatory on remote/cloud environments** (min 32+ characters / 256-bit entropy).
 * **Tool Name:** `execute-testcase`
 
 ---
@@ -57,9 +57,9 @@ The `MTA_plugin` MCP server runs inside the Mendix runtime JVM via the MTA Plugi
 
 | Field | Type | Required | Description |
 | :--- | :--- | :---: | :--- |
-| `ApplySecurityExecutor` | `string` (`"true"` / `"false"`) | Yes | Whether entity access and microflow security rules apply to the test context. |
-| `ExecutorUsername` | `string` / `null` | No | Target Mendix username to execute the test under. |
-| `RollbackTcseAfterExecution` | `string` (`"true"` / `"false"`) | Yes | If `"true"`, all database modifications roll back automatically when the test finishes. |
+| `ApplySecurityExecutor` | `string` (`"NONE"` / `"true"` / `"false"`) | Yes | Whether entity access and microflow security rules apply to the test context. `"NONE"` or `"false"` bypasses security; `"true"` enforces entity access. |
+| `ExecutorUsername` | `string` / `null` | No | Target Mendix username to execute the test under (e.g. `"MxAdmin"` or specific test user). |
+| `RollbackTcseAfterExecution` | `string` (`"true"` / `"false"`) | Yes | If `"true"` (or `"Yes"`), all database modifications roll back automatically when the test finishes (exploratory testing). If `"false"` (or `"No"`), data modifications are retained when followed by a `Persist` step (live data seeding). *(Note: Central MTA server tool `SetExecutionSettingsOfTestCase` uses `"Yes"` / `"No"`).* |
 | `TCEX_RQ_ExecutorUserRoles` | `array[string]` | No | Array of Mendix user role names to assign to the test execution context. |
 | `TCEX_RQ_TestStepRun` | `array[object]` | Yes | Chronological sequence of test steps to execute. |
 
@@ -109,8 +109,16 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
 
 * **Attributes (`TCEX_RQ_EntityValueRun.TCEX_RQ_AttributeValueRun`):**
   * `AttributeName`: Attribute name in the domain model.
-  * `DataType`: `"StringType_limited"`, `"StringType_unlimited"`, `"IntegerType"`, `"LongType"`, `"DecimalType"`, `"BooleanType"`, `"DateTimeType"`, `"EnumType"`, `"AutoNumberType"`, `"HashStringType"`.
-  * `Value`: String representation of the scalar value.
+  * `DataType` and Canonical Serialization Formats:
+    * `"DateTimeType"`: **Strict ISO-8601 UTC timestamp with millisecond precision**: `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` (e.g., `"2022-05-15T00:00:00.000Z"`, `"2026-08-27T14:30:00.000Z"`). *Do NOT use local formats, offset-less strings, or "CurrentDateTime" in raw TCEX_RQ payloads.*
+    * `"DecimalType"`: Numeric string with period decimal separator (e.g., `"45.00"`, `"1250.75"`).
+    * `"IntegerType"` / `"LongType"`: Digits string (e.g., `"5"`, `"1000"`).
+    * `"BooleanType"`: Lowercase boolean string (`"true"` / `"false"`).
+    * `"EnumType"`: Exact enum key/caption name without module prefix (e.g., `"Small"`, `"Petrol"`).
+    * `"StringType_limited"` / `"StringType_unlimited"`: String literal.
+    * `"AutoNumberType"`: Read-only generated long.
+    * `"HashStringType"`: Plain text string to hash.
+  * `Value`: String representation conforming strictly to the above data type format.
 
 * **Association Binding via `TCEX_RQ_Sfar` (Select For Association Run):**
   * Placed directly on `TCEX_RQ_TestStepRunOact` (sibling to `TCEX_RQ_EntityValueRun`).
@@ -121,6 +129,25 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
   * `EntityParentQualifiedName`: Parent entity qualified name (e.g. `"CarRentalModule.Car"`).
   * `EntityChildQualifiedName`: Child entity qualified name (e.g. `"CarRentalModule.CarSize"`).
   * `Operation`: `"set"` (or `"add"`, `"remove"`).
+
+* **Action: `"Persist"` (Standalone Batch Commit Step) (`PAT-21`):**
+  * Used to commit all uncommitted in-memory objects to the database in a single batch (especially when `RollbackTcseAfterExecution: "No"`).
+  * Does **NOT** require `EntityQualifiedName`.
+  * Do **NOT** attach `TCEX_RQ_Sfdr` or `TCEX_RQ_Sfcr` handles (attaching handles causes runtime lookup failures).
+  * JSON Example:
+    ```json
+    {
+      "Key": 12,
+      "SequenceNumber": 12,
+      "TestStepRunType": "Oact",
+      "ExecutionCondition": "None",
+      "ResumeExecutionAfterException": "Stop",
+      "ExecutionDelayInMs": 0,
+      "TCEX_RQ_TestStepRunOact": {
+        "Action": "Persist"
+      }
+    }
+    ```
 
 * **Step Piping / Object Handles:**
   * `TCEX_RQ_Sfcr`: Select Object for Change (references earlier step `Key` via `TestStepRunKey_output`).
@@ -234,14 +261,43 @@ When drafting the 8-field Chronological Step Sequence during `STATE_BUILD_PLANNI
 
 ---
 
-## 5. Frontend Test Compatibility & 3-Case Promotion Mapping
+## 5. Scope & Frontend vs. Backend Construction
 
-Frontend UI tests also compile into `TCEX_RQ_TestStepRun` because all Frontend Testkit operations (`Start_MxFrontend_Test_*`, `ACT_*`, `ELO_*`, `ASR_*`, `Close_Browser_Session`) are standard Mendix Java microflows:
+* **Backend Exploratory Testing (`execute-testcase`):**
+  Executed as a self-contained in-memory array of `Oact` and `MicroflowCall` steps with automatic database rollback (`RollbackTcseAfterExecution: "true"`). Ideal for instant microflow verification, business logic testing, boundary checks, and data variations.
+* **Frontend UI Automation (Option B - Persistent MTA Platform):**
+  Frontend UI tests drive Playwright browser instances and require locator maps, browser lifecycle management, and execution users provided by the MTA Platform. Frontend tests are constructed directly on the MTA Platform as a 3-case suite:
+  1. `_01_Setup`: Database seeding `Oact` steps and browser launch (`ExecutionCondition = "_Always"`).
+  2. `_02_Action`: UI navigation, inputs, clicks, and widget assertions.
+  3. `_03_Teardown`: Browser shutdown (`Stop_MxFrontendTest` with `ExecutionCondition = "_Always"`) and cleanup.
 
-* **In Exploratory Mode (`execute-testcase`):**
-  Executed as a single unified array (Seeding -> Browser Launch -> Page Actions -> Assertions -> Browser Close -> DB Rollback).
-* **When Promoted to MTA (`SaveExecutionPlan` + `CreateTestCase`):**
-  The unified step sequence is mapped into the canonical 3-TestCase suite structure:
-  1. `_01_Setup`: Seeding `Oact` steps and `Start_MxFrontend_Test_*` (`ExecutionCondition = "_Always"`).
-  2. `_02_Action`: UI navigation, inputs, clicks, and page assertions (`ExecutionCondition = "None"`).
-  3. `_03_Teardown`: `Close_Browser_Session` and database `Delete` steps (`ExecutionCondition = "_Always"`).
+---
+
+## 6. The 5 Universal MTA Plugin Execution Principles
+
+Every interaction with `MTA_plugin.execute-testcase` must adhere to these five universal principles regardless of whether the goal is testing a microflow, provisioning test data, or clearing records:
+
+1. **Targeted Cluster Discovery (`mxcli`):**
+   * Inspect all required elements (Microflows, Input Entities, Associated Entities, and Return Types) in a single batched `mxcli` query. Never query components in sequential 1-by-1 loops.
+2. **Canonical Data Type Serialization:**
+   * Strictly format attribute and parameter values per Section 2.2 specifications (especially ISO-8601 UTC `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` for `DateTimeType`).
+3. **Explicit Object Topology & Handle Binding:**
+   * Use `TCEX_RQ_Sfar` on create/change steps to wire associations in-memory using `TestStepRunKey_output`. Order creation from root/independent parents to dependent children.
+4. **Single-Pass Blueprint Construction:**
+   * Assemble complete end-to-end lifecycles (Fixtures -> Actions -> Assertions -> Cleanup) into a single cohesive JSON payload executed in one round-trip.
+5. **Execution Mode Governance (Rollback vs Persist Policy):**
+   * **Exploratory & Verification Tests:** `RollbackTcseAfterExecution: "Yes"`, no trailing `Persist` step. Pure in-memory execution.
+   * **Live Data Seeding & Teardown:** `RollbackTcseAfterExecution: "No"`, mandatory trailing `Persist` step (`Action: "Persist"`).
+
+---
+
+## 7. Troubleshooting & Error Remediation
+
+| Symptom / Stacktrace | Root Cause | Remediation |
+| :--- | :--- | :--- |
+| `java.text.ParseException: Unparseable date: "..."` | `DateTimeType` attribute value is not formatted in ISO-8601 UTC format. | Reformat the date string to `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` (e.g. `"2022-05-15T00:00:00.000Z"`). |
+| `java.lang.Exception: Executor Username or Executor UserRoles need to be given` | Missing executor identity in top-level payload. | Provide `"ExecutorUsername": "MxAdmin"` and `"ApplySecurityExecutor": "NONE"`. |
+| `Association ... cannot be set / NullPointerException` | `TCEX_RQ_Sfar` references an invalid `TestStepRunKey_output` or uninstantiated parent. | Verify that `TestStepRunKey_output` matches the exact integer `Key` of the earlier creation step. |
+| `Delete failed: Object is referenced by other object(s)` | Attempted to delete a parent entity with active child associations under protected delete behavior. | Query associations in reverse dependency order and delete child records (e.g., `Booking`, `CarImage`) before deleting parent records (`Car`, `CarSize`). |
+| Database changes not visible after run | Missing batch persist step under `Rollback: "No"`. | Append a parameterless `{"Action": "Persist"}` step to the end of the `TCEX_RQ_TestStepRun` array (`PAT-21`). |
+

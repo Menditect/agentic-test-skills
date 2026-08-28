@@ -1,10 +1,10 @@
-# 📋 MTA Test Design & Scoping Reference
+# MTA Test Design & Scoping Reference
 
 This cheat-sheet provides a highly condensed, high-density summary of test configuration scoping, coverage rules, and design handoff specifications.
 
 ---
 
-## 📐 Test Suite & TestCase Scoping
+## Test Suite & TestCase Scoping
 
 Structure test containers cleanly within your application instance boundaries:
 
@@ -14,7 +14,7 @@ Structure test containers cleanly within your application instance boundaries:
 
 ---
 
-## 📊 Coverage Calibration
+## Coverage Calibration
 
 MTA allows you to target and measure test coverage metrics across Mendix microflows and nanoflows:
 
@@ -25,17 +25,18 @@ MTA allows you to target and measure test coverage metrics across Mendix microfl
 
 ---
 
-## 🎯 Design Handoff Blueprint
+## Design Handoff Blueprint
 
-When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the agent formats the output as a formal **Execution Plan Blueprint** adhering to the uniform 8-section schema:
+When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the agent formats the output as a formal **Execution Plan Blueprint** (`# MTA EXECUTION PLAN SIGN-OFF`) adhering to the uniform 8-section visual schema:
 
-1. **Section 1: Test Case Metadata & Target Placement** (Category, Placement, Execution User, Playwright Settings)
-2. **Section 2: Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)** (Explicit audit of prompt against MTA Skill Laws)
-3. **Section 3: Scope, Purpose & Risk Alignment** (Functional Purpose, Technical Risk, Business Risk, Pyramid Level)
-4. **Section 4: Verified Model Elements & MTF Testability Check** (Entities, Microflows, Pages/Widgets)
-5. **Section 5: Chronological Teststep Execution Sequence** (Uniform 8-field schema per step)
-6. **Section 6: Playwright / Browser Settings (10 Keys)** (Playwright browser configuration on suite / setup case)
-7. **Section 7: Data Variation Matrix & Metadata** (Consolidated scenarios, $M \times N$ matrix, horizontal max 8-column layout)
-8. **Section 8: Applied Testing Patterns & Rationale** (Citation of canonical `PAT-xx` / `ANTI-xx` IDs and rationale)
+*   **Pre-Approval Quality Audit Banner & Checklist:** 3-tier status alert + expandable 13-point compliance checklist table (`[CHECK 1]` to `[CHECK 13]`).
+1. **Section 1: State Compaction & Target Placement:** Collapsible `<details>` block with Session Compaction JSON block and target application metadata bullets.
+2. **Section 2: Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY):** Collapsible `<details>` block with conflict audit table and automatic skill corrections.
+3. **Section 3: Test Case Scope & Dual-Risk Profile:** Structured markdown tables for Functional Specification Profile and Dual-Risk Alignment & Mitigation Profile.
+4. **Section 4: Verified Model Elements & Testability Profile:** Structured markdown table of verified model elements (Microflow, Entity, Page, Widget, Navigation).
+5. **Section 5: Chronological Step Sequence Plan:** Test case container settings (`RollbackTcseAfterExecution`, validation assertions) + clean **Step Sequence Matrix** overview table (zero in-cell HTML) + standalone collapsible step drilldowns (`<details><summary><b>Step N: ...</b></summary>`) containing the 8 uniform bullet properties.
+6. **Section 6: Playwright / Browser Settings (10 Keys):** Collapsible `<details>` block with 10-key browser environment settings table (`open` for Frontend, closed/NA for Backend).
+7. **Section 7: Data Variation Matrix & Metadata:** Structured horizontal $M \times N$ matrix table (max 8 columns) + collapsible Scenario Registration Metadata and Recipes block.
+8. **Section 8: Applied Testing Patterns & Rationale:** Collapsible `<details>` block with Applied Testing Patterns & Architecture Laws table (`Applied Pattern`, `Target Step(s)`, `Law Citation`, `Applied Rationale`).
 
-*   👉 **Read:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Master Pattern Index](mta-patterns-and-antipatterns-reference.md)
+*   Read: [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Master Pattern Index](mta-patterns-and-antipatterns-reference.md)

@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.2.0"
-changes: "Added MTA Mendix Plugin MCP endpoint configuration, exploratory test prerequisites, and updated setup guide."
+version: "1.3.0"
+changes: "Added strong Bearer token security requirements and setup instructions for remote/cloud MTA Plugin MCP server."
 ---
 
 # MTA Installation & Configuration Skill
@@ -88,8 +88,11 @@ Guide the user through these four sequential setup micro-states, halting to veri
     *   Instruct the user to call `ASU_Setup_Connection_MTA` inside their App's "After startup" microflow tab.
     *   **Embedded Plugin MCP Server Configuration (`MTA_plugin`):**
         *   To enable local exploratory testing via `execute-testcase`, set constant `MtaPluginModule.EnableMcpServer = true`.
-        *   Configure optional security token via constant `MtaPluginModule.McpServerAccessToken` (passed as `Bearer [Token]` in MCP requests).
-        *   Endpoint is reachable at `[RuntimeUrl]/plugin-mcp/` (e.g. `http://localhost:8081/plugin-mcp/`).
+        *   **Bearer Token Security (`MtaPluginModule.McpServerAccessToken`):**
+            *   *Localhost (Studio Pro):* Optional, but recommended.
+            *   *Non-Localhost (Cloud / Staging / Remote Docker):* **MANDATORY**. Instruct the user to generate a strong 256-bit token (min 32+ characters, e.g. via `openssl rand -base64 32` or PowerShell random generation) and configure it as an Encrypted Constant in Mendix Portal / Studio Pro.
+            *   Passed as `Authorization: Bearer [Token]` in MCP client request headers.
+        *   Endpoint is reachable at `[RuntimeUrl]/plugin-mcp/` (e.g. `http://localhost:8081/plugin-mcp/` or `https://[app-domain]/plugin-mcp/`).
 *   **🔍 Success Verification Check:**
     *   The Mendix App compiles successfully in Studio Pro with zero Java action compilation errors.
     *   Running `git status` verifies that all proxies, actions, and system files under `modules/javasource` are untracked and successfully ignored.

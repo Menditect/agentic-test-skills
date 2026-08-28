@@ -80,9 +80,17 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 7. **Schema Requirements & Defaults for `SetExecutionSettingsOfTestStep`:**
    Because all four fields of `SetExecutionSettingsOfTestStep` are strictly marked `required` in the schema, you **MUST** provide all of them:
    - `TestStepKey`: The key of the target teststep.
-   - `ExecutionCondition`: Default is `"None"` for standard steps, `"Always"` for boilerplate/backend data steps.
+   - `ExecutionCondition`: Default is `"None"` for standard steps, `"_Always"` for boilerplate/backend data steps.
    - `ExecutionDelayInMs`: Numeric delay (set to `0` if no delay is desired).
    - `ResumeExecutionAfterException`: In Backend Unit Tests, ALWAYS set to `"_Stop"` for ALL steps. In Frontend UI and Backend Integration tests, set to `"_Stop"` for standard UI interactions, and `"_Continue"` for boilerplate, setup seeding (Case 1), teardown cleanup (Case 3), and assertion steps.
+
+### 🔌 Execution Settings Wire Format vs. Plan Display Mapping
+| Execution Setting | User-Facing Plan Display | Wire / MCP Tool Value (`SetExecutionSettingsOfTestStep`) | Wire / MCP Tool Value (`SetExecutionSettingsOfTestCase`) |
+| :--- | :--- | :--- | :--- |
+| **Execution Condition** | `None` / `Always` / `Skip` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` |
+| **Resume After Exception** | `Stop` / `Continue` | `"_Stop"` / `"_Continue"` | `"_Stop"` / `"_Continue"` |
+| **Apply Security** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`ApplySecurity`) |
+| **Rollback After Run** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`RollbackTcseAfterExecution`) |
 
 ---
 

@@ -65,20 +65,20 @@ If a connection dropout, timeout, or validation error interrupts active construc
 #### The Post-Construction Verification & Compliance Report Structure:
 Your report **MUST** contain four distinct sections:
 1. **100% Entire Execution Plan Content Audit (Execution Plan vs. Reality - ALL 8 SECTIONS):** Compare the approved execution plan (State 2) section-by-section with the actual created assets on MTA:
-    *   **Section 1 (Metadata & Placement):** App, Test Configuration, Test Suite, Test Case Name, Category, Execution User (`EXUS_ExecutionUser`).
+    *   **Section 1 (State Compaction & Target Placement):** App, Test Configuration, Test Suite, Test Case Name, Category, Execution User (`EXUS_ExecutionUser`).
     *   **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
-    *   **Section 3 (Documentation & Risk Alignment):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`), Technical Risk, Business Risk.
-    *   **Section 4 (Verified Elements):** Target microflows, pages, entities, attributes referenced.
-    *   **Section 5 (Step Sequence Audit):** Compare approved steps line-by-line with created steps (`GetTestSteps`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`), and `[Pattern: ...]` annotations.
-    *   **Section 6 (Playwright Settings):** Verify all 10 browser setting keys/values configured on suite/setup case.
-    *   **Section 7 (Data Variation Matrix & Content Audit):** **Mandatory Cell-by-Cell Verification**: Call `GetTestCaseDataVariationsDetails` (or `GetTestSuiteDataVariationsDetails`) and verify every variation system name, description, input attribute value, microflow parameter, return value assertion, object count, exception string, and validation feedback string against Section 7 matrix.
+    *   **Section 3 (Test Case Scope & Dual-Risk Profile):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseSpecifications`), Technical Risk, Business Risk.
+    *   **Section 4 (Verified Model Elements & Testability Profile):** Target microflows, pages, entities, attributes referenced.
+    *   **Section 5 (Chronological Step Sequence Plan):** Compare approved steps line-by-line with created steps (`GetTestSteps`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`), and `[Pattern: ...]` annotations.
+    *   **Section 6 (Playwright / Browser Settings):** Verify all 10 browser setting keys/values configured on suite/setup case.
+    *   **Section 7 (Data Variation Matrix & Metadata):** **Mandatory Cell-by-Cell Verification**: Call `GetTestCaseDataVariationsDetails` (or `GetTestSuiteDataVariationsDetails`) and verify every variation system name, description, input attribute value, microflow parameter, return value assertion, object count, exception string, and validation feedback string against Section 7 matrix.
     *   **Section 8 (Applied Testing Patterns & Rationale):** Verify pattern explanations match pattern annotations written into step descriptions via `SetTestStepNameDescription`.
 2. **MTA Server Validation Audit (Compiler Check):** Show retrieved compiler or configuration errors from `GetTestConstructionErrorsOfTestCase`. Report the output. If any compilation errors are found, they **MUST** be resolved before proceeding.
 3. **Rules & Best Practices Checklist (Skill Conformity):** Verify and confirm that:
     * **Piping Integrity:** Every consumer step references its producer's returned memory outputs (like created object keys) dynamically, with zero hardcoding.
     * **Execution topology:** All setup, teardown, and database-seeding steps are set to `"Always"` execution with `"_Continue"` exception handling.
     * **Empty Object retrieves:** Any conditional null parameter retrieves use `RetrieveOption = "Teststep"`.
-    * **Data Matrix Conformity:** Every created Data Variation has its `Name` and `Description` explicitly configured, and all variation item values match the Execution Plan matrix cell-by-cell.
+    * **Data Matrix Conformity:** Every created Data Variation has its `Name` and `Description` explicitly configured (`PAT-77`), zero empty descriptions exist (`ANTI-31`), and all variation item values match the Execution Plan matrix cell-by-cell (`PAT-54`).
     * **Zero Data in Names:** Step names are purely action-descriptive with zero raw test data in the titles, conforming to the `[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]` template.
     * **Single Persist Check:** No redundant per-step `Persist` steps exist; creations/deletions of multiple objects are committed via a single grouped `Persist` step at the end.
     * **No Sequential Batching Violations:** No steps were created in parallel in a single turn; sequential steps were built one-by-one waiting for their predecessor keys.

@@ -320,3 +320,25 @@ If a test run contains any failed/errored steps:
 1. **Do not** just print the failure message and stop.
 2. **Automatically trigger** the Proactive Mendix Model Comparison Analysis.
 3. Systematically query the local model, compare formats/validations, trace state changes backwards, and output the **Cascade Diagnostic Analysis Report** immediately in your single response.
+
+---
+
+## 🔍 SINGLE-SESSION MATRIX STATE CONTAMINATION DIAGNOSTICS (`PAT-74` / `ANTI-28`)
+
+When executing chained exploratory data variations in a single payload via `MTA_plugin.execute-testcase` (`PAT-73`):
+
+### 1. Diagnosis Matrix
+
+| Symptom in `TCEX_RS` Telemetry | Root Cause | Resolution Action |
+| :--- | :--- | :--- |
+| `VAR_01` **Passed**, but `VAR_02` fails with SQL/Mendix Unique Constraint Violation | Shared/overlapping synthetic key (e.g. same email, license plate, code used across blocks). | Enforce **Disjoint Synthetic Partitioning** (`VAR01-A`, `VAR02-B`). |
+| `VAR_01` **Passed**, but `VAR_02` XPath retrieve returns `Count = 2` instead of `1` | `VAR_01` created/committed records to the database without teardown, polluting `VAR_02`'s query. | Add explicit **Intra-Block Deletion** (`Oact: Delete` via `TCEX_RQ_Sfdr`) at the end of each block. |
+| `VAR_02` returns unexpected Validation Feedback *"Record already exists"* | Microflow executes an internal duplicate existence check on the database. | Apply unique synthetic keys per variation and intra-block cleanup. |
+| Global configuration or singleton state changed in `VAR_01` affects `VAR_02` | Microflow mutates shared in-memory or database singleton entity. | Revert singleton state at the end of each block or trigger Fallback Protocol. |
+| Microflow modifies external non-transactional cache or web service | Non-transactional Java actions cannot be rolled back by Mendix transaction. | Trigger **Session Isolation Fallback Protocol** (dispatch each variation in a separate `execute-testcase` session). |
+
+### 2. Session Isolation Fallback Protocol (`PAT-74`)
+If state leakage is caused by unmanaged external side-effects:
+1. Halt chained single-payload execution.
+2. Re-dispatch the variations as isolated, single-scenario `execute-testcase` calls.
+3. Consolidate results into the standard multi-scenario report (`PAT-61`).
