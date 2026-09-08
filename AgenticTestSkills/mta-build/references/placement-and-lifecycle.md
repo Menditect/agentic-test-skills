@@ -102,5 +102,64 @@ Memory-based piping links the output of Step A directly to Step B inside the sam
 
 ### Saving the Approved Execution Plan (Gate 2 Approval)
 Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLANNING`, save the approved Execution Plan locally before entering `STATE_CONSTRUCTION`:
-*   **Agentic Track (Write-Enabled):** Save the approved plan as a Markdown file (`.md`) to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`). Record `execution_plan_file` in `mta_state.json`. Read this local `.md` file to retrieve and verify the plan during `STATE_SMOKE_AUDIT`.
-*   **Chat Track (Memory-Only / Write-Disabled):** If the environment lacks local file writing tools, warn the user (`> ⚠️ NOTICE: LOCAL STORAGE UNAVAILABLE...`), preserve the complete Execution Plan in the active chat context, set `ExecutionPlanFile: "chat-context"`, and continue the build process seamlessly.
+*   **Agentic Track (Write-Enabled):**
+    1. **Target File & Archiving / Deduplication Audit:**
+       Check if `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`) already exists:
+       - **Case A: Fresh Plan (No existing file):**
+         - Set `revision: 1`
+         - Set `supersedes_plan_id: null`
+       - **Case B: Zero-Change Re-Run (Existing file unchanged):**
+         - Compare the content of the newly generated markdown body with the existing file's body.
+         - If identical: **Do NOT archive or duplicate**. Output:
+           > `ℹ️ Notice: The approved execution plan is identical to the active plan on disk (Revision: <N>). Re-using existing Plan ID without archival.`
+         - Proceed to `STATE_CONSTRUCTION` without creating archive noise.
+       - **Case C: Modified Plan / Revision (Existing file with changes):**
+         - Read the existing file's frontmatter to extract its `plan_id`, `approved_at`, and `revision`.
+         - Format the archive timestamp as `YYYYMMDD_HHmmss` (e.g. `20260908_161141`).
+         - Ensure `${MTA_OUTPUT_PATH}/execution-plans/archive/` exists.
+         - Move the prior plan to:
+           `${MTA_OUTPUT_PATH}/execution-plans/archive/EP_<TestCaseName>_<YYYYMMDD_HHmmss>.md`
+         - In the new plan, set:
+           - `supersedes_plan_id: "<old_plan_id>"`
+           - `revision: <old_revision + 1>` (or `2` if previous had no revision)
+    2. **Immutable Provenance Header (YAML Frontmatter):** Prepend a YAML frontmatter block to `EP_<TestCaseName>.md`:
+       ```yaml
+       ---
+       plan_id: "urn:uuid:<UUIDv4>"
+       schema_version: "1.0.0"
+       supersedes_plan_id: "<urn:uuid:UUID | null>"
+       revision: 1
+       approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
+       test_case_name: "<TestCaseName>"
+       target_configuration: "<TargetConfig>"
+       target_suite: "<TargetSuite>"
+       category: "<Backend | Frontend>"
+       ---
+       ```
+    3. **Deterministic Integer Revision Sequence:** Revisions strictly increment monotonically (`revision: 1`, `revision: <old_revision + 1>`). If an existing plan is edited, increment the revision number, set `supersedes_plan_id` to the prior plan's UUID, and update `approved_at`.
+    4. **Save File & Notify User (Sealed / Dual Receipt):** Write the plan to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`. Immediately notify the user with a clickable link and receipt:
+       - *Fresh Creation (Revision 1):*
+         ```markdown
+         📄 **Execution Plan Stored & Sealed:**
+         • **Plan ID:** `urn:uuid:<UUIDv4>` (Revision 1)
+         • **File Location:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/menditect-output/execution-plans/EP_<TestCaseName>.md)
+         • **Relative Path:** `menditect-output/execution-plans/EP_<TestCaseName>.md`
+         • **Approved At:** `<ISO 8601 Timestamp>`
+         • **Status:** Approved (Gate 1 & Gate 2) & Sealed to Workspace
+         ```
+       - *Revision / Superseding Prior Plan:*
+         ```markdown
+         📄 **Execution Plan Stored & Sealed:**
+         • **Plan ID:** `urn:uuid:<UUIDv4>` (Revision <N>)
+         • **Supersedes:** `urn:uuid:<old_uuid>`
+         • **Active Plan:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/menditect-output/execution-plans/EP_<TestCaseName>.md)
+         • **Archived Snapshot:** [`EP_<TestCaseName>_<timestamp>.md`](file:///absolute/path/to/menditect-output/execution-plans/archive/EP_<TestCaseName>_<timestamp>.md)
+         • **Approved At:** `<ISO 8601 Timestamp>`
+         • **Status:** Approved (Gate 1 & Gate 2) & Sealed to Workspace
+         ```
+    5. **State Persistence (`PAT-47`):** Record `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_revision`, and `execution_plan_supersedes_id` in `mta_state.json`.
+    6. **Pre-Construction Drift Detection (`STATE_CONSTRUCTION`):** When entering `STATE_CONSTRUCTION`, read the file, verify that `plan_id`, `revision`, and `approved_at` match the state tracker and frontmatter. If mismatch (drift detected), offer the **Soft Reconciliation Choice**:
+       - *Option 1 (Accept Changes & Re-Sign):* Increments revision number, updates `approved_at` timestamp, updates `mta_state.json`, and proceeds.
+       - *Option 2 (Halt & Revert):* Reject changes and restore the previously approved version before building.
+    7. **Verification in Smoke Audit:** Read this local `.md` file to verify the plan and display Plan ID, Revision, Supersedes ID, and Approved At validity during `STATE_SMOKE_AUDIT`.
+*   **Chat Track (Memory-Only / Write-Disabled):** If the environment lacks local file writing tools, warn the user (`> ⚠️ NOTICE: LOCAL STORAGE UNAVAILABLE...`), generate the UUID v4 and ISO 8601 timestamp, preserve the complete Execution Plan and metadata in the active chat context, set `ExecutionPlanFile: "chat-context"`, and continue the build process seamlessly.

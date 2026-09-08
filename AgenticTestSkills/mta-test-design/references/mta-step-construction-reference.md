@@ -77,8 +77,20 @@ Asserts that a microflow returns a value matching expected conditions.
 
 ---
 
-## 🔄 Construction Workflow Sequence
-1.  **Scope the TestCase:** Ensure test configuration, test suite, and test case name are aligned (Gate 1 & Gate 2 approvals).
-2.  **Add Chronological Steps:** Create steps one-by-one in exact forward sequence using `CreateObjectActionTestStep` or `CreateMicroflowCallTestStep` (strictly sequential predecessor chaining; parallel creation banned).
-3.  **⚡ Multi-Tool Batch Configuration (1 Turn):** Dispatch all independent attribute values, parameter bindings, assertion configurations, and step settings concurrently in a **single turn** (up to 75% token & latency reduction).
-4.  **Audit Step Sequence:** Verify clean retrievals, single persist placements, zero unfilled variation cells, and direct initialization adherence before concluding construction.
+## 🔄 Construction Workflow: Deterministic 4-Phase Protocol (PAT-78, ANTI-32)
+1.  **Scope & Plan Gating:** Ensure test configuration, test suite, and test case name are aligned (Gate 1 & Gate 2 approvals), and the approved Execution Plan is saved locally or verified in chat context (`PAT-44`).
+2.  **Phase 1: Sequential Step Pipeline (`SKELETON_PROVISIONING`):**
+    * Concurrently dispatch `CreateTestCase` for all cases (`PAT-79`).
+    * Create steps one-by-one in exact forward sequence using `CreateObjectActionTestStep` or `CreateMicroflowCallTestStep` (strictly sequential predecessor chaining; parallel step creation is banned).
+    * Pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` for `ChangeObjects` and `DeleteObjects` (`PAT-80`).
+3.  **Phase 2: Step & Assertion Configuration (`BATCH_BINDING`):**
+    * Inspect created step keys via `GetTestCaseDetails`.
+    * Concurrently dispatch ALL independent attribute values (`EditAttributeValue`), parameter bindings (`EditMicroflowParameterValue`, `EditMicroflowObjectParameter`), assertion configurations (`CreateAssert*`), dedicated outputs (`SetTestStepOutputFor*`), and step settings in a **single turn** (`PAT-81`). Single-call loops are strictly prohibited (`ANTI-32`).
+4.  **Phase 3: Variation Item Registration (`VARIATION_REGISTRATION`):**
+    * **Zero Disconnect SSOT Invariant:** Registered items MUST strictly match Section 7 of the approved plan. Zero unapproved additions allowed.
+    * Concurrently dispatch ALL planned `AddTestCaseVariationItem` calls in a **single turn**.
+5.  **Phase 4: Variation Column Population (`VARIATION_POPULATION`):**
+    * For each variation column created via `CreateTestCaseVariation`, configure the entire column in **EXACTLY 1 turn** (dispatch all cell edits, `SetName`, and `SetDescription` concurrently).
+6.  **Smoke Audit (`STATE_SMOKE_AUDIT`):**
+    * Concurrently dispatch all `GetTestCaseDetails` queries in a **single turn**.
+    * Verify clean retrievals, single persist placements, zero unfilled variation cells, and **zero unapproved additions** before concluding construction.

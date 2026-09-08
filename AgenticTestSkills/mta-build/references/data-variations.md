@@ -48,40 +48,45 @@ This metadata is **mandatory for all workflows**. Failing to set names and descr
 
 ---
 
-## 🏗️ 5-PHASE CONSTRUCTION PROTOCOL (PAT-54)
+## 🏗️ DATA VARIATIONS CONSTRUCTION PROTOCOL (PAT-54, PAT-78, ANTI-32)
 
-With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). Therefore, the strategy is: **Batch Column Provisioning $\rightarrow$ Single-Pass Key Resolution $\rightarrow$ Multi-Tool Batch Scenario Population**.
+With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). Therefore, the strategy is: **Single-Turn Variation Item Registration $\rightarrow$ Column Provisioning $\rightarrow$ Single-Pass Key Resolution $\rightarrow$ 1-Turn Per Column Multi-Tool Batch Population**.
 
-### Phase 1: Baseline Registration (Scenario #1)
-1. Build all baseline test steps sequentially (`CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, etc.).
+> [!IMPORTANT]
+> **Zero Disconnect SSOT Invariant (`ANTI-32`):** The variation items registered via `AddTestCaseVariationItem` **MUST strictly match** Section 7 of the approved Execution Plan. You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, or assertion to the variation matrix that is not explicitly declared as a variation item in Section 7 of the approved plan.
+
+### Step 1: Baseline Variation Item Registration (1 Turn Single Batch)
+1. Build all baseline test steps and configure baseline properties/assertions (`Phase 1 & Phase 2`).
 2. Enable variations via `AddTestCaseVariationItem` (`Action="EnableTestCaseDatavariation"`, `TestCaseKey=...`).
-3. **⚡ Multi-Tool Batch Item Registration (1 Turn):** Dispatch ALL item registration calls concurrently in a **single turn** using `AddTestCaseVariationItem`:
+3. **⚡ Single-Turn Batch Item Registration (`ANTI-32`):** Dispatch **ALL** planned item registration calls concurrently in a **single turn** using `AddTestCaseVariationItem` (strictly matching Section 7):
    * Attribute values: `Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`.
    * Microflow parameters: `Action="AddMicroflowParameterValueTestCaseVariationItem"`, `ObjectKey=MicroflowParameterValueKey`.
    * Attribute compare assertions: `Action="AddAssertAttributeValueCompareTestCaseVariationItem"`, `ObjectKey=AssertAttributeValueCompareKey`.
    * Return value assertions: `Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem"`, `ObjectKey=AssertMicroflowReturnValueCompareKey`.
    * Exception assertions: `Action="AddAssertExceptionTestCaseVariationItem"`, `ObjectKey=AssertExceptionKey`.
    * Object count assertions: `Action="AddAssertObjectCountTestCaseVariationItem"`, `ObjectKey=AssertObjectCountKey`.
+   *Sequential single-item loops across multiple conversational turns are strictly prohibited.*
 
-### Phase 2: Column Provisioning & Metadata Registration (Scenarios #2..N)
+### Step 2: Column Provisioning & Metadata Registration (Scenarios #2..N)
 1. Create columns $2..N$ via `CreateTestCaseVariation(TestCaseKey)`. This returns new `TestCaseVariationKey`s.
 2. Immediately apply `PAT-77`: call `EditTestCaseVariation` with `EditAction="SetName"` and `EditAction="SetDescription"` for Variation #1 and all Variations $2..N$.
    *(Note: You can batch all `SetName` and `SetDescription` calls across variations in a single turn!)*
 
-### Phase 3: Single-Pass Key Matrix Resolution
+### Step 3: Single-Pass Key Matrix Resolution
 1. Call `GetTestCaseDetails(TestCaseKey)` EXACTLY ONCE.
 2. Traverse the returned deeply nested JSON mapping to extract the 2D matrix grid of unique `AttributeValueKey`, `MicroflowParameterValueKey`, and `Assert*Key` values across all Scenario Indexes and Item Names.
 
-### Phase 4: Column-by-Column Multi-Tool Batch Population (`PAT-54`)
+### Step 4: Column-by-Column Multi-Tool Batch Population (`PAT-54`, `ANTI-32`)
 1. Loop through Scenarios $2..N$. For *each entire scenario column*:
-   * **⚡ 1-Turn Batch Dispatch:** Dispatch ALL cell overrides for that scenario concurrently in a **single turn**:
+   * **⚡ 1-Turn Batch Dispatch:** Dispatch ALL cell overrides for that scenario concurrently in **EXACTLY 1 turn**:
      - Set input overrides via `EditAttributeValue` or `EditMicroflowParameterValue`.
      - Set assertion overrides via `EditAssert*` (`EditAssertAttributeValueCompare`, `EditAssertMicroflowReturnValueCompare`, `EditAssertObjectCount`, etc.).
-   * *(Do NOT populate row-by-row item-first across turns; failure must not corrupt horizontal states, and batching saves up to 75% tokens/time).*
+   * *(Iterating through cell setters across multiple conversational turns is strictly prohibited; failure must not corrupt horizontal states, and batching saves up to 75% tokens/time).*
 
-### Phase 5: Final Validation (Smoke Audit)
-1. Run `STATE_SMOKE_AUDIT` post-construction compiler checks (`GetTestCaseDetails`).
+### Step 5: Final Smoke Audit (`STATE_SMOKE_AUDIT`)
+1. Run `STATE_SMOKE_AUDIT` post-construction compiler checks via `GetTestCaseDetails`.
 2. Verify exactly zero unfilled variation items exist across the entire scenario matrix.
+3. **Zero Disconnect Verification:** Verify that zero unapproved variation items, attributes, filters, or assertions exist beyond what was declared in Section 7 and Section 5.
 
 ---
 

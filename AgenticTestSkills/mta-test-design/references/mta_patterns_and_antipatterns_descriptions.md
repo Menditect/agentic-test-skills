@@ -572,7 +572,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-44`: Atomic Multi-Case Construction & Execution Plan Gating
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Requires saving the approved plan locally as a `.md` file (or retaining in active chat context with a warning if write tools are unavailable) and obtaining Gate 2 placement approval before constructing steps in `STATE_CONSTRUCTION`. The local plan path MUST be persisted in `mta_state.json` (as `execution_plan_file`). Once gated, all test cases and steps are provisioned in a single uninterrupted execution sweep.
+* **Description:** Requires saving the approved plan locally as a `.md` file with an immutable provenance YAML frontmatter (UUID v4 `plan_id`, `supersedes_plan_id`, integer `revision`, ISO 8601 `approved_at`), explicitly notifying the user of plan storage with a clickable sealed receipt (or dual active/archived receipt), and obtaining Gate 2 placement approval before constructing steps in `STATE_CONSTRUCTION`. Enforces automatic archiving of prior revisions into `execution-plans/archive/EP_<TestCaseName>_<YYYYMMDD_HHmmss>.md` when a modified plan is saved, and idempotent deduplication (preventing duplicate archive files if revision or content is unchanged). When entering `STATE_CONSTRUCTION`, the agent performs drift detection by re-verifying the plan ID, revision sequence, and approval timestamp against the frontmatter and state tracker (with a soft reconciliation prompt if intentional drift is detected). The local plan path, plan ID, approval timestamp, revision number, and superseded ID MUST be persisted in `mta_state.json`. Once gated and verified, all test cases and steps are provisioned with safe batch sizing (max 15-20 tool calls per turn).
 * **Related Rules:**
   * **Related Patterns:** `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-47` (Real-Time Placement Key Persistence).
 
@@ -596,7 +596,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-47`: Real-Time Placement Key Persistence
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`) and `execution_plan_file` immediately into `mta_state.json` as assets are created.
+* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`), `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_revision`, and `execution_plan_supersedes_id` immediately into `mta_state.json` as assets are created.
 * **Related Rules:**
   * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable Navigation Links).
 
@@ -1051,7 +1051,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-32`: Chatterbox Sequential Setter Anti-Pattern
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Invoking configuration tools, setters, or container creators (`EditTestSuite`, `CreateTestCase`, `EditTestCase`, `CreateTestCaseVariation`, `EditTestCaseVariation`, `EditAttributeValue`, `EditMicroflowParameterValue`, `EditTestStep`, `AddTestCaseVariationItem`, `CreateAssert*`) sequentially one-by-one across multiple separate conversation turns after container or step keys have already been resolved. This chatty interaction introduces immense latency, token overhead, and fragmented context when tools can and must be batched at the suite, case, variation, and step levels.
+* **Description:** Invoking configuration tools, setters, or container creators (`EditTestSuite`, `CreateTestCase`, `EditTestCase`, `CreateTestCaseVariation`, `EditTestCaseVariation`, `EditAttributeValue`, `EditMicroflowParameterValue`, `EditTestStep`, `AddTestCaseVariationItem`, `CreateAssert*`) sequentially one-by-one across multiple separate conversation turns after container or step keys have already been resolved. This chatty interaction introduces immense latency, token overhead, and fragmented context when tools can and must be batched at the suite, case, variation, and step levels. Enforces **Safe Batch Sizing (max 15-20 tool calls per turn)** to avoid generation instability or truncation. Since MTA MCP tools do not provide server-side atomic transactions or rollback capabilities for mutating tool calls, if any individual call within a batch fails, the agent must isolate the error from the response array and surgically retry or fix the failed call.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law).
   * **Related Patterns:** `ANTI-05` (Parallel / Batched Creation in Same Container).

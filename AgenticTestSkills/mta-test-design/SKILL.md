@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.2.0"
-changes: "Refactored workflow for removed SaveExecutionPlan/GetExecutionPlan tools; added local markdown storage protocol (PAT-43, PAT-44) and chat-context fallback."
+version: "6.5.0"
+changes: "Enforced Zero Disconnect SSOT in Section 7 Data Variation Matrix; replaced MD5 checksum calculation with integer revision sealing and timestamps to eliminate LLM hashing overhead."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -238,17 +238,74 @@ When the user's intent is manual exploratory testing or structured manual verifi
 > ❓ *Please confirm if this target placement and settings summary is correct so I can save the execution plan and proceed to test construction.*
 ```
 
-*   **⚡ Mandatory Local Plan Storage & Sign-Off Protocol (`PAT-43`, `PAT-44`):**
+*   **⚡ Mandatory Local Plan Storage, Revision Sealing & Sign-Off Protocol (`PAT-43`, `PAT-44`, `PAT-47`):**
     Upon receiving explicit user approval for the Placement & Target Summary (Gate 2), you **MUST** store the approved Execution Plan locally as a `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`).
+    
+    > **Target File & Archiving / Deduplication Audit:**
+    > Before saving, inspect if `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` already exists on disk:
+    > - **Case A: Fresh Plan (No existing file):**
+    >   - Set `revision: 1`
+    >   - Set `supersedes_plan_id: null`
+    > - **Case B: Zero-Change Re-Run (Existing file unchanged):**
+    >   - If re-running an already approved and unchanged plan: **Do NOT archive or duplicate**. Output:
+    >     > `ℹ️ Notice: The approved execution plan matches the active plan on disk (Revision: <revision>). Re-using existing Plan ID without archival.`
+    >   - Retain existing plan and proceed to `STATE_CONSTRUCTION` without creating archive noise.
+    > - **Case C: Modified Plan / Revision (Updated plan specifications):**
+    >   - Read the existing file's frontmatter to extract its `plan_id`, `approved_at`, and `revision`.
+    >   - Format the archive timestamp as `YYYYMMDD_HHmmss` (e.g. `20260908_161141`).
+    >   - Ensure directory `${MTA_OUTPUT_PATH}/execution-plans/archive/` exists.
+    >   - Move/copy the prior plan to:
+    >     `${MTA_OUTPUT_PATH}/execution-plans/archive/EP_<TestCaseName>_<YYYYMMDD_HHmmss>.md`
+    >   - In the new plan, set:
+    >     - `supersedes_plan_id: "<old_plan_id>"`
+    >     - `revision: <old_revision + 1>` (or `2` if previous had no revision)
+
+    > **Immutable Provenance Header (YAML Frontmatter):**
+    > Prepend a YAML frontmatter block to the top of the Markdown plan file:
+    > ```yaml
+    > ---
+    > plan_id: "urn:uuid:<UUIDv4>"
+    > schema_version: "1.0.0"
+    > supersedes_plan_id: "<urn:uuid:UUID | null>"
+    > revision: 1
+    > approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
+    > test_case_name: "<TestCaseName>"
+    > target_configuration: "<TargetConfig>"
+    > target_suite: "<TargetSuite>"
+    > category: "<Backend | Frontend>"
+    > ---
+    > ```
+
+    > **Mandatory User Notification & Sealed Receipt Display:**
+    > Immediately upon saving the Execution Plan to disk, you **MUST** explicitly notify the user that the plan has been stored and display its absolute and relative file location as a clickable markdown file link along with the sealed receipt (or dual receipt if archiving):
+    > - *Fresh Creation (Revision 1):*
+    >   ```markdown
+    >   📄 **Execution Plan Stored & Sealed:**
+    >   • **Plan ID:** `urn:uuid:<UUIDv4>` (Revision 1)
+    >   • **File Location:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/menditect-output/execution-plans/EP_<TestCaseName>.md)
+    >   • **Relative Path:** `menditect-output/execution-plans/EP_<TestCaseName>.md`
+    >   • **Approved At:** `<ISO 8601 Timestamp>`
+    >   • **Status:** Approved (Gate 1 & Gate 2) & Sealed to Workspace
+    >   ```
+    > - *Revision / Superseding Prior Plan:*
+    >   ```markdown
+    >   📄 **Execution Plan Stored & Sealed:**
+    >   • **Plan ID:** `urn:uuid:<UUIDv4>` (Revision <N>)
+    >   • **Supersedes:** `urn:uuid:<old_uuid>`
+    >   • **Active Plan:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/menditect-output/execution-plans/EP_<TestCaseName>.md)
+    >   • **Archived Snapshot:** [`EP_<TestCaseName>_<timestamp>.md`](file:///absolute/path/to/menditect-output/execution-plans/archive/EP_<TestCaseName>_<timestamp>.md)
+    >   • **Approved At:** `<ISO 8601 Timestamp>`
+    >   • **Status:** Approved (Gate 1 & Gate 2) & Sealed to Workspace
+    >   ```
     
     > **Local Storage Capability Fallback:**
     > If the agent does not possess file-writing tools (e.g., in chat-only environments without `write_to_file`), output this prominent warning but do NOT block the build:
     > ```markdown
     > > ⚠️ NOTICE: LOCAL STORAGE UNAVAILABLE. The execution plan cannot be saved to disk. Retaining the complete Execution Plan in active chat context. Proceeding to STATE_CONSTRUCTION...
     > ```
-    > In this fallback mode, record `execution_plan_file: "chat-context"` in active state and retain the complete Execution Plan in conversational context.
+    > In this fallback mode, generate a UUID v4 `plan_id` and ISO 8601 `approved_at`, record `execution_plan_file: "chat-context"`, `execution_plan_id: "urn:uuid:<UUIDv4>"`, and `execution_plan_approved_at: "<ISO 8601 Timestamp>"` in active state, and retain the complete Execution Plan in conversational context.
 
-    In write-enabled environments, write the target file path to `execution_plan_file` in `mta_state.json` (along with `test_configuration` `key`/`name`, `test_suite` `key`/`name`, and register planned `test_cases`). Keep `execution_plan_key: null` for backward compatibility. Successfully storing the plan (or issuing the chat-context warning) completes `STATE_BUILD_PLANNING` and authorizes transition to `STATE_CONSTRUCTION`. Note that upon entering `STATE_CONSTRUCTION`, Step 1 is ALWAYS the Pre-Construction Model-to-MTA Schema Audit (`PAT-82`, `ANTI-36`) via `GetAppModelData` to verify that MTA has the synchronized model revision matching the planned entities, attributes, microflows, parameters, and pages before any server building begins. [^PAT-43] [^PAT-44] [^PAT-47] [^PAT-82] [^ANTI-36]
+    In write-enabled environments, write the target file path, plan ID, approved timestamp, revision number, and supersedes ID to `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_revision`, and `execution_plan_supersedes_id` in `mta_state.json` (along with `test_configuration` `key`/`name`, `test_suite` `key`/`name`, and register planned `test_cases`). Keep `execution_plan_key: null` for backward compatibility. Successfully storing the plan and notifying the user with the clickable file location and sealed receipt (or issuing the chat-context warning) completes `STATE_BUILD_PLANNING` and authorizes transition to `STATE_CONSTRUCTION`. Note that upon entering `STATE_CONSTRUCTION`, Step 1 is ALWAYS the Pre-Construction Model-to-MTA Schema Audit (`PAT-82`, `ANTI-36`) via `GetAppModelData` to verify that MTA has the synchronized model revision matching the planned entities, attributes, microflows, parameters, and pages before any server building begins. [^PAT-43] [^PAT-44] [^PAT-47] [^PAT-82] [^ANTI-36]
 *   **⚡ MTA Model Revision Synchronization & Decoupled Plan Storage Law**:
     1. *Plan Storage Decoupling:* Drafting and storing an Execution Plan locally as a `.md` file is **always permitted and encouraged**, even when the local Mendix model contains uncommitted elements not yet present in the active MTA Model Revision. The plan is stored as a specification document on disk and does not bind to live metamodel elements until construction. [^PAT-36]
     2. *Internal-Only Logic vs. Structural Delta Classification:*
@@ -486,6 +543,9 @@ You **MUST** output the final approved Execution Plan inside this exact standard
 </details>
 
 ## 7. Data Variation Matrix & Metadata
+
+> [!IMPORTANT]
+> **Zero Disconnect SSOT Invariant:** Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
 
 ### Data Variation Matrix
 #### Table 1: Scenarios #1 to #7 (Primary Scenarios)
