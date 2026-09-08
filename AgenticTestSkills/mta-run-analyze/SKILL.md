@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "4.8.5"
-changes: "Updated promotion reverse-handoff bridge to enforce PAT-77 data variation container metadata and description persistence upon promotion."
+version: "6.2.1"
+changes: "Removed GetExecutionPlan from read-only tools and updated promotion handoff to local execution plan storage."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -19,12 +19,12 @@ changes: "Updated promotion reverse-handoff bridge to enforce PAT-77 data variat
 
 > [!IMPORTANT]
 > ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
-> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationByName`, `GetTestConfigurationsForApplicationKey`, `GetTestSuites`, `GetTestCases`, `GetTestSteps`, `GetPages`, `GetWidgets`, `GetExecutionUsers`, `RetrieveTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve the MCP server endpoint (`[MtaUrl]/tools/mcp`), evaluate in order: (1) project-level `AGENTS.md` (`MTA Url`), (2) `mta_config.json` (`mta_base_url`), (3) `.vscode/settings.json` (`MTA_BASE_URL`), (4) `mta_state.json` (`mta_base_url`), or (5) prompt the user on turn 1.
+> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationDetails`, `GetTestConfigurationDetails`, `GetAppModelData`, `GetExecutionUsers`, `GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`, `GetTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve the MCP server endpoint (`[MtaUrl]/primitivetools/mcp`), evaluate in order: (1) project-level `AGENTS.md` (`MTA Url`), (2) `mta_config.json` (`mta_base_url`), (3) `.vscode/settings.json` (`MTA_BASE_URL`), (4) `mta_state.json` (`mta_base_url`), or (5) prompt the user on turn 1.
 > Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
 
 > [!IMPORTANT]
 > ### ⚡ EXECUTION & MUTATING TOOL GATING
-> You are strictly prohibited from executing **execution or mutating MTA tools** (e.g. `ExecuteTestSuite`, `ExecuteTestCase`, `ExecuteTestConfiguration`, `CreateTestCase`, `Set*`, etc.) on the first turn or during discovery until the target execution parameters (Configuration, Suite, or Case) are explicitly confirmed by the user.
+> You are strictly prohibited from executing **execution or mutating MTA tools** (e.g. `ExecuteTest`, `CreateTestCase`, `EditTestStep`, etc.) on the first turn or during discovery until the target execution parameters (Configuration, Suite, or Case) are explicitly confirmed by the user.
 
 ---
 
@@ -48,9 +48,9 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 2. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
 3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every MTA tool call.
 4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly. Available `ObjectTypes`: `testconfiguration`, `testsuite`, `testcase`, `testrun`, `testsuiterun`, `testcaserun`.
-5. **State File Key Resolution Law**: Before executing any persistent test case, test suite, or configuration on the MTA platform, check `mta_state.json` (if in Agentic Mode) or the Session Compaction Block (if in Chat Mode) to load the exact numeric `key` for the target test case (`test_cases[].key`), test suite (`test_suite.key`), or execution plan (`execution_plan_key`). If missing keys, use read-only discovery tools (`GetTestSuites`, `GetTestCases`) to locate the entity on the MTA server, and immediately persist them. *(Note: Local in-memory exploratory tests executed under `STATE_EXPLORATORY_EXECUTION` via `MTA_plugin.execute-testcase` are strictly EXEMPT from key requirements).*
+5. **State File Key Resolution Law**: Before executing any persistent test case, test suite, or configuration on the MTA platform, check `mta_state.json` (if in Agentic Mode) or the Session Compaction Block (if in Chat Mode) to load the exact numeric `key` for the target test case (`test_cases[].key`) or test suite (`test_suite.key`). If missing keys, use read-only discovery tools (`GetTestConfigurationDetails`, `GetTestSuiteDetails`) to locate the entity on the MTA server, and immediately persist them. *(Note: Local in-memory exploratory tests executed under `STATE_EXPLORATORY_EXECUTION` via `MTA_plugin.execute-testcase` are strictly EXEMPT from key requirements).*
 6. **Pattern Audit & Auto-Registration Protocol**: When analyzing existing test cases or auditing step sequences in `STATE_QA_ASSISTANCE`, verify step patterns against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-xx] [^ANTI-xx]. If a new pattern or anti-pattern is identified or learned, auto-register it in `mta-patterns-and-antipatterns-reference.md` and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files.
-7. **Pre-Flight Zero Construction Error Verification Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTestCase`, `ExecuteTestSuite`, or `ExecuteTestConfiguration`, you **MUST** verify that `GetTestConstructionErrorsOfTestCase` returns **0 construction errors**. If construction errors exist on the server, you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors to the user, and explain that execution cannot proceed until model revision synchronization or step binding issues are resolved.
+7. **Pre-Flight Zero Construction Error Verification Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTest`, you **MUST** verify that `GetTestCaseDetails` returns **0 construction errors**. If construction errors exist on the server, you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors to the user, and explain that execution cannot proceed until model revision synchronization or step binding issues are resolved.
 
 ---
 
@@ -180,13 +180,14 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                  "TestCase": "[ApprovedTestCaseName]",
                  "Category": "[Backend | Frontend]",
                  "MtaBaseUrl": "[MtaBaseUrl]",
+                 "ExecutionPlanFile": "[PathToSavedExecutionPlan.md | null]",
                  "ExecutionPlanKey": null,
                  "Context": "Promoting verified exploratory test for [Components Under Test] to persistent MTA suite. Proceed to Gate 2 placement."
                }
                ```
                ```
             3. Instruct the user/agent:
-               > 🚀 **Promotion Handoff Trigger**: Switched to `mta-test-design` (`PLAN_STEP_2`). Ready to interactively resolve Test Configuration, Test Suite, and Test Case placement (Gate 2), save the execution plan via `SaveExecutionPlan`, and proceed to `STATE_CONSTRUCTION` with full variation container metadata and description persistence (`PAT-77`).
+               > 🚀 **Promotion Handoff Trigger**: Switched to `mta-test-design` (`PLAN_STEP_2`). Ready to interactively resolve Test Configuration, Test Suite, and Test Case placement (Gate 2), store the execution plan locally as a `.md` file (or retain in active chat context if write tools are unavailable), and proceed to `STATE_CONSTRUCTION`. Note that in `STATE_CONSTRUCTION`, Step 1 is ALWAYS the Pre-Construction Model-to-MTA Schema Audit (`PAT-82`, `ANTI-36`) via `GetAppModelData` to verify whether MTA's synchronized model revision contains the required entities, attributes, and microflows or whether MTA needs an updated revision first, followed by the 3-Turn Batch Construction sequence with full variation container metadata and description persistence (`PAT-77`, `PAT-78`).
 
 2.  `STATE_LIVE_DATA_PROVISIONING`: Executing live test data provisioning and teardown for manual testing via `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "No"`).
     *   **Targeted Cluster Discovery Protocol:** For data provisioning, inspect all target entities and mandatory associations in a single batched `mxcli` call. Omit optional attributes unless explicitly requested.
@@ -201,9 +202,17 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         *   **Promotion Reverse-Handoff Protocol:** Upon the user selecting an option, transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_1 | Active Skill: mta-test-design]`) to draft the formal `# MTA EXECUTION PLAN SIGN-OFF` corresponding to the chosen profile. Direct construction without an approved Execution Plan (Gate 1) and Placement Summary (Gate 2) is strictly **PROHIBITED** (`PAT-43`, `ANTI-14`).
 
 3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
+    *   **Execution Initiation & Scoping (`ExecuteTest`):**
+        *   Call `ExecuteTest(ApplicationInstanceToken="...", ExecutionLevel="TestCase"|"TestSuite"|"TestConfiguration", TestCaseKey=... | TestSuiteKey=... | TestConfigurationKey=...)`.
+        *   Prefer single test case execution (`ExecutionLevel="TestCase"`) during active construction or verification for fast, isolated feedback loops.
+        *   The call returns `TestRunKey` and `TestRunExecutionId`.
+    *   **Context-Preserving Diagnostic Drill-Down Protocol (`PAT-83` / `ANTI-37`):**
+        *   **Step 1 (Summary):** Call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestRunSummary")` to check overall execution status and identify any failing test case run keys (`TestCaseRunKey`).
+        *   **Step 2 (Targeted Details):** For each failed test case, call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=<numeric_key>)` to retrieve isolated step receipts and logs strictly for that case.
+        *   **Prohibition (`ANTI-37`):** Never invoke `RetrieveAction="GetTestRunDetails"` blindly across an entire suite or configuration, as monolithic dumps cause rapid context window exhaustion.
     *   **🚨 THE AUTOMATED SELF-REPAIR PROTOCOL (CRITICAL):**
         If a test execution fails during runtime verification, you **MUST NOT** simply report the failure and wait. You **MUST** immediately initiate this automated self-repair loop in the same turn:
-        1. **Auto-Retrieve logs:** Immediately call `RetrieveTestRunResults` (and `GetAssertExceptionByTestStep` / `GetAssertValidationFeedbackMessageCompareByTestCase` if applicable) to programmatically pull the failure receipt.
+        1. **Auto-Retrieve logs via PAT-83 Drill-Down:** Call `GetTestRunResults(RetrieveAction="GetTestRunSummary")` to get `TestCaseRunKey`, followed by `GetTestRunResults(RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=...)`, and `GetTeststepDetails(TestStepKey=...)` for the failing step to programmatically extract the failure receipt.
         2. **Perform a Cognitive Reverse Trace:** Analyze the transaction memory of the 5 steps preceding the failing step to check if the error is a cascade from an upstream state modification or invalid validation.
         3. **Formulate the Surgical Fix:** Map the root cause to a precise, actionable modification (e.g., updating a specific input attribute, correcting date format casing, or unskipping a cascading provider).
         4. **Lock in Self-Repair State:** Update your State Header to: `[State: STATE_RUN_ANALYZE | Temp State: STATE_SELF_REPAIR | Active Skill: mta-run-analyze]`.
@@ -226,3 +235,4 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 > [!NOTE]
 > **MTA Tool Context Mapping:**
 > The MTA MCP tools and schemas refer to the "mta skill" or "MTA". Since we have split the monolithic `mta` skill into `mta-build` and `mta-run-analyze`, treat all tool schema references to "mta skill" as referring to these two specialized skills.
+

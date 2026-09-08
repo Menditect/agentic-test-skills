@@ -57,7 +57,7 @@ Once downloading is enabled, download and map the parsed page definitions:
 1. Navigate to **Application Revisions** in the left menu.
 2. Click **Download a new revision** to force MTA to parse the latest model pages and widgets from the Mendix Model Server.
 3. Go back to your active **Test Configuration** settings.
-4. Adapt your Test Configuration's active revision mapping to the newly downloaded revision, making all pages, widgets, and layouts fully visible to the MTA MCP scanning tools (`GetPages` and `GetWidgets`).
+4. Adapt your Test Configuration's active revision mapping to the newly downloaded revision, making all pages, widgets, and layouts fully visible to the MTA MCP scanning tool (`GetAppModelData`).
 
 ---
 
@@ -67,5 +67,5 @@ To verify that the manual Web UI and Page classes configurations were completed 
 
 1.  **Application Registered:** The application name displays in the MTA Applications dashboard and maps to your developer profile.
 2.  **Toggle Checked:** The "Enable downloading pages and widgets" checkbox is checked and saved under Application settings.
-3.  **Metadata Ingest Audit:** Adapt your Test Configuration to the latest downloaded revision. Run the MTA MCP tool `GetPages`. Verify that it returns a valid JSON array of your Mendix App's pages and unique custom class names (proving that ingestion succeeded and model layout is fully mapped).
+3.  **Metadata Ingest Audit:** Adapt your Test Configuration to the latest downloaded revision. Run the MTA MCP tool `GetAppModelData(RetrieveAction="RetrievePagesByApplicationAndTestConfiguration")`. Verify that it returns a valid JSON array of your Mendix App's pages and unique custom class names (proving that ingestion succeeded and model layout is fully mapped).
 

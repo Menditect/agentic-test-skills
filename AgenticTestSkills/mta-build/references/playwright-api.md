@@ -54,7 +54,7 @@ These exact literal string values MUST be used when setting parameter values:
 
 ## 📦 CONNECTOR OPTIONS & POSITION ENTITIES
 
-These entities are constructed statically via `CreateTestStepCreateObject` and linked to microflows using the **Strict 4-Step Options Protocol**.
+These entities are constructed statically via `CreateObjectActionTestStep` and linked to microflows using the **Strict 4-Step Options Protocol**.
 
 ### 📍 Position Entities
 *   **`MenditectPlaywrightConnector.Position`**: Coordinates `X` and `Y` (`Decimal`).
@@ -226,13 +226,13 @@ Create Case 1's Start Playwright step calling the microflow matching the executi
 
 ### Option-Building Protocol (All Modes)
 Before executing the setup microflow, build and configure context/start options:
-1.  Create the options object step (e.g., `MenditectPlaywrightConnector.LocalStartOptions` or `NewBrowserContextOptions`) using `CreateTestStepCreateObject`.
-2.  For each active attribute (e.g., `SlowMo`, `DefaultTimeout`, `Locale`), call `IncludeAttributeValueInTeststep` followed by its attribute setter (e.g., `SetDecimalAttributeValue` or `SetIntegerAttributeValue`).
-3.  Bind the configured options step to the setup microflow parameter using `SetTestStepOutputForSelectObjectForMicroflowParameter`.
+1.  Create the options object step (e.g., `MenditectPlaywrightConnector.LocalStartOptions` or `NewBrowserContextOptions`) using `CreateObjectActionTestStep(ObjectAction="CreateObject")`.
+2.  For each active attribute (e.g., `SlowMo`, `DefaultTimeout`, `Locale`), call `EditAttributeValue(TestStepKey, AttributeName, EditAction="IncludeAttribute")`, retrieve `AttributeValueKey` via `GetTeststepDetails(TestStepKey)`, and set value via `EditAttributeValue(AttributeValueKey, EditAction="SetDecimalValue" | "SetIntegerValue" | "SetStringValue", ...)`.
+3.  Bind the configured options step to the setup microflow parameter using `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)`.
 
 ### 🌐 Login Preferences
 At the start of Case 2, call the correct startup microflow:
-*   *With Login:* `Start_MxFrontend_Test_With_Login`. Set `Username` and `Password` using `SetStringMicroflowParameterValue`.
+*   *With Login:* `Start_MxFrontend_Test_With_Login`. Set `Username` and `Password` using `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetStringValue", StringValue=...)`.
 *   *Without Login:* `Start_MxFrontend_Test_Without_Login`.
 
 ### 🎬 Tracing & Screenshots Configuration
@@ -242,5 +242,6 @@ Configure tracing strictly via the simple pattern:
 3.  *Case 3 (Teardown):* Call `Teardown_Playwright`.
 
 ### 🚨 Mandatory Piping Rule
-You **MUST** link Case 1's returned `Browser` object output to Case 2's starting step input using `SetTestStepOutputForSelectObjectForMicroflowParameter`. Skipping this output binding is strictly prohibited as it breaks all downstream frontend actions.
+You **MUST** link Case 1's returned `Browser` object output to Case 2's starting step input using `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)`. Skipping this output binding is strictly prohibited as it breaks all downstream frontend actions.
+
 

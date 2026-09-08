@@ -10,13 +10,13 @@ To run an exploratory test directly on the active Mendix runtime without MTA pla
 
 1. **Pre-Flight Probing:**
    * Confirm the local Mendix application is running.
-   * Verify the endpoint `[RuntimeUrl]/plugin-mcp/` (e.g. `http://localhost:8081/plugin-mcp/`) is active and `MtaPluginModule.EnableMcpServer = true`.
+   * Verify the endpoint `[RuntimeUrl]/plugin/mcp` (e.g. `http://localhost:8081/plugin/mcp`) is active and `MtaPluginModule.EnableMcpServer = true`.
    * *Fallback Rule:* If the endpoint is unreachable or `MTA_plugin` MCP server is offline, immediately notify the user and offer:
      * *Option 1:* Start the local Mendix app and enable `EnableMcpServer`.
      * *Option 2:* Fall back immediately to Option B (Direct Persistent MTA Test).
 2. **Compile Request:** Convert the approved 8-field Chronological Step Sequence into the `TCEX_RQ` JSON structure.
    * **Mandatory Execution User Context Law:** All exploratory requests MUST include `"ExecutorUsername": "MxAdmin"` (or the active project execution user) and `"ApplySecurityExecutor": "NONE"` (or `"ALL"`). Omitting `ExecutorUsername` causes `java.lang.Exception: Executor Username or Executor UserRoles need to be given to create a user` from the Mendix runtime.
-   * **Verified Entity Fixture Attribute Binding Law (`PAT-75` / `ANTI-29`):** All entity attribute names, data types, and associations used in `TCEX_RQ_AttributeValueRun` or entity creation steps MUST be verified against the domain model AST (`DESCRIBE ENTITY`) prior to compiling the payload. Prohibits assumed synthetic attributes (e.g., `Code`, `Id`, `Name`).
+   * **Verified Entity Fixture Attribute Binding Law (`PAT-75` / `ANTI-29`):** All entity attribute names, data types, and associations used in `TCEX_RQ_AttributeValueRun` or entity creation steps MUST be verified against the domain model AST (`DESCRIBE ENTITY`) prior to compiling the payload. Prohibits assumed synthetic attributes (e.g., `Code`, `Id`, `Name`). Furthermore, entity attribute wire types in `TCEX_RQ_AttributeValueRun` strictly require the schema-specific type name (e.g. `"StringType_limited"` or `"StringType_unlimited"`, NOT `"StringType"` which is reserved for microflow parameters in `TCEX_RQ_MicroflowParameter`).
 3. **Execute Tool:**
    Call `call_mcp_tool` with:
    * `ServerName`: `"MTA_plugin"`
@@ -841,7 +841,7 @@ To protect development databases from unintended corruption:
 When an exploratory test executes and passes in-memory (`RollbackTcseAfterExecution = "true"`), the assistant MUST prompt the user to promote it:
 > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
 
-Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test Case with Data Variations (**no structure selection needed**). The agent transitions directly to `mta-test-design` (`PLAN_STEP_2`) for the **Universal Iterative Placement Protocol** (Config -> Suite -> Case -> Gate 2 Sign-off), calls `SaveExecutionPlan` upon Gate 2 approval, and proceeds to `STATE_CONSTRUCTION` in `mta-build`.
+Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test Case with Data Variations (**no structure selection needed**). The agent transitions directly to `mta-test-design` (`PLAN_STEP_2`) for the **Universal Iterative Placement Protocol** (Config -> Suite -> Case -> Gate 2 Sign-off), saves the approved execution plan locally as a `.md` file (or preserves in chat context) upon Gate 2 approval, and proceeds to `STATE_CONSTRUCTION` in `mta-build`.
 
 ---
 
@@ -877,10 +877,12 @@ You are **strictly prohibited** from converting or constructing persistent MTA t
 2. **Draft Execution Plan (Gate 1):** Generate `# MTA EXECUTION PLAN SIGN-OFF` conforming to the selected option, including the 13-point Pre-Approval Quality Checklist.
 3. **Iterative Gate 2 Placement Discovery:** In `mta-test-design` (`PLAN_STEP_2`), interactively scan and present available Test Configurations, then Test Suites, and propose Test Case Name(s) and Execution User in strict multi-turn sequential steps.
 4. **Present Summary & Sign-Off (Gate 2):** In `mta-test-design` (`PLAN_STEP_3`), present Placement & Target Summary for user approval.
-5. **Persist Execution Plan:** Upon Gate 2 approval, call `SaveExecutionPlan` on the MTA server to obtain `ExecutionPlanKey`. Check model revision currency (`PAT-36`).
-6. **Transition to Construction:** Set State Header to `[State: STATE_CONSTRUCTION | Temp State: STEP_BUILDING | Active Skill: mta-build]`.
-7. **Construct Server Assets:** Provision test cases and map each step to MTA Server tools (`CreateTestStepCreateObject`, `CreateMicroflowCallTestStep`, `Set*AttributeValue`, `SetTestStepOutputForSelectObjectFor*`). When data variations are present, strictly execute the variation lifecycle (`PAT-77`): call `EnableTestCaseDataVariations`, set template name and description (`TestCaseDataVariationName` + `TestCaseDataVariationDescription`), duplicate columns (`DuplicateTestCaseDataVariation`), set each duplicated variation's name and description (`TestCaseDataVariationName` + `TestCaseDataVariationDescription`), and reconcile matrix cell values (`PAT-54`).
-8. **Save Keys:** Write all generated keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`, `execution_plan_key`) to `mta_state.json`.
-9. **Transition to Smoke Audit:** Set State Header to `[State: STATE_SMOKE_AUDIT | Temp State: SMOKE_AUDITING | Active Skill: mta-build]` and execute `GetTestConstructionErrorsOfTestCase`. Verify all variation descriptions match Section 7 cell-by-cell (`PAT-77`).
+5. **Pre-Construction Model-to-MTA Schema Audit (PAT-82, ANTI-36):** Call `GetAppModelData` to compare entities, microflows, and pages against local Mendix AST (`mxcli`). If the MTA model revision is outdated or missing planned elements, halt and inform the user that MTA requires model synchronization.
+6. **Persist Execution Plan Locally:** Upon Gate 2 approval and successful schema audit, save the approved execution plan locally as a `.md` file (e.g. `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`). If local write tools are unavailable, warn the user and preserve the complete plan in active chat context. Check model revision currency (`PAT-36`).
+7. **Transition to Construction:** Set State Header to `[State: STATE_CONSTRUCTION | Temp State: STEP_BUILDING | Active Skill: mta-build]`.
+8. **Construct Server Assets (3-Turn Batch Law - PAT-78):** Provision test cases (`PAT-79`) and test steps sequentially in Turn 1 with direct output binding (`PAT-80`), resolve step detail keys in Turn 2 via `GetTestCaseDetails`, and dispatch all parameter/attribute setters in parallel in Turn 3 (`PAT-81`). When data variations are present, strictly execute the variation lifecycle (`PAT-77`): call `AddTestCaseVariationItem(Action="EnableTestCaseDatavariation")`, set template name and description via `EditTestCaseVariation(EditAction="SetName" / "SetDescription")`, duplicate columns (`CreateTestCaseVariation`), set each duplicated variation's name and description, and reconcile matrix cell values (`PAT-54`).
+9. **Save Keys & Plan Path:** Write all generated keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`) and `execution_plan_file` to `mta_state.json`.
+10. **Transition to Smoke Audit:** Set State Header to `[State: STATE_SMOKE_AUDIT | Temp State: SMOKE_AUDITING | Active Skill: mta-build]` and execute `GetTestCaseDetails` to inspect test construction status and verify all variation descriptions match Section 7 cell-by-cell (`PAT-49`, `PAT-77`).
+
 
 

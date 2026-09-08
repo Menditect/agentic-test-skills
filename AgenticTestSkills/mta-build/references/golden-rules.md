@@ -13,7 +13,7 @@ This manual contains the detailed Golden Rules, zero-data naming templates, opti
 ### 1. The Predecessor Chaining Law (Forward Chaining)
 To prevent step, case, or suite sequence corruption, elements must be created in chronological forward order:
 *   **The Predecessor 0 Rule (First Element in Empty Container):** For the absolute first element (step, case, or suite) in an empty container (empty testcase, empty suite, or empty test configuration), you **MUST** pass `0` for the predecessor parameter (`TestStepBeforeKey`, `TestCaseBeforeKey`, or `TestSuiteBeforeKey`) in the tool call. This explicitly indicates to the MTA backend that the element should be placed at the absolute beginning.
-*   **The Non-Empty Container Predecessor Sub-Rule (Subsequent Elements):** For non-empty suites, cases, or configurations, you **MUST** first query the existing elements (via `GetTestCases`, `GetTestSteps`, or `GetTestSuites`) to retrieve the last element's key, using it as the predecessor key to append chronologically. For subsequent elements created within the same turn cycle, you MUST use the actual non-zero numeric key returned by their immediate predecessor to chain them forward chronologically (e.g., Step B uses Step A's returned key as `TestStepBeforeKey`).
+*   **The Non-Empty Container Predecessor Sub-Rule (Subsequent Elements):** For non-empty suites, cases, or configurations, you **MUST** first query the existing elements (via `GetTestConfigurationDetails`, `GetTestSuiteDetails`, or `GetTestCaseDetails`) to retrieve the last element's key, using it as the predecessor key to append chronologically. For subsequent elements created within the same turn cycle, you MUST use the actual non-zero numeric key returned by their immediate predecessor to chain them forward chronologically (e.g., Step B uses Step A's returned key as `TestStepBeforeKey`).
 
 ```
 Create Step A ──► TestStepBeforeKey = 0                      (KeyA returned)
@@ -25,21 +25,22 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     *   *Why this fails:* Downstream keys do not exist until the server processes their predecessors. Batching multiple sequential creation calls in parallel causes them all to use the same existing `BeforeKey` (or attempt to reference keys that do not exist yet), corrupting the sequence.
     *   *The Correct Procedure:* You **MUST** execute creation calls one by one, waiting for the server's response to retrieve the Key of element N before using it as the `BeforeKey` of element N+1.
     *   *Explicit Server-Side Bans (Red Lines - DO NOT RUN IN PARALLEL):*
-        *   **Creation Tools:** Concurrent and parallel execution of step creation tools (e.g., `CreateMicroflowCallTestStep`, `CreateTestStepCreateObject`, etc.) within the **same parent Test Case** is physically blocked by the server and will result in write collisions and sequencing corruption.
+        *   **Creation Tools:** Concurrent and parallel execution of step creation tools (e.g., `CreateMicroflowCallTestStep`, `CreateObjectActionTestStep`, etc.) within the **same parent Test Case** is physically blocked by the server and will result in write collisions and sequencing corruption.
         *   **Sequencing Tool:** Concurrent and parallel execution of `SetSequenceOfTestStep` for teststeps in the **same parent Test Suite** is physically blocked by the server.
-*   **⚡ THE MAXIMUM PARALLELIZATION PROTOCOL (CONCURRENCY LAW):**
-    To optimize performance, minimize execution latency, and reduce the number of conversation turns, you **MUST** run all tools that are permitted to run in parallel as much as possible in parallel. Do not execute them sequentially when concurrent execution is supported.
+*   **⚡ THE MULTI-TOOL BATCH DISPATCH PROTOCOL (PARALLEL CONCURRENCY MANDATE):**
+    To optimize performance, eliminate conversational token accumulation, and reduce execution latency by up to 75%, you **MUST** run all independent Category A tools concurrently in a **single turn** (Parallel Tool Calling). Do not execute them sequentially across multiple turns when concurrent execution is supported.
     *   **1. Scan Phase & Design Phase Tools (MANDATORY Level-Specific Parallelization):**
         *   While read-only lookups within the same level should run in parallel, you are **strictly prohibited** from scanning across different hierarchy levels (Configurations, Suites, Cases) simultaneously during discovery. You MUST adhere to the **Step-by-Step Interactive Placement Discovery Law** to conserve tokens.
-        *   *Parallel Candidates (Within Active Level Only):* Running `GetPages` and `GetWidgets` together to analyze a page, or calling lookup tools for the *currently active step only* in parallel.
-        *   *Actionable Example:* If you need to analyze a page structure and retrieve its widgets, do NOT make separate turns. You MUST invoke `GetPages` and `GetWidgets` in parallel in the same turn. But do NOT fetch test suites and test cases until the parent test configuration has been selected and locked by the user.
-    *   **2. Independent Write & Configuration Operations (MANDATORY Parallelization):**
-        *   Operations that modify independent objects, setup data variations, or configure independent settings do not have predecessor dependencies and MUST be parallelized.
-        *   *Parallel Candidates:*
-            *   Adding variation items: Calling `AddTestCaseVariationItemAttributeValue` or `AddTestSuiteVariationItemAttributeValue` for multiple attributes/values.
-            *   Duplicating variations: Calling `DuplicateTestCaseDataVariation` for different test cases/variations.
-            *   Configuring execution settings of different steps or test cases: Calling `SetExecutionSettingsOfTestStep` or `SetExecutionSettingsOfTestCase` across separate targets.
-            *   Setting metadata & pattern annotations: Calling `SetTestStepNameDescription` (to set step names or pattern description annotations `[Pattern: <Name> - <Rationale>]`), `TestCaseDataVariationName`, or `TestCaseDataVariationDescription` on independent entities.
+        *   *Parallel Candidates (Within Active Level Only):* Running `GetAppModelData(RetrieveAction="RetrievePagesByApplicationAndTestConfiguration")` and `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` together to analyze a page, or calling lookup tools for the *currently active step only* in parallel.
+    *   **2. Independent Write & Configuration Operations (MANDATORY 1-Turn Batching):**
+        *   Operations that modify independent objects, setup data variations, or configure independent settings do not have predecessor dependencies and **MUST be batched in a single turn**.
+        *   *Parallel Candidates (Category A):*
+            *   **Adding variation items:** Calling `AddTestCaseVariationItem` or `AddTestSuiteVariationItem` for multiple attributes, parameters, and assertions in 1 single turn.
+            *   **Setting attribute values:** Calling `EditAttributeValue` across multiple attributes of a step or across steps in 1 single turn.
+            *   **Setting microflow parameters:** Calling `EditMicroflowParameterValue` and `EditMicroflowObjectParameter` across all parameters of a microflow step in 1 single turn.
+            *   **Configuring assertions:** Calling `EditAssert*` tools across multiple assertions in 1 single turn.
+            *   **Overriding variation scenario columns:** Calling `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*` for all cells in a variation scenario in 1 single turn.
+            *   **Step metadata & execution settings:** Calling `EditTestStep` (to set step names, descriptions with pattern annotations `[Pattern: <Name> - <Rationale>]`, highlights `Highlight="_True"`, or execution conditions) across multiple steps in 1 single turn.
 *   **🚨 THE `SetSequenceOfTestStep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to three strict safety gates:
     1.  *Same-Case Validation:* Both `TestStepKey` and `TestStepBeforeKey` MUST reside within the exact same parent Test Case. Linking across case boundaries is strictly prohibited.
     2.  *No Self-Reference or Loops:* Never pass the same key for both parameters, and never point a step's predecessor to a downstream step (which creates circular references and crashes the runner).
@@ -54,14 +55,34 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     3.  *Validation constraints:* Both suites must reside in the exact same parent Test Configuration. Self-references or circular references are strictly prohibited.
 *   **🔄 THE TEST STEP REORGANIZATION RULE (`MoveTestStepToOtherTestCase`):**
     When refactoring sequence structures (e.g., separating UI steps into modular setup or teardown test cases), you can relocate a teststep to a different testcase in the same suite:
-    1.  *Syntax:* Call `MoveTestStepToOtherTestCase(TestStepKey, TargetTestCaseKey, TestStepBeforeKey)`.
-    2.  *Target Placement:* Use the `TestStepBeforeKey` parameter to specify where inside the destination testcase the step should reside. Symmetrically, to place the moved step at the absolute beginning of the target testcase, pass `0` for `TestStepBeforeKey` in the tool call.
-    3.  *Validation:* After moving, always run lookups (such as `GetTestSteps`) to verify that the predecessor and successor sequences in both source and target cases are intact.
-*   **🚨 THE MANUAL INTERVENTION HIGHLIGHT PROTOCOL (`SetHighlightOfTestStep`):** When you cannot fully automate a step as planned due to system limitations, lack of tool support, or because manual configuration is required, you MUST implement a placeholder step, highlight it to make it stand out (the official highlight/mark color is **blue**), and suggest manual finishing.
+    1.  *Syntax:* Call `MoveTestStepToOtherTestCase(TestStepKey=..., TargetTestCaseKey=...)`. The 53-tool primitive API accepts only `TestStepKey` and `TargetTestCaseKey`.
+    2.  *Target Placement & Sequencing:* To position the moved step at a specific location within the destination testcase, immediately call `SetSequenceOfTestStep(TestStepKey=..., TestStepBeforeKey=...)`. Symmetrically, to place the moved step at the absolute beginning of the target testcase, pass `0` for `TestStepBeforeKey`.
+    3.  *Validation:* After moving and sequencing, always query `GetTestCaseDetails(TestCaseKey)` to verify that the predecessor and successor sequences in both source and target cases are intact.
+*   **🚨 THE MANUAL INTERVENTION HIGHLIGHT PROTOCOL (`EditTestStep` with `Highlight="_True"`):** When you cannot fully automate a step as planned due to system limitations, lack of tool support, or because manual configuration is required, you MUST implement a placeholder step, highlight it to make it stand out (the official highlight/mark color is **blue**), and suggest manual finishing.
     *   *Lack of Tool Support (Configuration Deletions):* Since deleting Test Cases, Test Steps, or Test Suites inside the MTA configuration itself is not supported by the MCP server for safety and auditability reasons, any placeholder step that you wish to propose for deletion must be highlighted in **blue** and documented for the user to delete manually inside the MTA UI.
-    *   *AUT Database Object Deletions (Fully Supported):* Note that deleting database records/objects in the App Under Test (AUT) during test execution is fully supported via the `CreateTestStepDeleteObject` tool and does NOT require manual highlights.
+    *   *AUT Database Object Deletions (Fully Supported):* Note that deleting database records/objects in the App Under Test (AUT) during test execution is fully supported via `CreateObjectActionTestStep(ObjectAction="DeleteObjects")` and does NOT require manual highlights.
     *   *Custom / Complex Steps:* For complex interactions or widgets that cannot be automated with the current toolkit, create a placeholder step, highlight it in **blue**, and clearly direct the user to manually finish it in the MTA UI.
-    *   *User-Prompted Highlights:* Of course, if the user explicitly prompts you to highlight specific teststeps, always execute `SetHighlightOfTestStep(Highlight=true)` on those steps to mark them in **blue**.
+    *   *User-Prompted Highlights:* If the user explicitly prompts you to highlight specific teststeps, always execute `EditTestStep(TestStepKey, EditAction="SetHighlight", Highlight="_True")` on those steps to mark them in **blue**.
+*   **⚡ THE 3-TURN MULTI-TOOL BATCH CONSTRUCTION LAW (PAT-78, ANTI-32):**
+    When constructing test suites and test cases on the server, you **MUST** strictly adhere to the 3-Turn Multi-Tool Batch Construction sequence, batching tool calls at the Test Suite, Test Case, Variation, and Step levels to minimize round-trips and eliminate conversational latency:
+    *   *Turn 1 (Containers & Steps Batching):*
+        - **Suite Level:** Create test suite (`CreateTestSuite`) if needed.
+        - **Case Level (Multi-Case Batching):** For multi-case suites (e.g. Frontend 3-Case pattern: Case 1 Setup, Case 2 Action, Case 3 Teardown [`PAT-03`], or multi-case backend integration suites), dispatch ALL planned `CreateTestCase` calls in Turn 1 concurrently (with pre-resolved `ExecutionUserKey` per `PAT-79`).
+        - **Step Level:** Construct test steps sequentially in forward chronological order (`TestStepBeforeKey = KeyN`, `PAT-11`). For `ChangeObjects` and `DeleteObjects`, pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` at creation time (`PAT-80`).
+    *   *Turn 2 (Bulk Key Resolution):* Call `GetTestCaseDetails(TestCaseKey)` (and `GetTestSuiteDetails` if needed) in a single query to retrieve all generated `TestStepKey`s, sequence IDs, parameter binding slots, and variation slots.
+    *   *Turn 3 (Parallel Batch Dispatch across Suite, Case, Variation & Step Levels):* In a single turn, batch-call all configuration tools concurrently:
+        - **Suite Level:** Set suite properties (`EditTestSuite` for `SetDescription`, `SetExecutionCondition`, `SetInheritConfigurationSettings`, `SetUsePlaywright`).
+        - **Case Level:** Configure case specifications (`EditTestCase` for `SetObjective`, `SetPreconditions`, `SetExpectedResult`, `SetRollback`, `SetExecutionCondition`, `SetResumeExecutionAfterException`, `SetCategory`) across ALL created test cases.
+        - **Variation Level:** Duplicate scenarios (`CreateTestCaseVariation`), set variation names and descriptions (`EditTestCaseVariation` for `SetName` and `SetDescription` per `PAT-77`), and register variation items (`AddTestCaseVariationItem`).
+        - **Step Level:** Batch-call attribute value setters (`EditAttributeValue`, using `IntegerLongValue` per `PAT-81`), parameter setters (`EditMicroflowParameterValue`, `EditMicroflowObjectParameter`), step descriptions (`EditTestStep`), association bindings (`CreateSelectObjectForAssociation`), and assertions (`CreateAssertMicroflowReturnValue`, `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertException`).
+*   **👤 PRE-CREATION EXECUTION USER RESOLUTION LAW (PAT-79, ANTI-33):**
+    Because `ExecutionUserKey` is a required integer in `CreateTestCase`, you **MUST** query `GetExecutionUsers(ApplicationKey=...)` to discover existing execution users or call `CreateExecutionUser` before creating test cases. Never attempt to pass dummy/synthetic strings or omit this property.
+*   **🔗 DIRECT OUTPUT BINDING ON OBJECT ACTION CREATION (PAT-80, ANTI-34):**
+    When calling `CreateObjectActionTestStep` for mutating actions (`ChangeObjects` or `DeleteObjects`), you **MUST** pass the target `TestStepOutputKey` directly in the creation payload. Creating an unbound object action step and then calling a separate setter tool is strictly prohibited.
+*   **🔢 INTEGERLONGVALUE & INTEGER KEY WIRE CONSTRAINTS (PAT-81, ANTI-35):**
+    When configuring attribute values (`EditAttributeValue`) or microflow parameters (`EditMicroflowParameterValue`) of type Integer, Long, or AutoNumber, you **MUST** pass the numeric value in the dedicated `IntegerLongValue` property (e.g., `IntegerLongValue: 42`). String-based properties (`StringValue`) must only be used for string, enumeration, or date strings. All database keys (`TestStepKey`, `TestCaseKey`, `TestSuiteKey`, `TestStepOutputKey`, `ExecutionUserKey`) MUST be passed as raw JSON integers (e.g. `12345`), never string-quoted (`"12345"`).
+*   **🔍 MANDATORY PRE-CONSTRUCTION MODEL-TO-MTA SCHEMA AUDIT (PAT-82, ANTI-36):**
+    You are strictly prohibited from attempting trial-and-error building or relying on step creation errors to discover missing model elements (`ANTI-36`). Before creating any persistent test artifacts in MTA (or when evaluating whether an exploratory test can be promoted directly to MTA), you **MUST** execute `GetAppModelData` (checking entities, attributes, microflows, parameters, enumerations, pages, and widgets) against local Mendix AST (`mxcli`) as the absolute first step. If any structural delta exists, HALT immediately and notify the user that MTA requires a model revision synchronization first.
 
 ---
 
@@ -87,13 +108,13 @@ All object creation, attribute configuration, and object retrieval steps used as
 *   **The Flow:** `Create Object` ➔ `Set Attributes & Associations directly on Create Object step` ➔ `Create Microflow Call Step` ➔ `Link to Microflow Parameter`.
 
 ```
-[Create Option Step] (BeforeKey = predecessor) ➔ [Include Attribute Step] (BeforeKey = OptionStep) ➔ [Set Value Step] (BeforeKey = IncludeStep) ➔ [Consuming Microflow Step] (BeforeKey = SetValueStep) ➔ Link parameter to Option Output.
+[Create Object Step] (BeforeKey = predecessor, outputs TestStepOutputKey) ➔ [EditAttributeValue setters] (concurrent Turn 3) ➔ [Consuming Microflow Step] (BeforeKey = CreateObjectStep) ➔ [EditMicroflowObjectParameter](EditAction="SetTestStepOutput") linking parameter to CreateObject Step's TestStepOutputKey.
 ```
 
 *   **🚨 Proactive Output Piping Rule:** You **MUST** proactively pipe outputs from preceding teststeps (such as a returned object/locator from a Create, Retrieve, or Microflow execution step) into subsequent teststep inputs (such as a Change, Delete, or Microflow Parameter input) rather than repeating database queries or hardcoding static values. 
     - **Maintainability Piping for Static Attributes (HIGHLY RECOMMENDED):** To maximize test maintenance, prioritize using scalar piping (`SelectValueForValue`) even for static attributes (such as default usernames, test emails, or numeric thresholds). Instead of hardcoding the same static value across multiple teststeps, define the static value once in a single, early teststep (acting as a "Single Source of Truth") and pipe it downstream. If the value ever needs to change, it is modified in exactly one place and automatically propagates everywhere.
-    - Use the target select object binders (`SetTestStepOutputForSelectObjectForChange`, `SetTestStepOutputForSelectObjectForDelete`, `SetTestStepOutputForSelectObjectForRetrieve`, or `SetTestStepOutputForSelectObjectForMicroflowParameter`) to programmatically link memory objects.
-    - Link primitive values and dynamic attributes dynamically using `SetInputTypeAttributeValueToTestStep` or `SetInputTypeMicroflowParameterValueToTestStep`.
+    - Use the target select object binders (`SetTestStepOutputForSelectObjectForChange`, `SetTestStepOutputForSelectObjectForDelete`, `EditTestStepRetrieve(EditAction="SetTestStepForRetrieveByTeststep")`, or `EditMicroflowObjectParameter(EditAction="SetTestStepOutput")`) to programmatically link memory objects.
+    - Link primitive values and dynamic attributes dynamically using `EditAttributeValue(EditAction="SetTestStepOutputForSelectValueForValue")` or `EditMicroflowParameterValue(EditAction="SetTestStepOutputForSelectValueForValue")`.
     - Memory-based piping is the primary, most robust way to reference records in MTA; querying the database should only be used as a fallback if memory references are unavailable.
 
 #### 💡 Test Maintenance & Variable Piping Best Practices
@@ -138,7 +159,7 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
             *   **Immediate Configuration:** Immediately upon creation, both steps **MUST** be explicitly configured with:
                 *   `ExecutionCondition` = `"Always"`
                 *   `ResumeExecutionAfterException` = `"_Continue"`
-                *(using `SetExecutionSettingsOfTestStep`).*
+                *(using `EditTestStep`).*
             *   **Sequential Insertion:** All subsequent UI actions (clicks, fills, etc.) and assertions are then built chronologically and inserted/sequenced **between** the start and stop steps.
             *   **Rationale:** Creating these steps first guarantees that the frontend session is always correctly initiated and closed (preventing hanging/orphaned browser sessions even under UI failures), and eliminates the risk of forgetting to set their execution conditions to `"Always"`.
         *   **🚨 The Persist Rule (Separate Sessions & Single Persist Batching):** Because the backend technical runner's session and the frontend browser session are completely unshared, the browser *cannot* see backend-seeded data unless it is written to the database. Therefore:
@@ -176,14 +197,15 @@ To ensure your MTA test suite adheres to world-class QA engineering practices (s
     3.  **Avoid `"Head"`, retrieve `"All"`:** Avoid setting `RetrieveSet = "Head"` on assert retrieves. Always configure the retrieve set to `"All"`.
     4.  **Downstream Object Count Assertion:** To check for object existence or correct record count, couple the `"All"` retrieve with an `AssertObjectCount` step downstream to programmatically verify the returned count (e.g., asserting that the list size is exactly `1`).
 *   **🚨 Assertion Failure & Execution Settings Laws by Test Category:**
-    1.  **Backend Unit Tests (Strict Universal `_Stop` Law - `PAT-17`):** For **ALL** teststeps in Backend Unit Tests (including setup, create, microflow call, retrieve, and assertions), set `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. Because Backend Unit Tests rely on MTA's automated database transaction rollback (`RollbackTcseAfterExecution = "Yes"`), any failure must halt execution immediately to preserve isolation and prevent downstream cascading errors. Setting `_Continue` on any step in a Backend Unit Test is strictly prohibited (`ANTI-07`).
-    2.  **Frontend UI & Backend Integration Tests (`_Continue` on Assertions - `PAT-33`):** For non-setup/non-teardown assertion steps in Frontend UI tests and multi-step Integration tests, set `ResumeExecutionAfterException = "_Continue"` (via `SetExecutionSettingsOfTestStep`) and set assertion parameters (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"` to provide full-suite error reporting across the entire test run.
-    3.  **Frontend Setup & Teardown Cases (Strict `_Always` / `_Continue` Law - `PAT-18`):** In Frontend tests, all setup steps in Case 1 (including `Start_MxFrontend_Test_*`, seeding, and `Persist`) and all teardown steps in Case 3 (including delete and `Stop_MxFrontendTest`) MUST use `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+    1.  **Backend Unit Tests (Strict Universal `Stop` Law - `PAT-17`):** For **ALL** teststeps in Backend Unit Tests (including setup, create, microflow call, retrieve, and assertions), set `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`. Because Backend Unit Tests rely on MTA's automated database transaction rollback (`RollbackTcseAfterExecution = "Yes"`), any failure must halt execution immediately to preserve isolation and prevent downstream cascading errors. Setting `_Continue` on any step in a Backend Unit Test is strictly prohibited (`ANTI-07`).
+    2.  **Frontend UI & Backend Integration Tests (`_Continue` on Assertions - `PAT-33`):** For non-setup/non-teardown assertion steps in Frontend UI tests and multi-step Integration tests, set `ResumeExecutionAfterException = "_Continue"` (via `EditTestStep`) and set assertion parameters (`ASRT_ActionFailedAssert` / `ActionFailedAssert`) to `"ContinueTestRun"` to provide full-suite error reporting across the entire test run.
+    3.  **Frontend Setup & Teardown Cases (Strict `Always` / `_Continue` Law - `PAT-18`):** In Frontend tests, all setup steps in Case 1 (including `Start_MxFrontend_Test_*`, seeding, and `Persist`) and all teardown steps in Case 3 (including delete and `Stop_MxFrontendTest`) MUST use `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
 
 ### 🔌 Execution Settings Wire Format vs. Plan Display Mapping
-| Execution Setting | User-Facing Plan Display | Wire / MCP Tool Value (`SetExecutionSettingsOfTestStep`) | Wire / MCP Tool Value (`SetExecutionSettingsOfTestCase`) |
+| Execution Setting | User-Facing Plan Display | Wire / MCP Tool Value (`EditTestStep`) | Wire / MCP Tool Value (`EditTestCase`) |
 | :--- | :--- | :--- | :--- |
-| **Execution Condition** | `None` / `Always` / `Skip` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` | `"None"` / `"_Always"` / `"Always"` / `"_Skip"` |
-| **Resume After Exception** | `Stop` / `Continue` | `"_Stop"` / `"_Continue"` | `"_Stop"` / `"_Continue"` |
+| **Execution Condition** | `None` / `Always` / `Skip` | `"None"` / `"Always"` / `"Skip"` | `"None"` / `"Always"` / `"Skip"` |
+| **Resume After Exception** | `Stop` / `Continue` | `"Stop"` / `"_Continue"` | `"Stop"` / `"_Continue"` |
+| **Highlight** | `True` / `False` | `"_True"` / `"_False"` | N/A |
 | **Apply Security** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`ApplySecurity`) |
 | **Rollback After Run** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`RollbackTcseAfterExecution`) |

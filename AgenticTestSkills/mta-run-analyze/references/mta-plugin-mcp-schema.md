@@ -7,7 +7,7 @@ This reference document defines the complete technical schema of the `MTA_plugin
 ## 1. Overview & Protocol
 
 The `MTA_plugin` MCP server runs inside the Mendix runtime JVM via the MTA Plugin module:
-* **Endpoint URL:** `[RuntimeUrl]/plugin-mcp/` (e.g., `http://localhost:8081/plugin-mcp/`)
+* **Endpoint URL:** `[RuntimeUrl]/plugin/mcp` (e.g., `http://localhost:8081/plugin/mcp`)
 * **Transport:** Streamable HTTP / Server-Sent Events (SSE) with JSON-RPC 2.0
 * **Module Constants:**
   * `MtaPluginModule.EnableMcpServer` (`Boolean`): Activates or disables the endpoint.
@@ -237,16 +237,16 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
 
 | TCEX_RQ Element | 8-Field Execution Plan Element | MTA Server Tool (Construction) |
 | :--- | :--- | :--- |
-| `Oact` (`Action: "Create"`) | `Create Object` | `CreateTestStepCreateObject` |
-| `Oact` (`Action: "Retrieve"`) | `Retrieve Object` | `CreateTestStepRetrieveObject` |
-| `Oact` (`Action: "Change"`) | `Change Object` | `CreateTestStepChangeObject` |
-| `Oact` (`Action: "Delete"`) | `Delete Object` | `CreateTestStepDeleteObject` |
-| `Oact` (`Action: "Persist"`) | `Persist` | `CreateTestStepPersist` |
+| `Oact` (`Action: "Create"`) | `Create Object` | `CreateObjectActionTestStep(ObjectAction="CreateObject")` |
+| `Oact` (`Action: "Retrieve"`) | `Retrieve Object` | `CreateObjectActionTestStep(ObjectAction="RetrieveObjects")` + `EditTestStepRetrieve` |
+| `Oact` (`Action: "Change"`) | `Change Object` | `CreateObjectActionTestStep(ObjectAction="ChangeObjects")` |
+| `Oact` (`Action: "Delete"`) | `Delete Object` | `CreateObjectActionTestStep(ObjectAction="DeleteObjects")` |
+| `Oact` (`Action: "Persist"`) | `Persist` | `CreateObjectActionTestStep(ObjectAction="Persist")` |
 | `MicroflowCall` | `Call Microflow` | `CreateMicroflowCallTestStep` |
-| `TCEX_RQ_EntityValueRun` (Attribute) | Parameters & Attribute Values | `Set*AttributeValue` / `IncludeAttributeInTeststep` |
-| `TCEX_RQ_EntityValueRun` (Assoc) | Parameters & Attribute Values | `CreateSelectObjectForAssociation` |
-| `TCEX_RQ_Smpr` / `TCEX_RQ_Sfrr` | Output Handles / Input Sources | `SetTestStepOutputForSelectObjectFor*` |
-| `TCEX_RQ_Svvr` | Scalar Value Piping | `SetOutputForSelectValueForValue` |
+| `TCEX_RQ_EntityValueRun` (Attribute) | Parameters & Attribute Values | `EditAttributeValue` |
+| `TCEX_RQ_EntityValueRun` (Assoc) | Parameters & Attribute Values | `CreateSelectObjectForAssociation` + `EditTestStepAssociation` |
+| `TCEX_RQ_Smpr` / `TCEX_RQ_Sfrr` | Output Handles / Input Sources | `EditMicroflowObjectParameter` |
+| `TCEX_RQ_Svvr` | Scalar Value Piping | `SetTestStepOutputForSelectObjectForChange` / `SelectValueForValue` |
 | `TCEX_RS_ValidationFeedback` | Validation Feedback Assertions | `CreateAssertValidationFeedbackMessageCompare` |
 
 ---

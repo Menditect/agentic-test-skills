@@ -10,7 +10,7 @@ To enable communication between your Mendix App and the MTA test runner, you **M
 
 *   **MTA Plugin Module (Public):** [Mendix Marketplace Component 214717](https://marketplace.mendix.com/link/component/214717)
 *   **Menditect Commons (Public, Optional):** [Mendix Marketplace Component 254123](https://marketplace.mendix.com/link/component/254123)
-*   **Menditect Agentic Test Skills (Public):** [Mendix Marketplace Component 301447](https://marketplace.mendix.com/link/component/301447)
+*   **Menditect Agentic Test Skills (Public):** [Mendix Marketplace Component 305457](https://marketplace.mendix.com/link/component/305457)
 
 ---
 
@@ -19,14 +19,14 @@ To enable communication between your Mendix App and the MTA test runner, you **M
 The MTA Plugin module includes an embedded MCP server running directly inside the Mendix JVM runtime. This enables direct, local exploratory testing (`execute-testcase`) with in-memory execution and automatic rollback.
 
 ### Endpoint URL Format
-* **Local Studio Pro Runtime:** `http://localhost:8081/plugin-mcp/` (or matching application runtime port, e.g. `http://localhost:8080/plugin-mcp/`).
-* **Cloud / Custom Domain:** `https://[app-domain]/plugin-mcp/`.
+* **Local Studio Pro Runtime:** `http://localhost:8081/plugin/mcp` (or matching application runtime port, e.g. `http://localhost:8080/plugin/mcp`).
+* **Cloud / Custom Domain:** `https://[app-domain]/plugin/mcp`.
 
 ### Configuration Constants
 
 | Constant | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `MtaPluginModule.EnableMcpServer` | `Boolean` | `false` | Must be set to `true` in App Settings / Configuration to activate the `[RuntimeUrl]/plugin-mcp/` endpoint. |
+| `MtaPluginModule.EnableMcpServer` | `Boolean` | `false` | Must be set to `true` in App Settings / Configuration to activate the `[RuntimeUrl]/plugin/mcp` endpoint. |
 | `MtaPluginModule.McpServerAccessToken` | `String` | `""` | Optional on localhost, **MANDATORY on non-localhost / cloud environments**. When set, all incoming MCP requests must provide `Authorization: Bearer [Value]`. |
 
 ### 🔐 Security & Bearer Token Configuration (Remote / Non-Localhost Environments)
@@ -79,7 +79,7 @@ When connecting an AI assistant or MCP client (MAIA, Claude Desktop, custom runn
 {
   "mcpServers": {
     "MTA_plugin": {
-      "url": "https://your-mendix-app.example.com/plugin-mcp/",
+      "url": "https://your-mendix-app.example.com/plugin/mcp",
       "headers": {
         "Authorization": "Bearer <YOUR_STRONG_BEARER_TOKEN>"
       }
@@ -91,7 +91,7 @@ When connecting an AI assistant or MCP client (MAIA, Claude Desktop, custom runn
 ### Transport & Client Connection
 * **Protocol:** Streamable HTTP / Server-Sent Events (SSE) with JSON-RPC 2.0 (`Accept: text/event-stream, application/json`).
 * **Session Management:** Returns `mcp-session-id` on initialization, passed as a header in subsequent requests.
-* **Native HTTP Clients (MAIA, Claude Desktop, direct HTTP callers):** Connect directly to `[RuntimeUrl]/plugin-mcp/`.
+* **Native HTTP Clients (MAIA, Claude Desktop, direct HTTP callers):** Connect directly to `[RuntimeUrl]/plugin/mcp`.
 * **Stdio-Only MCP Clients (Subprocess-based runners):** Use the optional local workspace proxy bridge `mta-proxy.js`.
 
 ---
@@ -132,4 +132,4 @@ To ensure your App Under Test can successfully listen and handshake with MTA upo
 
 1. **Zero-Compilation Error Verification:** Run a local compilation/build (`F5`) in Mendix Studio Pro. Ensure zero compilation errors.
 2. **Git Ignorance Audit:** Run `git status`. Verify no generated files under `/javasource` are listed.
-3. **Plugin MCP Server Audit:** Start the app, ensure `EnableMcpServer = true`, and probe `[RuntimeUrl]/plugin-mcp/` to confirm `execute-testcase` is returned.
+3. **Plugin MCP Server Audit:** Start the app, ensure `EnableMcpServer = true`, and probe `[RuntimeUrl]/plugin/mcp` to confirm `execute-testcase` is returned.

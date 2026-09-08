@@ -10,7 +10,7 @@ This reference file contains standardized, copy-pasteable build templates optimi
 > 1. **Step 1: Test Specification & Scope Drafting (Part 1):** Draft functional objectives, authentication/login requirement (*With vs Without Login* for Frontend), and step sequence WITHOUT asking placement questions or making placement assumptions.
 > 2. **Step 2: Placement Resolution Procedure (Part 2):** Display the mandatory warning notice:
 >    > ⚠️ **Important Notice:** The AI Assistant is **strictly prohibited from creating new Test Configurations**. If a new Test Configuration is needed, you must manually create it inside the MTA web application first.
->    Then interactively scan Application (`GetApplicationByName` / `GetTestConfigurationsForApplicationKey`), Test Suite (`GetTestSuites`), and Test Case Name (`GetTestCases`).
+>    Then interactively scan Application (`GetApplicationDetails`), Test Configuration (`GetTestConfigurationDetails`), Test Suite (`GetTestSuiteDetails`), and Test Case Name (`GetTestCaseDetails`).
 > 3. **Step 3: Playwright / Browser Settings Finalization (Part 3 - Frontend Only):**
 >    * Executed **AFTER** placement is provided in Step 2.
 >    * **Existing Suite Check:** If placing a Frontend test into an existing Test Suite that already contains Frontend tests, ask the user to choose between Option 1 (inherit existing suite settings), Option 2 (override suite Playwright settings), or Option 3 (create new 3-case pattern block in suite), explaining why and the consequences of each choice.
@@ -31,11 +31,11 @@ Use this template when testing deterministic business logic, calculations, or va
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Pre-Approval Quality Audit:** 13/13 checks executed
 > **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
@@ -69,7 +69,8 @@ Use this template when testing deterministic business logic, calculations, or va
   "TestCase": "[ModuleName].TC_Unit_[ElementName]_[Scenario]",
   "Category": "Backend",
   "MtaBaseUrl": "[RetrievedUrl]",
-  "ExecutionPlanKey": "[GeneratedExecutionPlanKey for Option B | null for Option A]",
+  "ExecutionPlanFile": "[PathToSavedExecutionPlan.md for Option B | null for Option A]",
+  "ExecutionPlanKey": null,
   "Context": "Backend Unit Test approved for [ElementName]"
 }
 ```
@@ -244,7 +245,7 @@ You **MUST** cover these critical execution profiles:
     - **Null and Empty States**: Test passing `null` or unassigned association values to verify defensive guard logic.
     - **Validation Failures**: Test invalid formatting, out-of-range values, or incorrect domain validation flags to ensure that the microflow gracefully handles illegal states.
     - **Exception Assertions**: When an input is expected to trigger an explicit error or crash, build a test case that verifies the error handling. 
-      - *MTA Rule*: Downstream, use `CreateAssertException` and set its properties via `SetAssertExceptionProperties` to assert that the target microflow throws the expected error message or error code.
+      - *MTA Rule*: Downstream, use `CreateAssertException` and configure its properties via `EditAssertException` (with `EditAction="SetExpectedResult"` and `EditAction="SetComparisonString"`) to assert that the target microflow throws the expected error message or error code.
 
 ---
 
@@ -264,11 +265,11 @@ Use this template when testing multi-step processes or transactional orchestrati
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Pre-Approval Quality Audit:** 13/13 checks executed
 > **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
@@ -302,7 +303,8 @@ Use this template when testing multi-step processes or transactional orchestrati
   "TestCase": "[ModuleName].TC_Int_[ElementName]_[Scenario]",
   "Category": "Backend",
   "MtaBaseUrl": "[RetrievedUrl]",
-  "ExecutionPlanKey": "[GeneratedExecutionPlanKey for Option B | null for Option A]",
+  "ExecutionPlanFile": "[PathToSavedExecutionPlan.md for Option B | null for Option A]",
+  "ExecutionPlanKey": null,
   "Context": "Backend Integration Test approved for [ElementName]"
 }
 ```
@@ -463,11 +465,11 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13 of 13 compliance checks passed (100% compliant)
+> **Pre-Approval Quality Audit:** 13/13 checks executed
 > **Category:** Frontend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Passed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
@@ -477,7 +479,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` |
 | **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; list filters use dynamic scalar piping | `PASS` |
 | **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | Assertions embedded directly in producer steps / UI element operator steps | `PASS` |
-| **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | `GetPages`/`GetWidgets` or `DESCRIBE PAGE/SNIPPET/ENTITY` executed; exhaustive widget inventory | `PASS` |
+| **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | `GetAppModelData` (Pages/Widgets) or `DESCRIBE PAGE/SNIPPET/ENTITY` executed; exhaustive widget inventory | `PASS` |
 | **8** | **Uniform 8-Field Step Schema** | `PAT-12` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
 | **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53` | 8-point frontend verification (seed data, multiple seed items, navigation, scalar piping) | `PASS` |
 | **10** | **Dual-Track Strategy Declaration** | `PAT-60` | Option B (Persistent MTA Platform) explicitly declared in Section 1 | `PASS` |
@@ -501,7 +503,8 @@ Use this template when testing screen layouts, button clicks, client-cache synch
   "TestCase": "[ModuleName].TC_UI_[ElementName]",
   "Category": "Frontend",
   "MtaBaseUrl": "[RetrievedUrl]",
-  "ExecutionPlanKey": "[GeneratedExecutionPlanKey]",
+  "ExecutionPlanFile": "[PathToSavedExecutionPlan.md]",
+  "ExecutionPlanKey": null,
   "Context": "Frontend UI Test approved for [PageName]"
 }
 ```

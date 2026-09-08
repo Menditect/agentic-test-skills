@@ -1,61 +1,84 @@
 # 📋 MTA Test Step Construction Reference Cheat-Sheet
 
-This cheat-sheet provides a highly condensed, high-density technical summary of all MTA Test Steps, Assertions, and Boundary Rules. Use this as a fast-lookup guide during step construction.
+This cheat-sheet provides a highly condensed, high-density technical summary of all MTA Test Steps, Assertions, and Boundary Rules using the consolidated 53-tool MTA-ACCP MCP API (`/primitivetools/mcp`). Use this as a fast-lookup guide during step construction.
 
 ---
 
 ## ⚡ Critical Boundary Rules (Golden Guardrails)
 
 > [!IMPORTANT]
-> ### 🚫 Guardrail 1: Configuration Deletes vs. Runtime Deletes
-> *   **MTA Configuration Deletions (Manual):** Deleting test suites, test cases, or test steps in the MTA Portal is **not** supported via MCP tools. For these actions, you MUST use the blue-highlight manual workaround (`SetHighlightOfTestStep`).
-> *   **AUT Object Deletions (Automated):** Deleting database records or objects *inside the App Under Test* is fully supported. Use **`CreateTestStepDeleteObject`**; this does NOT require manual highlights.
+> ### 🚫 Guardrail 1: Step Lifecycle & Object Actions
+> *   **Step Lifecycle Management:** Create and configure test steps using `CreateObjectActionTestStep` or `CreateMicroflowCallTestStep`. Sequence steps using `SetSequenceOfTestStep` or `MoveTestStepToOtherTestCase`.
+> *   **AUT Object Actions (Automated):** Manipulating database records inside the App Under Test is performed via **`CreateObjectActionTestStep`** with `ObjectAction` in `{"CreateObject", "ChangeObjects", "RetrieveObjects", "DeleteObjects", "Persist"}`.
+> *   **Direct Initialization on Create Object Law:** ALL initial attribute values and associations MUST be configured directly on the Create Object step using `EditAttributeValue` and `CreateSelectObjectForAssociation` + `EditTestStepAssociation`. Creating a subsequent Change Object step is prohibited [^PAT-06] [^ANTI-01].
 
 > [!IMPORTANT]
 > ### 🚫 Guardrail 2: Validation Feedback Assertions
-> *   **Backend/Microflow Tests:** Assert validation feedback at the **Test Case level** inside MTA.
-> *   **Frontend/UI Tests:** Assert validation feedback shown in browser pages as standard UI text elements using regular frontend/Playwright locator assertions.
+> *   **Backend/Microflow Tests:** Assert validation feedback at the **Test Case level** using `CreateAssertValidationFeedbackMessageCompare` and `CreateAssertValidationFeedbackMessageCount`.
+> *   **Frontend/UI Tests:** Assert validation feedback shown in browser pages as standard UI text elements using regular frontend/Playwright locator assertions (e.g., `ASR_Widget_Has_Text`).
 
 ---
 
-## 🛠️ MTA Test Step Payloads & APIs
+## 🛠️ MTA Test Step Payloads & APIs (53-Tool MTA-ACCP)
 
-### 1. Object Action Steps
+### 1. Object Action Steps (`CreateObjectActionTestStep`)
 
-| Step Type | MCP Creator Tool | Key Parameters / Payload | Core Validation / Behavior |
+| Step Type | `ObjectAction` Enum | Associated Configuration Tools | Core Validation / Behavior |
 | :--- | :--- | :--- | :--- |
-| **Microflow Call** | `CreateMicroflowCallTestStep` | `MicroflowName`, `ParameterValueBindings` | Calls a Mendix microflow. Return values can be asserted. |
-| **Create Object** | `CreateTestStepCreateObject` | `EntityName`, `AttributeBindings` | Instantiates an entity inside the AUT database. |
-| **Change Object** | `CreateTestStepChangeObject` | `SelectObjectStep`, `AttributeBindings` | Modifies attributes of a retrieved or created object. |
-| **Retrieve Object** | `CreateTestStepRetrieveObject` | `EntityName`, `XpathConstraint`, `AssociationFilter` | Retrieves an object from the AUT database or memory. |
-| **Delete Object** | `CreateTestStepDeleteObject` | `SelectObjectStep` | Deletes a test data object inside the AUT database. |
-| **Persist Object** | `CreateTestStepPersist` | *(None / Standalone Batch Commit)* | Commits all uncommitted in-memory object changes to the database (PAT-21). |
+| **Create Object** | `"CreateObject"` | `EditAttributeValue`, `CreateSelectObjectForAssociation`, `EditTestStepAssociation` | Instantiates an entity in memory. Set all initial attributes and associations directly on this step. |
+| **Change Object** | `"ChangeObjects"` | `SetTestStepOutputForSelectObjectForChange`, `EditAttributeValue` | Modifies attributes of an existing retrieved or created object. |
+| **Retrieve Object** | `"RetrieveObjects"` | `EditTestStepRetrieve`, `EditAttributeValueFilter` | Retrieves objects from database or teststep output. Apply filters via `EditAttributeValueFilter`. |
+| **Delete Object** | `"DeleteObjects"` | `SetTestStepOutputForSelectObjectForDelete` | Marks target objects for deletion. |
+| **Persist** | `"Persist"` | *(Position chronologically after write/delete steps)* | Commits all uncommitted in-memory object changes to the database (PAT-21). |
+
+### 2. Microflow Call Steps
+
+| Step Type | MCP Creator Tool | Parameter & Value Configuration Tools | Core Validation / Behavior |
+| :--- | :--- | :--- | :--- |
+| **Microflow Call** | `CreateMicroflowCallTestStep` | `EditMicroflowObjectParameter`, `EditMicroflowParameterValue` | Executes a Mendix microflow. Return values, exceptions, and side-effects can be asserted. |
+| **Locate Page Step** | `GenerateMicroflowCallTestStepLocatePage` | Automated page context generation | Generates a frontend locator step for a Mendix page. |
+| **Locate Widget Step**| `GenerateMicroflowCallTestStepLocateWidget`| Automated widget context generation | Generates a frontend locator step for a specific widget. |
 
 ---
 
 ## 🔍 Assertions Reference
 
 ### 1. Attribute Compare (`CreateAssertAttributeValueCompare`)
-Compares the value of an attribute of a retrieved/created object against an expected value.
-*   **Property Bindings:** Set compare operator (`Equals`, `Contains`, `StartsWith`, `NotEmpty`, `Empty`, etc.) using `SetAssertAttributeValueCompareProperties`.
-*   **Data Variation:** Use `AddTestCaseVariationItemAssertAttributeValueCompare` to enable variations.
+Compares the value of an attribute of a retrieved, created, or modified object against an expected value.
+*   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertAttributeValueCompareKey`.
+*   **Property & Value Bindings:** Call `EditAssertAttributeValueCompare` with `AssertAttributeValueCompareKey`, `ComparisonOperator` (`"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"LessThan"`, `"Contains"`, etc.), and `EditAction` (`"SetStringValue"`, `"SetIntegerValue"`, `"SetLongValue"`, `"SetDecimalValue"`, `"SetBooleanValue"`, `"SetDateTimeValueWithCurrentDateTime"`, etc.).
+*   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertAttributeValueCompareTestCaseVariationItem", ObjectKey=AssertAttributeValueCompareKey)`.
 
 ### 2. Exception Assertion (`CreateAssertException`)
-Asserts that a Microflow Call step throws a specific error or exception.
-*   **Properties:** Set exact expected exception message using `SetAssertExceptionProperties`.
+Asserts that a Microflow Call step throws an expected exception or completes without exception.
+*   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertExceptionKey`.
+*   **Properties & Message:** Call `EditAssertException` with `AssertExceptionKey`:
+    - `EditAction="SetExpectedResult"`, `ExpectedResult="RaisedException"` (or `"NoException"`).
+    - `EditAction="SetComparisonString"`, `ComparisonString="Expected error substring"`.
+*   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertExceptionTestCaseVariationItem", ObjectKey=AssertExceptionKey)`.
 
 ### 3. Object Count Assertion (`CreateAssertObjectCount`)
 Asserts that the number of objects retrieved or present in a list matches an expected integer.
-*   **Properties:** Set target step reference and expected count range or value using `SetAssertObjectCountProperties`.
+*   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertObjectCountKey`.
+*   **Properties:** Call `EditAssertObjectCount` with `AssertObjectCountKey`:
+    - `EditAction="SetExpectedObjectCount"`, `ExpectedObjectCount=1`.
+    - `EditAction="SetComparisonOperator"`, `ComparisonOperator="Equals"` (or `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"`).
+*   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertObjectCountTestCaseVariationItem", ObjectKey=AssertObjectCountKey)`.
 
 ### 4. Microflow Return Value Assertion (`CreateAssertMicroflowReturnValue`)
 Asserts that a microflow returns a value matching expected conditions.
-*   **Properties:** Configure using type-specific setters (e.g. `SetDecimalAssertMicroflowReturnValueCompare`, `SetIntegerLongAssertMicroflowReturnValueCompare`).
+*   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertMicroflowReturnValueCompareKey`.
+*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (mandatory!), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
+*   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
+
+### 5. Validation Feedback Message Assertions (Backend Only)
+*   **Message Compare:** `CreateAssertValidationFeedbackMessageCompare` (TestCaseKey, MemberType, AttributeName, ComparisonOperator, Quantifier, ComparisonString) + `EditAssertValidationFeedbackMessageCompare`.
+*   **Message Count:** `CreateAssertValidationFeedbackMessageCount` (TestCaseKey, ComparisonOperator, ComparisonNumber) + `EditAssertValidationFeedbackMessageCount`.
 
 ---
 
 ## 🔄 Construction Workflow Sequence
-1.  **Scope the TestCase:** Ensure configuration, suite, and name are aligned.
-2.  **Add Chronological Steps:** Create steps in exact logical sequence.
-3.  **Bind Assertions:** Bind assertions immediately to their corresponding target steps.
-4.  **Verify Success:** Call `GetTestConstructionErrorsOfTestCase` immediately after building a step block to check for mapping or schema-binding errors.
+1.  **Scope the TestCase:** Ensure test configuration, test suite, and test case name are aligned (Gate 1 & Gate 2 approvals).
+2.  **Add Chronological Steps:** Create steps one-by-one in exact forward sequence using `CreateObjectActionTestStep` or `CreateMicroflowCallTestStep` (strictly sequential predecessor chaining; parallel creation banned).
+3.  **⚡ Multi-Tool Batch Configuration (1 Turn):** Dispatch all independent attribute values, parameter bindings, assertion configurations, and step settings concurrently in a **single turn** (up to 75% token & latency reduction).
+4.  **Audit Step Sequence:** Verify clean retrievals, single persist placements, zero unfilled variation cells, and direct initialization adherence before concluding construction.

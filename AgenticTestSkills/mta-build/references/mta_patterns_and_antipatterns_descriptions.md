@@ -90,7 +90,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-06`: Direct Attribute & Association Initialization on Create Object
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Mandates setting all initial entity attributes and association references directly within the parameters of the `Create Object` test step (`CreateTestStepCreateObject`). Prohibits generating a separate `Change Object` step immediately after a `Create Object` step to set initial values.
+* **Description:** Mandates setting all initial entity attributes and association references directly within the parameters of the `Create Object` test step (`CreateObjectActionTestStep`). Prohibits generating a separate `Change Object` step immediately after a `Create Object` step to set initial values.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-01` (Separate `Change Object` Step After `Create Object`).
   * **Related Patterns:** `PAT-14` (Prohibition of Embedded Asserts on Create/Change), `PAT-21` (Single Persist Batching Law).
@@ -126,7 +126,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-12`: Test Step Description Pattern Annotation
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Mandates documenting the design rationale for each step by writing standard pattern annotation tags (e.g. `[Pattern: Direct Initialization on Create Object [^PAT-06] - Rationale...]`) into the step's `Description` field using `SetTestStepNameDescription`.
+* **Description:** Mandates documenting the design rationale for each step by writing standard pattern annotation tags (e.g. `[Pattern: Direct Initialization on Create Object [^PAT-06] - Rationale...]`) into the step's `Description` field using `EditTestStep(TestStepKey, EditAction="SetDescription", Description=...)`.
 * **Related Rules:**
   * **Related Patterns:** `PAT-34` (Uniform 8-Field Step Sequence Schema), `PAT-55` (Zero Data in Step Names).
 
@@ -149,7 +149,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
-### `PAT-16`: Sequential Step Execution Ban
+### `PAT-16`: Sequential Skeleton Creation Law
 * **Scope:** General | **Classification:** Platform API Quirk
 * **Description:** Prohibits invoking multiple mutating MTA tool calls in parallel or asynchronously within the same parent container. All step creation tool calls must be executed sequentially, waiting for the predecessor key returned by the server to allow chaining of teststeps.
 * **Related Rules:**
@@ -200,7 +200,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-30`: Manual Intervention Highlight Protocol
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Mandates setting the highlight flag on steps requiring user attention (e.g., temporary credentials, external API keys, or manual cleanup steps) using `SetHighlightOfTestStep(Highlight=true)` so they are visually highlighted in **blue** in the MTA Web UI. Crucially, because the MTA MCP server does NOT support deleting test steps or test configuration elements via API (only AUT application data via `DeleteObject`), any test configuration modifications that require manual cleanup or review must be highlighted in blue for explicit user action.
+* **Description:** Mandates setting the highlight flag on steps requiring user attention (e.g., temporary credentials, external API keys, or manual cleanup steps) using `EditTestStep(TestStepKey, EditAction="SetHighlight", Highlight="_True")` so they are visually highlighted in **blue** in the MTA Web UI. Crucially, because the MTA MCP server does NOT support deleting test steps or test configuration elements via API (only AUT application data via `DeleteObject`), any test configuration modifications that require manual cleanup or review must be highlighted in blue for explicit user action.
 * **Related Rules:**
   * **Related Patterns:** `PAT-12` (Test Step Description Pattern Annotation).
 
@@ -308,6 +308,24 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-80`: Dedicated Output Binding Tools Law
+* **Scope:** Backend | **Classification:** Methodological Law
+* **Description:** When creating `ChangeObjects` or `DeleteObjects` steps via `CreateObjectActionTestStep`, the agent MUST pass the target memory object's `TestStepOutputKey` directly into the creation tool call. This binds the target object immediately at instantiation, eliminating the need for subsequent, separate calls to `SetTestStepOutputForSelectObjectForChange` or `SetTestStepOutputForSelectObjectForDelete` in subsequent conversation turns.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-34` (Unbound Object Action Step Anti-Pattern).
+  * **Related Patterns:** `PAT-06` (Direct Attribute & Association Initialization on Create Object), `PAT-11` (Forward Predecessor Chaining Law), `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law).
+
+---
+
+### `ANTI-34`: Unbound Object Action Step Anti-Pattern
+* **Scope:** Backend | **Classification:** Methodological Anti-Pattern
+* **Description:** Creating `ChangeObjects` or `DeleteObjects` steps with an empty or omitted `TestStepOutputKey`, and subsequently invoking separate setter tools (`SetTestStepOutputForSelectObjectForChange` or `SetTestStepOutputForSelectObjectForDelete`) across extra conversation turns to bind the target object handle. This anti-pattern fragments object action lifecycle setup, doubles token cost, and inflates round-trip construction latency.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-80` (Direct Output Binding on Object Action Creation).
+  * **Related Patterns:** `ANTI-01` (Separate `Change Object` Step After `Create Object`), `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern).
+
+---
+
 ## ⚙️ Domain C: Execution Settings, Rollback & Exception Handling
 
 ### `PAT-03`: Frontend 3-Case Split Law
@@ -386,7 +404,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-27`: Horizontal & Capped (8-Column) Variation Matrix Layout
 * **Scope:** General | **Classification:** Methodological Law
 * **Description:** Limits Data Variation Matrix tables in documentation and Execution Plans to a maximum of 8 columns per table block (1 Parameter Label column + 7 Variation Scenario columns) to prevent truncation in the MTA UI. Matrices with more than 7 variations are split into consecutive 8-column table blocks.
-  * **System Naming Constraint:** Column header labels `#1`, `#2`, etc., are strictly for visual Markdown table presentation; actual Data Variation names registered in MTA via `TestCaseDataVariationName` MUST NOT include `#n` prefixes or numbers.
+  * **System Naming Constraint:** Column header labels `#1`, `#2`, etc., are strictly for visual Markdown table presentation; actual Data Variation names registered in MTA via `EditTestCaseVariation (SetName)` MUST NOT include `#n` prefixes or numbers.
   * **Separator Alignment Law:** The separator row cell count (`|:---|`) must match the header column count exactly to prevent Markdown table parsing breaks.
 * **Related Rules:**
   * **Related Patterns:** `PAT-19` (Data Variation Consolidation), `PAT-54` (Exhaustive Matrix Cell Reconciliation Law).
@@ -404,7 +422,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-77`: Mandatory Data Variation Container Metadata & Description Persistence Law
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Mandates calling `TestCaseDataVariationName(VariationKey, Name)` AND `TestCaseDataVariationDescription(VariationKey, Description)` (or `TestSuiteDataVariation*`) on Scenario #1 (the Template Variation) and every duplicated variation ($2..N$) immediately upon container creation or duplication. Guarantees that all scenario names and descriptions defined in Section 7 of the Execution Plan are strictly persisted in the MTA database rather than remaining ephemeral in markdown plans.
+* **Description:** Mandates calling `EditTestCaseVariation (SetName)(VariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(VariationKey, Description)` (or `TestSuiteDataVariation*`) on Scenario #1 (the Template Variation) and every duplicated variation ($2..N$) immediately upon container creation or duplication. Guarantees that all scenario names and descriptions defined in Section 7 of the Execution Plan are strictly persisted in the MTA database rather than remaining ephemeral in markdown plans.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-31` (Unpersisted Variation Metadata & Description Omission Anti-Pattern).
   * **Related Patterns:** `PAT-19` (Data Variation Consolidation), `PAT-27` (Capped 8-Column Matrix Layout), `PAT-54` (Exhaustive Matrix Cell Reconciliation Law), `PAT-57` (Exploratory Test Promotion Bridge), `PAT-70` (Data Script Conversion Bridge).
@@ -429,7 +447,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-31`: Unpersisted Variation Metadata & Description Omission Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Omitting `TestCaseDataVariationDescription` (or `TestSuiteDataVariationDescription`) during persistent test construction or exploratory-to-persistent conversion, leaving scenario descriptions ephemeral in markdown plans while unpersisted in the MTA database.
+* **Description:** Omitting `EditTestCaseVariation (SetDescription)` (or `TestSuiteDataVariationDescription`) during persistent test construction or exploratory-to-persistent conversion, leaving scenario descriptions ephemeral in markdown plans while unpersisted in the MTA database.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law).
   * **Related Patterns:** `PAT-54` (Exhaustive Matrix Cell Reconciliation Law).
@@ -479,11 +497,11 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-36`: MTA Model Revision Synchronization & Structural Delta Classification
 * **Scope:** General | **Classification:** Methodological Law
 * **Description:** Decouples Execution Plan storage from MTA Model Revision currency and establishes the structural delta classification rules:
-  1. *Execution Plan Decoupling:* Drafting and storing an Execution Plan via `SaveExecutionPlan` is always valid and supported even when local model elements are not yet present in MTA. The plan is stored as a specification document on the server and does not bind to live metamodel elements.
+  1. *Execution Plan Decoupling:* Drafting and storing an Execution Plan locally as a `.md` file is always valid and supported even when local model elements are not yet present in MTA. The plan is stored as a specification document and does not bind to live metamodel elements until construction.
   2. *Delta Classification:*
      - *Internal-Only Microflow Logic Changes:* (Microflow actions, loops, expressions, or sub-microflow calls change, but parameter names, parameter types, and return types remain identical) $\rightarrow$ No MTA Model Revision update required. Persistent test creation and execution proceed immediately.
      - *Structural Model Modifications:* (Domain model entities, attributes, associations, enumerations; Page widgets, page renames; Microflow signatures, parameter additions/removals/renames, return type changes) $\rightarrow$ Require an updated Model Revision in MTA before persistent step construction or test execution.
-  3. *Proactive Upgrade Guidance:* If structural model deltas are identified during `STATE_BUILD_PLANNING`, the assistant completes Gate 1 and Gate 2, saves the execution plan (`SaveExecutionPlan`), and then proactively proposes upgrading the MTA Model Revision prior to entering `STATE_CONSTRUCTION` (or offers local exploratory testing via `MTA_plugin.execute-testcase`).
+  3. *Proactive Upgrade Guidance:* If structural model deltas are identified during `STATE_BUILD_PLANNING`, the assistant completes Gate 1 and Gate 2, saves the execution plan locally, and then proactively proposes upgrading the MTA Model Revision prior to entering `STATE_CONSTRUCTION` (or offers local exploratory testing via `MTA_plugin.execute-testcase`).
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-17` (Premature Step Construction on Stale MTA Revision).
   * **Related Patterns:** `PAT-41` (Anonymous vs. Role Navigation Resolution), `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-52` (List Filter Options Protocol), `PAT-56` (Dual-Track Decision Gate), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-59` (Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic).
@@ -548,15 +566,15 @@ For each rule, this document outlines its scope, category, detailed operational 
   * **Gate 1 Approval:** The Execution Plan specification draft is approved by the user.
   * **Gate 2 Approval:** The target placement summary (Test Configuration, Test Suite, Test Case Name) is approved by the user.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & ExecutionPlanKey Gating), `PAT-48` (Allowed Operational States).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-48` (Allowed Operational States).
 
 ---
 
-### `PAT-44`: Atomic Multi-Case Construction & `ExecutionPlanKey` Gating
+### `PAT-44`: Atomic Multi-Case Construction & Execution Plan Gating
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Requires saving the approved plan via `SaveExecutionPlan` to obtain an `ExecutionPlanKey` before constructing steps in `STATE_CONSTRUCTION`. The returned `execution_plan_key` MUST be immediately persisted in `mta_state.json` and attached to all generated test cases (`test_cases[].execution_plan_key`) to link database entities to the plan. Once gated, all test cases and steps are provisioned in a single uninterrupted execution sweep.
+* **Description:** Requires saving the approved plan locally as a `.md` file (or retaining in active chat context with a warning if write tools are unavailable) and obtaining Gate 2 placement approval before constructing steps in `STATE_CONSTRUCTION`. The local plan path MUST be persisted in `mta_state.json` (as `execution_plan_file`). Once gated, all test cases and steps are provisioned in a single uninterrupted execution sweep.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-43` (Mandatory Dual-Gate Approval), `PAT-47` (Real-Time Placement Key Persistence).
+  * **Related Patterns:** `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-47` (Real-Time Placement Key Persistence).
 
 ---
 
@@ -578,9 +596,9 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-47`: Real-Time Placement Key Persistence
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `execution_plan_key`, `test_cases[].key`) immediately into `mta_state.json` as assets are created.
+* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`) and `execution_plan_file` immediately into `mta_state.json` as assets are created.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-44` (Atomic Construction & ExecutionPlanKey Gating), `PAT-46` (Clickable Navigation Links).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable Navigation Links).
 
 ---
 
@@ -592,9 +610,9 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
-### `PAT-49`: Incremental Construction Success Verification
+### `PAT-49`: Post-Batch Construction Verification
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Calls `GetTestConstructionErrorsOfTestCase` immediately after building a step block to check for unbound parameters or broken sequence keys on the MTA server. Also serves as the mandatory compiler verification gate during `STATE_SMOKE_AUDIT` before generating the Post-Construction Smoke Audit Report and transitioning to `STATE_RUN_ANALYZE`.
+* **Description:** Calls `GetTestCaseDetails(TestCaseKey)` immediately after building a step block to check for unbound parameters or broken sequence keys on the MTA server. Also serves as the mandatory compiler verification gate during `STATE_SMOKE_AUDIT` before generating the Post-Construction Smoke Audit Report and transitioning to `STATE_RUN_ANALYZE`.
 * **Related Rules:**
   * **Related Patterns:** `PAT-44` (Atomic Construction).
 
@@ -659,7 +677,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-57`: Exploratory-to-Persistent Test Promotion Protocol
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Once an in-memory exploratory test passes via `MTA_plugin.execute-testcase`, provide an explicit, frictionless promotion path to persistent MTA Platform storage (`SaveExecutionPlan` -> Gate 2 Placement -> `STATE_CONSTRUCTION`). Prior to executing server construction, verify that the active Model Revision on the MTA server contains all new/modified model elements (`PAT-36`). Automatically transform the single unified `TCEX_RQ_TestStepRun` sequence into the target persistent MTA structure (single Backend TestCase with Data Variations, or canonical 3-TestCase Frontend Suite).
+* **Description:** Once an in-memory exploratory test passes via `MTA_plugin.execute-testcase`, provide an explicit, frictionless promotion path to persistent MTA Platform storage (Store Plan Locally -> Gate 2 Placement -> `STATE_CONSTRUCTION`). Prior to executing server construction, verify that the active Model Revision on the MTA server contains all new/modified model elements (`PAT-36`). Automatically transform the single unified `TCEX_RQ_TestStepRun` sequence into the target persistent MTA structure (single Backend TestCase with Data Variations, or canonical 3-TestCase Frontend Suite).
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `ANTI-16` (Unpromoted Exploratory Test Drift).
   * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Local Fallback), `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-56` (Dual-Track Decision Gate), `PAT-58` (Unified 3-Phase Frontend Lifecycle).
@@ -692,7 +710,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-17`: Premature Step Construction on Stale MTA Revision
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Attempting to construct persistent test steps (`CreateTestStep*`, `Set*AttributeValue`, `CreateMicroflowCallTestStep`) on the MTA server when required model elements (entities, attributes, microflow signatures, widgets) exist only locally and have not yet been synchronized into the active MTA Model Revision. This causes immediate step creation failures or broken metadata references on the server.
+* **Description:** Attempting to construct persistent test steps (`CreateTestStep*`, `EditAttributeValue`, `CreateMicroflowCallTestStep`) on the MTA server when required model elements (entities, attributes, microflow signatures, widgets) exist only locally and have not yet been synchronized into the active MTA Model Revision. This causes immediate step creation failures or broken metadata references on the server.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification).
   * **Related Patterns:** `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol).
@@ -701,19 +719,18 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-59`: Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Governs construction error interception and verification across test building, smoke audits, and execution:
-  1. *Reactive Build Error Interception (`STATE_CONSTRUCTION`):* If any mutating step creation tool (e.g. `CreateTestStepCreateObject`, `SetStringAttributeValue`, `CreateMicroflowCallTestStep`) fails with a model element not-found error, the assistant MUST immediately halt further step creation, relate the error to an MTA Model Revision mismatch (identifying the specific missing entity, attribute, microflow, parameter, or widget), inform the user that further building will not work until MTA is upgraded, and offer immediate local exploratory testing (`MTA_plugin.execute-testcase`) to test against uncommitted local code.
-  2. *Smoke Audit Gatekeeper (`STATE_SMOKE_AUDIT`):* Immediately following test step construction, the assistant MUST invoke `GetTestConstructionErrorsOfTestCase(TestCaseKey)`. If construction errors > 0, progression to `STATE_RUN_ANALYZE` is strictly blocked, errors are detailed in the Smoke Audit report, and the assistant remains in `STATE_CONSTRUCTION` to resolve the mismatch.
-  3. *Pre-Flight Execution Guard (`STATE_RUN_ANALYZE`):* Before calling `ExecuteTestCase` or `ExecuteTestSuite`, verify that `GetTestConstructionErrorsOfTestCase` returns 0 errors. If errors exist, reject execution and guide revision synchronization.
+* **Description:** Governs construction error verification and pre-flight execution gates:
+  1. *Smoke Audit Gatekeeper (`STATE_SMOKE_AUDIT`):* Immediately following test step construction, the assistant MUST invoke `GetTestCaseDetails(TestCaseKey)`. If construction errors > 0, progression to `STATE_RUN_ANALYZE` is strictly blocked, errors are detailed in the Smoke Audit report, and the assistant remains in `STATE_CONSTRUCTION` to resolve the mismatch. Note that upfront model element verification is strictly handled by `PAT-82` (`GetAppModelData`), completely superseding the legacy reactive "try and build" failure handling (`ANTI-36`).
+  2. *Pre-Flight Execution Guard (`STATE_RUN_ANALYZE`):* Before calling `ExecuteTest`, verify that `GetTestCaseDetails` returns 0 construction errors. If errors exist, reject execution and guide revision synchronization or binding fixes.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern).
-  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-44` (Atomic Multi-Case Construction), `PAT-49` (Incremental Construction Success Verification).
+  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-44` (Atomic Multi-Case Construction), `PAT-49` (Incremental Construction Success Verification), `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law).
 
 ---
 
 ### `PAT-60`: Dual-Track Execution Strategy Explicit Declaration in Execution Plan
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Every Execution Plan drafted during `STATE_BUILD_PLANNING` MUST explicitly declare the Execution Strategy in Section 1 Metadata (`Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback)` vs. `Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)`). When presenting the plan for Gate 1 approval, the assistant MUST prompt the user for their explicit choice between Option A (bypassing Gate 2 and `STATE_CONSTRUCTION` to run immediately in-memory with automatic rollback) and Option B (initiating Gate 2 placement discovery and `SaveExecutionPlan` for persistent server creation).
+* **Description:** Every Execution Plan drafted during `STATE_BUILD_PLANNING` MUST explicitly declare the Execution Strategy in Section 1 Metadata (`Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback)` vs. `Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)`). When presenting the plan for Gate 1 approval, the assistant MUST prompt the user for their explicit choice between Option A (bypassing Gate 2 and `STATE_CONSTRUCTION` to run immediately in-memory with automatic rollback) and Option B (initiating Gate 2 placement discovery and local execution plan storage for persistent server creation).
 * **Related Rules:**
   * **Related Patterns:** `PAT-12` (Uniform Step Sequence Schema Law), `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol).
 
@@ -740,7 +757,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-18`: Ignored Construction Errors & Cascading Build Failure Anti-Pattern
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Continuing to invoke step creation tools after encountering model element not-found errors, or attempting to execute test cases (`ExecuteTestCase` / `ExecuteTestSuite`) without verifying and resolving active test construction errors (`GetTestConstructionErrorsOfTestCase`). Continuing to build or execute despite construction errors leads to cascading failures, unrunnable test suites, and corrupted test structures.
+* **Description:** Continuing to invoke step creation tools after encountering model element not-found errors, or attempting to execute test cases (`ExecuteTest`) without verifying and resolving active test construction errors (`GetTestCaseDetails`). Continuing to build or execute despite construction errors leads to cascading failures, unrunnable test suites, and corrupted test structures.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-59` (Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic).
   * **Related Patterns:** `PAT-49` (Incremental Construction Success Verification).
@@ -832,8 +849,8 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-67`: Exhaustive Page & Snippet Input Widget Discovery and Domain Reconciliation Law
 * **Scope:** Frontend | **Classification:** Methodological Law
-* **Description:** When designing Frontend execution plans, especially when `GetWidgets` is unavailable or when inspecting complex Mendix pages, the agent MUST perform exhaustive, multi-level widget discovery to identify all form input controls, selection widgets, and interactive triggers:
-  1. *Recursive Page & Snippet Inspection:* First execute `mxcli` `DESCRIBE PAGE <Module.Page>` (or `GetWidgets` if MTA is up to date). If any `SnippetCall` references or nested container calls (e.g., `SnippetCall Administration.Account_Details`) are detected, immediately execute `DESCRIBE SNIPPET <Module.Snippet>` recursively for each snippet to uncover all embedded form fields.
+* **Description:** When designing Frontend execution plans, especially when `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` is unavailable or when inspecting complex Mendix pages, the agent MUST perform exhaustive, multi-level widget discovery to identify all form input controls, selection widgets, and interactive triggers:
+  1. *Recursive Page & Snippet Inspection:* First execute `mxcli` `DESCRIBE PAGE <Module.Page>` (or `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` if MTA is up to date). If any `SnippetCall` references or nested container calls (e.g., `SnippetCall Administration.Account_Details`) are detected, immediately execute `DESCRIBE SNIPPET <Module.Snippet>` recursively for each snippet to uncover all embedded form fields.
   2. *Domain Model Attribute Reconciliation:* Inspect the underlying domain entity via `DESCRIBE ENTITY <Module.Entity>` or `SHOW ENTITY <Module.Entity>` to compare domain attributes against discovered widgets, ensuring no essential input attributes or reference selectors were overlooked.
   3. *Mandatory Input Widget Inventory:* In Section 4 ("Verified Model Elements & Testability Profile") of the Execution Plan, construct an explicit **Input Widget Inventory** table listing every input widget, its widget type (`TextBox`, `DropDown`, `DatePicker`, `CheckBox`, `ReferenceSelector`), its container/snippet/tab location, bound entity/attribute, and verified Testkit locator microflow.
   4. *Complete Step Coverage in Step Sequence:* Ensure Section 5 (Chronological Step Sequence) and Section 7 (Data Variation Matrix) include explicit locate-and-fill steps for all discovered required and relevant form inputs rather than testing only a superficial subset of fields.
@@ -895,7 +912,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-72`: Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping
 * **Scope:** Frontend | **Classification:** Methodological Law
-* **Description:** Eliminates recursive CLI cascades when planning Frontend UI tests. The agent inspects the `DESCRIBE PAGE` AST in a single pass to derive the complete seed data profile: the root DataView entity, bound form input attributes (`TextBox`, `DropDown`, `DatePicker`), parent-child association dependencies (`ReferenceSelector`), and collection entities (`DataGrid2`/`ListView`). The agent automatically maps discovered widget types to verified `MenditectMxFrontendTestKit` microflows using a deterministic locator mapping table, avoiding trial-and-error reasoning and eliminating 3–5 separate `DESCRIBE ENTITY` queries. When MTA Server is connected and synchronized, the agent leverages `GetPages` and `GetWidgets` for sub-second zero-CLI discovery.
+* **Description:** Eliminates recursive CLI cascades when planning Frontend UI tests. The agent inspects the `DESCRIBE PAGE` AST in a single pass to derive the complete seed data profile: the root DataView entity, bound form input attributes (`TextBox`, `DropDown`, `DatePicker`), parent-child association dependencies (`ReferenceSelector`), and collection entities (`DataGrid2`/`ListView`). The agent automatically maps discovered widget types to verified `MenditectMxFrontendTestKit` microflows using a deterministic locator mapping table, avoiding trial-and-error reasoning and eliminating 3–5 separate `DESCRIBE ENTITY` queries. When MTA Server is connected and synchronized, the agent leverages `GetAppModelData` (`RetrievePagesByApplicationAndTestConfiguration` and `RetrieveWidgetsByPage`) for sub-second zero-CLI discovery.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-23` (Shallow Page Inspection & Form Input Omission Anti-Pattern), `ANTI-26` (Redundant Exploratory Model Query Cascade).
   * **Related Patterns:** `PAT-05` (Frontend Testkit Strict Default), `PAT-40` (Multi-Object List & Dropdown Seeding), `PAT-67` (Exhaustive Page & Snippet Input Widget Discovery).
@@ -983,6 +1000,107 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-78`: Two-Phase Skeleton & Batch Binding Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Governs optimal test construction across exactly 3 deterministic turns, enforcing multi-tool batching at the Test Suite, Test Case, Data Variation, and Test Step levels to minimize conversation turns, token consumption, and round-trip latency:
+  1. *Turn 1: Container Creation & Sequential Step Instantiation:*
+     - **Test Suite Level:** Call `CreateTestSuite` if provisioning a new suite.
+     - **Test Case Level:** When building multi-case suites (e.g. the standard Frontend 3-Case lifecycle: Case 1 Setup, Case 2 Action, Case 3 Teardown, or multi-case backend integration suites), dispatch ALL planned `CreateTestCase` tool calls in batch in Turn 1 (with pre-resolved `ExecutionUserKey` per `PAT-79`).
+     - **Test Step Level:** Within each test case container, instantiate test steps sequentially with forward predecessor chaining (`PAT-11`) and direct output binding (`PAT-80`).
+  2. *Turn 2: Bulk Key & Schema Resolution:*
+     - Call `GetTestCaseDetails(TestCaseKey)` (and `GetTestSuiteDetails` if needed) in a single query to retrieve all generated `TestStepKey`s, sequence assignments, parameter binding requirements, and variation slots.
+  3. *Turn 3: Parallel Batch Dispatch across Suite, Case, Variation & Step Levels:* Concurrently dispatch all configuration and mutation setters in a single multi-tool turn:
+     - **Test Suite Level:** Dispatch suite property setters (`EditTestSuite` for `SetDescription`, `SetExecutionCondition`, `SetInheritConfigurationSettings`, `SetUsePlaywright`).
+     - **Test Case Level:** Dispatch all specification and execution setting tools (`EditTestCase` for `SetObjective`, `SetPreconditions`, `SetExpectedResult`, `SetRollback`, `SetExecutionCondition`, `SetResumeExecutionAfterException`, `SetCategory`) across ALL created test cases concurrently.
+     - **Data Variation Level:** Dispatch all variation duplications (`CreateTestCaseVariation`), variation naming and descriptions (`EditTestCaseVariation` for `SetName` and `SetDescription` per `PAT-77`), and variation item overrides (`AddTestCaseVariationItem`) concurrently.
+     - **Test Step Level:** Dispatch all attribute value setters (`EditAttributeValue` with `IntegerLongValue` per `PAT-81`), parameter setters (`EditMicroflowParameterValue`, `EditMicroflowObjectParameter`), step descriptions (`EditTestStep`), associations (`CreateSelectObjectForAssociation`), and assertions (`CreateAssertMicroflowReturnValue`, `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertException`).
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern).
+  * **Related Patterns:** `PAT-11` (Forward Predecessor Chaining Law), `PAT-16` (Sequential Creation Tool Calling Ban), `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law), `PAT-79` (Pre-Creation Execution User Resolution Law), `PAT-80` (Direct Output Binding on Object Action Creation).
+
+---
+
+### `PAT-79`: Pre-Creation Execution User Resolution Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Because `CreateTestCase` requires `ExecutionUserKey` as a mandatory, non-nullable integer parameter, the agent MUST resolve the appropriate execution user prior to calling `CreateTestCase`. The agent queries `GetExecutionUsers(ApplicationKey)` to locate an existing user matching the required role or invokes `CreateExecutionUser(ApplicationKey, Username, Password, ...)` if no matching user exists. Passing null, 0, or an unverified synthetic key is strictly prohibited.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-33` (Premature Test Case Creation Without Execution User Anti-Pattern).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating).
+
+---
+
+### `PAT-81`: IntegerLongValue Primitive Wire Format & Integer Key Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Enforces strict adherence to the primitive JSON tool schemas for numeric data types:
+  1. *Attribute & Parameter Integer Property Binding:* When configuring integer or long attributes via `EditAttributeValue(EditAction="SetIntegerValue"|"SetLongValue")` or microflow parameters via `EditMicroflowParameterValue(EditAction="SetIntegerLongValue")`, the value MUST be passed in the `IntegerLongValue` property as an integer. Inventing synthetic field names (`IntegerValue`, `LongValue`, `ParamValue`) is prohibited.
+  2. *Strict Integer Entity Keys:* All entity keys (`TestConfigurationKey`, `TestSuiteKey`, `TestCaseKey`, `TestStepKey`, `TestStepOutputKey`, `ApplicationKey`, `ExecutionUserKey`) MUST be passed as native JSON integers (e.g. `12345`), never string-quoted (`"12345"`).
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-35` (Mismatched Integer Wire Format & Quoted Key Anti-Pattern).
+  * **Related Patterns:** `PAT-34` (Uniform 8-Field Step Sequence Schema).
+
+---
+
+### `PAT-82`: Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates comparing domain entities (`RetrieveEntityByApplicationAndTestConfiguration`), microflow signatures (`RetrieveMicroflowByApplicationAndTestConfiguration`), and page widgets (`RetrieveWidgetsByPage`) synchronized in MTA via `GetAppModelData` against the local Mendix AST (`mxcli`) as Step 1 of `STATE_CONSTRUCTION` before creating any persistent containers or test steps in MTA, and as a mandatory feasibility gate before promoting an exploratory test. If structural deltas are detected (e.g., entity attributes, microflows, parameters, or page widgets present in local code but absent in MTA's model data), construction/promotion MUST halt immediately, alerting the user that MTA requires an updated revision export/synchronization.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern).
+  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-59` (Zero Construction Error Pre-Flight Law).
+
+---
+
+### `ANTI-32`: Chatterbox Sequential Setter Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Invoking configuration tools, setters, or container creators (`EditTestSuite`, `CreateTestCase`, `EditTestCase`, `CreateTestCaseVariation`, `EditTestCaseVariation`, `EditAttributeValue`, `EditMicroflowParameterValue`, `EditTestStep`, `AddTestCaseVariationItem`, `CreateAssert*`) sequentially one-by-one across multiple separate conversation turns after container or step keys have already been resolved. This chatty interaction introduces immense latency, token overhead, and fragmented context when tools can and must be batched at the suite, case, variation, and step levels.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law).
+  * **Related Patterns:** `ANTI-05` (Parallel / Batched Creation in Same Container).
+
+---
+
+### `ANTI-33`: Premature Test Case Creation Without Execution User Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Calling `CreateTestCase` without first querying or creating an execution user via `GetExecutionUsers` or `CreateExecutionUser`, or passing null, 0, or a dummy string for `ExecutionUserKey`. Because the MTA database schema enforces a foreign key constraint on `ExecutionUserKey`, this results in immediate tool execution failure.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-79` (Pre-Creation Execution User Resolution Law).
+  * **Related Anti-Patterns:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern).
+
+---
+
+### `ANTI-35`: Mismatched Integer Wire Format & Quoted Key Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Passing integer or long attribute values using synthetic property names (`IntegerValue`, `LongValue`) instead of the schema-defined `IntegerLongValue`, or formatting database keys (`TestStepKey`, `TestCaseKey`) as string literals (`"123"`) instead of raw JSON numbers (`123`). This causes JSON schema validation errors or runtime deserialization failures on the MTA MCP server.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-81` (IntegerLongValue Primitive Wire Format & Integer Key Law).
+
+---
+
+### `ANTI-36`: Blind Construction on Stale MTA Revision Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Attempting to build persistent test containers, steps, parameters, or assertions in MTA (or promoting an exploratory test) without first running the Pre-Construction Model-to-MTA Schema Audit (`GetAppModelData`), or relying on step creation errors to discover missing model elements through trial-and-error building. When local code has evolved past the MTA revision, this leads to cascading build rejections (`Entity not found`, `Microflow not found`, `Parameter not found`) and corrupt test definitions on the server.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law).
+  * **Related Anti-Patterns:** `ANTI-17` (Premature Step Construction on Stale MTA Revision), `ANTI-18` (Ignored Construction Errors).
+
+---
+
+### `PAT-83`: Context-Preserving Diagnostic Drill-Down Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Enforces a targeted two-step retrieval workflow for diagnosing test execution failures via `GetTestRunResults`. In Step 1, the agent calls `GetTestRunResults` with `RetrieveAction="GetTestRunSummary"` to inspect high-level execution status, overall pass/fail metrics, and extract the specific failing test case run keys (`TestCaseRunKey`) without token bloat. In Step 2, the agent calls `GetTestRunResults` with `RetrieveAction="GetTestCaseRunDetails"` targeted strictly to the failing `TestCaseRunKey` (accompanied by `GetTeststepDetails` if needed) to extract granular step receipts, error logs, and assertion failure messages. Prohibits executing un-scoped monolithic log queries across entire test suites or test configurations.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-37` (Monolithic Log Retrieval Anti-Pattern).
+  * **Related Patterns:** `PAT-59` (Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic), `PAT-81` (IntegerLongValue Primitive Wire Format & Integer Key Law).
+
+---
+
+### `ANTI-37`: Monolithic Log Retrieval Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Invoking `GetTestRunResults` with `RetrieveAction="GetTestRunDetails"` blindly for an entire Test Suite or Test Configuration without first querying `GetTestRunSummary`, or querying detailed test case receipts without scoping to the failing `TestCaseRunKey`. In large test suites and regression runs, this dumps massive, multi-megabyte JSON payloads containing thousands of lines of successful and failed step executions into the AI context window, precipitating rapid token exhaustion, context fragmentation, and severe diagnostic degradation.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-83` (Context-Preserving Diagnostic Drill-Down Law).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1019,4 +1137,13 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-74`** (Exploratory Single-Session Conflict Detection & Isolation Protocol) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining Anti-Pattern) | AST conflict vector audit, intra-block teardown & fallback to isolated sessions vs blind chained execution |
 | **`PAT-75`** (Verified Entity Fixture Attribute Binding Law) | **`ANTI-29`** (Unverified / Assumed Entity Fixture Attributes) | Verifying domain model attributes before fixture compilation vs guessing non-existent entity members |
 | **`PAT-76`** (Mandatory Exploratory Benchmark & Latency Telemetry Law) | **`ANTI-30`** (Exploratory Performance & Latency Telemetry Omission Anti-Pattern) | Extracting and displaying full 3-part performance profile vs omitting durations or using uncalculated placeholders |
+| **`PAT-78`** (The 3-Turn Multi-Tool Batch Construction Law) | **`ANTI-32`** (Chatterbox Sequential Setter Anti-Pattern) | 3-turn batch construction sequence vs sequential chatty setter round-trips |
+| **`PAT-79`** (Pre-Creation Execution User Resolution Law) | **`ANTI-33`** (Premature Test Case Creation Without Execution User Anti-Pattern) | Resolving ExecutionUserKey before TestCase creation vs foreign key creation failures |
+| **`PAT-80`** (Direct Output Binding on Object Action Creation) | **`ANTI-34`** (Unbound Object Action Step Creation Anti-Pattern) | Binding TestStepOutputKey at creation vs separate setter tool calls across turns |
+| **`PAT-81`** (IntegerLongValue Primitive Wire Format & Integer Key Law) | **`ANTI-35`** (Mismatched Integer Wire Format & Quoted Key Anti-Pattern) | Using IntegerLongValue property & raw integer keys vs synthetic field names and string quotes |
+| **`PAT-82`** (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law) | **`ANTI-36`** (Blind Construction on Stale MTA Revision Anti-Pattern) | Pre-construction schema audit via GetAppModelData vs blind building on stale MTA revision |
+| **`PAT-83`** (Context-Preserving Diagnostic Drill-Down Law) | **`ANTI-37`** (Monolithic Log Retrieval Anti-Pattern) | Targeted 2-step retrieval (GetTestRunSummary -> GetTestCaseRunDetails) vs dumping entire suite logs |
+
+
+
 

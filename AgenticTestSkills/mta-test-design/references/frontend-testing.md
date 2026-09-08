@@ -7,17 +7,17 @@ This reference contains the widget locator maps, nested repeating container stra
 ---
 
 ## 📐 UNIVERSAL RULES
-*   **The Options Parameter Rule:** If a frontend/testkit microflow has an Object-type `options` parameter, ALWAYS set it to empty by calling `SetEmptyForSelectObjectForMicroflowParameter` (or use Options Protocol). Do not leave unbound.
+*   **The Options Parameter Rule:** If a frontend/testkit microflow has an Object-type `options` parameter, ALWAYS set it to empty by calling `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetInputToEmpty")` (or use Options Protocol). Do not leave unbound.
 *   **The Frontend Testkit Default Law (CRITICAL):** For all Mendix applications, the **Menditect Frontend Testkit** (represented by the module `MenditectMxFrontendTestKit`) is the strict default and MUST be used exclusively to construct frontend UI tests. Falling back to low-level Playwright Connector commands (e.g. raw clicks, fills, presses) due to encountering an issue is strictly prohibited, unless the user has explicitly and unambiguously approved this workaround in the active session.
 *   **The Module Packaging Rule:** The Menditect Frontend Testkit (`MenditectMxFrontendTestKit`), Menditect Playwright Connector (`MenditectPlaywrightConnector`), and MTA Commons (`MenditectMtaCommons`) modules are packaged and imported as standard Mendix `.mxmodule` modules.
 *   **The Parent Context Rule:** All child widgets on a Mendix page require an `MxPageLocator` (returned by `Locate_MxPage`) or parent item locator passed as their `ParentContext` (`TestStepProvidePlaywrightPageKey`) to resolve selectors.
 *   **The Locate Page/Widget Tool Enforcement Rule:** For microflows that locate a page or a widget, the specialized locate page (`GenerateMicroflowCallTestStepLocatePage`) or locate widget (`GenerateMicroflowCallTestStepLocateWidget`) tool **MUST** be used. Calling these tools registers and sets the microflow to look for the page or widget in MTA. A manual reference to the CSS class of the page or the widget **DOES NOT WORK**. If an error occurs in calling the locate page or locate widget tool, you **MUST STOP AND ASK THE USER FOR INPUT**. Do **NOT** use any fallback strategy.
 *   **The BrowserType Enumeration Law (CRITICAL):** `BrowserType` is a Mendix **Enumeration**, NOT a standard string.
-    *   **Binding Tool:** You **MUST** call `SetEnumerationMicroflowParameterValue` to bind its value. Calling `SetStringMicroflowParameterValue` is incorrect and will cause an execution-time validation error.
+    *   **Binding Tool:** You **MUST** call `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetEnumerationValue", EnumerationValue=...)` to bind its value. Calling `"SetStringValue"` is incorrect and will cause an execution-time validation error.
     *   **Literal Value Casing:** Allowed values are strictly PascalCase: `"Chromium"`, `"Firefox"`, or `"Webkit"`. Lowercase variants (like `"chromium"`) will fail validation.
 *   **The Data-Backed Selection Piping Rule (Dynamic Data & Retrieve Rule):** If a `ComboBox`, `ReferenceSelector`, or `ReferenceSetSelector` widget's datasource is dynamic data (retrieved from database entities) rather than a static enumeration, you **MUST** prioritize using **Dynamic Scalar Value Piping** (`SelectValueForValue`) for selecting/filtering the option instead of hardcoding a static string.
     *   **Data Created in Same Suite:** Pipe the identifier attribute (e.g., `Name`, `Code`, `Description`) directly from the upstream creation step.
-    *   **Pre-existing / External Data:** If the target data was not created in the same test suite, you **MUST** explicitly add a retrieve-from-database teststep (e.g. `CreateTestStepRetrieveObject` or equivalent database-retrieve microflow) early in the test case to fetch the record, and then use that retrieve step's output as the provider (`TestStepOutputKey`) for the downstream scalar value piping.
+    *   **Pre-existing / External Data:** If the target data was not created in the same test suite, you **MUST** explicitly add a retrieve-from-database teststep (e.g. `CreateObjectActionTestStep(ObjectAction="RetrieveObjects")` or equivalent database-retrieve microflow) early in the test case to fetch the record, and then use that retrieve step's output as the provider (`TestStepOutputKey`) for the downstream scalar value piping.
 *   **The Frontend Persistent MTA Construction Law (CRITICAL):** Frontend UI automation requires browser lifecycle management, session contexts, and DOM locator maps provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the MTA Platform across the standard 3-Case Suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser configurations. [^PAT-62]
 
 ---
@@ -210,7 +210,7 @@ Before locating widgets, you **MUST** obtain the page's CSS class directly from 
     - *Option 1:* **[Specific Nested Widget Name] ([Widget Type]):** Target a specific nested button, link, or input inside the item (Requires Law 2).
     - *Option 2:* **Entire Card/Row:** Click the item itself directly (e.g., `ACT_Click_Gallery_Item`).
     *Wait for user response.*
-4.  **Update Specs:** Store chosen strategies inside the test case documentation using `SetTestCaseSpecifications`.
+4.  **Update Specs:** Store chosen strategies inside the test case documentation using `EditTestCase(EditAction="SetObjective")` and `EditTestCase(EditAction="SetPreconditions")`.
 
 ### PROTOCOL C: Frontend Testkit Discovery (Offline-First)
 Before building, map the exact qualified names of the required frontend testkit microflows:
@@ -221,7 +221,7 @@ Before building, map the exact qualified names of the required frontend testkit 
 ### PROTOCOL D: Mandatory Frontend Execution Plan Quality Protocol (8 Mandatory Requirements)
 When creating or updating an Execution Plan for Frontend testing, you **MUST** enforce these 8 requirements prior to plan presentation:
 
-1.  **Exhaustive Page & Snippet Widget Extraction (`PAT-67`, `ANTI-23`):** Inquire first whether MTA is up to date; if yes, call read-only MTA MCP tools `GetPages` and `GetWidgets` **first** to discover page/widget keys and layout structures. If not, fallback to `mxcli` using the 4-step discovery protocol:
+1.  **Exhaustive Page & Snippet Widget Extraction (`PAT-67`, `ANTI-23`):** Inquire first whether MTA is up to date; if yes, call read-only MTA MCP tool `GetAppModelData` (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) **first** to discover page/widget keys and layout structures. If not, fallback to `mxcli` using the 4-step discovery protocol:
     *   *Step 1 (Page Inspection):* Execute `mxcli` `DESCRIBE PAGE <Module.Page>` to discover top-level widgets, data views, and all `SnippetCall` references.
     *   *Step 2 (Recursive Snippet Inspection):* For every `SnippetCall <Module.Snippet>` detected, execute `DESCRIBE SNIPPET <Module.Snippet>` recursively to uncover all nested form input controls, dropdowns, date pickers, and buttons.
     *   *Step 3 (Domain Model Reconciliation):* Inspect the underlying entity via `DESCRIBE ENTITY <Module.Entity>` or `SHOW ENTITY <Module.Entity>` to cross-reference attributes with discovered widgets, ensuring no required input fields or reference selectors were missed.
@@ -238,14 +238,14 @@ When creating or updating an Execution Plan for Frontend testing, you **MUST** e
 
 ### PROTOCOL E: Fully Qualified Name (FQN) to Registry Resolution (Mapping Law)
 To resolve the discrepancy between Mendix model-level Fully Qualified Names (FQN, e.g. `"Sales.Order_Detail"`) and the MTA server's flat registry fields:
-1.  **Construct a Resolution Map:** At the start of discovery or analysis, retrieve all pages using `GetPages`. Map each page's simple name (`Name`) and module name to build an in-memory FQN-to-Registry cache:
+1.  **Construct a Resolution Map:** At the start of discovery or analysis, retrieve all pages using `GetAppModelData(RetrieveAction="RetrievePagesByApplicationAndTestConfiguration")`. Map each page's simple name (`Name`) and module name to build an in-memory FQN-to-Registry cache:
     *   `Key`: `"[ModuleName].[PageName]"` (e.g., `"Sales.Order_Detail"`)
     *   `Value`: `{ PageKey: Key, ClassName: ClassName, SimpleName: Name, ModuleName: ModuleName }`
 2.  **Enforce Strict Dual-Key Matching:** When mapping a Mendix model page reference to MTA, you **MUST** match BOTH module and page name exactly. Never perform lookup using only the page's simple name to avoid namespace collisions.
 3.  **Validate Parameter Inputs:**
-    *   For `GetWidgets`, you **MUST** pass the fully qualified page name (FQN, e.g., `"Sales.Order_Detail"`) directly into the `PageQualifiedName` parameter. Lookups to translate FQN to `PageKey` are deprecated and no longer needed for querying widgets.
+    *   For `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")`, you **MUST** pass the fully qualified page name (FQN, e.g., `"Sales.Order_Detail"`) directly into the `PageQualifiedName` parameter. Lookups to translate FQN to `PageKey` are deprecated and no longer needed for querying widgets.
     *   For `GenerateMicroflowCallTestStepLocatePage` and `GenerateMicroflowCallTestStepLocateWidget`, always pass the full FQN (e.g., `"Sales.Order_Detail"`) as the `PageQualifiedName` parameter.
-4.  **Perform Out-of-Sync Verification:** If the target FQN from local model queries (`mxcli`) is not found in your `GetPages` resolution map, verify if a simple name match exists in a different module, or raise a warning to the user to sync their local project with the MTA server.
+4.  **Perform Out-of-Sync Verification:** If the target FQN from local model queries (`mxcli`) is not found in your `GetAppModelData` resolution map, verify if a simple name match exists in a different module, or raise a warning to the user to sync their local project with the MTA server.
 
 ## 🧭 HIERARCHICAL MENU NAVIGATION PATTERN
 
@@ -312,13 +312,14 @@ When constructing Playwright UI steps in `STATE_CONSTRUCTION`, you MUST use a co
 ### 1. The 3-Step Microflow Call & Binding Lifecycle
 Every standard action (e.g., `ACT_Fill_TextBox_Input`, `ACT_Click_Button`) or assertion (e.g., `ASR_Has_Value_TextBox_Input`) MUST follow this strict sequence:
 1.  **Create Step:** Call `CreateMicroflowCallTestStep` with the fully qualified name (e.g., `MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input`). This returns the unique `TestStepKey`.
-2.  **Get Parameters:** Call `GetMicroflowCallTestStepDetails(TestStepKey)` to retrieve the parameter value keys.
+2.  **Get Parameters:** Call `GetTeststepDetails(TestStepKey)` to retrieve the parameter value keys (`MicroflowParameterValueKey` and `SelectObjectForMicroflowParameterKey`).
 3.  **Bind Values:** Call the appropriate binder tool for each parameter:
-    *   *Strings:* `SetStringMicroflowParameterValue(MicroflowParameterValueKey, StringValue)`
-    *   *Booleans:* `SetBooleanValueMicroflowParameterValue(MicroflowParameterValueKey, BooleanValue)`
-    *   *Enumerations:* `SetEnumerationMicroflowParameterValue(MicroflowParameterValueKey, EnumerationValue)` (This MUST be used for all Mendix enumerations like `BrowserType`).
-    *   *Empty Objects:* `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey)`
-    *   *Piped Objects (Locators / Browser):* `SetTestStepOutputForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey, TestStepOutputKey)` (Use this to pass the locator returned by a previous Locate Page or Locate Widget step).
+    *   *Strings:* `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetStringValue", StringValue=...)`
+    *   *Booleans:* `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetBooleanValue", BooleanValue=...)`
+    *   *Enumerations:* `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetEnumerationValue", EnumerationValue=...)` (This MUST be used for all Mendix enumerations like `BrowserType`).
+    *   *Empty Objects:* `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetInputToEmpty")`
+    *   *Piped Objects (Locators / Browser):* `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)` (Use this to pass the locator returned by a previous Locate Page or Locate Widget step).
+    *   *⚡ Multi-Tool Batch Dispatch:* Batch all independent parameter setters concurrently in a **single turn**!
 
 ### 2. High-Level Locator Generators
 Instead of calling `CreateMicroflowCallTestStep` for locator microflows, you **MUST** call the specialized generator tools. These tools create the step, register the locator output, and configure standard parameters in a single call:
@@ -349,15 +350,15 @@ To automate entering a username into the textbox of a login page:
     *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input", TestStepName="Fill TextBox 'Username' Input", TestStepBeforeKey=WidgetLocateStepKey, TestCaseKey=Case2Key)`
     *   *Returns:* `ActionStepKey` (e.g. `103`)
 4.  **Fetch Parameter Keys for the Action Step:**
-    *   *Action:* Call `GetMicroflowCallTestStepDetails(TestStepKey=ActionStepKey)`
+    *   *Action:* Call `GetTeststepDetails(TestStepKey=ActionStepKey)`
     *   *Returns Details:*
         *   `TextBoxLocator` parameter ➔ `SelectObjectForMicroflowParameterKey` = `801` (numeric key)
         *   `Value` parameter ➔ `MicroflowParameterValueKey` = `802` (numeric key)
         *   `options` parameter ➔ `SelectObjectForMicroflowParameterKey` = `803` (numeric key)
-5.  **Bind Parameters of the Action Step:**
-    *   *Pipe the Locator:* Call `SetTestStepOutputForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=801, TestStepOutputKey=WidgetLocateStepKey)`
-    *   *Set the Value:* Call `SetStringMicroflowParameterValue(MicroflowParameterValueKey=802, StringValue="admin")`
-    *   *Set Option to Empty:* Call `SetEmptyForSelectObjectForMicroflowParameter(SelectObjectForMicroflowParameterKey=803)`
+5.  **Bind Parameters of the Action Step (⚡ Batch in 1 Turn):**
+    *   *Pipe the Locator:* `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey=801, EditAction="SetTestStepOutput", TestStepOutputKey=WidgetLocateStepKey)`
+    *   *Set the Value:* `EditMicroflowParameterValue(MicroflowParameterValueKey=802, EditAction="SetStringValue", StringValue="admin")`
+    *   *Set Option to Empty:* `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey=803, EditAction="SetInputToEmpty")`
 
 ### 4. ComboBox Selection Sequence (Example)
 To automate selecting "Premium Coverage" from a ComboBox named `comboBoxInsurance`:

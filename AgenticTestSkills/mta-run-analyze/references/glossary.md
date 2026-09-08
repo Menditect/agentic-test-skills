@@ -48,28 +48,17 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 
 ## ⚠️ CASE-SENSITIVE VALUE CONSTANTS
 
-Many MTA MCP tools require string inputs that represent Mendix enums or special runtime behaviors. These constants are strictly case-sensitive and must be formatted exactly as listed below. Any deviation will cause schema validation errors or runtime crashes.
-
 | MCP Tool | Parameter | Required Constant Value & Description |
 | :--- | :--- | :--- |
-| **`SetRetrieveSettingsOfTestStep`** | `RetrieveOption` | `"Database"`, `"Association"`, or `"Teststep"`<br>*(Note the specific PascalCase: `"Teststep"` has a lowercase "s")* |
-| **`SetRetrieveSettingsOfTestStep`** | `RetrieveSet` | `"Head"` or `"All"`<br>*(Retrieves the first object or the entire collection respectively)* |
-| **`SetExecutionSettingsOfTestStep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
-| **`SetExecutionSettingsOfTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
-| **`CreateAssertMicroflowReturnValue`** | `AMRC_ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"LessThan"`, `"Contains"` |
-| **`CreateAssertMicroflowReturnValue`** | `ASRT_ActionFailedAssert` | `"ContinueTestRun"` or `"StopTestRun"` |
-| **`SetOperationOfSelectObjectForAssociation`**| `Operation` | `"Add"`, `"Set"`, `"Remove"`, `"Clear"`, or `"Omit"` |
-| **`SetExecutionSettingsOfTestCase`** | `ApplySecurity` | `"Yes"` or `"No"` |
-| **`SetExecutionSettingsOfTestCase`** | `ExecutionCondition` | `"Always"`, `"Skip"`, or `"None"` |
-| **`SetExecutionSettingsOfTestCase`** | `ResumeExecutionAfterException` | `"Stop"` or `"_Continue"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
-| **`SetExecutionSettingsOfTestCase`** | `RollbackTcseAfterExecution` | `"Yes"` or `"No"`<br>*(⚠️ **Note spelling:** Parameter name has a typo `"RollbackTcseAfterExecution"`)* |
-| **`SetTestCaseSpecifications`** | `ActionWithName`<br>`ActionWithObjective`<br>`ActionWithPreconditions`<br>`ActionWithExpectedResult` | `"Set"`, `"Reset"`, or `"Omit"` |
-
-### 🛠️ Input Type Setter Distinction (No String Needed)
-When setting input types of attributes or microflow parameters to use dynamic values from upstream steps, you **DO NOT** pass `"teststep"` as a string manually. Instead, you **MUST** call the dedicated tool:
-*   **For attributes:** Call `SetInputTypeAttributeValueToTestStep`.
-*   **For microflow parameters:** Call `SetInputTypeMicroflowParameterValueToTestStep`.
-*   *Why:* These specialized tools handle setting the internal input type enumeration value to `"teststep"` natively in the MTA engine.
+| **`EditTestStepRetrieve`** | `RetrieveOption` | `"Database"`, `"Association"`, or `"Teststep"`<br>*(Note the specific PascalCase: `"Teststep"` has a lowercase "s")* |
+| **`EditTestStepRetrieve`** | `RetrieveSet` | `"Head"` or `"All"`<br>*(Retrieves the first object or the entire collection respectively)* |
+| **`EditTestStep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
+| **`EditTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
+| **`CreateAssertMicroflowReturnValue`** / **`EditAssertMicroflowReturnValueCompare`** | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"LessThan"`, `"Contains"` |
+| **`CreateAssertMicroflowReturnValue`** / **`EditAssertMicroflowReturnValueCompare`** | `ActionFailedAssert` | `"ContinueTestRun"` or `"StopTestRun"` |
+| **`EditTestStepAssociation`** | `EditAction` | `"Add"`, `"Set"`, `"Remove"`, `"Clear"` |
+| **`CreateTestCase`** / **`EditTestCase`** | `RollbackTcseAfterExecution` | `"true"` or `"false"` |
+| **`CreateTestSuite`** / **`EditTestSuite`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
 
 ---
 

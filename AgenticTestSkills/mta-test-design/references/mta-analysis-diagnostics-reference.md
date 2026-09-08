@@ -10,10 +10,8 @@ Trigger tests and analyze results programmatically using these core tools:
 
 | Action | MCP Tool | Purpose / Key Parameters |
 | :--- | :--- | :--- |
-| **Execute Configuration** | `ExecuteTestConfiguration` | Starts execution for an entire configuration key. |
-| **Execute Suite** | `ExecuteTestSuite` | Starts execution for a specific test suite. |
-| **Execute TestCase** | `ExecuteTestCase` | Runs a single test case immediately. |
-| **Retrieve Results** | `RetrieveTestRunResults` | Pulls the active execution status, logs, and failure details. |
+| **Execute Test** | `ExecuteTest` | Executes tests at the requested level. Parameters: `ApplicationInstanceToken` (required), `ExecutionLevel` (`"TestConfiguration"`, `"TestSuite"`, or `"TestCase"`), and corresponding `TestConfigurationKey`, `TestSuiteKey`, or `TestCaseKey`. Optional `ExecutionScope` (`"All"`, `"ChangedOnly"`, `"FailedOnly"`, `"Changed_Failed"`). |
+| **Retrieve Results** | `GetTestRunResults` | Pulls active execution status, logs, and failure receipts using the 2-step drill-down (`PAT-83`). Parameters: `TestRunExecutionId` (required), `RetrieveAction` (`"GetTestRunSummary"`, `"GetTestRunDetails"`, or `"GetTestCaseRunDetails"`), and optional numeric `TestCaseRunKey` (required for `"GetTestCaseRunDetails"`). |
 
 ---
 

@@ -19,11 +19,11 @@ You MUST progress through these workflow states. Rollback/revision paths are sup
 | State | Allowed Destination | Transition Trigger / Action | HALT Required? | Direction |
 | :--- | :--- | :--- | :--- | :--- |
 | **`STATE_DISCOVERY`** (1) | `STATE_BUILD_PLANNING` (2) | Setup and target placement resolved (Test Configuration & Test Suite) | Yes (If placements not provided) | Forward |
-| **`STATE_BUILD_PLANNING`** (2)| `STATE_CONSTRUCTION` (3) | Specifications and chronological execution plan approved & saved in MTA (retrieved `ExecutionPlanKey`) | **YES (All Modes)** | Forward |
+| **`STATE_BUILD_PLANNING`** (2)| `STATE_CONSTRUCTION` (3) | Specifications and chronological execution plan approved & saved locally as `.md` (or retained in chat context) | **YES (All Modes)** | Forward |
 | **`STATE_BUILD_PLANNING`** (2)| `STATE_DISCOVERY` (1) | User rejects specs/placement or requests structural changes | No | **Rollback** |
 | **`STATE_CONSTRUCTION`** (3) | `STATE_SMOKE_AUDIT` (4) | Sequential step creation and binding completed on the server | No | Forward |
-| **`STATE_CONSTRUCTION`** (3) | `STATE_BUILD_PLANNING` (2) | Sequential creation tools fail or `ExecutionPlanKey` is lost | Yes | **Rollback** |
-| **`STATE_SMOKE_AUDIT`** (4) | `STATE_RUN_ANALYZE` (5) | Programmatic validation checks (`GetTestConstructionErrorsOfTestCase`) and rule conformity validated with 0 errors | **YES (All Modes)** | Forward |
+| **`STATE_CONSTRUCTION`** (3) | `STATE_BUILD_PLANNING` (2) | Sequential creation tools fail or execution plan approval is invalid | Yes | **Rollback** |
+| **`STATE_SMOKE_AUDIT`** (4) | `STATE_RUN_ANALYZE` (5) | Programmatic validation checks (`GetTestCaseDetails`) and rule conformity validated with 0 errors | **YES (All Modes)** | Forward |
 | **`STATE_SMOKE_AUDIT`** (4) | `STATE_CONSTRUCTION` (3) | Audit reveals compilation or structural validation errors | Yes | **Rollback** |
 | **`STATE_RUN_ANALYZE`** (5) | `STATE_CONSTRUCTION` (3) | Execution fails or requires adjustment of specific steps | No | **Rollback** |
 | *Any State* | **`STATE_QA_ASSISTANCE`** | User asks tangent, conceptual question, or platform clarification | No | Out-of-Band |
@@ -39,10 +39,10 @@ To support both advanced runtimes with local write capabilities and memory-only 
 | :--- | :--- | :--- |
 | **Active Condition** | File-writing & run tools present in tool schema. | No write/run tools found (restricted sandbox / chat UI). |
 | **State Persistence** | Silently reads/writes to local `mta_state.json`. | Prepends State Header; user copy-pastes Compaction Block. |
-| **Specification Approval** | Automatically saves specs with `SetTestCaseSpecifications`. | Outputs formatted spec markdown; user saves in MTA Web UI. |
-| **Execution Plan Key** | Programmatically saved via `SaveExecutionPlan` and fetched upon plan approval. | User retrieves `ExecutionPlanKey` from Web UI and pastes it. |
+| **Specification Approval** | Automatically saves specs with `EditTestCase(EditAction="SetObjective" | "SetPreconditions" | "SetExpectedResult")`. | Outputs formatted spec markdown; user saves in MTA Web UI. |
+| **Execution Plan Storage** | Saved locally as a `.md` file to `${MTA_OUTPUT_PATH}/execution-plans/`. | Retained in chat context (with user warning if local write unavailable). |
 | **Step Construction** | Runs sequentially in background using direct MCP tools. | Generates step-by-step JSON payloads for user local execution. |
-| **Smoke Auditing** | Automatically runs `GetTestConstructionErrorsOfTestCase`. | Instructs user to view Web UI errors and paste back findings. |
+| **Smoke Auditing** | Automatically runs `GetTestCaseDetails` to check compiler errors. | Instructs user to view Web UI errors and paste back findings. |
 | **Chat Verbosity** | Ultra-clean. Zero session compaction blocks in chat. | Compaction blocks outputted at major state transitions. |
 
 ---
@@ -124,9 +124,9 @@ To prevent sequence corruption, maintain clean naming, and build robust dynamic 
 ## 🏃 CONCRETE END-TO-END EXAMPLE: "Create a login validation test"
 
 1.  **`STATE_DISCOVERY`**: Agent performs Mendix model audit or user setup scans. Placement is resolved to suite `UserManagement`.
-2.  **`STATE_BUILD_PLANNING`**: Agent conducts the interactive planning loop in 3 steps: drafts sequential step plans, performs the Pre-Approval Self-Audit, and presents the Execution Plan. User responds: *"Approve"* (**Gate 1: Execution Plan Approval**). Next, agent interactively gathers placement and settings choices from the user. Agent presents the **Placement & Target Summary Box**. User responds: *"Approve"* (**Gate 2: Placement Summary Approval**). The Execution Plan is saved in MTA via `SaveExecutionPlan` and `ExecutionPlanKey` is returned.
+2.  **`STATE_BUILD_PLANNING`**: Agent conducts the interactive planning loop in 3 steps: drafts sequential step plans, performs the Pre-Approval Self-Audit, and presents the Execution Plan. User responds: *"Approve"* (**Gate 1: Execution Plan Approval**). Next, agent interactively gathers placement and settings choices from the user. Agent presents the **Placement & Target Summary Box**. User responds: *"Approve"* (**Gate 2: Placement Summary Approval**). The Execution Plan is saved locally as a `.md` file (or retained in chat context with a warning if write tools are unavailable).
 3.  **`STATE_CONSTRUCTION`**: Sequentially calls step creation and binding tools on the server, using predecessor chain linking.
-4.  **`STATE_SMOKE_AUDIT`**: Performs structural checks, runs programmatic validations (`GetTestConstructionErrorsOfTestCase`), and generates the Post-Construction Smoke Audit Report including direct MTA navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`). User approves.
+4.  **`STATE_SMOKE_AUDIT`**: Performs structural checks, runs programmatic validations (`GetTestCaseDetails`), and generates the Post-Construction Smoke Audit Report including direct MTA navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`). User approves.
 5.  **`STATE_RUN_ANALYZE`**: Executes the test suite run, parses results, and presents findings.
 
 ---
@@ -140,5 +140,5 @@ Before outputting your response or executing any tool call, mentally verify thes
 4. **Did I output my Chain of Thought block?** If I am calling any MTA MCP tool, I MUST have the `> 🧠 **Tool Execution Reasoning:**` block printed *immediately before* the tool call block.
 5. **Did I let the user choose the category?** I MUST have obtained the explicit choice of **Backend** vs **Frontend** during discovery/scoping and not assumed it on my own.
 6. **Did I strictly format my MTA direct links?** Check that links strictly conform to the singular, lowercase, `/p/`-inclusive structure (e.g. `[BaseUrl]/p/testcase/[Key]`) with zero pluralization or trailing paths.
-7. **Did I verify the ExecutionPlanKey?** If entering `STATE_CONSTRUCTION` or `STATE_SMOKE_AUDIT`, I MUST verify that a valid non-empty `ExecutionPlanKey` is present in the active state metadata/compaction block/filesystem state.
-8. **Did I run the Pre-Execution Smoke Audit?** Before completing `STATE_SMOKE_AUDIT`, I MUST read the saved Execution Plan (`GetExecutionPlan(ExecutionPlanKey)`), perform a 100% full-content audit across all 8 plan sections (Metadata, Specifications, Risk Alignment, Verified Elements, Step Sequence, Playwright Settings, Data Variations cell-by-cell, and Pattern Description Annotations), execute `GetTestConstructionErrorsOfTestCase` on the server to programmatically verify that zero validation or compiler errors exist, and output the Post-Construction Smoke Audit Report containing direct clickable MTA links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for Test Configuration, Test Suite, Test Cases, and Execution Plan.
+7. **Did I verify the Execution Plan Approval & Storage?** If entering `STATE_CONSTRUCTION` or `STATE_SMOKE_AUDIT`, I MUST verify that Gate 1 and Gate 2 are approved and the Execution Plan is saved locally as a `.md` file (or preserved in chat context with a warning if write tools are unavailable).
+8. **Did I run the Pre-Execution Smoke Audit?** Before completing `STATE_SMOKE_AUDIT`, I MUST read the saved Execution Plan from the local `.md` file (or from chat context in memory-only mode), perform a 100% full-content audit across all 8 plan sections (Metadata, Specifications, Risk Alignment, Verified Elements, Step Sequence, Playwright Settings, Data Variations cell-by-cell, and Pattern Description Annotations), execute `GetTestCaseDetails` on the server to programmatically verify that zero validation or compiler errors exist, and output the Post-Construction Smoke Audit Report containing direct clickable MTA links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for Test Configuration, Test Suite, and Test Cases, plus a clickable link to the local Execution Plan markdown file.

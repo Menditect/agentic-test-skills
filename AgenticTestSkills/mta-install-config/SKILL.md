@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.3.0"
-changes: "Added strong Bearer token security requirements and setup instructions for remote/cloud MTA Plugin MCP server."
+version: "1.3.1"
+changes: "Updated default MTA Plugin MCP server endpoint path from /plugin-mcp/ to /plugin/mcp."
 ---
 
 # MTA Installation & Configuration Skill
@@ -74,7 +74,7 @@ Guide the user through these four sequential setup micro-states, halting to veri
     *   Confirm if the user has already imported the MTA Plugin.
     *   Ask if they use Git for version control to proactively trigger the Java caching warning.
 *   **Key Requirements:**
-    *   Provide direct links to [MTA Plugin (Component 214717)](https://marketplace.mendix.com/link/component/214717) and [Menditect Agentic Test Skills (Component 301447)](https://marketplace.mendix.com/link/component/301447). 
+    *   Provide direct links to [MTA Plugin (Component 214717)](https://marketplace.mendix.com/link/component/214717) and [Menditect Agentic Test Skills (Component 305457)](https://marketplace.mendix.com/link/component/305457). 
     *   Explicitly flag **Menditect Commons (Component 254123)** as a helpful but *completely optional* helper dependency.
     *   Provide the mandatory Git batch script workaround to prevent compiled Java action merge conflicts:
         ```batch
@@ -92,12 +92,12 @@ Guide the user through these four sequential setup micro-states, halting to veri
             *   *Localhost (Studio Pro):* Optional, but recommended.
             *   *Non-Localhost (Cloud / Staging / Remote Docker):* **MANDATORY**. Instruct the user to generate a strong 256-bit token (min 32+ characters, e.g. via `openssl rand -base64 32` or PowerShell random generation) and configure it as an Encrypted Constant in Mendix Portal / Studio Pro.
             *   Passed as `Authorization: Bearer [Token]` in MCP client request headers.
-        *   Endpoint is reachable at `[RuntimeUrl]/plugin-mcp/` (e.g. `http://localhost:8081/plugin-mcp/` or `https://[app-domain]/plugin-mcp/`).
+        *   Endpoint is reachable at `[RuntimeUrl]/plugin/mcp` (e.g. `http://localhost:8081/plugin/mcp` or `https://[app-domain]/plugin/mcp`).
 *   **🔍 Success Verification Check:**
     *   The Mendix App compiles successfully in Studio Pro with zero Java action compilation errors.
     *   Running `git status` verifies that all proxies, actions, and system files under `modules/javasource` are untracked and successfully ignored.
     *   Startup console logs print a successful connection handshake from the startup hook.
-    *   Probing `[RuntimeUrl]/plugin-mcp/` returns the `execute-testcase` tool.
+    *   Probing `[RuntimeUrl]/plugin/mcp` returns the `execute-testcase` tool.
 
 ### 3. `[STATE_PLAYWRIGHT_SETUP]` (Frontend Only)
 *   **Purpose:** Guide Playwright Connector setup and browser hosting selection.
@@ -121,7 +121,7 @@ Guide the user through these four sequential setup micro-states, halting to veri
     *   Enforce high-DPI scaling checks: Ensure Windows display scaling and browser zoom are set strictly to **100%** to prevent click-alignment offset failures during frontend visual test steps.
 *   **🔍 Success Verification Check:**
     *   The MTA Portal Application Instance shows a green status light.
-    *   Running a model-discovery query via the MTA MCP tools (e.g. `GetPages` or `GetTestConfigurationsForApplicationKey`) returns a valid, non-empty JSON structure.
+    *   Running a model-discovery query via the MTA MCP tools (e.g. `GetAppModelData` or `GetTestConfigurationDetails`) returns a valid, non-empty JSON structure.
 
 ---
 

@@ -1,6 +1,0 @@
-{
-  "mta_base_url": "MtaUrl",
-  "mcp_endpoint": "MtaUrl/tools/mcp",
-  "plugin_mcp_url": "app-under-test-url/plugin-mcp/",
-  "plugin_mcp_token": ""
-}
