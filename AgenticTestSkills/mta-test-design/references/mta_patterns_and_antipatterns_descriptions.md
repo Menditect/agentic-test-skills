@@ -1169,11 +1169,30 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-88`: Execution Plan Post-Build Verification & Link Sealing Law
 * **Scope:** General | **Classification:** Platform Execution Law
 * **Description:** Mandates that upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 construction discrepancies, the agent MUST update and seal the local Execution Plan markdown file (`${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`):
-  1. *Machine-Readable Header Sealing:* Update the collapsible provenance YAML header (`schema_version: "1.2.0"`) to record `status: "BUILT_AND_VERIFIED"`, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
-  2. *Human-Readable Clickable Receipt:* Append a standardized `## MTA Build & Smoke Verification Receipt` at the end of the execution plan containing direct, clickable MTA Web links formatted per `PAT-46` (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) to the Test Configuration, Test Suite, and all created Test Cases, along with chronological audit timestamps.
-  3. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
+  1. *Machine-Readable Header Sealing:* Update the collapsible YAML header (`schema_version: "1.2.0"`) inside `<details><summary><b>Execution Plan Metadata</b></summary>` to record `status: "BUILT_AND_VERIFIED"`, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
+  2. *Top-of-Page Audit Callout & Direct Links:* Append post-construction build & smoke audit status to the single top-level callout note, and insert the Direct MTA Web Navigation Links table directly beneath the note at the top of the plan for immediate 1-click access without scrolling.
+  3. *Section 9 Verification Details:* Append Section 9 (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`) at the bottom of the plan containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) and detailed 7-point verification checks.
+  4. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
 * **Related Rules:**
   * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable MTA Web Navigation Link Formatting), `PAT-47` (Real-Time Placement Key Persistence), `PAT-59` (Zero Construction Error Pre-Flight Law), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
+
+---
+
+### `PAT-89`: File-First Execution Plan Drafting & Executive Chat Summary Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Mandates that during test design (`STATE_BUILD_PLANNING` / `PLAN_STEP_1`), the full, exhaustive 8-section Execution Plan MUST be persisted directly to disk at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` and outer collapsible headers (`<details><summary><b>...</b></summary>`) across all major sections (Metadata, Pre-Approval Checklist, and Sections 1 through 8). Conversational chat output MUST be strictly limited to an Executive Plan Summary Box, the pre-approval quality audit status, a clickable file link to the `.md` file, and the Checkpoint 1 Strategy Decision Card. The internal `Pattern Applicability Checklist` is relegated exclusively to silent internal reasoning tokens and MUST NOT be output in conversational chat.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-41` (Chat Plan Flooding & Delayed File Persistence Anti-Pattern).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law), `PAT-88` (Execution Plan Post-Build Verification & Link Sealing Law).
+
+---
+
+### `ANTI-41`: Chat Plan Flooding & Delayed File Persistence Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Dumping hundreds of lines of full uncollapsed markdown execution plans and internal pattern applicability checklists directly into conversational chat output before persisting to disk. This floods user context, produces severe UI scrolling fatigue, increases token usage, and delays disk-level file persistence until after user approval, risking plan loss across session boundaries or tool crashes.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-89` (File-First Execution Plan Drafting & Executive Chat Summary Law).
+  * **Related Anti-Patterns:** `ANTI-38` (Blind Prior Plan Overwrite or Amnesic Discard Anti-Pattern).
 
 ---
 
@@ -1182,6 +1201,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
 | **`PAT-88`** (Post-Build Verification & Link Sealing) | **`ANTI-18`** (Ignored Construction Errors) | Updating execution plan with verified status, timestamps, and clickable MTA links vs leaving plans unverified |
+| **`PAT-89`** (File-First Drafting & Chat Summary) | **`ANTI-41`** (Chat Plan Flooding & Delayed Persistence) | Persisting full plan to disk at draft phase with collapsible headers vs dumping full plans in chat |
 | **`PAT-01`** (MTF Pyramid Alignment) | **`ANTI-02`** (Ice Cream Cone Heavy UI Testing) | Scoping logic at lowest pyramid layer vs over-relying on UI tests |
 | **`PAT-04`** (Void Microflow Side-Effect Audit) | **`ANTI-13`** (Blind Void Microflow Testing) | Asserting DB side-effects vs relying on crash-only checks |
 | **`PAT-05`** / **`PAT-13`** (Frontend Testkit & Structural Locators) | **`ANTI-12`** (Raw Playwright Bypass) | Using Menditect Testkit & structural chains vs raw Playwright code |

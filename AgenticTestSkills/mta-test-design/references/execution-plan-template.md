@@ -1,19 +1,19 @@
 # Standardized AI-Generated Execution Plan Blueprint
 
 **📍 Location:** `references/execution-plan-template.md` | **🏠 Parent:** [MTA Test Design Skill](../SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
-*Patterns Enforced: `PAT-12`, `PAT-34`, `PAT-43`, `PAT-44`, `PAT-60`, `PAT-65`, `PAT-77`, `PAT-82`, `PAT-84`, `PAT-88`, `ANTI-31`, `ANTI-32`, `ANTI-36`*
+*Patterns Enforced: `PAT-12`, `PAT-34`, `PAT-43`, `PAT-44`, `PAT-60`, `PAT-65`, `PAT-77`, `PAT-82`, `PAT-84`, `PAT-88`, `PAT-89`, `ANTI-31`, `ANTI-32`, `ANTI-36`, `ANTI-41`*
 
-This document defines the canonical 8-section layout and schema for an approved MTA Execution Plan (`EP_<TestCaseName>.md`). Both `mta-test-design` (during plan generation) and `mta-build` (during pre-construction ingestion and post-construction smoke auditing) MUST adhere to this exact specification.
+This document defines the canonical layout and schema for an approved MTA Execution Plan (`EP_<TestCaseName>.md`). Both `mta-test-design` (during plan generation) and `mta-build` (during pre-construction ingestion and post-construction smoke auditing) MUST adhere to this exact specification.
 
 The document structure consists of:
-- **Execution Plan Provenance & Sealed Headers** (collapsible provenance metadata block, `PAT-44`)
-- **Pre-Approval Quality Audit Banner & Checklist** (top-level audit banner and collapsible 14-point checklist, `PAT-82`)
-- **Sections 1 through 8** (the core specification and test configuration sections)
-- **MTA Build & Smoke Verification Receipt** (post-construction receipt block appended upon verification, `PAT-88`)
+- **Execution Plan Metadata** (collapsible metadata block, `PAT-44`)
+- **Pre-Approval Quality Audit Banner & Checklist** (top-level audit banner, direct navigation links table post-build, and collapsible 14-point checklist, `PAT-82`)
+- **Sections 1 through 8** (the core specification and test configuration sections, enclosed in outer collapsible containers)
+- **Section 9: MTA Build & Smoke Verification Receipt** (post-construction receipt block appended upon verification, `PAT-88`)
 
 ---
 
-<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>
+<details><summary><b>Execution Plan Metadata</b></summary>
 
 ```yaml
 plan_id: "TC_CreateOrder-v1"
@@ -38,9 +38,20 @@ test_case_keys: []
 # MTA EXECUTION PLAN SIGN-OFF
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 14/14 checks executed
-> **MTA Model Parity Audit (`GetAppModelData`):** [Verified In-Sync (Options A & B Available) | Model Delta Detected (Option B Blocked ➔ Option A Only)]
-> **Category:** [Backend | Frontend] | **Execution User:** `[User]` | **Gate Status:** Ready for Gate 1 Review
+> **Pre-Approval Quality Audit:** 14/14 checks executed (100% compliant)  
+> **MTA Server Model Check:** Verified (All planned microflows, entities, and attributes exist in the MTA server)  
+> **Category:** [Backend | Frontend]  
+> *(Upon Smoke Audit completion, the following lines are appended directly without an empty line:)*  
+> **Post-Construction Build & Smoke Audit:** `BUILT_AND_VERIFIED` (0 Discrepancies)  
+> **Built By:** `[builder_system_user]` at `[built_at]` | **Verified By:** `[verifier_system_user]` at `[verified_at]`
+
+### Direct MTA Web Navigation Links
+*(Appended immediately beneath the top note upon successful smoke verification)*
+| MTA Asset Type | Asset Name | Database Key | Direct MTA Web Link |
+| :--- | :--- | :---: | :--- |
+| **Test Configuration** | `[ConfigName]` | `[ConfigKey]` | [Open Configuration]([MtaBaseUrl]/p/testconfiguration/[ConfigKey]) |
+| **Test Suite** | `[SuiteName]` | `[SuiteKey]` | [Open Suite]([MtaBaseUrl]/p/testsuite/[SuiteKey]) |
+| **Test Case** | `[TestCaseName]` | `[TestCaseKey]` | [Open Test Case]([MtaBaseUrl]/p/testcase/[TestCaseKey]) |
 
 <details>
 <summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>
@@ -60,7 +71,7 @@ test_case_keys: []
 | **11** | **Backend Exploratory Single-Payload Plan Blueprint** | `PAT-63`, `PAT-75`, `ANTI-29` | Verifies Backend exploratory flow with complete JSON blueprint, ExecutorUsername default, and verified domain attributes (`PAT-75`) | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Verifies UI actions drive browser via TestKit microflows, not domain microflows | `PASS` / `NA` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | All Frontend steps strictly use verified microflows from closed catalogs | `PASS` / `NA` |
-| **14** | **MTA Model Parity Audit** | `PAT-82`, `ANTI-36` | Plan drafted at local model level (`mxcli`). Parity audit via `GetAppModelData` verifies all planned microflows, entities, and attributes match identically in MTA. If mismatch/stale: Option B is blocked, and plan is restricted to Option A (Exploratory Testing Only) | `PASS` |
+| **14** | **MTA Server Model Check** | `PAT-82`, `ANTI-36` | Plan drafted at local model level (`mxcli`). Parity audit via `GetAppModelData` verifies all planned microflows, entities, and attributes exist in the MTA server. If mismatch/stale: Option B is blocked, and plan is restricted to Option A (Exploratory Testing Only) | `PASS` |
 
 </details>
 
@@ -86,11 +97,11 @@ test_case_keys: []
 
 *   **Target Application:** `[AppName]`
 *   **Execution Strategy / Target Mode:** `[Option A: Local Exploratory Test (MTA_plugin - Fast In-Memory Feedback) | Option B: Direct Persistent MTA Test (MTA Server - Full Placement & CI/CD)]`
-*   **Target Configuration:** `[UserSelectedTestConfig | Pending Gate 2 for Option B | Bypassed for Option A]`
-*   **Target Suite:** `[UserSelectedTestSuite | Pending Gate 2 for Option B | Bypassed for Option A]`
+*   **Target Configuration:** `[UserSelectedTestConfig | Pending Checkpoint 2 for Option B | Bypassed for Option A]`
+*   **Target Suite:** `[UserSelectedTestSuite | Pending Checkpoint 2 for Option B | Bypassed for Option A]`
 *   **Test Case Name:** `[UserSelectedTestCaseName]`
 *   **MTA Category:** `[Backend | Frontend]`
-*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Gate 2 for Option B | Bypassed for Option A]`
+*   **Execution User (`EXUS_ExecutionUser`):** `[UserSelectedExecutionUser, e.g., MxAdmin | Pending Checkpoint 2 for Option B | Bypassed for Option A]`
 
 </details>
 
@@ -107,7 +118,8 @@ test_case_keys: []
 
 </details>
 
-## 3. Test Case Scope & Dual-Risk Profile
+<details>
+<summary><b>3. Test Case Scope & Dual-Risk Profile</b></summary>
 
 ### Functional Specification Profile
 | Specification Property | Detail / Value |
@@ -125,7 +137,10 @@ test_case_keys: []
 | **Technical Risk** | `[e.g., ACID & Database Integrity Violation]` *(Severity: High)* | `[e.g., In-memory execution with explicit rollback and atomic count verification]` |
 | **Business Risk** | `[e.g., Calculation Accuracy & Financial Leakage]` *(Severity: Critical)* | `[e.g., Boundary value variation matrix validating strict decimal precision thresholds]` |
 
-## 4. Verified Model Elements & Testability Profile
+</details>
+
+<details>
+<summary><b>4. Verified Model Elements & Testability Profile</b></summary>
 
 | Model Type | Component Name | Verified Attributes, Values & Roles |
 | :--- | :--- | :--- |
@@ -134,7 +149,10 @@ test_case_keys: []
 | **Page** *(Frontend)* | `[ModuleName].[PageName]` | Page Key: `[PageKey]`, Layout Context: `[LayoutGrid / DataView]` |
 | **Widget** *(Frontend)* | `[WidgetName]` | Type: `[Button / TextBox / DropDown]`, Action / Operator: `[ACT_Click / ELO_SetText]` |
 
-## 5. Chronological Step Sequence Plan
+</details>
+
+<details>
+<summary><b>5. Chronological Step Sequence Plan</b></summary>
 
 ### Test Case Container Settings: `[TestCaseName]`
 *   **Rollback After Execution:** `RollbackTcseAfterExecution = Yes` (or `No`)
@@ -145,7 +163,7 @@ test_case_keys: []
 ### Step Sequence Matrix
 
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` | Direct Initialization on Create Object [^PAT-06] |
 | **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` | Explicit Filter & Count Assertion [^PAT-07], [^PAT-08] |
 | **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` | Business Process Execution & Assertion [^PAT-09] |
@@ -209,10 +227,10 @@ test_case_keys: []
 
 </details>
 
-## 6. Playwright / Browser Settings
+</details>
 
 <details>
-<summary><b>Playwright & Browser Environment Settings</b></summary>
+<summary><b>6. Playwright / Browser Settings</b></summary>
 
 | Setting Key | Default / Selected Value | All Available Alternative Options |
 | :--- | :--- | :--- |
@@ -231,7 +249,8 @@ test_case_keys: []
 
 </details>
 
-## 7. Data Variation Matrix & Metadata
+<details>
+<summary><b>7. Data Variation Matrix & Metadata</b></summary>
 
 > [!IMPORTANT]
 > **Zero Disconnect SSOT Invariant:** Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
@@ -252,10 +271,10 @@ test_case_keys: []
 
 </details>
 
-## 8. Applied Testing Patterns & Rationale
+</details>
 
 <details>
-<summary><b>Applied Testing Patterns & Architecture Laws</b></summary>
+<summary><b>8. Applied Testing Patterns & Rationale</b></summary>
 
 | Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
 | :--- | :--- | :--- | :--- |
@@ -265,23 +284,19 @@ test_case_keys: []
 
 </details>
 
----
+<details>
+<summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>
 
-## MTA Build & Smoke Verification Receipt
+### Smoke Audit Results & Verification Details (0 Discrepancies)
 
-> [!NOTE]
-> **Post-Construction Build & Smoke Verification Audit**  
-> **Schema Version:** `1.2.0` | **Status:** `BUILT_AND_VERIFIED`  
-> **Built By:** `[builder_system_user]` at `[built_at]` | **Verified By:** `[verifier_system_user]` at `[verified_at]`
+| Audit Item | Verification Target | Status | Details |
+| :--- | :--- | :-: | :--- |
+| **Plan ID Alignment** | `[plan_id]` | `PASS` | Matches approved execution plan ID |
+| **Revision Integrity** | Rev `[revision]` | `PASS` | No uncommitted plan drift |
+| **Test Case Placement** | `[TestCaseName]` (Key: `[TestCaseKey]`) | `PASS` | Verified under Suite `[SuiteKey]` and Config `[ConfigKey]` |
+| **Step Sequence Audit** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence and settings |
+| **Variation Items Audit** | Matrix Items | `PASS` | Zero unapproved additions, names/descriptions persisted |
+| **MTA Compiler Validation** | Server Validation Engine | `PASS` | 0 compilation errors, 0 warnings |
+| **Platform Quality Check** | 10 MTA Quality Laws | `PASS` | 100% compliant with MTA architecture standards |
 
-### 🌐 Direct MTA Web Navigation Links
-* **Test Configuration:** [`[ConfigName]`]([MtaBaseUrl]/p/testconfiguration/[ConfigKey]) (Key: `[ConfigKey]`)
-* **Test Suite:** [`[SuiteName]`]([MtaBaseUrl]/p/testsuite/[SuiteKey]) (Key: `[SuiteKey]`)
-* **Test Case(s):**
-  * [`[TestCaseName]`]([MtaBaseUrl]/p/testcase/[TestCaseKey]) (Key: `[TestCaseKey]`)
-
-### 📋 Smoke Audit Receipt
-* **Plan ID:** `[plan_id]`
-* **Revision:** `[revision]`
-* **Discrepancies:** `0 (100% Match with Approved Execution Plan)`
-* **Audit Timestamp:** `[verified_at]`
+</details>

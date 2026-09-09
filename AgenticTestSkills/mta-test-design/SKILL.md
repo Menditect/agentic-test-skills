@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.10.0"
-changes: "Implemented semantic PlanIDs, in-place Git overwrite, chat memory compaction, pattern taxonomy index, and mandatory CoT pattern applicability checklist."
+version: "6.11.0"
+changes: "Enforced File-First Execution Plan Drafting & Executive Chat Summary (PAT-89, ANTI-41), top navigation links table, unified audit note, Execution Plan Metadata container, and user-friendly gate titles."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -35,7 +35,7 @@ When active under the macro state `STATE_BUILD_PLANNING`, track your current pla
 You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan with dual user approval gates:
 
 ### 1. `PLAN_STEP_1: Scoping & Test Specification Drafting (Part 1 - Gate 1 Approval)`
-*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan (including specification, chronological step sequence with pattern annotations, risk matrix, data variations, self-audit report, omitting placement details).
+*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
 *   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
     Before designing steps, identify which pattern families apply to your target:
     - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `ANTI-02`
@@ -45,16 +45,16 @@ You must progress sequentially through these three interactive planning micro-st
     - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`
     - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `_Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
     - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `ANTI-24`..`ANTI-30`
-    - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `ANTI-36`, `ANTI-38`
-*   **🧠 Mandatory Pattern Applicability Checklist (Chain of Thought - CoT)**:
-    Before drafting the full Execution Plan, you **MUST** output a concise `## 🧠 Pattern Applicability Checklist` directly into the chat:
-    1. *Component Typology:* State the detected targets (e.g., Authenticated Page, Void Microflow, Selection Dropdowns, Repeating DataGrid2, etc.).
-    2. *Selected Patterns:* Cross-reference the Taxonomy Index above and explicitly list the 3 to 6 active `PAT-xx` and `ANTI-xx` rules governing this test.
-    3. *Enforcement Rationale:* State in 1 sentence per rule how the plan will conform to each selected pattern.
-    *(By externalizing this checklist first, you lock your attention onto the relevant rules, eliminating pattern hallucinations and avoiding the cognitive overload of holding all 128 patterns in working memory).*
+    - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
+*   **🧠 Mandatory Pattern Applicability Checklist (Silent Chain of Thought - CoT)**:
+    Before drafting the Execution Plan, you **MUST** execute a pattern applicability evaluation internally within your thinking tokens (do **NOT** output this checklist into the chat, to keep chat noise minimal):
+    1. *Component Typology:* Evaluate detected targets (e.g., Authenticated Page, Void Microflow, Selection Dropdowns, Repeating DataGrid2, etc.).
+    2. *Selected Patterns:* Cross-reference the Taxonomy Index above and identify the active `PAT-xx` and `ANTI-xx` rules governing this test.
+    3. *Enforcement Rationale:* Verify internally how the plan will conform to each selected pattern.
+    *(By performing this checklist internally, you anchor your attention onto the relevant rules, eliminating pattern hallucinations and avoiding the cognitive overload of holding all 128 patterns in working memory).*
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${MTA_OUTPUT_PATH}/execution-plans/` for any existing `EP_*.md` files targeting the same microflow or page.
-    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its provenance header (supporting both outer `<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>` and legacy top-level YAML frontmatter to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
+    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
     *   *Tri-Choice Lineage Decision Card:* Present the audit summary and prompt the user with the 3 lineage paths:
         1. **[Path A: Evolve & Supersede (Recommended)]** Increment revision to [N+1]. Inherit edge cases, boundary matrix, and risk profiles, updating steps to match the live AST. Upon Gate 2 approval, the prior plan will be automatically archived and superseded.
         2. **[Path B: Branch Companion Case]** Create a distinct companion test case (e.g. `TC_[Target]_ValidationErrors` alongside `TC_[Target]_HappyPath`). Both execution plans remain active without superseding.
@@ -104,21 +104,24 @@ You must progress sequentially through these three interactive planning micro-st
 *   **Void Microflow Side-Effect Audit**: If the target microflow returns Void (no output parameter), halt and warn the user. Ask them to help identify database side-effects (creations, deletions, modifications) so that retrieve/count assertions can be designed instead of a basic exception-only check.
 *   **Universal Validation Feedback Audit (Backend Microflow Tests ONLY)**: For Backend Microflow tests, inspect ANY target microflow (regardless of prefix or typology such as `ACT_`, `ORC_`, `SUB_`, `CMT_`) for "Validation feedback" action activities. Always evaluate whether `AssertValidationFeedbackMessageCompare` (for specific member messages) or `AssertValidationFeedbackMessageCount` (for message thresholds) are required. *(Note: This applies EXCLUSIVELY to Backend Microflow tests. For Frontend UI tests, validation feedback is checked directly on the page using UI widget text assertions).*
 *   **Boundary & Scenario Identification**: Identify critical boundary conditions, edge cases, and scenarios to test.
-*   **Local-Level Execution Plan Drafting & Pre-Approval Parity Audit (`PAT-82`, `ANTI-36`)**: You are explicitly authorized to draft and design the entire Execution Plan based on the local Mendix model AST (`mxcli`). Before presenting Gate 1 for user approval, you **MUST** call the read-only MTA tool `GetAppModelData` to verify whether all planned microflows, entities, and attributes match identically in MTA.
-    *   *If Parity Matches (In-Sync):* Both Option A (Local Exploratory) and Option B (Direct Persistent MTA) are available.
-    *   *If Delta/Mismatch Detected (Out-of-Sync / Stale MTA Revision):* To prevent server build failures (`ANTI-36`), Option B is strictly blocked. The plan is automatically restricted to **Option A (Immediate Local Exploratory Testing)** until MTA is synchronized.
-*   **🚨 Gate 1 Halt Rule & Strategy Decision Card (Execution Plan Approval)**: Present the complete Execution Plan draft for user review, conclude with the structured **Gate 1 Plan Approval & Execution Strategy Decision Card**, and **HALT**. You **MUST** ask for explicit user approval of the Execution Plan and handle the Execution Strategy based on the test category and parity audit results: [^PAT-43] [^PAT-60] [^PAT-82] [^ANTI-36]
+*   **Local-Level Execution Plan Drafting & Pre-Approval Parity Audit (`PAT-82`, `PAT-89`, `ANTI-36`, `ANTI-41`)**: You are explicitly authorized to draft and design the entire Execution Plan based on the local Mendix model AST (`mxcli`).
+    1. *File-First Plan Persistence (`PAT-89`):* Write the complete Execution Plan directly to a local Markdown file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical 8-section layout enclosed in outer collapsible headers.
+    2. *Parity Verification:* Call the read-only MTA tool `GetAppModelData` to verify whether all planned microflows, entities, and attributes match identically in MTA.
+       - *If Parity Matches (In-Sync):* Both Option A (Local Exploratory) and Option B (Direct Persistent MTA) are available.
+       - *If Delta/Mismatch Detected (Out-of-Sync / Stale MTA Revision):* To prevent server build failures (`ANTI-36`), Option B is strictly blocked. The plan is automatically restricted to **Option A (Immediate Local Exploratory Testing)** until MTA is synchronized.
+    3. *Executive Chat Summary Presentation (`PAT-89`, `ANTI-41`):* In the chat response, do **NOT** print the full hundreds-of-lines execution plan tables. Instead, render ONLY the concise **Executive Summary Box** (~35 lines), a direct clickable Markdown file link to the generated `.md` file, and the Checkpoint 1 Decision Card.
+*   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (Execution Plan Review)**: Present the Executive Summary Box and clickable plan link, conclude with the structured **Checkpoint 1: Test Plan Review & Execution Strategy Decision Card**, and **HALT**. You **MUST** ask for explicit user approval of the Execution Plan and handle the Execution Strategy based on the test category and parity audit results: [^PAT-43] [^PAT-60] [^PAT-82] [^PAT-89] [^ANTI-36] [^ANTI-41]
     *   **For Backend Microflow & Domain Logic Tests (`Category == Backend`):**
         *   **Case 1: When Model Delta is Detected (Option B Blocked ➔ Option A Only):**
             Render the decision card with warning status, audit delta table, and Option B marked blocked:
             ```markdown
             ---
 
-            ## 🚦 GATE 1 PLAN APPROVAL & EXECUTION STRATEGY
+            ## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
 
             > [!WARNING]
-            > **MTA Model Parity Check:** Out of Sync — Persistent MTA Building Blocked (`ANTI-36`)  
-            > Local Mendix AST contains changes that are **not yet exported/synchronized in MTA**.
+            > **MTA Server Model Check:** Out of Sync — Persistent MTA Building Blocked (`ANTI-36`)  
+            > One or more planned elements do not exist in the active MTA server revision.
             >
             > 💡 **Automate Model Updates on Every Commit:**  
             > If you want MTA to automatically update its model revision whenever you commit, you can subscribe your Test Configuration to your git branch. Expand the setup guide below for step-by-step instructions.
@@ -141,7 +144,7 @@ You must progress sequentially through these three interactive planning micro-st
 
             </details>
 
-            ### 🔍 Parity Audit Summary (`GetAppModelData`)
+            ### 🔍 Model Discrepancy Summary
 
             | Inspected Element | Local AST (`mxcli`) | MTA Server Revision | Parity Status | Impact |
             | :--- | :--- | :--- | :--- | :--- |
@@ -153,15 +156,6 @@ You must progress sequentially through these three interactive planning micro-st
             | :--- | :--- | :---: | :--- |
             | **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`ACTIVE`** | **1-Click In-Memory Execution.** Runs all scenarios in `< 1s` with `Rollback = Yes`. Zero database pollution, instant feedback. |
             | **Option B: Persistent MTA Test** | MTA Server Platform | **`BLOCKED`** | **Temporarily Disabled.** Blocked until project model is synchronized (via [Branch Subscription](https://documentation.menditect.com/mta/branch-subscription) or manual upload). |
-
-            ```
-            ┌────────────────────────────────────────────────────────────────────────────┐
-            │  RECOMMENDED NEXT STEP:                                                    │
-            │  Proceed with Option A (Local Exploratory Execution).                      │
-            │  Once tests pass and the Mendix model is committed, you can promote this   │
-            │  plan directly to persistent MTA (Option B) with one command.              │
-            └────────────────────────────────────────────────────────────────────────────┘
-            ```
 
             ### 💬 Decision Required:
             > **Do you approve this Execution Plan for immediate local execution?**
@@ -179,34 +173,34 @@ You must progress sequentially through these three interactive planning micro-st
             ---
             ```
         *   **Case 2: When Model Parity is 100% In-Sync (Dual Options Available):**
-            Render the comparative decision matrix:
+            Render the neutral comparative decision matrix:
             ```markdown
             ---
 
-            ## 🚦 GATE 1 PLAN APPROVAL & EXECUTION STRATEGY
+            ## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
 
             > [!NOTE]
-            > **MTA Model Parity Check:** 100% In-Sync (`PAT-82`)  
-            > All planned microflows, entities, and attributes match identically between your local model and MTA.
+            > **MTA Server Model Check:** Verified (`PAT-82`)  
+            > All planned microflows, entities, and attributes exist in the MTA server.
 
             ### 🧭 Choose Your Execution Strategy
 
-            | Strategy Option | Target Environment | Speed | Recommended For |
+            | Strategy Option | Target Environment | Speed | Execution Profile |
             | :--- | :--- | :---: | :--- |
-            | **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | `< 1s` | **Rapid dev iteration & immediate feedback.** Executes in-memory with automatic database rollback (`Rollback = Yes`). |
-            | **Option B: Persistent MTA Test** | MTA Server Platform | `~15s` | **CI/CD & Long-term regression.** Saves plan, configures suite placement, and persists test cases on the server. |
+            | **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | `< 1s` | In-memory exploratory execution with automatic database rollback (`Rollback = Yes`). Zero database pollution, instant feedback. |
+            | **Option B: Persistent MTA Test** | MTA Server Platform | `~15s` | Persistent test asset creation on MTA server for CI/CD pipelines, team collaboration, and long-term regression suites. |
 
             ### 💬 Decision Required:
             > **Do you approve this Execution Plan? If so, which execution route would you like to take?**
             > - **Reply "A"** ➔ Run immediate local exploratory execution via `MTA_plugin`.
-            > - **Reply "B"** ➔ Proceed to Gate 2 (Placement & Target Configuration) to build persistent test cases in MTA.
+            > - **Reply "B"** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to build persistent test cases in MTA.
             > - **Reply "Adjust"** ➔ Modify test steps, assertions, or data variations first.
 
             ---
             ```
     *   **For Frontend UI Tests (`Category == Frontend`):**
         Frontend tests ALWAYS route to Option B (Direct Persistent MTA Platform). State definitively:
-        > *"Please review the proposed Frontend Execution Plan above. Frontend UI tests require MTA Platform locator mapping, Playwright settings, and 3-case suite lifecycle management. Therefore, they are constructed directly on the MTA Platform (Option B). Once approved, we will proceed to Gate 2 (Placement & Target Configuration)."*
+        > *"Please review the proposed Frontend Execution Plan above. Frontend UI tests require MTA Platform locator mapping, Playwright settings, and 3-case suite lifecycle management. Therefore, they are constructed directly on the MTA Platform (Option B). Once approved, we will proceed to Checkpoint 2 (Confirm Test Suite Placement & Settings)."*
 *   **⚡ Execution Strategy Decision Flow & Backend Exploratory / Provisioning Blueprint Law (`PAT-63`)**:
     *   **If Backend and User Selects Option A (Immediate Local Exploratory Execution):**
         *   *Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `PAT-76`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`, `ANTI-30`):* When Section 7 defines multiple data variations (`VAR_01`..`VAR_0N`), selecting Option A compiles all variations into **1 single `TCEX_RQ_TestStepRun` array** in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"` (or active execution user), `"ApplySecurityExecutor": "NONE"`, and `"RollbackTcseAfterExecution": "Yes"` (or `"true"`) with NO trailing `Persist` step, AST conflict vector auditing, intra-block teardown, verified entity attributes (`PAT-75`), mandatory 3-part performance benchmark breakdown (`PAT-76`), and disjoint synthetic keys, executing the entire matrix in sub-second time (< 1s) with zero database pollution. Invoking `execute-testcase` across multiple sequential agent turns is strictly prohibited (`ANTI-27`). If unmanaged external side-effects are detected, trigger the Session Isolation Fallback Protocol (`PAT-74`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
@@ -266,10 +260,12 @@ When the user's intent is manual exploratory testing or structured manual verifi
     If placing into a new Test Suite (or a suite with 0 frontend tests), present the explicit table displaying **ALL 10 Playwright Browser Settings**, showing both Default/Selected Value and ALL Alternative Options.
 *   **Vague Onboarding Guardrail**: If the user request is vague (e.g. "I want to test", "How to start"), immediately stop and present the onboarding guide from [prompts-templates.md](references/prompts-templates.md).
 
-### 3. `PLAN_STEP_3: Placement Summary Presentation & Execution Plan Sign-Off (Part 3 - Gate 2 Approval)`
+### 3. `PLAN_STEP_3: Placement Summary Presentation & Execution Plan Sign-Off (Part 3 - Checkpoint 2 Approval)`
 *   **Action**: Compile and display the dedicated **Placement & Target Summary Box** summarizing all resolved placement parameters and settings:
 
 ```markdown
+## 🚦 CHECKPOINT 2: CONFIRM TEST SUITE PLACEMENT & SETTINGS
+
 > 📍 **PLACEMENT & TARGET SUMMARY**
 > * **Application Name:** `[AppName]`
 > * **Target Test Configuration:** `[UserSelectedTestConfig]`
@@ -283,7 +279,7 @@ When the user's intent is manual exploratory testing or structured manual verifi
 ```
 
 *   **⚡ Mandatory Local Plan Storage, Revision Sealing & Sign-Off Protocol (`PAT-43`, `PAT-44`, `PAT-47`):**
-    Upon receiving explicit user approval for the Placement & Target Summary (Gate 2), you **MUST** store the approved Execution Plan locally as a `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`).
+    Upon receiving explicit user approval for the Placement & Target Summary (Checkpoint 2), you **MUST** store the approved Execution Plan locally as a `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`).
     
     > **Target File & Versioning In-Place (Git History Delegation):**
     > Before saving, inspect if `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` already exists on disk:
@@ -296,16 +292,16 @@ When the user's intent is manual exploratory testing or structured manual verifi
     >     > `ℹ️ Notice: The approved execution plan matches the active plan on disk (Revision: <revision>). Re-using existing Plan ID without changes.`
     >   - Retain existing plan and proceed to `STATE_CONSTRUCTION`.
     > - **Case C: Modified Plan / Revision (Updated plan specifications):**
-    >   - Read the existing file's provenance header to extract its `revision` (defaulting to 1 if missing).
+    >   - Read the existing file's metadata header to extract its `revision` (defaulting to 1 if missing).
     >   - Set `revision: <old_revision + 1>`
     >   - Set `plan_id: "<TestCaseName>-v<new_revision>"`
     >   - Set `supersedes_plan_id: "<TestCaseName>-v<old_revision>"`
     >   - **Overwrite in place:** Overwrite `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` in place. Do NOT attempt to create archive subfolders or move files. Version history and historical diffs are delegated to Git.
 
-    > **Collapsible Sealed Provenance Header (YAML Block - Option A):**
+    > **Collapsible Execution Plan Metadata Header (YAML Block - Option A):**
     > Prepend a collapsible YAML block enclosed within an outer `<details>` tag with CommonMark blank line padding to the top of the Markdown plan file:
     > ```markdown
-    > <details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>
+    > <details><summary><b>Execution Plan Metadata</b></summary>
     >
     > ```yaml
     > plan_id: "<TestCaseName>-v<revision>"
@@ -404,12 +400,14 @@ When the user's intent is manual exploratory testing or structured manual verifi
     2. **For Associations:** Create a Retrieve/Filter step for the associated parent entity filtering on an attribute (e.g., `Code`). For associated variations, set filter = `'TEST_CODE'`. For unassociated variations, set filter = `'NON_EXISTENT'`. Pass the Retrieve step output to the association setter step.
 *   **Right-Level Allocation (The "Ice Cream Cone" Check)**: Defend against the "Ice Cream Cone" Anti-Pattern. Push logic testing down the pyramid to Unit or Integration levels where possible. [^PAT-01] [^ANTI-02]
 *   **🚫 Strict Data Variation Consolidation**: Seek to use MTA **Data Variations** rather than separate, duplicate test cases that only modify input data. Design a single, reusable test case structure and enable Data Variations to define a variation matrix. [^PAT-19] [^ANTI-08]
-*   **🔄 Execution Plan Revision & Build Plan Pattern Re-Audit Protocol**:
+*   **🔄 Execution Plan Iteration & Modification Protocol (`PAT-89`, `ANTI-41`)**:
     Whenever the user requests a modification, addition, or refinement to an existing or draft Execution Plan (whether at step, parameter, or variation matrix level):
-    1. 🚫 **No Localized Edits or Partial Table Outputs:** You are strictly prohibited from outputting localized text/table edits, isolated snippet changes, or showing ONLY the mutated Data Variation Matrix table in isolation. You MUST ALWAYS re-display the entire Execution Plan in its full, complete form.
-    2. 🔍 **Pattern Re-Audit:** Cross-reference the updated step sequence against the [MTA Scoping & Design Pattern Registry](#-mta-test-scoping--design-pattern-registry) and the 14-point audit in [pre-approval-audit.md](references/pre-approval-audit.md).
-    3. 📝 **Re-Run Pre-Approval Self-Audit:** Re-embed the updated Pre-Approval Quality Audit status banner and checklist table reflecting any step sequence adjustments.
-    4. 🤖 **Automatic Pattern Registration:** If during conversation or planning a new pattern or rule is identified, register it in `mta-patterns-and-antipatterns-reference.md`, run `sync-mta-skills.bat`, and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`).
+    1. **Scenario 1 (Chat Delta Modification):** If the user requests changes in chat, update the local `.md` file on disk directly (incrementing revision if previously approved), re-audit patterns silently, and render an updated Executive Summary in chat with a concise diff summary and the Checkpoint 1 Decision Card (`PAT-89`).
+    2. **Scenario 2 (Manual IDE File Edit Ingestion):** If the user modifies the `.md` file directly in their editor/IDE, re-read the file via `view_file`, validate changes against domain AST and MTA Skill Laws, update `mta_state.json`, and render an updated Executive Summary in chat.
+    3. 🔍 **Pattern Re-Audit:** Cross-reference the updated step sequence against the [MTA Scoping & Design Pattern Registry](#-mta-test-scoping--design-pattern-registry) and the 14-point audit in [pre-approval-audit.md](references/pre-approval-audit.md).
+    4. 📝 **Re-Run Pre-Approval Self-Audit:** Re-embed the updated Pre-Approval Quality Audit status banner and checklist table in the `.md` file reflecting any step sequence adjustments.
+    5. 🚫 **Chat Flooding Prohibition (`ANTI-41`):** You are strictly prohibited from dumping hundreds of lines of raw execution plan tables or localized text snippets into chat. Keep the complete specification on disk and output ONLY the Executive Summary in chat.
+    6. 🤖 **Automatic Pattern Registration:** If during conversation or planning a new pattern or rule is identified, register it in `mta-patterns-and-antipatterns-reference.md`, run `sync-mta-skills.bat`, and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`).
 
 ---
 
@@ -417,16 +415,24 @@ When the user's intent is manual exploratory testing or structured manual verifi
 
 You **MUST** format the final approved Execution Plan strictly in accordance with the standardized blueprint defined in [execution-plan-template.md](references/execution-plan-template.md).
 
-The Execution Plan layout consists of the Top-Level Audit Banner followed by 8 numbered sections:
-- **Pre-Approval Quality Audit Banner & Checklist Table:** Top-level 3-tier status note (`> [!NOTE] Pre-Approval Quality Audit: 14/14 checks executed`) and collapsible checklist (`<details><summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>`) verifying all 14 quality checks defined in [pre-approval-audit.md](references/pre-approval-audit.md).
-1. **State Compaction & Target Placement:** Collapsible container with session restoration block, target application, execution strategy (Option A vs Option B), suite, case name, and execution user.
-2. **Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY):** Explicit table auditing user prompt/JSON log against MTA Skill Laws with applied automatic corrections.
-3. **Test Case Scope & Dual-Risk Profile:** Functional specification profile and Technical vs Business risk mitigation table.
-4. **Verified Model Elements & Testability Profile:** Model elements inspected via `mxcli` AST or `GetAppModelData`.
-5. **Chronological Step Sequence Plan:** Rollback setting, clean step sequence matrix (zero raw HTML in cells), and outer collapsible step drilldown blocks (`<details><summary><b>Step N: ...</b></summary>`).
-6. **Playwright / Browser Settings:** Outer collapsible container for browser settings (Frontend) or memory notice (Backend).
-7. **Data Variation Matrix & Metadata:** Data variation matrix capped at 8 columns per table, followed by outer collapsible scenario descriptions (`EditAction="SetDescription"` SSOT).
-8. **Applied Testing Patterns & Rationale:** Table documenting applied patterns, step targets, and rule citations (`[^PAT-xx]`, `[^ANTI-xx]`).
+The Execution Plan layout consists of the Metadata Header followed by the Single Unified Audit Note, top navigation links table (post-build), the collapsible checklist, and 8 numbered sections (with Section 9 added post-build):
+- **Execution Plan Metadata Header:** Outer collapsible `<details><summary><b>Execution Plan Metadata</b></summary>` containing the YAML block (`plan_id`, `schema_version: "1.2.0"`, `revision`, `status`, `approved_at`, `approved_by`, `approver_system_user`, etc.).
+- **Single Unified Status Note:** Single continuous top-level status note (`> [!NOTE]`) with:
+  - `Pre-Approval Quality Audit: 14/14 checks executed (100% compliant)`
+  - `MTA Server Model Check: Verified (All planned microflows, entities, and attributes exist in the MTA server)`
+  - `Category: [Backend | Frontend]`
+  - *(And upon smoke verification, appended post-construction verification status and builder/verifier timestamps without empty lines)*
+- **Direct MTA Web Navigation Links Table (Post-Build):** Placed immediately beneath the top note upon successful smoke verification, displaying 1-click links to the Test Configuration, Test Suite, and all created Test Cases.
+- **Pre-Approval Quality Checklist:** Collapsible checklist (`<details><summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>`) verifying all 14 quality checks defined in [pre-approval-audit.md](references/pre-approval-audit.md).
+1. **State Compaction & Target Placement:** Collapsible container (`<details><summary><b>1. State Compaction & Target Placement</b></summary>`) with session restoration block, target application, execution strategy, suite, case name, and execution user.
+2. **Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY):** Collapsible container (`<details><summary><b>2. Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)</b></summary>`) with explicit table auditing user prompt/JSON log against MTA Skill Laws with applied automatic corrections.
+3. **Test Case Scope & Dual-Risk Profile:** Collapsible container (`<details><summary><b>3. Test Case Scope & Dual-Risk Profile</b></summary>`) with functional specification profile and Technical vs Business risk mitigation table.
+4. **Verified Model Elements & Testability Profile:** Collapsible container (`<details><summary><b>4. Verified Model Elements & Testability Profile</b></summary>`) with model elements inspected via `mxcli` AST or `GetAppModelData`.
+5. **Chronological Step Sequence Plan:** Collapsible container (`<details><summary><b>5. Chronological Step Sequence Plan</b></summary>`) with rollback setting, clean step sequence matrix (zero raw HTML in cells), and nested outer collapsible step drilldown blocks (`<details><summary><b>Step N: ...</b></summary>`).
+6. **Playwright / Browser Settings:** Collapsible container (`<details><summary><b>6. Playwright / Browser Settings</b></summary>`) for browser settings (Frontend) or memory notice (Backend).
+7. **Data Variation Matrix & Metadata:** Collapsible container (`<details><summary><b>7. Data Variation Matrix & Metadata</b></summary>`) with variation matrix capped at 8 columns per table, followed by nested outer collapsible scenario descriptions (`EditAction="SetDescription"` SSOT).
+8. **Applied Testing Patterns & Rationale:** Collapsible container (`<details><summary><b>8. Applied Testing Patterns & Rationale</b></summary>`) with table documenting applied patterns, step targets, and rule citations (`[^PAT-xx]`, `[^ANTI-xx]`).
+9. **MTA Build & Smoke Verification Receipt (Post-Build):** Appended at the bottom as `<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>` containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) with the 7-row verification table.
 
 For the complete verbatim Markdown template with sample values and code fences, consult [execution-plan-template.md](references/execution-plan-template.md).
 

@@ -1,9 +1,9 @@
 # 14-Point Pre-Approval Quality Audit Protocol
 
-**📍 Location:** `references/pre-approval-audit.md` | **🏠 Parent:** [MTA Test Design Skill](../SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
-*Patterns Enforced: `PAT-03`, `PAT-06`, `PAT-07`, `PAT-08`, `PAT-10`, `PAT-11`, `PAT-12`, `PAT-16`, `PAT-18`, `PAT-19`, `PAT-20`, `PAT-27`, `PAT-28`, `PAT-34`, `PAT-35`, `PAT-41`, `PAT-54`, `PAT-60`, `PAT-63`, `PAT-64`, `PAT-65`, `PAT-67`, `PAT-75`, `PAT-77`, `PAT-82`, `ANTI-01`, `ANTI-03`, `ANTI-08`, `ANTI-11`, `ANTI-20`, `ANTI-21`, `ANTI-23`, `ANTI-29`, `ANTI-31`, `ANTI-36`*
+**📍 Location:** `references/pre-approval-audit.md` | **🏠 Parent:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) / [MTA Build Skill](../SKILL.md)  
+*Patterns Enforced: `PAT-03`, `PAT-06`, `PAT-07`, `PAT-08`, `PAT-10`, `PAT-11`, `PAT-12`, `PAT-16`, `PAT-18`, `PAT-19`, `PAT-20`, `PAT-27`, `PAT-28`, `PAT-34`, `PAT-35`, `PAT-41`, `PAT-54`, `PAT-60`, `PAT-63`, `PAT-64`, `PAT-65`, `PAT-67`, `PAT-75`, `PAT-77`, `PAT-82`, `PAT-89`, `ANTI-01`, `ANTI-03`, `ANTI-08`, `ANTI-11`, `ANTI-20`, `ANTI-21`, `ANTI-23`, `ANTI-29`, `ANTI-31`, `ANTI-36`, `ANTI-41`*
 
-This reference document defines the complete 14-point Pre-Approval Quality Audit protocol required before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or proceeding to Gate 1 sign-off.
+This reference document defines the complete 14-point Pre-Approval Quality Audit protocol required before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or proceeding to Checkpoint 1 review.
 
 ---
 
@@ -72,7 +72,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 
 ### [CHECK 10] Dual-Track Execution Strategy Explicit Declaration (`PAT-60`, `PAT-62`)
 - **Scope:** All Tests.
-- **Verification Criteria:** Section 1 explicitly declares the Execution Strategy (Option A vs Option B for Backend; Option B Persistent MTA for Frontend). The Gate 1 prompt presents the appropriate path for user choice.
+- **Verification Criteria:** Section 1 explicitly declares the Execution Strategy (Option A vs Option B for Backend; Option B Persistent MTA for Frontend). The Checkpoint 1 prompt presents the appropriate path for user choice.
 - **Compliance Status:** `PASS`.
 
 ### [CHECK 11] Backend Exploratory Single-Payload Plan Blueprint (`PAT-63`, `PAT-75`, `ANTI-29`)
@@ -90,35 +90,37 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Verification Criteria:** All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs with exact parameter signatures. Zero synthetic microflows invented.
 - **Compliance Status:** `PASS` or `NA`.
 
-### [CHECK 14] MTA Model Parity Audit (`PAT-82`, `ANTI-36`)
+### [CHECK 14] MTA Server Model Check (`PAT-82`, `ANTI-36`)
 - **Scope:** All Tests.
-- **Verification Criteria:** Plan drafted at local model level (`mxcli`) is audited against MTA via `GetAppModelData`. All planned microflows, entities, and attributes must match identically in MTA. If any delta or missing element is detected: Option B is strictly blocked, and the plan is restricted to Option A (Exploratory Testing Only) until MTA is synchronized.
+- **Verification Criteria:** Plan drafted at local model level (`mxcli`) is audited against the MTA server via `GetAppModelData`. All planned microflows, entities, and attributes must exist in the MTA server. If any delta or missing element is detected: Option B is strictly blocked, and the plan is restricted to Option A (Exploratory Testing Only) until MTA is synchronized.
 - **Compliance Status:** `PASS`.
 
 ---
 
 ## 🚦 3-Tier Alert System
 
-The Pre-Approval Self-Audit banner at the top of Section 1 of the Execution Plan is rendered based on audit findings:
+The Pre-Approval Self-Audit banner at the top of the Execution Plan is rendered based on audit findings:
 
 1. **100% Compliance / Pass (All 14 Checks Pass):**
 ```markdown
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 14/14 checks executed
-> **MTA Model Parity Audit (`GetAppModelData`):** [Verified In-Sync (Options A & B Available) | Model Delta Detected (Option B Blocked ➔ Option A Only)]
-> **Category:** [Category] | **Execution User:** `[User]` | **Gate Status:** Ready for Gate 1 Review
+> **Pre-Approval Quality Audit:** 14/14 checks executed (100% compliant)  
+> **MTA Server Model Check:** Verified (All planned microflows, entities, and attributes exist in the MTA server)  
+> **Category:** [Category]
 ```
 
 2. **Adjusted / Minor Corrections (Corrections Applied via Conflict Audit):**
 ```markdown
 > [!IMPORTANT]
-> **Pre-Approval Quality Audit:** [X] of 14 checks executed (Corrections Applied)
-> **Category:** [Category] | **Execution User:** `[User]` | **Gate Status:** Requires Review (See Section 2 Conflict Audit)
+> **Pre-Approval Quality Audit:** [X] of 14 checks executed (Corrections Applied)  
+> **MTA Server Model Check:** [Verified | Out of Sync]  
+> **Category:** [Category]
 ```
 
 3. **Critical Violations Detected / Blocker (Violations detected that prevent execution):**
 ```markdown
 > [!CAUTION]
-> **Pre-Approval Quality Audit:** Critical Violations Detected (Plan Blocked)
-> **Category:** [Category] | **Execution User:** `[User]` | **Gate Status:** Blocked — Immediate Action Required
-```\n
+> **Pre-Approval Quality Audit:** Critical Violations Detected (Plan Blocked)  
+> **MTA Server Model Check:** [Verified | Out of Sync]  
+> **Category:** [Category]
+```
