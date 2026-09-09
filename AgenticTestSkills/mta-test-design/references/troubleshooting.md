@@ -148,3 +148,14 @@ If state leakage is caused by unmanaged external side-effects:
 2. Re-dispatch the variations as isolated, single-scenario `execute-testcase` calls.
 3. Consolidate results into the standard multi-scenario report (`PAT-61`).
 
+---
+
+## 🛠️ SCHEMA & VARIATION CONSTRUCTION TROUBLESHOOTING
+
+| Error / Failure Symptom | Underlying Cause | Corrective Action |
+| :--- | :--- | :--- |
+| MCP tool error: `Value 'Equals' is not valid for ComparisonOperator` on `EditAssert*` | Using plural `"Equals"` on edit/compare tools. | Pass singular `"Equal"` to `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`. Use plural `"Equals"` only on `CreateAssertMicroflowReturnValue`. |
+| Cloned variation fails with `ExpectedObjectCount: 0, Actual: 1` | Cloned `AssertObjectCount` containers default to `ExpectedObjectCount: 0` when created via `CreateTestCaseVariation`. | Explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N` for any variation expecting $\ge 1$ objects. |
+| Variation requires NULL/empty value, but empty string `""` fails type validation | Passing empty string to integer/date/decimal or non-string attribute. | Set `SetValueToEmpty: "_True"` instead of passing empty string literal. |
+| Intermediate key lookups slow down variation population | Calling `GetTeststepDetails` repeatedly between variations (`ANTI-40`). | Call `GetTestCaseDetails` once after bulk provisioning and index cloned keys in-memory (`PAT-86`, `PAT-87`). |
+

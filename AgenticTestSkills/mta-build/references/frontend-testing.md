@@ -183,13 +183,13 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 ## 🧭 INTERACTIVE PAGE & DISCOVERY PROTOCOLS
 
 ### PROTOCOL A: Page CSS Class Discovery (Mandatory Retry)
-Before locating widgets, you **MUST** obtain the page's CSS class directly from the `GetPages` tool using the `ClassName` field.
-1.  **MTA Server-Side Retrieval:** Call `GetPages`. Find the target page and read its `ClassName` field. This is the primary source of truth.
-2.  **MANDATORY RETRY & fallback on Empty Class:** If `GetPages` returns an empty string (`ClassName: ""`):
-    *   **Verify with Local Model:** Check the local Mendix model (using `ped_read_document` or `mxcli`) to see if a class actually is configured on the page.
-    *   **Execute Retries:** If a class is present in the local model but missing in `GetPages`, do NOT report a missing class error immediately. Instead, retry calling `GetPages` several times to account for server sync lag.
-    *   **Sync Discrepancy Warning:** If after retries `GetPages` still returns empty but the local model has a class, output a prominent warning to the user:
-        > "⚠️ **WARNING/DISCREPANCY:** Page '[PageName]' has a CSS classname defined in the local Mendix model, but the MTA server's `GetPages` tool still returns an empty class name after several retries. Please reload/re-sync your MTA configuration in Mendix Studio Pro."
+Before locating widgets, you **MUST** obtain the page's CSS class directly from the `GetAppModelData` tool (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"`) using the `ClassName` field.
+1.  **MTA Server-Side Retrieval:** Call `GetAppModelData(RetrieveAction="RetrievePagesByApplicationAndTestConfiguration")`. Find the target page and read its `ClassName` field. This is the primary source of truth.
+2.  **MANDATORY RETRY & fallback on Empty Class:** If `GetAppModelData` returns an empty string (`ClassName: ""`):
+    *   **Verify with Local Model:** Check the local Mendix model (using `mxcli` `DESCRIBE PAGE <Module.Page>`) to see if a class actually is configured on the page.
+    *   **Execute Retries:** If a class is present in the local model but missing in `GetAppModelData`, do NOT report a missing class error immediately. Instead, retry calling `GetAppModelData` several times to account for server sync lag.
+    *   **Sync Discrepancy Warning:** If after retries `GetAppModelData` still returns empty but the local model has a class, output a prominent warning to the user:
+        > "⚠️ **WARNING/DISCREPANCY:** Page '[PageName]' has a CSS classname defined in the local Mendix model, but the MTA server's `GetAppModelData` tool still returns an empty class name after several retries. Please reload/re-sync your MTA configuration in Mendix Studio Pro."
     *   **Absolute Missing Warning:** If no class exists in either source, output a warning unless the page belongs to a system, platform, or marketplace dependency where modification is restricted:
         *   **Exclusion Rules:** Do NOT output this warning for pages belonging to the following modules: `System`, `Administration`, any Marketplace modules, or standard platform module dependencies (e.g., `mxmodule`).
         *   **Standard Warning:** For all other user-modifiable modules, output:
@@ -292,12 +292,13 @@ Sequence of steps to automate a login page (`MxLoginFormPage`) with Username (`u
 
 ## 🛠️ CUSTOM WIDGETS & MOBILE GUIDELINES
 
-### 1. Custom Widget Discovery via `ped_read_document`
-If a custom widget is unknown, inspect the local model page:
-1.  Call `ped_read_document("MyModule.Page", "Pages$Page", ["/widgets"])` and locate the custom widget.
-2.  Extract the CSS class from `appearance.class` (e.g., `"my-custom-datepicker-v2"`).
-3.  Use this class in `Locate_MxWidget_Container(ClassName="my-custom-datepicker-v2")` to generate a reliable locator.
-4.  If specialized actions fail, resolve to a raw Playwright locator via `GET_Locator_by_MxLocator` to click or interact directly.
+### 1. Custom & Pluggable Widget Discovery via mxcli v0.21.0
+If a custom or pluggable widget is unknown or complex (e.g., DataGrid2, Gallery, custom extensions):
+1.  **Describe Widget Properties:** Run `.\mxcli.bat -p "[MendixProject.mpr]" -c "DESCRIBE WIDGET <kind>"` (or package ID) to expose exact property keys, dynamically visible properties, container child slots, and required inputs.
+2.  **Inspect Page AST:** Run `.\mxcli.bat -p "[MendixProject.mpr]" -c "DESCRIBE PAGE <Module.Page>"` to locate the widget in its page hierarchy, extract its class from appearance, and read its bound attributes and container child slots.
+3.  **Translatable String Resolution:** Run `.\mxcli.bat -p "[MendixProject.mpr]" -c "SEARCH STRINGS '<Text>'"` (or `CATALOG.strings`) to resolve exact text/captions for buttons, labels, and tabs.
+4.  **Widget Location:** Use the discovered class in `Locate_MxWidget_Container(ClassName="...")` or the specialized `Locate_MxWidget_*` generator.
+5.  If specialized actions fail, resolve to a raw Playwright locator via `GET_Locator_by_MxLocator` to click or interact directly.
 
 ### 2. Native Mobile & Touch Gestures
 For native bottom sheets, drawers, or swipes:

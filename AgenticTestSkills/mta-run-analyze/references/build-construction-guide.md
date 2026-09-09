@@ -24,8 +24,12 @@ This guide outlines the precise operational checklists, evaluation questions, co
 
 ## 3. `STATE_CONSTRUCTION` (State 3)
 
-### Step 1: Pre-Construction Model-to-MTA Schema Audit (MANDATORY FIRST STEP - PAT-82, ANTI-36)
-Before building any persistent test suites, test cases, or test steps in MTA (or when evaluating whether an exploratory test can be promoted directly to MTA), the assistant MUST first execute `GetAppModelData` to compare MTA's synchronized model data against the Mendix model AST (`mxcli`):
+### Step 1: Pre-Construction Model-to-MTA Schema Audit (PAT-82, ANTI-36)
+*   **The Single Responsibility & Parity Bypass Rule (PAT-82):** In active sessions where Check 14 of the Pre-Approval Quality Audit (`mta-test-design`) has already verified model parity (`In-Sync`) and the `PAT-44` Pre-Construction Integrity Check confirms no manual drift reconciliation occurred, **SKIP** redundant `GetAppModelData` queries and proceed directly to Step 2.
+*   **Conditional Audit Execution:** Only execute `GetAppModelData` in `mta-build` if:
+    1. The session is restored from a cold file or state compaction block where parity was not audited in active turn memory.
+    2. An exploratory test is being promoted after Gate 1 had previously flagged an *Out-of-Sync* state.
+    3. The plan was manually edited and re-signed via the `PAT-44` Drift Reconciliation Gate in Step 0.
 *   **Prohibition of Trial-and-Error Building (ANTI-36):** You are strictly prohibited from attempting to build steps or relying on step creation errors to discover missing model elements. Never "try and build" hoping it succeeds or using failed builds as a diagnostic mechanism.
 *   **Domain Model Entities & Attributes:** Call `GetAppModelData(RetrieveAction="RetrieveEntityByApplicationAndTestConfiguration", EntityQualifiedName="<Module.Entity>")` to confirm the entity and all referenced attributes exist in MTA.
 *   **Microflows & Parameter Signatures:** Call `GetAppModelData(RetrieveAction="RetrieveMicroflowByApplicationAndTestConfiguration", MicroflowQualifiedName="<Module.Microflow>")` to verify microflow parameters, return types, and parameter names.
@@ -37,23 +41,32 @@ Before building any persistent test suites, test cases, or test steps in MTA (or
 *   **Execution Plan Local Storage Gating (MANDATORY - PAT-44):** Ensure the approved plan is saved locally as a `.md` file (e.g. `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`). If running in an environment without file-writing capabilities (Chat Track), warn the user and ensure the plan is preserved in active chat context. Active step building is strictly prohibited until Gate 1 (Plan) and Gate 2 (Placement) are approved and the plan is stored locally or retained in chat context.
 *   **Pre-Creation Execution User Resolution (PAT-79, ANTI-33):** Because `CreateTestCase` requires `ExecutionUserKey` as a mandatory integer, query `GetExecutionUsers(ApplicationKey)` to resolve an existing user or call `CreateExecutionUser` before creating test cases.
 
-### Step 3: The Deterministic 4-Phase Construction Protocol (PAT-16, PAT-78, ANTI-05, ANTI-32)
-Execute construction across deterministic phases, strictly adhering to tool dependency boundaries and batching tool calls concurrently to eliminate sequential single-call loops (`ANTI-32`):
+### Step 3: The Deterministic Horizontal Layered Construction Protocol (PAT-16, PAT-78, PAT-85, ANTI-05, ANTI-32, ANTI-39)
+Execute construction across deterministic horizontal layers rather than vertical per-step interleaving (`ANTI-39`). Strictly adhere to tool dependency boundaries and safe batch sizing (max 15-20 tool calls per turn per `ANTI-32`) across all layers:
 *   **Phase 1: Sequential Step Pipeline (`SKELETON_PROVISIONING`):**
     1. **Test Suite Level:** Create test suite (`CreateTestSuite`) if provisioning a new suite.
     2. **Test Case Level (Multi-Case Batching):** In multi-case suites (e.g., Frontend 3-Case lifecycle: Case 1 Setup, Case 2 Action, Case 3 Teardown [`PAT-03`], or multi-case backend integration suites), dispatch ALL planned `CreateTestCase` calls concurrently (with pre-resolved `ExecutionUserKey` per `PAT-79`).
     3. **Test Step Level (Strictly Sequential Forward Chaining):** Construct test steps sequentially in forward chronological order using predecessor chaining (`TestStepBeforeKey = KeyN`, `PAT-11`). Batching step creation across steps in the same case is strictly prohibited because each step requires its predecessor's key.
     4. **Direct Output Binding:** For `ChangeObjects` and `DeleteObjects` steps, pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` at creation time (`PAT-80`).
-*   **Phase 2: Step & Assertion Configuration (`BATCH_BINDING`):**
-    *   Inspect created step keys via `GetTestCaseDetails(TestCaseKey)`.
-    *   Concurrently dispatch all configuration and mutation setters across Suite, Case, and Steps using **Safe Batch Sizing (max 15-20 tool calls per turn)**:
-        *   **Test Suite Level:** Set suite properties (`EditTestSuite` for `SetDescription`, `SetExecutionCondition`, `SetInheritConfigurationSettings`, `SetUsePlaywright`).
-        *   **Test Case Level:** Configure test case specifications and execution conditions (`EditTestCase` for `SetObjective`, `SetPreconditions`, `SetExpectedResult`, `SetRollback`, `SetExecutionCondition`, `SetResumeExecutionAfterException`, `SetCategory`) across ALL created test cases.
-        *   **Test Step Attributes & Parameters:** Configure attribute values (`EditAttributeValue`, using `IntegerLongValue` per `PAT-81`) and microflow parameters (`EditMicroflowParameterValue`, `EditMicroflowObjectParameter`).
-        *   **Step Property Descriptions & Patterns:** Set step descriptions (`EditTestStep(EditAction="SetDescription")`).
-        *   **Step Associations & Assertions:** Bind associations (`CreateSelectObjectForAssociation`), set dedicated outputs (`SetTestStepOutputFor*`), and create assertions (`CreateAssertMicroflowReturnValue`, `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertException`).
-        *   **Partial Failure Handling (No Server Transactions):** Because the MTA MCP server executes each mutating tool individually without atomic transaction rollback, if any call within a batch of 15-20 fails, inspect the error, identify the failed setter, and surgically retry or fix that specific call.
-        Single-call turn loops here are strictly prohibited (`ANTI-32`).
+*   **Phase 2: Step & Assertion Configuration (`HORIZONTAL_LAYERED_BINDING`):**
+    Prohibits vertical per-step interleaving (adding attributes, setting values, and creating asserts step-by-step) (`ANTI-39`). Construct steps in strict horizontal cross-step layers:
+    *   **Phase 2A: Bulk Slot Inclusion (All Steps) (`BATCH_INCLUSION`):**
+        *   Concurrently dispatch in parallel across ALL steps in the test case:
+            - `EditAttributeValue(EditAction="IncludeAttribute")` for ALL attributes across ALL steps.
+            - `CreateAssertMicroflowReturnValue`, `CreateAssertObjectCount`, `CreateAssertValidationFeedback*`, and `CreateAssertException` for ALL assert steps.
+            - `EditTestStepRetrieve(RetrieveOption=...)` and attribute filters for ALL retrieve steps.
+        *   Enforce **Safe Batch Sizing (max 15-20 tool calls per turn)** (`ANTI-32`). For large test cases with many attributes/asserts, chunk across sequential turns while remaining within Phase 2A.
+    *   **Mid-Phase Bulk Sync (1 Tool Call):**
+        *   Execute `GetTestCaseDetails(TestCaseKey)` for the active test case (or `GetTestSuiteDetails` for multi-case suites) to fetch all newly minted `AttributeValueKey`s and assertion keys across the entire step matrix in a single payload.
+    *   **Phase 2B: Bulk Value Binding (All Steps) (`BATCH_BINDING`):**
+        *   With all `AttributeValueKey`s and assertion keys resolved, concurrently dispatch in parallel across ALL steps:
+            - `EditAttributeValue` (`SetStringValue`, `SetIntegerValue`, `SetDateTime*`, `SetTestStepOutputForSelectValueForValue`, using `IntegerLongValue` per `PAT-81`) across ALL steps.
+            - `EditAssert*Compare` across ALL assert steps.
+            - `EditTestStep(EditAction="SetDescription")` pattern annotations across ALL steps.
+            - `EditTestCase` specifications and conditions across ALL cases.
+            - `EditTestSuite` suite properties (`SetDescription`, `SetExecutionCondition`, `SetInheritConfigurationSettings`, `SetUsePlaywright`).
+        *   Enforce **Safe Batch Sizing (max 15-20 tool calls per turn)** (`ANTI-32`). Chunk large sets across sequential turns while remaining within Phase 2B.
+        *   **Partial Failure Handling (No Server Transactions):** Because the MTA MCP server executes each mutating tool individually without atomic transaction rollback, if any call within a batch fails, inspect the error, identify the failed setter, and surgically retry or fix that specific call.
 *   **Phase 3: Variation Item Registration (`VARIATION_REGISTRATION`):**
     *   **Zero Disconnect SSOT Invariant:** The variation items registered via `AddTestCaseVariationItem` MUST strictly match Section 7 of the approved Execution Plan. Zero unapproved additions or improvisations allowed.
     *   Enable variations via `AddTestCaseVariationItem(Action="EnableTestCaseDatavariation")`.

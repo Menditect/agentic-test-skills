@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.4.0"
-changes: "Updated promotion bridge to sealed local execution plan storage with Plan ID, integer revision sequence, and approved timestamp (PAT-44, PAT-47)."
+version: "6.9.0"
+changes: "Synchronized shared references with 4-step partial failure handling and scenario batching in construction SOP."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -182,7 +182,9 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                  "MtaBaseUrl": "[MtaBaseUrl]",
                  "ExecutionPlanFile": "[PathToSavedExecutionPlan.md | null]",
                  "ExecutionPlanId": "[urn:uuid:UUID | null]",
+                 "ExecutionPlanStatus": "[APPROVED | BUILT_AND_VERIFIED | null]",
                  "ExecutionPlanApprovedAt": "[ISO 8601 | null]",
+                 "ExecutionPlanApprovedBy": "[ApprovedBy | null]",
                  "ExecutionPlanRevision": null,
                  "ExecutionPlanSupersedesId": null,
                  "ExecutionPlanKey": null,
@@ -191,7 +193,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                ```
                ```
             3. Instruct the user/agent:
-               > 🚀 **Promotion Handoff Trigger**: Switched to `mta-test-design` (`PLAN_STEP_2`). Ready to interactively resolve Test Configuration, Test Suite, and Test Case placement (Gate 2), store and seal the execution plan locally as a `.md` file with Plan ID, integer revision sequence, and approved timestamp (or retain in active chat context if write tools are unavailable), and proceed to `STATE_CONSTRUCTION`. Note that in `STATE_CONSTRUCTION`, Step 0 is the Pre-Construction Plan Integrity & Drift Check (`PAT-44`) and Step 1 is the Pre-Construction Model-to-MTA Schema Audit (`PAT-82`, `ANTI-36`) via `GetAppModelData` to verify whether MTA's synchronized model revision contains the required entities, attributes, and microflows or whether MTA needs an updated revision first, followed by the 4-Phase Construction Protocol with safe batch sizing and variation metadata persistence (`PAT-77`, `PAT-78`, `ANTI-32`).
+               > 🚀 **Promotion Handoff Trigger**: Switched to `mta-test-design` (`PLAN_STEP_2`). Ready to interactively resolve Test Configuration, Test Suite, and Test Case placement (Gate 2), store and seal the execution plan locally as a `.md` file with a collapsible provenance header (Plan ID, schema version 1.2.0, integer revision sequence, approved timestamp, approved by identity) (or retain in active chat context if write tools are unavailable), and proceed to `STATE_CONSTRUCTION`. Note that in `STATE_CONSTRUCTION`, Step 0 is the Pre-Construction Plan Integrity & Drift Check (`PAT-44`) and Step 1 is the Pre-Construction Model Parity Verification & Bypass Rule (`PAT-82`, `ANTI-36`) via `GetAppModelData` (bypassed if already verified in `mta-test-design` Check 14), followed by the Horizontal Layered Construction Protocol with upfront column provisioning, deterministic cell key indexing, chunked variation population (`PAT-77`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `ANTI-32`, `ANTI-39`, `ANTI-40`), and Post-Build Verification & Link Sealing (`PAT-88`).
 
 2.  `STATE_LIVE_DATA_PROVISIONING`: Executing live test data provisioning and teardown for manual testing via `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "No"`).
     *   **Targeted Cluster Discovery Protocol:** For data provisioning, inspect all target entities and mandatory associations in a single batched `mxcli` call. Omit optional attributes unless explicitly requested.

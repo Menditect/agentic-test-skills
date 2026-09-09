@@ -48,43 +48,50 @@ This metadata is **mandatory for all workflows**. Failing to set names and descr
 
 ---
 
-## 🏗️ DATA VARIATIONS CONSTRUCTION PROTOCOL (PAT-54, PAT-78, ANTI-32)
+## 🏗️ DATA VARIATIONS CONSTRUCTION PROTOCOL (PAT-54, PAT-78, PAT-85, PAT-86, PAT-87, ANTI-32, ANTI-40)
 
-With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). Therefore, the strategy is: **Single-Turn Variation Item Registration $\rightarrow$ Column Provisioning $\rightarrow$ Single-Pass Key Resolution $\rightarrow$ 1-Turn Per Column Multi-Tool Batch Population**.
+With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). To maximize build efficiency and eliminate conversational latency, the construction protocol operates across 4 horizontal sub-phases:
 
 > [!IMPORTANT]
 > **Zero Disconnect SSOT Invariant (`ANTI-32`):** The variation items registered via `AddTestCaseVariationItem` **MUST strictly match** Section 7 of the approved Execution Plan. You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, or assertion to the variation matrix that is not explicitly declared as a variation item in Section 7 of the approved plan.
 
-### Step 1: Baseline Variation Item Registration (1 Turn Single Batch)
+### Step 1: Baseline Variation Item Registration (1 Turn Batch Inclusion)
 1. Build all baseline test steps and configure baseline properties/assertions (`Phase 1 & Phase 2`).
 2. Enable variations via `AddTestCaseVariationItem` (`Action="EnableTestCaseDatavariation"`, `TestCaseKey=...`).
-3. **⚡ Single-Turn Batch Item Registration (`ANTI-32`):** Dispatch **ALL** planned item registration calls concurrently in a **single turn** using `AddTestCaseVariationItem` (strictly matching Section 7):
+3. **⚡ Bulk Registration (`ANTI-32`):** Dispatch **ALL** planned item registration calls concurrently in safe chunks of 15 to 20 tool calls per turn using `AddTestCaseVariationItem` (strictly matching Section 7):
    * Attribute values: `Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`.
    * Microflow parameters: `Action="AddMicroflowParameterValueTestCaseVariationItem"`, `ObjectKey=MicroflowParameterValueKey`.
    * Attribute compare assertions: `Action="AddAssertAttributeValueCompareTestCaseVariationItem"`, `ObjectKey=AssertAttributeValueCompareKey`.
    * Return value assertions: `Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem"`, `ObjectKey=AssertMicroflowReturnValueCompareKey`.
    * Exception assertions: `Action="AddAssertExceptionTestCaseVariationItem"`, `ObjectKey=AssertExceptionKey`.
    * Object count assertions: `Action="AddAssertObjectCountTestCaseVariationItem"`, `ObjectKey=AssertObjectCountKey`.
-   *Sequential single-item loops across multiple conversational turns are strictly prohibited.*
+4. Maintain an in-memory index dictionary mapping `ItemIndex -> {StepKey, Entity, AttributeOrAssertName, ItemType}` to prepare for deterministic key resolution.
 
-### Step 2: Column Provisioning & Metadata Registration (Scenarios #2..N)
-1. Create columns $2..N$ via `CreateTestCaseVariation(TestCaseKey)`. This returns new `TestCaseVariationKey`s.
-2. Immediately apply `PAT-77`: call `EditTestCaseVariation` with `EditAction="SetName"` and `EditAction="SetDescription"` for Variation #1 and all Variations $2..N$.
-   *(Note: You can batch all `SetName` and `SetDescription` calls across variations in a single turn!)*
+### Step 2: Upfront Bulk Column Provisioning (`PAT-86`, `ANTI-40`)
+1. **Concurrently Provision All Columns in 1 Turn:** Call `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) in **1 single turn**.
+   * *Anti-Pattern Prohibited (`ANTI-40`):* Do NOT create columns one-by-one or halt between columns to query keys or edit cells.
+2. Immediately apply `PAT-77`: call `EditTestCaseVariation` with `EditAction="SetName"` and `EditAction="SetDescription"` for Variation #1 and all Variations $2..N$. Batch all name and description setters in safe chunks (max 15-20 per turn).
 
-### Step 3: Single-Pass Key Matrix Resolution
-1. Call `GetTestCaseDetails(TestCaseKey)` EXACTLY ONCE.
-2. Traverse the returned deeply nested JSON mapping to extract the 2D matrix grid of unique `AttributeValueKey`, `MicroflowParameterValueKey`, and `Assert*Key` values across all Scenario Indexes and Item Names.
+### Step 3: Single Matrix Schema Snapshot (`PAT-86`)
+1. Call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** after all columns #2..#N are provisioned.
+2. This single call returns the complete, updated tree of all variation containers and their cloned item keys across the entire matrix.
 
-### Step 4: Column-by-Column Multi-Tool Batch Population (`PAT-54`, `ANTI-32`)
-1. Loop through Scenarios $2..N$. For *each entire scenario column*:
-   * **⚡ 1-Turn Batch Dispatch:** Dispatch ALL cell overrides for that scenario concurrently in **EXACTLY 1 turn**:
-     - Set input overrides via `EditAttributeValue` or `EditMicroflowParameterValue`.
-     - Set assertion overrides via `EditAssert*` (`EditAssertAttributeValueCompare`, `EditAssertMicroflowReturnValueCompare`, `EditAssertObjectCount`, etc.).
-   * *(Iterating through cell setters across multiple conversational turns is strictly prohibited; failure must not corrupt horizontal states, and batching saves up to 75% tokens/time).*
+### Step 4: Deterministic Cloned Cell Key Indexing (`PAT-87`)
+1. When MTA clones variation items for a new column, the elements in `ATVL_AttributeValues`, `AOBC_AssertObjectCounts`, and `AMRC_AssertMcfwReturnValueCompares` strictly follow the **1-to-1 registration sequence** of `TCVI_TestCaseVariationItems`.
+2. Correlate cloned keys in-memory by indexing them against the registered variation items list:
+   * Item index $k$ on Scenario #1 directly corresponds to item index $k$ on Scenario #2, Scenario #3, etc.
+   * Prohibit calling `GetTeststepDetails` or intermediate discovery endpoints to look up cloned cell keys (`PAT-87`, `ANTI-40`).
 
-### Step 5: Final Smoke Audit (`STATE_SMOKE_AUDIT`)
-1. Run `STATE_SMOKE_AUDIT` post-construction compiler checks via `GetTestCaseDetails`.
+### Step 5: Safe Chunked Matrix Cell Population (`PAT-85`, `PAT-86`, `ANTI-32`)
+1. Group all cell overrides across all variations ($2..N$) into safe batches of **15 to 20 tool calls per turn** (`ANTI-32`):
+   * **Input Overrides:** Call `EditAttributeValue` (or `EditMicroflowParameterValue`).
+   * **Assertion Overrides:** Call `EditAssert*` (`EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, `EditAssertObjectCount`, etc.).
+   * **Empty / Null Values:** When a variation requires setting a cell to empty or NULL, pass `SetValueToEmpty = "_True"`.
+   * **Cloned Object Count Invariant:** All cloned `AssertObjectCount` containers default to `ExpectedObjectCount: 0`. For any variation expecting $\ge 1$ objects, `EditAssertObjectCount(SetExpectedObjectCount)` MUST be explicitly called.
+2. In case of any individual call error, isolate the failed setter and retry surgically without aborting the batch.
+
+### Step 6: Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`)
+1. Run `STATE_SMOKE_AUDIT` compiler verification via `GetTestCaseDetails`.
 2. Verify exactly zero unfilled variation items exist across the entire scenario matrix.
 3. **Zero Disconnect Verification:** Verify that zero unapproved variation items, attributes, filters, or assertions exist beyond what was declared in Section 7 and Section 5.
 

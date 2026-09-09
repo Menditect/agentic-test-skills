@@ -56,13 +56,40 @@ Fetches runtime session state during execution:
 *   **`GET_latestError()`** ➔ Returns last caught error string.
 *   **`GET_currentSession()`** / **`GET_currentUser()`** ➔ Fetches active session or user entity.
 
-### 4. Assertions Capabilities
-> [!NOTE]
-> **Programmatic Assertion Support:** MTA fully supports programmatic assertions using direct MCP tools:
-> 1. **Microflow Return Value Assertions:** For scalar types (Strings, Integers, Decimals, DateTime, Enumeration) using `CreateAssertMicroflowReturnValue` and `EditAssertMicroflowReturnValueCompare`.
-> 2. **Object Count Assertions:** To verify the number of records returned or held in memory/database retrieves using `CreateAssertObjectCount` and `EditAssertObjectCount`.
-> 3. **Exception Assertions:** To verify whether microflow calls throw errors or finish successfully using `CreateAssertException` and `EditAssertException`.
-> 4. **Validation Feedback Assertions:** Backend microflow test validation feedback using `CreateAssertValidationFeedbackMessageCompare` and `CreateAssertValidationFeedbackMessageCount`.
+### 4. Assertions Capabilities & Comparison Operator Wire Format Reference
+
+> [!IMPORTANT]
+> **Schema Invariant: Plural vs. Singular Comparison Operators**
+> MTA enforces a strict distinction in wire format naming conventions across tools:
+> - **Singular (`Equal`, `NotEqual`):** Required by `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`.
+> - **Plural (`Equals`, `NotEquals`):** Required by `CreateAssertMicroflowReturnValue`, `CreateAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCompare`.
+> - **Plural with mixed casing (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`):** Required by `EditAssertObjectCount`.
+> ⚠️ *Important:* Do NOT apply a blanket "singular Equal" rule to all `Edit*` tools. Calling `EditAssertObjectCount` or `EditAssertValidationFeedbackMessageCompare` with singular `"Equal"` will fail schema validation.
+
+| Tool | Property Name | Valid Operator Enum Values |
+| :--- | :--- | :--- |
+| `CreateAssertMicroflowReturnValue` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAssertMicroflowReturnValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAssertAttributeValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAttributeValueFilter` | `FilterComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
+| `CreateAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
+| `EditAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
+
+#### Cloned AssertObjectCount Default Invariant
+When test case variations are cloned via `CreateTestCaseVariation`, cloned `AssertObjectCount` containers in newly minted variations default to `ExpectedObjectCount: 0`. If a scenario expects $\ge 1$ objects, you MUST explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N`.
+
+#### Numeric & Scalar Value Wire Formats (`EditAttributeValue`, `PAT-81`)
+MTA requires strict parameter naming and data types when updating attribute values:
+- **Integer / Long:** `EditAction="SetIntegerValue"`, pass `IntegerLongValue: 123` (raw integer, **NOT** string `"123"`).
+- **String:** `EditAction="SetStringValue"`, pass `StringValue: "text"`.
+- **Boolean:** `EditAction="SetBooleanValue"`, pass `BooleanValue: "_True"` or `"_False"`.
+- **Decimal:** `EditAction="SetDecimalValue"`, pass `DecimalValue: "12.50"` (string formatted decimal).
+- **DateTime:** `EditAction="SetDateTimeValue"`, pass `DateTimeValue: "2026-09-09T12:00:00Z"`.
+- **Piped Output Value:** `SetTestStepOutputForSelectValueForValue(TestStepOutputKey=...)`.
+
+#### Primitive Null / Empty Syntax
+To set an attribute, parameter, or expected return value to empty (NULL) in `EditAttributeValue` or assertion comparison tools, pass `SetValueToEmpty: "_True"`.
 
 ---
 
@@ -111,11 +138,15 @@ To filter retrieve operations, you **MUST** follow this canonical filtering sequ
 2. **Configure Retrieve Mode (Memory vs Database):** Call `EditTestStepRetrieve` passing:
    - `TestStepKey`: The key from Step 1.
    - `EditAction`: `"SetRetrieveOption"` (with `RetrieveOption="Database"` or `"Teststep"`), `"SetRetrieveSet"` (`RetrieveSet="All"` or `"Head"`), and optionally `"SetTestStepForRetrieveByTeststep"` (`TestStepOutputKey` pointing to the provider step).
-3. **Include & Set Filter:** Call `EditAttributeValueFilter` with:
+3. **Include Filter Attribute (Phase 2A):** Call `EditAttributeValueFilter` with:
    - `TestStepKey`: The key from Step 1.
    - `AttributeName`: The entity attribute to filter on (e.g., `"OrderStatus"`).
+   - `EditAction`: `"IncludeAttribute"`.
+4. **Resolve Filter Keys (Mid-Phase Sync):** Call `GetTestCaseDetails(TestCaseKey)` to capture the newly generated `AttributeValueKey` for each included filter.
+5. **Set Filter Value & Operator (Phase 2B):** Call `EditAttributeValueFilter` with:
+   - `AttributeValueKey`: The key resolved in Step 4.
    - `EditAction`: The typed setter action (`"SetStringValue"`, `"SetIntegerValue"`, `"SetBooleanValue"`, `"SetDateTimeValueWithSpecifiedDateTime"`, etc.).
-   - `FilterComparisonOperator`: The comparison operator enum (e.g., `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` for Strings; range or comparison operators for numbers and Dates).
+   - `FilterComparisonOperator`: The comparison operator enum (use singular `"Equal"`, `"NotEqual"`, `"Contains"`, `"NotContains"` for Strings; range or comparison operators for numbers and Dates).
    - The filtering target value (`StringValue`, `DecimalValue`, etc.).
 
 ### 2. Supported Filter Types in `EditAttributeValueFilter`:
@@ -299,16 +330,18 @@ To assert expected exceptions or error handling on a microflow call:
 
 ---
 
-## 🔄 DATA VARIATION INTEGRATION & BATCH REGISTRATION
+## 🔄 DATA VARIATION INTEGRATION & BATCH REGISTRATION (PAT-86, PAT-87, ANTI-40)
 
 To register items and configure Data Variation matrices efficiently:
 1. **Enable Variations:** Call `AddTestCaseVariationItem(TestCaseKey, Action="EnableTestCaseDatavariation")`.
-2. **Multi-Tool Batch Item Registration (1 Turn):** Dispatch ALL item registration calls concurrently in a single turn:
+2. **Bulk Item Registration (Phase 3):** Concurrently dispatch item registration calls in safe batches (15-20 per turn):
    - Attribute Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddAttributeValueTestCaseVariationItem", ObjectKey=AttributeValueKey)`.
    - Parameter Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddMicroflowParameterValueTestCaseVariationItem", ObjectKey=MicroflowParameterValueKey)`.
    - Assert Attribute Compare: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertAttributeValueCompareTestCaseVariationItem", ObjectKey=AssertAttributeValueCompareKey)`.
    - Assert Return Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
-3. **Create Variations:** Call `CreateTestCaseVariation(TestCaseKey)` to duplicate the baseline variation into Scenario 2..N.
-4. **Set Variation Names & Descriptions:** Call `EditTestCaseVariation(TestCaseVariationKey, EditAction="SetName", Name="Scenario 2")` and `EditTestCaseVariation(TestCaseVariationKey, EditAction="SetDescription", Description="...")`.
-5. **Batch Override Cell Values in 1 Turn:** Dispatch all cell overrides for a scenario column concurrently using `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*`.
+   - Assert Object Count: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertObjectCountTestCaseVariationItem", ObjectKey=AssertObjectCountKey)`.
+3. **Upfront Bulk Column Creation (Step 4.1 - PAT-86):** Call `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) concurrently in 1 single turn.
+4. **Set Variation Names & Descriptions (PAT-77):** Batch `EditTestCaseVariation(SetName)` and `EditTestCaseVariation(SetDescription)` calls across all variations.
+5. **Single Snapshot & Deterministic Indexing (Steps 4.2 & 4.3 - PAT-86, PAT-87):** Call `GetTestCaseDetails(TestCaseKey)` once to retrieve all cloned variation container and item keys, mapping them directly against registration sequence without extra queries.
+6. **Safe Chunked Cell Population (Step 4.4 - PAT-85, PAT-86):** Concurrently dispatch cell overrides in safe batches (max 15-20 calls per turn) using `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*` (with `SetValueToEmpty="_True"` for empty cells and explicit `SetExpectedObjectCount` for cloned count assertions).
 

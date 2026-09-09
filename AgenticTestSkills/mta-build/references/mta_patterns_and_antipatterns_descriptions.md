@@ -572,7 +572,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-44`: Atomic Multi-Case Construction & Execution Plan Gating
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Requires saving the approved plan locally as a `.md` file with an immutable provenance YAML frontmatter (UUID v4 `plan_id`, `supersedes_plan_id`, integer `revision`, ISO 8601 `approved_at`), explicitly notifying the user of plan storage with a clickable sealed receipt (or dual active/archived receipt), and obtaining Gate 2 placement approval before constructing steps in `STATE_CONSTRUCTION`. Enforces automatic archiving of prior revisions into `execution-plans/archive/EP_<TestCaseName>_<YYYYMMDD_HHmmss>.md` when a modified plan is saved, and idempotent deduplication (preventing duplicate archive files if revision or content is unchanged). When entering `STATE_CONSTRUCTION`, the agent performs drift detection by re-verifying the plan ID, revision sequence, and approval timestamp against the frontmatter and state tracker (with a soft reconciliation prompt if intentional drift is detected). The local plan path, plan ID, approval timestamp, revision number, and superseded ID MUST be persisted in `mta_state.json`. Once gated and verified, all test cases and steps are provisioned with safe batch sizing (max 15-20 tool calls per turn).
+* **Description:** Requires saving the approved plan locally as a `.md` file sealed with an outer collapsible provenance header (`<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>` containing fenced YAML with CommonMark blank line padding) recording semantic `plan_id` (`<TestCaseName>-v<revision>` or UUID v4), `schema_version: "1.2.0"`, `supersedes_plan_id`, integer `revision`, ISO 8601 `approved_at`, `approved_by` (resolved via Git email/name, OS username, or explicit override), `approver_system_user`, `test_case_name`, `target_configuration`, `target_suite`, and `category`. Mandates explicitly notifying the user of plan storage with a clickable sealed receipt (or dual active/archived receipt) including the approver identity, and obtaining Gate 2 placement approval before constructing steps in `STATE_CONSTRUCTION`. Enforces automatic archiving of prior revisions into `execution-plans/archive/EP_<TestCaseName>_<YYYYMMDD_HHmmss>.md` when a modified plan is saved, and idempotent deduplication (preventing duplicate archive files if revision or content is unchanged). When entering `STATE_CONSTRUCTION`, the agent performs drift detection by re-verifying the plan ID, revision sequence, approver, and approval timestamp against the header and state tracker (with a soft reconciliation prompt if intentional drift is detected). The local plan path, plan ID, approval timestamp, approver, revision number, and superseded ID MUST be persisted in `mta_state.json`. Once gated and verified, all test cases and steps are provisioned with safe batch sizing (max 15-20 tool calls per turn).
 * **Related Rules:**
   * **Related Patterns:** `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-47` (Real-Time Placement Key Persistence).
 
@@ -596,7 +596,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-47`: Real-Time Placement Key Persistence
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`), `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_revision`, and `execution_plan_supersedes_id` immediately into `mta_state.json` as assets are created.
+* **Description:** Writes returned numeric MTA database keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`), `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_approved_by`, `execution_plan_revision`, and `execution_plan_supersedes_id` immediately into `mta_state.json` as assets are created.
 * **Related Rules:**
   * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable Navigation Links).
 
@@ -1042,10 +1042,12 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-82`: Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Mandates comparing domain entities (`RetrieveEntityByApplicationAndTestConfiguration`), microflow signatures (`RetrieveMicroflowByApplicationAndTestConfiguration`), and page widgets (`RetrieveWidgetsByPage`) synchronized in MTA via `GetAppModelData` against the local Mendix AST (`mxcli`) as Step 1 of `STATE_CONSTRUCTION` before creating any persistent containers or test steps in MTA, and as a mandatory feasibility gate before promoting an exploratory test. If structural deltas are detected (e.g., entity attributes, microflows, parameters, or page widgets present in local code but absent in MTA's model data), construction/promotion MUST halt immediately, alerting the user that MTA requires an updated revision export/synchronization.
+* **Description:** Enforces a single-responsibility model parity audit workflow between Mendix and MTA:
+  1. *Test Design Responsibility (Check 14):* During `STATE_BUILD_PLANNING` (Check 14 of the Pre-Approval Quality Audit), the agent audits domain entities, microflow signatures, and page widgets via `GetAppModelData` against the local Mendix AST (`mxcli`) before Gate 1 approval. If any elements are missing or unequal in MTA, Option B (Persistent MTA Test) is strictly blocked, restricting execution exclusively to Option A (Local Exploratory Testing via `MTA_plugin.execute-testcase`).
+  2. *Build Phase Parity Bypass:* In `STATE_CONSTRUCTION` Step 1, redundant calls to `GetAppModelData` are strictly bypassed if parity was already verified in the active session and pre-construction drift detection confirms no manual edits occurred. `GetAppModelData` is executed conditionally in `STATE_CONSTRUCTION` only on cold session restoration, post-sync exploratory promotion, or if manual plan drift reconciliation occurred under `PAT-44`.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern).
-  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-59` (Zero Construction Error Pre-Flight Law).
+  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-59` (Zero Construction Error Pre-Flight Law).
 
 ---
 
@@ -1101,10 +1103,85 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-84`: Prior Execution Plan Discovery & Tri-Choice Lineage Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When initiating test design for a target microflow or page, the agent MUST silently search the local execution plans directory (`${MTA_OUTPUT_PATH}/execution-plans/`) for any existing `EP_*.md` files targeting the same element before drafting a new plan. If a prior plan is discovered, the agent must perform an AST delta audit comparing the current live AST against the verified elements in Section 4 of the prior plan to identify changed signatures, parameters, or domain models. The agent must then present an interactive Tri-Choice Lineage Decision Card: (1) Path A: Evolve & Supersede (increments revision to N+1, inherits domain risks and boundary cases, updates steps to match AST, and archives prior plan upon Gate 2 approval); (2) Path B: Branch Companion Case (drafts a distinct, independent companion test case such as validation error testing alongside happy path without superseding); (3) Path C: Clean Slate (archives prior plan as obsolete and drafts a fresh Rev 1 plan).
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-38` (Blind Prior Plan Overwrite or Amnesic Discard Anti-Pattern).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-47` (Real-Time Placement Key Persistence), `PAT-71` (Targeted Single-Pass Discovery & Semantic Path Tracing).
+
+---
+
+### `ANTI-38`: Blind Prior Plan Overwrite or Amnesic Discard Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Blindly overwriting an existing execution plan file on disk or discarding prior test specifications with complete context amnesia when re-testing or iterating on a microflow or page. This anti-pattern causes loss of carefully crafted domain edge cases, risk profiles, and historical test rationale, or results in accidental duplicates on the MTA platform with confusing revisions.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
+  * **Related Anti-Patterns:** `ANTI-08` (Duplicate Test Case Proliferation Anti-Pattern).
+
+---
+
+### `PAT-85`: Horizontal Layered Construction & Safe Cross-Step Batching Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates constructing test steps on the MTA platform in strict horizontal cross-step layers rather than vertical per-step interleaving. In Phase 1 (`SKELETON_PROVISIONING`), sequentially provision containers and empty step structures. In Phase 2A (`BATCH_INCLUSION`), concurrently dispatch all attribute slot inclusions (`IncludeAttribute`), assertion creations (`CreateAssert*`), and retrieve filter configurations across ALL steps in the test case. In the Mid-Phase Sync, execute a single `GetTestCaseDetails` (or `GetTestSuiteDetails`) call to fetch all newly minted `AttributeValueKey`s and assertion keys. In Phase 2B (`BATCH_BINDING`), concurrently dispatch all value bindings, comparison configurations, and step description annotations across ALL steps. In Phase 3 (`VARIATION_REGISTRATION`), register all variation items across all cases. In Phase 4 (`VARIATION_POPULATION`), concurrently dispatch all variation cell updates. Across all horizontal sweeps, enforce Safe Batch Sizing (max 15-20 tool calls per turn per `ANTI-32`) to prevent context exhaustion and token truncation.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-39` (Vertical Per-Step Interleaving Anti-Pattern).
+  * **Related Patterns:** `PAT-11` (Predecessor Chaining Law), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-80` (Direct Output Binding on Object Action Creation).
+
+---
+
+### `ANTI-39`: Vertical Per-Step Interleaving Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Interleaving attribute slot inclusions, value bindings, assertion creations, and description setters vertically step-by-step during test construction. Because setting an attribute value requires an `AttributeValueKey` generated by `IncludeAttribute`, vertical per-step construction forces either querying `GetTeststepDetails` after every single step or waiting for intermediate turn responses, fragmenting the construction phase into dozens of unnecessary turns and exploding LLM latency.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern).
+
+---
+
+### `PAT-86`: Upfront Column Provisioning & Bulk Chunked Population Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** When constructing or populating data variation matrices on the MTA platform during Phase 4 (`VARIATION_POPULATION`), the agent MUST concurrently provision all remaining variation columns (#2..#N) via `CreateTestCaseVariation` in 1 single turn (Step 4.1). Following column creation, the agent MUST execute 1 single schema snapshot call via `GetTestCaseDetails(TestCaseKey)` (Step 4.2) to capture all newly minted variation container keys and cloned item keys in a single roundtrip. The agent then populates the matrix cells by concurrently dispatching variation updates (`SetName`, `SetDescription`, `EditAttributeValue`, `EditAssert*`, `EditMicroflowParameterValue`) in safe batches of 15 to 20 tool calls per turn (Step 4.4). Prohibits creating, querying, and updating variation columns sequentially one-by-one.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-40` (Per-Column Variation Construction Roundtrip Anti-Pattern).
+  * **Related Patterns:** `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law), `PAT-87` (Deterministic Cloned Variation Cell Key Indexing Law), `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law).
+
+---
+
+### `PAT-87`: Deterministic Cloned Variation Cell Key Indexing Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** When `CreateTestCaseVariation` clones variation items from Scenario #1 (the baseline template) in the MTA database, the cloned elements in `ATVL_AttributeValues`, `AOBC_AssertObjectCounts`, and `AMRC_AssertMcfwReturnValueCompares` strictly follow the 1-to-1 registration sequence of `TCVI_TestCaseVariationItems`. The agent MUST map cloned variation cell keys deterministically in-memory by indexing them against the registered variation item sequence from the single `GetTestCaseDetails` snapshot. Prohibits executing intermediate `GetTeststepDetails` queries or redundant discovery calls to look up cloned cell keys.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-40` (Per-Column Variation Construction Roundtrip Anti-Pattern).
+  * **Related Patterns:** `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law), `PAT-54` (Exhaustive $M \times N$ Matrix Cell Value Reconciliation Law).
+
+---
+
+### `ANTI-40`: Per-Column Variation Construction Roundtrip Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Constructing data variation matrices sequentially one column at a time: calling `CreateTestCaseVariation` for scenario 2, halting to call `GetTestCaseDetails` or `GetTeststepDetails`, updating its cells, then calling `CreateTestCaseVariation` for scenario 3, halting again, etc. This anti-pattern multiplies conversational roundtrips and token consumption by $N$ variations, leading to massive latency, rate-limiting risks, and context window exhaustion during test construction.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law), `PAT-87` (Deterministic Cloned Variation Cell Key Indexing Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-39` (Vertical Per-Step Interleaving Anti-Pattern).
+
+---
+
+### `PAT-88`: Execution Plan Post-Build Verification & Link Sealing Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates that upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 construction discrepancies, the agent MUST update and seal the local Execution Plan markdown file (`${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`):
+  1. *Machine-Readable Header Sealing:* Update the collapsible provenance YAML header (`schema_version: "1.2.0"`) to record `status: "BUILT_AND_VERIFIED"`, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
+  2. *Human-Readable Clickable Receipt:* Append a standardized `## MTA Build & Smoke Verification Receipt` at the end of the execution plan containing direct, clickable MTA Web links formatted per `PAT-46` (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) to the Test Configuration, Test Suite, and all created Test Cases, along with chronological audit timestamps.
+  3. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable MTA Web Navigation Link Formatting), `PAT-47` (Real-Time Placement Key Persistence), `PAT-59` (Zero Construction Error Pre-Flight Law), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-88`** (Post-Build Verification & Link Sealing) | **`ANTI-18`** (Ignored Construction Errors) | Updating execution plan with verified status, timestamps, and clickable MTA links vs leaving plans unverified |
 | **`PAT-01`** (MTF Pyramid Alignment) | **`ANTI-02`** (Ice Cream Cone Heavy UI Testing) | Scoping logic at lowest pyramid layer vs over-relying on UI tests |
 | **`PAT-04`** (Void Microflow Side-Effect Audit) | **`ANTI-13`** (Blind Void Microflow Testing) | Asserting DB side-effects vs relying on crash-only checks |
 | **`PAT-05`** / **`PAT-13`** (Frontend Testkit & Structural Locators) | **`ANTI-12`** (Raw Playwright Bypass) | Using Menditect Testkit & structural chains vs raw Playwright code |
@@ -1143,6 +1220,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-81`** (IntegerLongValue Primitive Wire Format & Integer Key Law) | **`ANTI-35`** (Mismatched Integer Wire Format & Quoted Key Anti-Pattern) | Using IntegerLongValue property & raw integer keys vs synthetic field names and string quotes |
 | **`PAT-82`** (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law) | **`ANTI-36`** (Blind Construction on Stale MTA Revision Anti-Pattern) | Pre-construction schema audit via GetAppModelData vs blind building on stale MTA revision |
 | **`PAT-83`** (Context-Preserving Diagnostic Drill-Down Law) | **`ANTI-37`** (Monolithic Log Retrieval Anti-Pattern) | Targeted 2-step retrieval (GetTestRunSummary -> GetTestCaseRunDetails) vs dumping entire suite logs |
+| **`PAT-84`** (Prior Execution Plan Discovery & Tri-Choice Lineage) | **`ANTI-38`** (Blind Prior Plan Overwrite or Amnesic Discard) | Preserving plan lineage, delta auditing & tri-choice decisions vs blind overwrite or amnesia |
+| **`PAT-85`** (Horizontal Layered Construction & Safe Cross-Step Batching) | **`ANTI-39`** (Vertical Per-Step Interleaving) | Constructing steps in horizontal cross-step layers vs fragmented vertical per-step roundtrips |
+| **`PAT-86`** (Upfront Column Provisioning & Bulk Chunked Population) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Concurrently provisioning all variation columns upfront vs sequential column-by-column roundtrips |
+| **`PAT-87`** (Deterministic Cloned Cell Key Indexing) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Indexing cloned cell keys in-memory by registration order vs redundant GetTeststepDetails queries |
 
 
 
