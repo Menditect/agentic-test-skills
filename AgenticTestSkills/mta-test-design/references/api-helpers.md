@@ -83,12 +83,12 @@ When test case variations are cloned via `CreateTestCaseVariation`, cloned `Asse
 
 #### Numeric & Scalar Value Wire Formats (`EditAttributeValue`, `PAT-81`)
 MTA requires strict parameter naming and data types when updating attribute values:
-- **Integer / Long:** `EditAction="SetIntegerValue"`, pass `IntegerLongValue: 123` (raw integer, **NOT** string `"123"`).
+- **Integer / Long:** `EditAction="SetIntegerValue"` or `"SetLongValue"`, pass `IntegerLongValue: 123` (raw integer, **NOT** string `"123"`).
 - **String:** `EditAction="SetStringValue"`, pass `StringValue: "text"`.
 - **Boolean:** `EditAction="SetBooleanValue"`, pass `BooleanValue: "_True"` or `"_False"`.
-- **Decimal:** `EditAction="SetDecimalValue"`, pass `DecimalValue: "12.50"` (string formatted decimal).
-- **DateTime:** `EditAction="SetDateTimeValue"`, pass `DateTimeValue: "2026-09-09T12:00:00Z"`.
-- **Piped Output Value:** `SetTestStepOutputForSelectValueForValue(TestStepOutputKey=...)`.
+- **Decimal:** `EditAction="SetDecimalValue"`, pass `DecimalValue: 12.50` (numeric decimal).
+- **DateTime:** `EditAction="SetDateTimeValueWithSpecifiedDateTime"`, pass `SpecifiedDateTimeValue: "2026-09-09T12:00:00Z"`.
+- **Piped Output Value:** `EditAction="SetTestStepOutputForSelectValueForValue"`, pass `TestStepOutputKey: ...`, `TestStepOutputAttributeName: "..."`.
 
 #### Primitive Null / Empty Syntax
 To set an attribute, parameter, or expected return value to empty (NULL) in `EditAttributeValue` or assertion comparison tools, pass `SetValueToEmpty: "_True"`.

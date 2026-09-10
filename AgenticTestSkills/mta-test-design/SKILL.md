@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.12.0"
-changes: "Enforced 7-column Step Sequence Matrix overview, scoped note callouts for PAT-84, banned ASCII border art, and standardized comparison operators."
+version: "6.13.0"
+changes: "Aligned step sequence templates and pre-approval audit rules with MTA MCP tool schemas."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -35,15 +35,15 @@ When active under the macro state `STATE_BUILD_PLANNING`, track your current pla
 You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan with dual user approval gates:
 
 ### 1. `PLAN_STEP_1: Scoping & Test Specification Drafting (Part 1 - Gate 1 Approval)`
-*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
+*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
 *   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
     Before designing steps, identify which pattern families apply to your target:
     - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `ANTI-02`
     - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-20` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
-    - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`_Stop`), `ANTI-07`, `ANTI-10`, `ANTI-13`
+    - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `ANTI-07`, `ANTI-10`, `ANTI-13`
     - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`
-    - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `_Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
+    - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
     - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `ANTI-24`..`ANTI-30`
     - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
 *   **🧠 Mandatory Pattern Applicability Checklist (Silent Chain of Thought - CoT)**:
@@ -53,7 +53,7 @@ You must progress sequentially through these three interactive planning micro-st
     3. *Enforcement Rationale:* Verify internally how the plan will conform to each selected pattern.
     *(By performing this checklist internally, you anchor your attention onto the relevant rules, eliminating pattern hallucinations and avoiding the cognitive overload of holding all 128 patterns in working memory).*
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
-    *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${MTA_OUTPUT_PATH}/execution-plans/` for any existing `EP_*.md` files targeting the same microflow or page.
+    *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` (resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
     *   *Tri-Choice Lineage Decision Card:* Present the audit summary and prompt the user with the 3 lineage paths adhering strictly to the Scoped Note Box & Clean Markdown Standard:
         1. **Strictly Scoped `> [!NOTE]` Box:** Only the detection header line and metadata bullet points (including a 1–2 line AST delta summary) are inside the note box.
@@ -225,8 +225,8 @@ When the user's intent is manual exploratory testing or structured manual verifi
     1. *No Direct Construction Bypasses (`ANTI-14`):* The agent **MUST** generate an official `# MTA EXECUTION PLAN SIGN-OFF` (Gate 1) and resolve target placement (Gate 2) before calling any persistent construction tools.
     2. *The 3 Structured Execution Plan Profiles:*
        * **Option 1: Standalone Data Seeding Test Case (Backend Execution Plan):** Generates a 1-case plan with entity instantiations, attribute/association mappings, and trailing `Persist`. **No teardown steps** are included so records remain in the database for manual QA, demos, or downstream tests. Section 6 Playwright is marked NA.
-       * **Option 2: Automated Frontend Test Suite (Frontend Execution Plan):** Prompts for target page (`Module.Page`), runs single-pass AST discovery (`PAT-72`), presents the 10-setting Playwright table (Section 6), and generates a 3-case plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Frontend UI Test` using verified `MenditectMxFrontendTestKit` microflows, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`).
-       * **Option 3: Automated Backend Integration Suite (Backend Execution Plan):** Prompts for target backend logic, runs `DESCRIBE MICROFLOW` (`PAT-71`), and generates a 3-case plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Microflow Calls & Assertions`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`; Section 6 Playwright is marked NA).
+       * **Option 2: Automated Frontend Test Suite (Frontend Execution Plan):** Prompts for target page (`Module.Page`), runs single-pass AST discovery (`PAT-72`), presents the 10-setting Playwright table (Section 6), and generates a 3-case plan (`Case 1: Setup Data Seed` with `Always`/`_Continue`, `Case 2: Frontend UI Test` using verified `MenditectMxFrontendTestKit` microflows, `Case 3: Teardown Cleanup` with cascading delete and `Always`/`_Continue`).
+       * **Option 3: Automated Backend Integration Suite (Backend Execution Plan):** Prompts for target backend logic, runs `DESCRIBE MICROFLOW` (`PAT-71`), and generates a 3-case plan (`Case 1: Setup Data Seed` with `Always`/`_Continue`, `Case 2: Microflow Calls & Assertions`, `Case 3: Teardown Cleanup` with cascading delete and `Always`/`_Continue`; Section 6 Playwright is marked NA).
     3. *Handoff:* Present the fully compliant `# MTA EXECUTION PLAN SIGN-OFF` with the 14-point Pre-Approval Quality Checklist for Gate 1 approval, proceed to `PLAN_STEP_2` for Gate 2 placement approval, store the execution plan locally as a `.md` file (or retain in chat context if write tools are unavailable), and hand off to `STATE_CONSTRUCTION`.
 
 ### 2. `PLAN_STEP_2: Placement & Settings Discovery (Part 2 - User Input Phase)`
@@ -281,10 +281,10 @@ When the user's intent is manual exploratory testing or structured manual verifi
 ```
 
 *   **⚡ Mandatory Local Plan Storage, Revision Sealing & Sign-Off Protocol (`PAT-43`, `PAT-44`, `PAT-47`):**
-    Upon receiving explicit user approval for the Placement & Target Summary (Checkpoint 2), you **MUST** store the approved Execution Plan locally as a `.md` file at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (defaulting to `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`).
+    Upon receiving explicit user approval for the Placement & Target Summary (Checkpoint 2), you **MUST** store the approved Execution Plan locally as a `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` or `${workspaceFolder}/menditect-output/execution-plans/EP_<TestCaseName>.md`).
     
     > **Target File & Versioning In-Place (Git History Delegation):**
-    > Before saving, inspect if `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` already exists on disk:
+    > Before saving, inspect if `${execution_plans_dir}/EP_<TestCaseName>.md` already exists on disk:
     > - **Case A: Fresh Plan (No existing file):**
     >   - Set `revision: 1`
     >   - Set `plan_id: "<TestCaseName>-v1"`
@@ -394,7 +394,7 @@ When the user's intent is manual exploratory testing or structured manual verifi
        - If only internal microflow activities/loops/expressions were modified locally (with no signature, parameter, or return type changes), no MTA Model Revision update is needed; proceed immediately to `STATE_CONSTRUCTION`. [^PAT-36]
        - If structural changes exist (new/modified/deleted entities, attributes, microflows, microflow parameters, or page widgets), persistent step building in `STATE_CONSTRUCTION` will fail until the MTA Model Revision is upgraded. [^PAT-36] [^ANTI-17]
     3. *Proactive Upgrade Guidance:* If structural model deltas are known during `STATE_BUILD_PLANNING`, after saving the Execution Plan locally, proactively inform the user and propose upgrading the MTA Model Revision before starting test construction (or offer local in-memory exploratory testing via `MTA_plugin.execute-testcase` if local changes cannot yet be committed). [^PAT-36] [^PAT-56] [^PAT-82] [^ANTI-36]
-*   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps (including Create Object and setup steps) **MUST** be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"`. You are strictly prohibited from applying `"Always"` or `"_Continue"` to setup steps in Backend Unit Tests. [^PAT-17] [^ANTI-07]
+*   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps (including Create Object and setup steps) **MUST** be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`. You are strictly prohibited from applying `"Always"` or `"_Continue"` to setup steps in Backend Unit Tests. [^PAT-17] [^ANTI-07]
 *   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Whenever an object is instantiated via a `Create Object` test step (`CreateObjectActionTestStep` with `ObjectAction="CreateObject"`), ALL initial attribute values and association bindings MUST be set directly on the `Create Object` test step itself. Creating a separate `Change Object` test step immediately following a `Create Object` step to set initial attributes or associations is strictly **PROHIBITED**. [^PAT-06] [^ANTI-01]
 *   **🛑 Retrieve / Microflow Output Object Count Assertion Law**: Whenever an object or list retrieved via a `Retrieve Object` step or returned by a `Microflow Call` step is passed as input to a subsequent test step (e.g. Microflow parameter, Change Object, Delete Object, Persist Object, etc.), an `Assert Object Count` assertion MUST be embedded directly within Field 6 (`Embedded Step Assertions`) of the producer step before downstream consumption. Declaring `Assert Object Count` as a separate standalone test step container is strictly **PROHIBITED**. Default expected object count is `1` (for single object parameters), unless the receiving parameter/step accepts a List (where default matches expected list count N >= 0). Asserting object count immediately provides fast-fail diagnostic clarity and prevents silent null-pointer exceptions or confusing downstream test failures. *(Note: This law applies EXCLUSIVELY to `Retrieve Object` and `Microflow Call` steps. It does **NOT** apply to `Create Object` test steps, as in-memory objects instantiated via `Create Object` are guaranteed to exist and do NOT need object count assertions).* [^PAT-08] [^ANTI-03] [^ANTI-06]
 *   **🛑 Dual Retrieve/Filter Empty Object Law (Data Variations)**: In MTA Data Variations, step structures and association setters are fixed across all variations. You **CANNOT** set or unset an association directly inside a Data Variation item. To dynamically vary between a valid object and an `empty` (NULL) object across variations: [^PAT-07]

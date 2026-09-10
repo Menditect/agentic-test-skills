@@ -336,20 +336,20 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
-### `PAT-17`: Backend Unit Test Execution Settings Law (`_Stop`)
+### `PAT-17`: Backend Unit Test Execution Settings Law (Stop)
 * **Scope:** Backend | **Classification:** Methodological Law
-* **Description:** Dictates that ALL steps within Backend Unit Tests (single microflow tests) must use `ExecutionCondition = "None"` (standard default) and `ResumeExecutionAfterException = "_Stop"`. Backend Unit Tests are the **only** test type where `RollbackTcseAfterExecution = "Yes"` is enabled at the TestCase level. Because of this auto-rollback wrapper, all object actions inherit `None` / `_Stop` by default and do NOT require explicit calls to `SetExecutionSettingsOfTestStep` unless custom behavior is required. If any step raises an exception during execution, execution halts immediately so MTA's transactional rollback cleanly cleans up the database. Because rollback is enabled, no cleanup of created data is required.
+* **Description:** Dictates that ALL steps within Backend Unit Tests (single microflow tests) must use `ExecutionCondition = "None"` (standard default) and `ResumeExecutionAfterException = "Stop"`. Backend Unit Tests are the **only** test type where `RollbackTcseAfterExecution = "Yes"` is enabled at the TestCase level. Because of this auto-rollback wrapper, all object actions inherit `None` / `Stop` by default and do NOT require explicit calls to `SetExecutionSettingsOfTestStep` unless custom behavior is required. If any step raises an exception during execution, execution halts immediately so MTA's transactional rollback cleanly cleans up the database. Because rollback is enabled, no cleanup of created data is required.
 * **Related Rules:**
-  * **Direct Counterpart Anti-Pattern:** `ANTI-07` (Applying `_Always` / `_Continue` to Backend Unit Tests).
+  * **Direct Counterpart Anti-Pattern:** `ANTI-07` (Applying `Always` / `_Continue` to Backend Unit Tests).
   * **Related Patterns:** `PAT-18` (Frontend Execution Condition Law), `PAT-33` (Default Assertion Failure Behavior).
 
 ---
 
-### `PAT-18`: Frontend Setup/Teardown Execution Condition Law (`_Always` / `_Continue`)
+### `PAT-18`: Frontend Setup/Teardown Execution Condition Law (Always / _Continue)
 * **Scope:** Frontend | **Classification:** Methodological Law
-* **Description:** Dictates that database seeding steps in Case 1, browser lifecycle management steps (`Start_MxFrontend_Test` and `Stop_MxFrontendTest`), and deletion steps in Case 3 must be configured with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`. This guarantees that cleanup and browser shutdown execute even if the UI test in Case 2 fails.
+* **Description:** Dictates that database seeding steps in Case 1, browser lifecycle management steps (`Start_MxFrontend_Test` and `Stop_MxFrontendTest`), and deletion steps in Case 3 must be configured with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. This guarantees that cleanup and browser shutdown execute even if the UI test in Case 2 fails.
 * **Related Rules:**
-  * **Direct Counterpart Anti-Pattern:** `ANTI-07` (Applying `_Always` / `_Continue` to Backend Unit Tests).
+  * **Direct Counterpart Anti-Pattern:** `ANTI-07` (Applying `Always` / `_Continue` to Backend Unit Tests).
   * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-28` (Start-and-Stop First Boilerplate).
 
 ---
@@ -364,15 +364,15 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-33`: Default Assertion Failure Behavior (Continue Execution)
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Sets assertion steps for Backend tests to `ActionFailedAssert = "_ContinueTestRun"` so that all assertions in a suite run to completion, providing a full error report in test logs. Failed assertion for frontend test lead to an exception of the microflow and thus `ResumeExecutionAfterException = "_Continue"` must be set for frontend tests to provide a full error report in the test logs.
+* **Description:** Sets assertion steps for Backend tests to `ActionFailedAssert = "ContinueTestRun"` so that all assertions in a suite run to completion, providing a full error report in test logs. Failed assertion for frontend test lead to an exception of the microflow and thus `ResumeExecutionAfterException = "_Continue"` must be set for frontend tests to provide a full error report in the test logs.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-17` (Backend Unit Test Execution Settings Law — where `_Stop` is required instead), `PAT-18` (Frontend Execution Condition Law).
+  * **Related Patterns:** `PAT-17` (Backend Unit Test Execution Settings Law — where `Stop` is required instead), `PAT-18` (Frontend Execution Condition Law).
 
 ---
 
-### `ANTI-07`: Applying `_Always` / `_Continue` to Backend Unit Tests
+### `ANTI-07`: Applying Always / _Continue to Backend Unit Tests
 * **Scope:** Backend | **Classification:** Methodological Anti-Pattern
-* **Description:** Setting `ExecutionCondition = "_Always"` or `ResumeExecutionAfterException = "_Continue"` on steps inside Backend Unit Tests. Doing so bypasses MTA's built-in transaction rollback wrapper (`RollbackTcseAfterExecution = "Yes"`), leaving unrolled test data in the database.
+* **Description:** Setting `ExecutionCondition = "Always"` or `ResumeExecutionAfterException = "_Continue"` on steps inside Backend Unit Tests. Doing so bypasses MTA's built-in transaction rollback wrapper (`RollbackTcseAfterExecution = "Yes"`), leaving unrolled test data in the database.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-17` (Backend Unit Test Execution Settings Law).
 
@@ -480,7 +480,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-28`: "Start-and-Stop First" Boilerplate Session Law
 * **Scope:** Frontend | **Classification:** Platform Execution Law
-* **Description:** Dictates that when building a Frontend test case, `Start_MxFrontend_Test_*` and `Stop_MxFrontendTest` steps must be created FIRST with execution settings `_Always` / `_Continue`, and all interaction steps are sequenced between them to ensure browser sessions are always cleaned up.
+* **Description:** Dictates that when building a Frontend test case, `Start_MxFrontend_Test_*` and `Stop_MxFrontendTest` steps must be created FIRST with execution settings `Always` / `_Continue`, and all interaction steps are sequenced between them to ensure browser sessions are always cleaned up.
 * **Related Rules:**
   * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-18` (Frontend Setup/Teardown Settings), `PAT-05` (TestKit Strict Default).
 
@@ -1211,7 +1211,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-10`** (Validation Feedback Assertion) | **`ANTI-14`** (Validation Feedback in UI Tests) | Validation feedback assertions apply to Backend microflows only |
 | **`PAT-11`** / **`PAT-16`** (Predecessor Chaining & Sequential Execution Ban) | **`ANTI-05`** (Parallel/Batched Step Calls) | Sequential tool execution vs parallel API race conditions (`PAT-11` provides predecessor chaining) |
 | **`PAT-14`** (No Embedded Asserts on Create) | **`ANTI-10`** (Embedded Asserts on Create/Change) | Create/Change are state mutations, not assertions |
-| **`PAT-17`** (Backend Unit Test `_Stop` Setting) | **`ANTI-07`** (`_Always`/`_Continue` in Unit Tests) | Preserving DB auto-rollback wrapper in unit tests |
+| **`PAT-17`** (Backend Unit Test `Stop` Setting) | **`ANTI-07`** (`Always`/`_Continue` in Unit Tests) | Preserving DB auto-rollback wrapper in unit tests |
 | **`PAT-19`** (Data Variation Consolidation) | **`ANTI-08`** (Duplicate Test Case Proliferation) | Using Data Variations vs proliferating duplicate cases |
 | **`PAT-25`** (What Not to Test Guardrail) | **`ANTI-09`** (Native Platform Testing) | Testing custom app logic vs Mendix framework mechanisms |
 | **`PAT-36`** (MTA Model Revision Synchronization) | **`ANTI-17`** (Premature Step Construction on Stale Revision) | Verifying MTA Model Revision is in sync before constructing persistent steps |

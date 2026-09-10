@@ -256,7 +256,7 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
 When drafting the 8-field Chronological Step Sequence during `STATE_BUILD_PLANNING`:
 1. Use standard fully-qualified entity and microflow names (e.g. `Billing.Invoice`, `Billing.ACT_Invoice_CalculateTax`).
 2. Clearly declare output handles (e.g., `[#1.Customer]`, `[#2.Invoice]`) so they map directly to `TestStepRunKey_output` in `TCEX_RQ` and handle outputs on the MTA server.
-3. Configure `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"` for setup and teardown steps.
+3. Configure `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"` for setup and teardown steps.
 4. Keep exploratory test payloads self-contained with setup data and microflow calls so they can run with zero server-side pre-conditions.
 
 ---
@@ -267,9 +267,9 @@ When drafting the 8-field Chronological Step Sequence during `STATE_BUILD_PLANNI
   Executed as a self-contained in-memory array of `Oact` and `MicroflowCall` steps with automatic database rollback (`RollbackTcseAfterExecution: "true"`). Ideal for instant microflow verification, business logic testing, boundary checks, and data variations.
 * **Frontend UI Automation (Option B - Persistent MTA Platform):**
   Frontend UI tests drive Playwright browser instances and require locator maps, browser lifecycle management, and execution users provided by the MTA Platform. Frontend tests are constructed directly on the MTA Platform as a 3-case suite:
-  1. `_01_Setup`: Database seeding `Oact` steps and browser launch (`ExecutionCondition = "_Always"`).
+  1. `_01_Setup`: Database seeding `Oact` steps and browser launch (`ExecutionCondition = "Always"`).
   2. `_02_Action`: UI navigation, inputs, clicks, and widget assertions.
-  3. `_03_Teardown`: Browser shutdown (`Stop_MxFrontendTest` with `ExecutionCondition = "_Always"`) and cleanup.
+  3. `_03_Teardown`: Browser shutdown (`Stop_MxFrontendTest` with `ExecutionCondition = "Always"`) and cleanup.
 
 ---
 

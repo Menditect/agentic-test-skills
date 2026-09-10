@@ -860,16 +860,16 @@ You are **strictly prohibited** from converting or constructing persistent MTA t
 2. **Type 2: Automated Backend Integration Suite (3-Case Backend Pattern)**
    * *Generates:* A **Backend Execution Plan** (3-Case Integration Lifecycle).
    * *Step Sequence:*
-     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
      * `Case 2 (Backend Logic)`: Microflow execution and return value / state assertions mapped from `DESCRIBE MICROFLOW` (`PAT-71`).
-     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
    * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
 3. **Type 3: Automated Frontend Test Suite (3-Case UI Pattern)**
    * *Generates:* A **Frontend Execution Plan** (3-Case UI Lifecycle).
    * *Step Sequence:*
-     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
      * `Case 2 (Frontend UI Test)`: Playwright UI actions using verified `MenditectMxFrontendTestKit` microflows mapped from single-pass page AST discovery (`PAT-72`).
-     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"`.
+     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
    * *Section 6 (Playwright):* Full **10-Setting Playwright Table** (Environment, Browser Type, Headless Mode, Viewport, Video, Trace, SlowMo, Timeout, Base URL, Execution User).
 
 ### Step-by-Step Conversion & Promotion Workflow:

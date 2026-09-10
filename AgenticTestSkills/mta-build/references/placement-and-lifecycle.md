@@ -39,7 +39,7 @@ To create and initialize a new test suite from scratch, follow this canonical 4-
 3.  **Resolve/Provision Execution User:**
     *   Call `GetExecutionUsers(ApplicationKey)` to discover available execution users.
     *   If a new user is required, call `CreateExecutionUser(ApplicationKey, Username, Password, Role)` ➔ Returns `ExecutionUserKey`. Symmetrically, call `EditExecutionUser(ExecutionUserKey, Username, Password, Role)` to update existing user credentials.
-4.  **Provision the Test Case:** Call `CreateTestCase(TestSuiteKey, ExecutionUserKey, Name, Description, TestCaseBeforeKey=0, RollbackTcseAfterExecution, Timeout)` ➔ Returns `TestCaseKey`.
+4.  **Provision the Test Case:** Call `CreateTestCase(TestSuiteKey, ExecutionUserKey, TestCaseName, TestCaseBeforeKey=0)` ➔ Returns `TestCaseKey`. Then call `EditTestCase(TestCaseKey, Description, RollbackTcseAfterExecution)` to configure metadata and execution parameters.
 
 ### 2. Programmatic Sequencing
 *   **Test Suite Sequencing:** Call `SetSequenceOfTestSuite(TestSuiteKey, TestSuiteBeforeKey)`. Pass `0` for `TestSuiteBeforeKey` to place at the start.
@@ -62,10 +62,11 @@ To prevent token bloat, resolve placement interactively:
 
 ## 🧬 TESTRUN SCOPES, REVISIONS & BRANCHING STRATEGY
 
-### 1. Test Run Execution Scopes (`ExecuteTest`)
-*   **Test Configuration Scope (`ExecutionScope="TestConfiguration"`):** Executes all Test Suites in the configuration.
-*   **Test Suite Scope (`ExecutionScope="TestSuite"`):** Executes all Test Cases within a single Test Suite. Recommended for active test development.
-*   **Test Case Scope (`ExecutionScope="TestCase"`):** Executes exactly one Test Case. Fastest isolated verification.
+### 1. Test Run Execution Scopes & Levels (`ExecuteTest`)
+*   **Test Configuration Level (`ExecutionLevel="TestConfiguration"`):** Executes all Test Suites in the configuration.
+*   **Test Suite Level (`ExecutionLevel="TestSuite"`):** Executes all Test Cases within a single Test Suite. Recommended for active test development.
+*   **Test Case Level (`ExecutionLevel="TestCase"`):** Executes exactly one Test Case. Fastest isolated verification.
+*   **Execution Scope Filters (`ExecutionScope`):** Filter which tests to run: `"All"` (default, run all tests in level), `"ChangedOnly"` (run changed tests only), `"FailedOnly"` (rerun previously failed tests), or `"Changed_Failed"` (run changed and failed tests).
 
 ---
 

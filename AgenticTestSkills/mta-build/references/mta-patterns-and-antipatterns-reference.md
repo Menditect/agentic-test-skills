@@ -94,11 +94,11 @@ Whenever a new testing pattern, rule, or anti-pattern is introduced, modified, o
 | Rule ID | Pattern / Rule Name | Category | Classification | Reference Document | Core Enforcement & Summary |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **PAT-03** | **Frontend 3-Case Split Law** | **Frontend** | Methodological Law | [frontend-testing.md](frontend-testing.md) | Structures Frontend UI tests into 3 cases per suite: Case 1 (Setup/Seeding), Case 2 (Action/UI), and Case 3 (Teardown/Cleanup). |
-| **PAT-17** | **Backend Unit Test Execution Settings Law (`_Stop`)** | **Backend** | Methodological Law | [execution-settings.md](execution-settings.md) | Enforces `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"` on ALL steps (including setup, action, retrieve, and assertions) in Backend Unit Tests. |
-| **PAT-18** | **Frontend Setup/Teardown Execution Condition Law (`_Always` / `_Continue`)** | **Frontend** | Methodological Law | [execution-settings.md](execution-settings.md) | Enforces `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"` on Case 1 Seeding, Startup, Stop, and Case 3 Delete steps in Frontend tests. |
+| **PAT-17** | **Backend Unit Test Execution Settings Law (Stop)** | **Backend** | Methodological Law | [execution-settings.md](execution-settings.md) | Enforces `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"` on ALL steps (including setup, action, retrieve, and assertions) in Backend Unit Tests. |
+| **PAT-18** | **Frontend Setup/Teardown Execution Condition Law (Always / _Continue)** | **Frontend** | Methodological Law | [frontend-testing.md](frontend-testing.md) | Enforces `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"` on Case 1 Seeding, Startup, Stop, and Case 3 Delete steps in Frontend tests. |
 | **PAT-29** | **Page Object Model (POM) Equivalent Pattern** | **Frontend** | Platform Execution Law | [frontend-testing.md](frontend-testing.md) | Defines a single locator step (`MxPageLocator`/`ParentContext`) at the start of a page sequence and pipes its output key to downstream interaction steps. |
 | **PAT-33** | **Default Assertion Failure Behavior (Continue Execution)** | **General** | Platform Execution Law | [execution-settings.md](execution-settings.md) | Defaults assertion steps in Frontend UI and Backend Integration tests to `ResumeExecutionAfterException = "_Continue"` for full-suite error reporting. |
-| **ANTI-07** | **Applying `_Always` / `_Continue` to Backend Unit Tests** | **Backend** | Methodological Anti-Pattern | [execution-settings.md](execution-settings.md) | Setting `_Always` or `_Continue` on steps in Backend Unit Tests, bypassing MTA's built-in transaction rollback. |
+| **ANTI-07** | **Applying Always / _Continue to Backend Unit Tests** | **Backend** | Methodological Anti-Pattern | [execution-settings.md](execution-settings.md) | Setting `Always` or `_Continue` on steps in Backend Unit Tests, bypassing MTA's built-in transaction rollback. |
 
 ---
 
@@ -215,7 +215,7 @@ Whenever a new testing pattern, rule, or anti-pattern is introduced, modified, o
 Before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or constructing steps in `STATE_CONSTRUCTION`, the AI Agent MUST run the 14-point mental self-audit against the canonical pattern index (detailed in `references/pre-approval-audit.md`):
 
 ```markdown
-[ ] [CHECK 1] FRONTEND SPLIT LAW [Frontend]: Are setup/execute/teardown separated into 3 distinct test cases with _Always and _Continue? (PAT-18 / PAT-03)
+[ ] [CHECK 1] FRONTEND SPLIT LAW [Frontend]: Are setup/execute/teardown separated into 3 distinct test cases with Always and _Continue? (PAT-18 / PAT-03)
 [ ] [CHECK 2] TESTCASE CONTAINER FORMATTING & EXECUTION USER [All]: Are rollback/validation feedback set at container level and execution user assigned? (PAT-11 / PAT-10 / PAT-79)
 [ ] [CHECK 3] BACKEND-FIRST DIRECT PIPING DELETES [Backend]: Are backend-created objects deleted via direct handle piping without redundant retrieves? (PAT-20 / PAT-16)
 [ ] [CHECK 4] SETUP PORTABILITY [Frontend]: Are relative logical launch paths used (/index.html) rather than absolute host URLs? (PAT-28 / PAT-41)
@@ -243,6 +243,6 @@ When calling `EditTestStep(EditAction="SetDescription")` during `STATE_CONSTRUCT
 * **`PAT-09` Backend-First Delete [Backend]:** `[Pattern: Backend-First Delete [^PAT-09] - Retrieves object in memory prior to deletion]`
 * **`PAT-10` Validation Feedback Assertion [Backend]:** `[Pattern: Universal Validation Feedback Assertion [^PAT-10] - Asserts validation messages on backend microflow execution]`
 * **`PAT-12` Pattern Annotation Tag [General]:** `[Pattern: <Name> - <Rationale>]`
-* **`PAT-18` Frontend Setup/Teardown Settings [Frontend]:** `[Pattern: Frontend Setup/Teardown Settings [^PAT-18] - Configures _Always / _Continue on seeding and cleanup]`
+* **`PAT-18` Frontend Setup/Teardown Settings [Frontend]:** `[Pattern: Frontend Setup/Teardown Settings [^PAT-18] - Configures Always / _Continue on seeding and cleanup]`
 * **`PAT-29` POM Locator Modularization [Frontend]:** `[Pattern: Page Object Model Locator [^PAT-29] - Modularizes page container selector for downstream step reuse]`
 

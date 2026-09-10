@@ -11,7 +11,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 
 ### [CHECK 1] Frontend Split Law (`PAT-18`, `PAT-03`)
 - **Scope:** Frontend UI Tests (NA for Backend).
-- **Verification Criteria:** Setup and teardown steps MUST be separated into distinct test cases: Case 1 Setup (`ExecutionCondition = "_Always"`), Case 2 Execute, and Case 3 Teardown (`ExecutionCondition = "_Always"`, `ResumeExecutionAfterException = "_Continue"`).
+- **Verification Criteria:** Setup and teardown steps MUST be separated into distinct test cases: Case 1 Setup (`ExecutionCondition = "Always"`), Case 2 Execute, and Case 3 Teardown (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
 - **Compliance Status:** `PASS` or `NA`.
 
 ### [CHECK 2] TestCase Container Formatting & Execution User (`PAT-11`, `PAT-10`, `PAT-79`)

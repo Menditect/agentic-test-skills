@@ -84,9 +84,8 @@ Execute construction across deterministic horizontal layers rather than vertical
 #### Strict Wire Format & Datatype Constraints (PAT-81, ANTI-35):
 *   All database keys (`TestStepKey`, `TestCaseKey`, `TestSuiteKey`, `TestConfigurationKey`, `TestStepOutputKey`, `ApplicationKey`, `ExecutionUserKey`) MUST be passed as raw JSON integers (e.g., `12345`), never string-quoted (`"12345"`).
 *   All `IntegerLongValue` attributes MUST be passed as valid integer numbers, never strings (`"100"` -> `100`).
-*   All `DateTimeOffsetType` fields MUST strictly use valid MTA enum values (`"_Year"`, `"_Month"`, `"_Day"`, `"_Hour"`, `"_Minute"`, `"_Second"`).
-*   All `ExecutionCondition` fields MUST strictly use valid MTA enum values (`"_Always"`, `"_Never"`, `"_Previous_Step_Succeeded"`).
-*   All `ResumeExecutionAfterException` fields MUST strictly use valid MTA enum values (`"_Continue"`, `"_Stop"`).
+*   All `ExecutionCondition` fields MUST strictly use valid MTA enum values (`"Always"`, `"Skip"`, `"None"`).
+*   All `ResumeExecutionAfterException` fields MUST strictly use valid MTA enum values (`"_Continue"`, `"Stop"` — note: `"Stop"` has NO leading underscore).
 
 ---
 
@@ -112,7 +111,7 @@ Your report **MUST** contain four distinct sections:
     *   **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
     *   **Section 3 (Test Case Scope & Dual-Risk Profile):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseDetails`), Technical Risk, Business Risk.
     *   **Section 4 (Verified Model Elements & Testability Profile):** Target microflows, pages, entities, attributes referenced.
-    *   **Section 5 (Chronological Step Sequence Plan):** Compare approved steps line-by-line with created steps (`GetTeststepDetails`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"_Stop"`), and `[Pattern: ...]` annotations.
+    *   **Section 5 (Chronological Step Sequence Plan):** Compare approved steps line-by-line with created steps (`GetTeststepDetails`), verifying step types, predecessors, settings (`"Always"`/`"_Continue"` vs `"None"`/`"Stop"`), and `[Pattern: ...]` annotations.
     *   **Section 6 (Playwright / Browser Settings):** Verify all 10 browser setting keys/values configured on suite/setup case (Frontend only).
     *   **Section 7 (Data Variation Matrix & Metadata):** **Mandatory Cell-by-Cell & Zero-Disconnect Verification**: Call `GetTestCaseDetails` (or `GetTestSuiteDetails`) and verify:
         * Every variation system name and description matches Section 7 (`PAT-77`, `ANTI-31`).
@@ -131,7 +130,7 @@ Your report **MUST** contain four distinct sections:
     * **Single Persist Check:** No redundant per-step `Persist` steps exist; creations/deletions of multiple objects are committed via a single grouped `Persist` step at the end.
     * **No Sequential Batching Violations:** No steps were created in parallel in a single turn; sequential steps were built one-by-one waiting for their predecessor keys.
     * **No Flaky Sleeps:** Zero sleep/delay steps exist in the test sequence.
-    * **Execution & Assertion Settings:** For Backend Unit tests, ALL steps (including asserts) use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "_Stop"` (`PAT-17`). For Frontend UI and Backend Integration tests, assertions default to `"ContinueTestRun"` or `"_Continue"` exception handling (`PAT-33`).
+    * **Execution & Assertion Settings:** For Backend Unit tests, ALL steps (including asserts) use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"` (`PAT-17`). For Frontend UI and Backend Integration tests, assertions default to `"ContinueTestRun"` or `"_Continue"` exception handling (`PAT-33`).
     * **Date Format Casing:** All date-picker formats use uppercase `MM` for months (converting any lowercase `mm` used in date-only context to avoid minute fields overrides).
     * **Retrieve for Assertions:** Retrieve steps used for asserting objects configure explicit or piped dynamic attribute filters with `RetrieveSet = "All"`, coupled with an immediate downstream `Assert Object Count` step (`PAT-07`, `PAT-13`, `PAT-31`).
     * **Cascading Consumer Check:** No step executes on a skipped provider step (downstream consumers of skipped steps must also be set to `"Skip"`).

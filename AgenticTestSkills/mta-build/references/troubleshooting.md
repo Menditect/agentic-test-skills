@@ -72,7 +72,7 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 *   **Resolution:**
     1.  Call `GetTeststepDetails(TestStepKey)` to identify parameter keys.
     2.  Call `EditMicroflowObjectParameter(EditAction="SetTestStepOutput", SelectObjectForMicroflowParameterKey=..., TestStepOutputKey=ProducerStepKey)`.
-    3.  If parameter should be empty/null, call `EditMicroflowObjectParameter(EditAction="SetEmpty", SelectObjectForMicroflowParameterKey=...)`.
+    3.  If parameter should be empty/null, call `EditMicroflowObjectParameter(EditAction="SetInputToEmpty", SelectObjectForMicroflowParameterKey=...)`.
     4.  If parameter is a primitive literal, call `EditMicroflowParameterValue(...)`.
 
 ### Pattern C: Skipped Data Provider

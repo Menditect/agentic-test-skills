@@ -38,7 +38,7 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 | **`TestStepKey`** | Step Key | Targets an existing step for reading, updating, or sequencing. |
 | **`TestStepBeforeKey`** | Before Key | Placement/predecessor key for step operations. For creating the absolute first step in an empty testcase, or sequencing a step to the first position using `SetSequenceOfTestStep`, this parameter **MUST** be set to `0`. For subsequent steps, use the key of the immediate predecessor. |
 | **`TestStepOutputKey`** | Output Key | Unique identifier of a step's returned object (e.g., `Browser`, `MxPageLocator`). |
-| **`TestStepProvidePlaywrightPageKey`** | Parent Context Key | Output key of a parent locator (e.g. `MxPageLocator`, `MxGalleryItemLocator`) scoping a nested widget. |
+| **`TestStepProvidesPlaywrightPageKey`** | Parent Context Key | Output key of a parent locator (e.g. `MxPageLocator`, `MxGalleryItemLocator`) scoping a nested widget. |
 | **`TestCaseKey`** | Case Key | Targets a specific test case. |
 | **`TestCaseBeforeKey`** | Case Before Key | Placement/predecessor key for case creation. For creating the absolute first case in an empty test suite, or sequencing a case to the first position using `SetSequenceOfTestCase`, this parameter **MUST** be set to `0`. For subsequent cases, use the key of the immediate predecessor. |
 | **`TestSuiteKey`** | Suite Key | Targets a specific test suite. Used for reading, executing, or reordering suites. |
@@ -54,7 +54,7 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 | **`EditTestStepRetrieve`** | `RetrieveOption` | `"Database"`, `"Association"`, or `"Teststep"`<br>*(Note the specific PascalCase: `"Teststep"` has a lowercase "s")* |
 | **`EditTestStepRetrieve`** | `RetrieveSet` | `"Head"` or `"All"`<br>*(Retrieves the first object or the entire collection respectively)* |
 | **`EditTestStep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
-| **`EditTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
+| **`EditTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore, whereas `"Stop"` has NO underscore)* |
 | **`CreateAssertMicroflowReturnValue`** | `ComparisonOperator` | **Plural**: `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
 | **`EditAssertMicroflowReturnValueCompare`** | `ComparisonOperator` | **Singular**: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`<br>*(CRITICAL: `EditAssertMicroflowReturnValueCompare` requires singular `"Equal"`, whereas `CreateAssertMicroflowReturnValue` requires plural `"Equals"`)* |
 | **`EditAssertAttributeValueCompare`** | `ComparisonOperator` | **Singular**: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
@@ -65,8 +65,10 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 | **`CreateAssertMicroflowReturnValue`** / **`EditAssertMicroflowReturnValueCompare`** | `ActionFailedAssert` | `"ContinueTestRun"` or `"StopTestRun"` |
 | **`EditTestStepAssociation`** | `EditAction` | `"SetOperation"`, `"SetTestStepOutput"`, or `"SetInputToEmpty"` |
 | **`EditTestStepAssociation`** | `Operation` | `"Set"`, `"Add"`, or `"Remove"`<br>*(Required when `EditAction="SetOperation"`. Note: To clear/unlink an association, use `EditAction="SetInputToEmpty"`, NOT an Operation value)* |
-| **`CreateTestCase`** / **`EditTestCase`** | `RollbackTcseAfterExecution` | `"Yes"` or `"No"` |
-| **`CreateTestSuite`** / **`EditTestSuite`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
+| **`EditTestCase`** | `RollbackTcseAfterExecution` | `"Yes"` or `"No"` |
+| **`EditTestSuite`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
+| **`ExecuteTest`** | `ExecutionLevel` | `"TestConfiguration"`, `"TestSuite"`, or `"TestCase"` |
+| **`ExecuteTest`** | `ExecutionScope` | `"All"`, `"ChangedOnly"`, `"FailedOnly"`, or `"Changed_Failed"` |
 
 ---
 

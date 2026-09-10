@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.3.1"
-changes: "Updated default MTA Plugin MCP server endpoint path from /plugin-mcp/ to /plugin/mcp."
+version: "1.5.0"
+changes: "Added agentic-test-tools template repository cloning, upstream sync, and lifecycle commands."
 ---
 
 # MTA Installation & Configuration Skill
@@ -118,10 +118,33 @@ Guide the user through these four sequential setup micro-states, halting to veri
 *   **Key Requirements:**
     *   Instruct the developer to create a Personal Access Token (PAT) under Mendix developer settings (`user-settings.mendix.com/link/developersettings`) with appropriate API scopes.
     *   Configure application settings, create application instances in MTA, and establish webhook tokens for CI/CD.
+    *   **Canonical Workspace Configuration (`mta_config.json`):**
+        *   Generated automatically by `agentic-test-tools` (or maintained manually) in the workspace root.
+        *   Establishes the Single Source of Truth (SSOT) across 19 canonical properties: workspace paths, MTA portal and plugin MCP endpoints, authentication tokens, `mendix_mpr_path`, `execution_plans_dir`, and `app_instances[]`.
+        *   Validated against `references/mta_config.schema.json` via `python scripts/lint-config-schema.py`. Complete field reference documented in `references/mta-config-reference.md`.
+        *   Provides automatic token resolution for `ExecuteTest` (`default_app_instance_token` or instance name lookup in `app_instances[]`), eliminating manual credential prompts.
+    *   **Template Repository Acquisition & Lifecycle Protocol (`agentic-test-tools`):**
+        *   [`agentic-test-tools`](https://github.com/Menditect/agentic-test-tools) is a **GitHub Template Repository** that provides MCP proxies, Mendix model wrappers, IDE configs, and automated setup scripts.
+        *   **Cloning for Acquisition & Upgrades:** Because it is a template repository, updating to a new version or setting up a fresh workspace is done by **cloning the template repository**:
+            ```bash
+            git clone https://github.com/Menditect/agentic-test-tools.git
+            ```
+        *   **Discovery Protocol:** Before running setup or updates, check if `agentic-test-tools` is already cloned: (1) `mta_config.json` -> `workspace_dir`, (2) current directory `./`, (3) sibling directory `../agentic-test-tools`, (4) known tools directory (e.g. `C:\Projecten\agentic-test-tools`). If missing or when updating version, clone it.
+        *   **Workspace Configuration & Self-Healing (`npm run setup`):**
+            Inside the cloned tools directory, execute `npm run setup` (or `.\setup.ps1`). This interactive wizard scans the Mendix `.mpr`, detects application instances, extracts connection settings, and generates/updates `mta_config.json`, `.env`, and IDE configs. Run this whenever paths change, tokens expire, or `mta_config.json` needs healing.
+        *   **Upstream Synchronization (`npm run update`):**
+            ```bash
+            npm run update           # Updates both testing skills and mxcli binary
+            npm run update:skills    # Updates only skills from Menditect/agentic-test-skills
+            npm run update:mxcli     # Downloads the latest mxcli binary from Mendix Labs
+            ```
+        *   **Health Verification (`npm run verify`):**
+            Execute `npm run verify` to test connectivity to MTA Primitive Tools MCP, local MTA Plugin MCP, and ensure `mxcli.exe` is present and functional.
     *   Enforce high-DPI scaling checks: Ensure Windows display scaling and browser zoom are set strictly to **100%** to prevent click-alignment offset failures during frontend visual test steps.
 *   **🔍 Success Verification Check:**
     *   The MTA Portal Application Instance shows a green status light.
     *   Running a model-discovery query via the MTA MCP tools (e.g. `GetAppModelData` or `GetTestConfigurationDetails`) returns a valid, non-empty JSON structure.
+    *   `mta_config.json` is validated without errors against `mta_config.schema.json`.
 
 ---
 
@@ -133,4 +156,4 @@ To maintain maximum performance and token efficiency, only read the specific ref
 | `[STATE_INFRA_PROVISIONING]` | `references/mta-backend-install.md` |
 | `[STATE_PLUGIN_INTEGRATION]` | `references/plugin-integration.md` |
 | `[STATE_PLAYWRIGHT_SETUP]` | `references/playwright-browser-setup.md` |
-| `[STATE_PLATFORM_CONNECT]` | `references/mta-account-config.md` \| `references/mta-ui-setup.md` |
+| `[STATE_PLATFORM_CONNECT]` | `references/mta-account-config.md` \| `references/mta-ui-setup.md` \| `references/mta-config-reference.md` |

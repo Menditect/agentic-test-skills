@@ -135,9 +135,9 @@ Use this template when testing deterministic business logic, calculations, or va
 ### Step Sequence Matrix
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | Case 1 | `Create Object` | `[ModuleName].[ParameterEntityName]` | Memory | `out_param_obj` | `None` / `_Stop` |
-| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `out_retrieved_obj` | `None` / `_Stop` |
-| **3** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | Handles | `out_result` | `None` / `_Stop` |
+| **1** | Case 1 | `Create Object` | `[ModuleName].[ParameterEntityName]` | Memory | `out_param_obj` | `None` / `Stop` |
+| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `out_retrieved_obj` | `None` / `Stop` |
+| **3** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | Handles | `out_result` | `None` / `Stop` |
 
 ### Detailed Step Configurations & Assertions
 
@@ -150,7 +150,7 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **4. Output Variable Handle:** `out_param_obj`
 *   **5. Parameters & Initial Values:** `[Attribute1 = 'InitialVal']`
 *   **6. Embedded Step Assertions:** `None (Embedded assertions are strictly prohibited on Create Object steps)`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Direct Initialization on Create Object [^PAT-06] - Sets initial attributes directly on creation]`
 
 </details>
@@ -164,7 +164,7 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **4. Output Variable Handle:** `out_retrieved_obj`
 *   **5. Parameters & Filters:** `Filter: [ModuleName].[EntityName].[FilterAttribute] = 'TEST_VAL'`
 *   **6. Embedded Step Assertions:** `Assert Object Count Equals 1`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Dual Retrieve/Filter Empty Object & Count Assertion [^PAT-07], [^PAT-08]]`
 
 </details>
@@ -178,7 +178,7 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **4. Output Variable Handle:** `out_result`
 *   **5. Parameters & Bindings:** `Pipe: out_param_obj, out_retrieved_obj`
 *   **6. Embedded Step Assertions:** `Assert Microflow Return Value: ComparisonOperator = "Equals" (creation) / "Equal" (compare config), ComparisonValue = [Expected Value]`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Pure Unit Execution & Direct Return Assertion [^PAT-09]]`
 
 </details>
@@ -369,8 +369,8 @@ Use this template when testing multi-step processes or transactional orchestrati
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1** | Case 1 | `Create Object & Persist` | `[ModuleName].[EntityName]` | Database | `out_seeded_obj` | `Always` / `_Continue` |
-| **2** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | `out_seeded_obj` | `out_int_result` | `None` / `_Stop` |
-| **3** | Case 1 | `Microflow Call` | `TestLogger.GetFootprint` | None | `out_footprint` | `None` / `_Stop` |
+| **2** | Case 1 | `Microflow Call` | `[ModuleName].[ElementName]` | `out_seeded_obj` | `out_int_result` | `None` / `Stop` |
+| **3** | Case 1 | `Microflow Call` | `TestLogger.GetFootprint` | None | `out_footprint` | `None` / `Stop` |
 | **4** | Case 1 | `Delete Object & Persist` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
@@ -398,7 +398,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 *   **4. Output Variable Handle:** `out_int_result`
 *   **5. Parameters & Bindings:** `Pipe: out_seeded_obj`
 *   **6. Embedded Step Assertions:** `None`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Orchestration Execution - Triggers parent workflow]`
 
 </details>
@@ -412,7 +412,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 *   **4. Output Variable Handle:** `out_footprint`
 *   **5. Parameters & Bindings:** `None`
 *   **6. Embedded Step Assertions:** `Assert Microflow Return Value: ComparisonOperator = "Equals" (creation) / "Equal" (compare config), ComparisonValue = [Expected Footprint]`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Diagnostic Probe Footprint [^PAT-08] - Validates sub-process execution order]`
 
 </details>
@@ -473,7 +473,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
-| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`_Always`), Case 2 Execute, Case 3 Teardown (`_Always`) | `PASS` |
+| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`Always`), Case 2 Execute, Case 3 Teardown (`Always`) | `PASS` |
 | **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & settings configured per TestCase container; `EXUS_ExecutionUser` assigned | `PASS` |
 | **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | Case 3 Teardown cleans up seeded records via cross-case handle piping | `PASS` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` |
@@ -538,9 +538,9 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 ### Functional Specification Profile
 | Specification Property | Detail / Value |
 | :--- | :--- |
-| **Case 1 (Setup)** | `[ModuleName].TC_UI_[ElementName]_Setup` *(Objective: Initialize browser & seed data, Execution: `_Always` / `_Continue`)* |
-| **Case 2 (Execution)** | `[ModuleName].TC_UI_[ElementName]_Execute` *(Objective: Verify UI navigation, widget inputs, and page submission, Authentication: `[With Login \| Without Login]`, Execution: `None` / `_Stop`)* |
-| **Case 3 (Teardown)** | `[ModuleName].TC_UI_[ElementName]_Teardown` *(Objective: Close browser and clean up seeded records, Execution: `_Always` / `_Continue`)* |
+| **Case 1 (Setup)** | `[ModuleName].TC_UI_[ElementName]_Setup` *(Objective: Initialize browser & seed data, Execution: `Always` / `_Continue`)* |
+| **Case 2 (Execution)** | `[ModuleName].TC_UI_[ElementName]_Execute` *(Objective: Verify UI navigation, widget inputs, and page submission, Authentication: `[With Login \| Without Login]`, Execution: `None` / `Stop`)* |
+| **Case 3 (Teardown)** | `[ModuleName].TC_UI_[ElementName]_Teardown` *(Objective: Close browser and clean up seeded records, Execution: `Always` / `_Continue`)* |
 | **Preconditions** | Application running at target base URL; test execution user provisioned |
 | **Expected Result** | Browser session launches, navigates to target page, fills inputs, asserts widget visibility/state, and tears down cleanly |
 | **Authentication Scope** | `[With Login (admin/1) | Without Login (Anonymous)]` |
@@ -574,22 +574,22 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 
 ### Step Sequence Matrix
 
-#### Case 1: Setup & Data Seeding (`[ModuleName].TC_UI_[ElementName]_Setup` — Rollback: `No`, Execution: `_Always` / `_Continue`)
+#### Case 1: Setup & Data Seeding (`[ModuleName].TC_UI_[ElementName]_Setup` — Rollback: `No`, Execution: `Always` / `_Continue`)
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **101** | Case 1 | `Create Object` | `LocalStartOptions` | Memory | `out_options` | `Always` / `_Continue` |
 | **102** | Case 1 | `Create Object & Persist` | `[ModuleName].[EntityName]` | Database | `out_seeded_obj` | `Always` / `_Continue` |
 
-#### Case 2: UI Action & Execution (`[ModuleName].TC_UI_[ElementName]_Execute` — Rollback: `No`, Execution: `None` / `_Stop`)
+#### Case 2: UI Action & Execution (`[ModuleName].TC_UI_[ElementName]_Execute` — Rollback: `No`, Execution: `None` / `Stop`)
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **201** | Case 2 | `Start Frontend Session` | `Start_MxFrontend_Test_With_Login` | `out_options` | `out_browser_page` | `Always` / `_Continue` |
-| **202** | Case 2 | `Locate Page` | `[ModuleName].[PageName]` | `out_browser_page` | `out_page_locator` | `None` / `_Stop` |
-| **203** | Case 2 | `Locate Widget & Fill` | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` | `out_page_locator` | `out_widget_locator` | `None` / `_Stop` |
-| **204** | Case 2 | `Locate Widget & Click` | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` | `out_page_locator` | `out_button_locator` | `None` / `_Stop` |
+| **202** | Case 2 | `Locate Page` | `[ModuleName].[PageName]` | `out_browser_page` | `out_page_locator` | `None` / `Stop` |
+| **203** | Case 2 | `Locate Widget & Fill` | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` | `out_page_locator` | `out_widget_locator` | `None` / `Stop` |
+| **204** | Case 2 | `Locate Widget & Click` | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` | `out_page_locator` | `out_button_locator` | `None` / `Stop` |
 | **205** | Case 2 | `Stop Frontend Test` | `Stop_MxFrontendTest` | `out_browser_page` | `N/A` | `Always` / `_Continue` |
 
-#### Case 3: Teardown & Cleanup (`[ModuleName].TC_UI_[ElementName]_Teardown` — Rollback: `No`, Execution: `_Always` / `_Continue`)
+#### Case 3: Teardown & Cleanup (`[ModuleName].TC_UI_[ElementName]_Teardown` — Rollback: `No`, Execution: `Always` / `_Continue`)
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **301** | Case 3 | `Delete Object & Persist` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` |
@@ -648,7 +648,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **4. Output Variable Handle:** `out_page_locator`
 *   **5. Parameters & Initial Values:** `PageQualifiedName = '[ModuleName].[PageName]'`
 *   **6. Embedded Step Assertions:** `None (Automatic internal page IsVisible check executed by Locate_Page)`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Page Object Model Locator [^PAT-29] - Modularizes page container context]`
 
 </details>
@@ -662,7 +662,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **4. Output Variable Handle:** `out_widget_locator`
 *   **5. Parameters & Initial Values:** `WidgetName = 'textBox_CustomerName'`, `Value = 'TestInput'`
 *   **6. Embedded Step Assertions:** `None`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Structural Locator Law 1 [^PAT-13] [^PAT-64] - 2-step widget locate and fill chain using verified closed-catalog testkit microflows]`
 
 </details>
@@ -676,7 +676,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **4. Output Variable Handle:** `out_button_locator`
 *   **5. Parameters & Initial Values:** `WidgetName = 'btn_Save'`
 *   **6. Embedded Step Assertions:** `None`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Structural Locator Law 1 [^PAT-13] [^PAT-64] - 2-step widget locate and click chain using verified closed-catalog testkit microflows]`
 
 </details>
@@ -771,7 +771,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 
 | Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
 | :--- | :--- | :--- | :--- |
-| **Frontend 3-Case Split Law** | Case 1 -> Case 2 -> Case 3 | `PAT-18`, `PAT-03` | Separates setup seeding, UI execution, and cleanup across 3 isolated test cases with `_Always` / `_Continue` settings on setup and teardown |
+| **Frontend 3-Case Split Law** | Case 1 -> Case 2 -> Case 3 | `PAT-18`, `PAT-03` | Separates setup seeding, UI execution, and cleanup across 3 isolated test cases with `Always` / `_Continue` settings on setup and teardown |
 | **Structural Locator Law 1** | Steps 203, 204 | `PAT-13`, `PAT-64` | Enforces direct 2-step widget locate and action chains using closed-catalog microflows |
 | **Start-and-Stop Boilerplate** | Steps 101, 201, 205, 302 | `PAT-28`, `PAT-18` | Controls clean browser instance lifecycle from initialization through safe process teardown |
 | **Closed Catalog Frontend Testkit Verification** | Steps 201, 202, 203, 204, 205, 302 | `PAT-64`, `ANTI-21` | All UI actions and teardowns use verified closed catalog microflows from MenditectMxFrontendTestKit and MenditectPlaywrightConnector |
@@ -809,8 +809,9 @@ To help new users get started successfully with MTA and the AI coding assistant,
 > - **Test Construction (`mta-build`):** **NOT required.** Building test cases, steps, assertions, and variation matrices uses authoring tools (`CreateTestCase`, `CreateObjectActionTestStep`, etc.) at the project repository level.
 > - **Local Exploratory Testing (`execute-testcase` via `MTA_plugin`):** **NOT required.** Local exploratory tests execute in-memory against your local Mendix runtime with automatic rollback.
 > - **Remote Server Test Execution (`ExecuteTest` via `MTA`):** **REQUIRED.** Triggering persistent background test runs on the MTA server requires an `ApplicationInstanceToken` to identify which runtime instance executes the test run.
+>   *Automatic Resolution:* If `mta_config.json` is present in the workspace root, the assistant automatically resolves the token from `default_app_instance_token` or maps named environments via `app_instances[]`, eliminating manual credential entry.
 >
-> **Where to find your App Instance Token for Remote Execution:**
+> **Where to find your App Instance Token for Remote Execution (if not configured in mta_config.json):**
 > 1. Log in to your **MTA Portal** account.
 > 2. Select your target **Application** from the dashboard.
 > 3. Navigate to the **Application Instances** section.
@@ -831,8 +832,8 @@ To help new users get started successfully with MTA and the AI coding assistant,
     *   *Why this works:* Locks Frontend, inspects page AST via `mxcli`, and initiates UI action and assertion planning without any token requirement.
 
 4.  **For Remote MTA Server Test Execution (`ExecuteTest`):**
-    > "Execute test case '[TestCaseName]' on the MTA server using App Instance Token '[AppInstanceToken]'"
-    *   *Why this works:* Directly triggers persistent server-side execution via `ExecuteTest`, targeting the specified environment instance.
+    > "Execute test case '[TestCaseName]' on the MTA server"
+    *   *Why this works:* Directly triggers persistent server-side execution via `ExecuteTest`. The `ApplicationInstanceToken` is automatically resolved from `mta_config.json` (`default_app_instance_token` or `app_instances[]`). To target a specific environment, specify its name: "Execute test case '[TestCaseName]' on environment 'Staging'".
 
 ---
 

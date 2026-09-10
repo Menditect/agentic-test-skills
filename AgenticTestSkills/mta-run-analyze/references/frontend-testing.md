@@ -10,7 +10,7 @@ This reference contains the widget locator maps, nested repeating container stra
 *   **The Options Parameter Rule:** If a frontend/testkit microflow has an Object-type `options` parameter, ALWAYS set it to empty by calling `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetInputToEmpty")` (or use Options Protocol). Do not leave unbound.
 *   **The Frontend Testkit Default Law (CRITICAL):** For all Mendix applications, the **Menditect Frontend Testkit** (represented by the module `MenditectMxFrontendTestKit`) is the strict default and MUST be used exclusively to construct frontend UI tests. Falling back to low-level Playwright Connector commands (e.g. raw clicks, fills, presses) due to encountering an issue is strictly prohibited, unless the user has explicitly and unambiguously approved this workaround in the active session.
 *   **The Module Packaging Rule:** The Menditect Frontend Testkit (`MenditectMxFrontendTestKit`), Menditect Playwright Connector (`MenditectPlaywrightConnector`), and MTA Commons (`MenditectMtaCommons`) modules are packaged and imported as standard Mendix `.mxmodule` modules.
-*   **The Parent Context Rule:** All child widgets on a Mendix page require an `MxPageLocator` (returned by `Locate_MxPage`) or parent item locator passed as their `ParentContext` (`TestStepProvidePlaywrightPageKey`) to resolve selectors.
+*   **The Parent Context Rule:** All child widgets on a Mendix page require an `MxPageLocator` (returned by `Locate_MxPage`) or parent item locator passed as their parent locator (`TestStepProvidesParentWidgetKey`) to resolve selectors.
 *   **The Locate Page/Widget Tool Enforcement Rule:** For microflows that locate a page or a widget, the specialized locate page (`GenerateMicroflowCallTestStepLocatePage`) or locate widget (`GenerateMicroflowCallTestStepLocateWidget`) tool **MUST** be used. Calling these tools registers and sets the microflow to look for the page or widget in MTA. A manual reference to the CSS class of the page or the widget **DOES NOT WORK**. If an error occurs in calling the locate page or locate widget tool, you **MUST STOP AND ASK THE USER FOR INPUT**. Do **NOT** use any fallback strategy.
 *   **The BrowserType Enumeration Law (CRITICAL):** `BrowserType` is a Mendix **Enumeration**, NOT a standard string.
     *   **Binding Tool:** You **MUST** call `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetEnumerationValue", EnumerationValue=...)` to bind its value. Calling `"SetStringValue"` is incorrect and will cause an execution-time validation error.
@@ -84,10 +84,10 @@ This open-fill-close sequence is fully sufficient to select the option and updat
 
 ## 🗺️ PLAYWRIGHT `Page` VS. MENDIX `MxPageLocator` CONTEXTS
 
-When locating widgets, the `TestStepProvidePlaywrightPageKey` parent parameter depends on where the widget resides on the screen. Supplying the wrong type will fail.
+When locating pages and widgets, the parent context parameter depends on whether the target is a page, a standard widget, or a global widget:
 
-*   **Playwright `Page` Object (Low-level context):** Returned by setup/login microflows (`Start_MxFrontend_Test_With_Login` / `Start_MxFrontend_Test_Without_Login`). Used **exclusively** as the parent context for `Locate_MxPage` and `Stop_MxFrontendTest`.
-*   **Mendix `MxPageLocator` Object (Page Wrapper):** Returned by `Locate_MxPage`. Used as the parent context for all top-level widgets directly on that page.
+*   **Playwright `Page` Object (Low-level context):** Returned by setup/login microflows (`Start_MxFrontend_Test_With_Login` / `Start_MxFrontend_Test_Without_Login`). Passed into `GenerateMicroflowCallTestStepLocatePage(TestStepProvidesPlaywrightPageKey=...)` and into `Stop_MxFrontendTest`.
+*   **Mendix `MxPageLocator` Object (Page Wrapper):** Returned by `GenerateMicroflowCallTestStepLocatePage`. Passed into non-global widgets via `GenerateMicroflowCallTestStepLocateWidget(IsGlobalWidget="_False", TestStepProvidesParentWidgetKey=...)`.
 
 | Widget Position on Page | Parent Key to Use for Locator | Example Tool |
 | :--- | :--- | :--- |
@@ -325,14 +325,18 @@ Every standard action (e.g., `ACT_Fill_TextBox_Input`, `ACT_Click_Button`) or as
 ### 2. High-Level Locator Generators
 Instead of calling `CreateMicroflowCallTestStep` for locator microflows, you **MUST** call the specialized generator tools. These tools create the step, register the locator output, and configure standard parameters in a single call:
 *   **Locate Page:** Call `GenerateMicroflowCallTestStepLocatePage`
+    *   *TestCaseKey:* Key of the test case.
     *   *PageClassName:* The CSS class name of the target page (e.g., `"MxLoginFormPage"`).
     *   *PageQualifiedName:* Fully qualified page name (e.g., `"MyModule.MyPage"`).
-    *   *TestStepProvidePlaywrightPageKey:* The `TestStepKey` of Case 1's Start Playwright step (the browser session).
-*   **Locate Widget:** Call `GenerateMicroflowCallTestStepLocateWidget`
+    *   *TestStepProvidesPlaywrightPageKey:* The `TestStepKey` of Case 1's Start Playwright step (the browser session).
+*   **Locate Widget (Container/Page Scoped):** Call `GenerateMicroflowCallTestStepLocateWidget`
+    *   *TestCaseKey:* Key of the test case.
+    *   *IsGlobalWidget:* `"_False"` (for standard page-scoped widgets).
     *   *WidgetName:* Name of the widget in the Mendix model (e.g., `"username-input"`).
     *   *PageClassName:* CSS class name of the page.
     *   *PageQualifiedName:* Fully qualified page name.
-    *   *TestStepProvidePlaywrightPageKey:* The `TestStepKey` of the preceding `GenerateMicroflowCallTestStepLocatePage` step (or the parent container's locator step).
+    *   *TestStepProvidesParentWidgetKey:* The `TestStepKey` of the preceding `GenerateMicroflowCallTestStepLocatePage` step (or parent container locator step).
+    *   *(Note: For global widgets, set `IsGlobalWidget="_True"`, pass `WidgetType`, and provide `TestStepProvidesPlaywrightPageKey`).*
 
 > ⚠️ **CRITICAL ENFORCEMENT:** You **MUST** use these high-level locator generator tools (`GenerateMicroflowCallTestStepLocatePage` and `GenerateMicroflowCallTestStepLocateWidget`) for locating pages and widgets. Calling these tools registers and sets up the microflow to find the page or widget inside MTA.
 > *   **DO NOT** manually create a standard microflow teststep (using `CreateMicroflowCallTestStep`) and reference the CSS class of the page or widget yourself. A manual reference **DOES NOT WORK** and is strictly prohibited.
@@ -342,10 +346,10 @@ Instead of calling `CreateMicroflowCallTestStep` for locator microflows, you **M
 To automate entering a username into the textbox of a login page:
 
 1.  **Locate the Page:**
-    *   *Action:* Call `GenerateMicroflowCallTestStepLocatePage(PageClassName="MxLoginFormPage", PageQualifiedName="MyModule.MyPage", TestStepProvidePlaywrightPageKey=Case1BrowserStepKey, TestCaseKey=Case2Key)`
+    *   *Action:* Call `GenerateMicroflowCallTestStepLocatePage(TestCaseKey=Case2Key, PageClassName="MxLoginFormPage", PageQualifiedName="MyModule.MyPage", TestStepProvidesPlaywrightPageKey=Case1BrowserStepKey)`
     *   *Returns:* `PageLocateStepKey` (e.g. `101`)
 2.  **Locate the TextBox Widget:**
-    *   *Action:* Call `GenerateMicroflowCallTestStepLocateWidget(WidgetName="username-input", PageClassName="MxLoginFormPage", PageQualifiedName="MyModule.MyPage", TestStepProvidePlaywrightPageKey=PageLocateStepKey, TestStepBeforeKey=PageLocateStepKey, TestCaseKey=Case2Key)`
+    *   *Action:* Call `GenerateMicroflowCallTestStepLocateWidget(TestCaseKey=Case2Key, IsGlobalWidget="_False", WidgetName="username-input", PageClassName="MxLoginFormPage", PageQualifiedName="MyModule.MyPage", TestStepProvidesParentWidgetKey=PageLocateStepKey, TestStepBeforeKey=PageLocateStepKey)`
     *   *Returns:* `WidgetLocateStepKey` (e.g. `102`)
 3.  **Create the Action Step (Fill Text):**
     *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input", TestStepName="Fill TextBox 'Username' Input", TestStepBeforeKey=WidgetLocateStepKey, TestCaseKey=Case2Key)`
@@ -365,7 +369,7 @@ To automate entering a username into the textbox of a login page:
 To automate selecting "Premium Coverage" from a ComboBox named `comboBoxInsurance`:
 
 1.  **Locate the ComboBox Widget:**
-    *   *Action:* Call `GenerateMicroflowCallTestStepLocateWidget(WidgetName="comboBoxInsurance", PageClassName="MxInsurancePage", PageQualifiedName="MyModule.MyPage", TestStepProvidePlaywrightPageKey=PageLocateStepKey, TestCaseKey=Case2Key)`
+    *   *Action:* Call `GenerateMicroflowCallTestStepLocateWidget(TestCaseKey=Case2Key, IsGlobalWidget="_False", WidgetName="comboBoxInsurance", PageClassName="MxInsurancePage", PageQualifiedName="MyModule.MyPage", TestStepProvidesParentWidgetKey=PageLocateStepKey)`
     *   *Returns:* `ComboBoxLocateStepKey` (e.g., `201`)
 2.  **Open the ComboBox (Trigger):**
     *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Click_ComboBox_Trigger", TestCaseKey=Case2Key, TestStepBeforeKey=ComboBoxLocateStepKey)`
@@ -418,7 +422,7 @@ Verify the outcome by retrieving the object from the database using MTA backend 
 ### 7. Frontend Execution Architecture: Persistent MTA Platform (`PAT-62`, `ANTI-20`)
 
 Frontend UI testing requires the full orchestration capabilities of the MTA Platform (Option B):
-1. **Persistent 3-Case Suite Lifecycle (`PAT-03`):** Frontend UI tests are constructed across 3 dedicated test cases: Case 1 (Setup Test Case: database seeding with `_Always` condition, browser launch with login/anonymous navigation), Case 2 (Action Test Case: TestKit UI interactions and assertions), and Case 3 (Teardown Test Case: browser shutdown via `Stop_MxFrontendTest` with `_Always` condition, database cleanup).
+1. **Persistent 3-Case Suite Lifecycle (`PAT-03`):** Frontend UI tests are constructed across 3 dedicated test cases: Case 1 (Setup Test Case: database seeding with `"Always"` condition, browser launch with login/anonymous navigation), Case 2 (Action Test Case: TestKit UI interactions and assertions), and Case 3 (Teardown Test Case: browser shutdown via `Stop_MxFrontendTest` with `"Always"` condition, database cleanup).
 2. **Prohibition of Backend Domain Microflow Substitution (`ANTI-20`):** In all Frontend tests, all UI actions (inputs, clicks, selections, and screen asserts) MUST strictly drive the browser via `MenditectMxFrontendTestKit` microflows. Substituting UI steps with backend domain microflows (`ACT_*`, `SUB_*`, `CMT_*`) is strictly **PROHIBITED**.
-3. **Mandatory Playwright Browser Teardown:** In Case 3 (Teardown), browser teardown microflows (`Stop_MxFrontendTest` and/or `Teardown_Playwright`) MUST ALWAYS be included and configured with `ExecutionCondition = "_Always"` and `ResumeExecutionAfterException = "_Continue"` to guarantee that browser processes and windows are never orphaned even if intermediate UI assertions fail.
+3. **Mandatory Playwright Browser Teardown:** In Case 3 (Teardown), browser teardown microflows (`Stop_MxFrontendTest` and/or `Teardown_Playwright`) MUST ALWAYS be included and configured with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"` to guarantee that browser processes and windows are never orphaned even if intermediate UI assertions fail.
 4. **Closed Catalog Testkit Verification (`PAT-64`, `ANTI-21`):** All test steps must strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector`.

@@ -58,7 +58,7 @@ test_case_keys: []
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
-| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`_Always`), Case 2 Execute, Case 3 Teardown (`_Always`) | `PASS` / `NA` |
+| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`Always`), Case 2 Execute, Case 3 Teardown (`Always`) | `PASS` / `NA` |
 | **2** | **TestCase Container Formatting & Execution User** | `PAT-11`, `PAT-10`, `PAT-79` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
 | **3** | **Backend-First Direct Piping Deletes** | `PAT-20`, `PAT-16` | Backend-created objects deleted via direct handle piping without redundant retrieves | `PASS` / `NA` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` / `NA` |
@@ -164,9 +164,9 @@ test_case_keys: []
 
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` |
-| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` |
-| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` |
+| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `Stop` |
+| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `Stop` |
+| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `Stop` |
 | **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
@@ -180,7 +180,7 @@ test_case_keys: []
 *   **4. Output Variable Handle:** `[Step1_Output]`
 *   **5. Parameters & Initial Values:** `[Initial Attributes: Attribute = Value | Initial Associations: Association = Target Handle]`
 *   **6. Embedded Step Assertions:** `None (Embedded assertions are strictly prohibited on Create Object steps)`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Direct Initialization on Create Object [^PAT-06] - Sets initial attributes directly on creation]`
 
 </details>
@@ -194,7 +194,7 @@ test_case_keys: []
 *   **4. Output Variable Handle:** `[Step2_Retrieved]`
 *   **5. Parameters & Filters:** `[Filter Criteria: Explicit Attribute Name, Operator, Value / 'NON_EXISTENT']`
 *   **6. Embedded Step Assertions:** `Assert Object Count == [Equals 1 (or N for lists)]`, `Assert Attribute Value: [Attribute Operator Value]`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Explicit Attribute Filter Query & Count Assertion [^PAT-07], [^PAT-08]]`
 
 </details>
@@ -208,7 +208,7 @@ test_case_keys: []
 *   **4. Output Variable Handle:** `[Step3_Result]` (if non-void)
 *   **5. Parameters & Bindings:** `Pipe: [Step1_Output], [Step2_Retrieved]`
 *   **6. Embedded Step Assertions:** `Assert Return Value == [Expected Return Value]`, `Assert Validation Feedback Count == 0`
-*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "_Stop"`
+*   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Business Process Execution & Direct Return Assertion [^PAT-09]]`
 
 </details>

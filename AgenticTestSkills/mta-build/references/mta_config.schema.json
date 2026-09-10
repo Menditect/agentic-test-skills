@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MTAConfiguration",
+  "description": "Canonical configuration schema for Menditect Test Automation (MTA) workspace, MCP servers, runtime plugin, and tooling.",
+  "version": "1.3.0",
+  "type": "object",
+  "properties": {
+    "workspace_type": {
+      "type": "string",
+      "enum": ["clone_root", "mendix_project", "custom"],
+      "description": "Type of workspace where the agent is running."
+    },
+    "workspace_dir": {
+      "type": "string",
+      "description": "Absolute path to the active workspace directory."
+    },
+    "skills_dir": {
+      "type": "string",
+      "description": "Absolute path to the directory containing MTA agentic skills."
+    },
+    "skills_style": {
+      "type": "string",
+      "enum": ["standard", "mendix_module"],
+      "description": "Style of skill installation (standard project-level skills/ or Mendix 11.12+ Marketplace module)."
+    },
+    "mta_output_path": {
+      "type": "string",
+      "description": "Root directory for MTA output artifacts and reports."
+    },
+    "execution_plans_dir": {
+      "type": "string",
+      "description": "Directory where active Execution Plans (.md) are stored."
+    },
+    "execution_plans_archive_dir": {
+      "type": "string",
+      "description": "Directory where superseded Execution Plan revisions are archived."
+    },
+    "mendix_version": {
+      "type": "string",
+      "description": "Mendix Studio Pro version detected from the project .mpr."
+    },
+    "application_name": {
+      "type": "string",
+      "description": "Name of the target Mendix application."
+    },
+    "mta_base_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL of the Menditect Test Automation web portal."
+    },
+    "mcp_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "MCP endpoint URL for the MTA primitive tools server."
+    },
+    "mta_auth_header": {
+      "type": "string",
+      "description": "Authentication header (e.g. Bearer <token>) for the MTA MCP endpoint."
+    },
+    "plugin_mcp_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "MCP endpoint URL for the MTA local runtime plugin."
+    },
+    "plugin_mcp_token": {
+      "type": "string",
+      "description": "Access token header (e.g. Bearer 1) for the MTA local runtime plugin MCP endpoint."
+    },
+    "app_instances": {
+      "type": "array",
+      "description": "List of discovered or configured application runtime instances.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the application instance (e.g. 'mta-trial-1', 'Local Development')."
+          },
+          "token": {
+            "type": "string",
+            "description": "MTA Application Instance Token (GUID) used by ExecuteTest."
+          },
+          "mtaUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "MTA server URL associated with this instance."
+          },
+          "runtimeUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Local or remote Mendix application runtime root URL."
+          },
+          "pluginUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Plugin MCP URL for this instance."
+          },
+          "pluginToken": {
+            "type": "string",
+            "description": "Plugin MCP access token for this instance."
+          },
+          "pluginPort": {
+            "type": "string",
+            "description": "HTTP port of the plugin MCP server."
+          }
+        },
+        "required": ["name", "token"]
+      }
+    },
+    "default_app_instance": {
+      "type": "string",
+      "description": "Name of the default application instance to target."
+    },
+    "default_app_instance_token": {
+      "type": "string",
+      "description": "Default MTA Application Instance Token used for ExecuteTest calls."
+    },
+    "model_source": {
+      "type": "string",
+      "enum": ["mxcli", "studiopro"],
+      "description": "Model discovery mechanism used by the agent ('mxcli' or 'studiopro')."
+    },
+    "mendix_project_dir": {
+      "type": "string",
+      "description": "Absolute path to the Mendix project directory."
+    },
+    "mendix_mpr_path": {
+      "type": "string",
+      "description": "Absolute path to the Mendix project .mpr file."
+    }
+  },
+  "required": [
+    "mta_base_url",
+    "mcp_endpoint"
+  ]
+}
