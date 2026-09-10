@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.10.0"
-changes: "Synchronized shared references with PAT-89, ANTI-41, Execution Plan Metadata container, and Section 9 collapsible receipt."
+version: "6.11.0"
+changes: "Standardized comparison operator enums for test execution and troubleshooting, and synchronized shared references."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -210,6 +210,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
     *   **Execution Initiation & Scoping (`ExecuteTest`):**
         *   Call `ExecuteTest(ApplicationInstanceToken="...", ExecutionLevel="TestCase"|"TestSuite"|"TestConfiguration", TestCaseKey=... | TestSuiteKey=... | TestConfigurationKey=...)`.
+        *   *App Instance Token Requirement:* `ApplicationInstanceToken` is mandatory for `ExecuteTest`. If not provided by the user in the prompt or session context, prompt the user for their App Instance Token (copied from MTA Portal > Application > Application Instances), as instance tokens cannot be retrieved via read-only MCP discovery tools.
         *   Prefer single test case execution (`ExecutionLevel="TestCase"`) during active construction or verification for fast, isolated feedback loops.
         *   The call returns `TestRunKey` and `TestRunExecutionId`.
     *   **Context-Preserving Diagnostic Drill-Down Protocol (`PAT-83` / `ANTI-37`):**

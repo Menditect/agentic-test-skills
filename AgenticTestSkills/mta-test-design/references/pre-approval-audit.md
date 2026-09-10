@@ -1,6 +1,6 @@
 # 14-Point Pre-Approval Quality Audit Protocol
 
-**📍 Location:** `references/pre-approval-audit.md` | **🏠 Parent:** [MTA Test Design Skill](../SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
+**📍 Location:** `references/pre-approval-audit.md` | **🏠 Parent:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
 *Patterns Enforced: `PAT-03`, `PAT-06`, `PAT-07`, `PAT-08`, `PAT-10`, `PAT-11`, `PAT-12`, `PAT-16`, `PAT-18`, `PAT-19`, `PAT-20`, `PAT-27`, `PAT-28`, `PAT-34`, `PAT-35`, `PAT-41`, `PAT-54`, `PAT-60`, `PAT-63`, `PAT-64`, `PAT-65`, `PAT-67`, `PAT-75`, `PAT-77`, `PAT-82`, `PAT-89`, `ANTI-01`, `ANTI-03`, `ANTI-08`, `ANTI-11`, `ANTI-20`, `ANTI-21`, `ANTI-23`, `ANTI-29`, `ANTI-31`, `ANTI-36`, `ANTI-41`*
 
 This reference document defines the complete 14-point Pre-Approval Quality Audit protocol required before presenting any Execution Plan to the user in `STATE_BUILD_PLANNING` or proceeding to Checkpoint 1 review.
@@ -46,15 +46,17 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 
 ### [CHECK 8] Uniform 8-Field Step Sequence Schema (`PAT-12`, `PAT-34`)
 - **Scope:** All Tests.
-- **Verification Criteria:** Every test step in Section 5 strictly adheres to the uniform 8-field schema in exact field order:
-  1. `Step Type`
-  2. `Target / Entity / Action`
-  3. `Input Source / Handles`
-  4. `Output Variable Handle`
-  5. `Parameters & Attribute Values`
-  6. `Embedded Step Assertions`
-  7. `Execution Settings`
-  8. `Step Description & Pattern Rationale`
+- **Verification Criteria:** 
+  1. Every detailed test step in Section 5 (`### Detailed Step Configurations & Assertions`) strictly adheres to the uniform 8-field schema in exact field order:
+     1. `Step Type`
+     2. `Target / Entity / Action`
+     3. `Input Source / Handles`
+     4. `Output Variable Handle`
+     5. `Parameters & Attribute Values`
+     6. `Embedded Step Assertions`
+     7. `Execution Settings`
+     8. `Step Description & Pattern Rationale`
+  2. The high-level `Step Sequence Matrix` overview table and any Executive Summary step tables display the concise 7 operational columns (`Step #`, `Case`, `Step Type`, `Target Element / Action`, `Input Source`, `Output Handle`, `Exec Settings`), omitting the verbose narrative rationale column to maintain clean, readable table layouts without text wrapping.
 - **Compliance Status:** `PASS`.
 
 ### [CHECK 9] Frontend Execution Plan Quality Protocol (`PAT-41`..`PAT-53`, `PAT-67`, `ANTI-23`)

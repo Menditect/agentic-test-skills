@@ -46,15 +46,17 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 
 ### [CHECK 8] Uniform 8-Field Step Sequence Schema (`PAT-12`, `PAT-34`)
 - **Scope:** All Tests.
-- **Verification Criteria:** Every test step in Section 5 strictly adheres to the uniform 8-field schema in exact field order:
-  1. `Step Type`
-  2. `Target / Entity / Action`
-  3. `Input Source / Handles`
-  4. `Output Variable Handle`
-  5. `Parameters & Attribute Values`
-  6. `Embedded Step Assertions`
-  7. `Execution Settings`
-  8. `Step Description & Pattern Rationale`
+- **Verification Criteria:** 
+  1. Every detailed test step in Section 5 (`### Detailed Step Configurations & Assertions`) strictly adheres to the uniform 8-field schema in exact field order:
+     1. `Step Type`
+     2. `Target / Entity / Action`
+     3. `Input Source / Handles`
+     4. `Output Variable Handle`
+     5. `Parameters & Attribute Values`
+     6. `Embedded Step Assertions`
+     7. `Execution Settings`
+     8. `Step Description & Pattern Rationale`
+  2. The high-level `Step Sequence Matrix` overview table and any Executive Summary step tables display the concise 7 operational columns (`Step #`, `Case`, `Step Type`, `Target Element / Action`, `Input Source`, `Output Handle`, `Exec Settings`), omitting the verbose narrative rationale column to maintain clean, readable table layouts without text wrapping.
 - **Compliance Status:** `PASS`.
 
 ### [CHECK 9] Frontend Execution Plan Quality Protocol (`PAT-41`..`PAT-53`, `PAT-67`, `ANTI-23`)

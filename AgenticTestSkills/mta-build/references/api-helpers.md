@@ -63,8 +63,8 @@ Fetches runtime session state during execution:
 > MTA enforces a strict distinction in wire format naming conventions across tools:
 > - **Singular (`Equal`, `NotEqual`):** Required by `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`.
 > - **Plural (`Equals`, `NotEquals`):** Required by `CreateAssertMicroflowReturnValue`, `CreateAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCompare`.
-> - **Plural with mixed casing (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`):** Required by `EditAssertObjectCount`.
-> ⚠️ *Important:* Do NOT apply a blanket "singular Equal" rule to all `Edit*` tools. Calling `EditAssertObjectCount` or `EditAssertValidationFeedbackMessageCompare` with singular `"Equal"` will fail schema validation.
+> - **Plural with mixed casing (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`):** Required by `EditAssertObjectCount`, `CreateAssertValidationFeedbackMessageCount`, and `EditAssertValidationFeedbackMessageCount`.
+> ⚠️ *Important:* Do NOT apply a blanket "singular Equal" rule to all `Edit*` tools. Calling `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, or `EditAssertValidationFeedbackMessageCount` with singular `"Equal"` will fail schema validation.
 
 | Tool | Property Name | Valid Operator Enum Values |
 | :--- | :--- | :--- |
@@ -75,6 +75,8 @@ Fetches runtime session state during execution:
 | `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `CreateAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
+| `CreateAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
+| `EditAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 
 #### Cloned AssertObjectCount Default Invariant
 When test case variations are cloned via `CreateTestCaseVariation`, cloned `AssertObjectCount` containers in newly minted variations default to `ExpectedObjectCount: 0`. If a scenario expects $\ge 1$ objects, you MUST explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N`.
@@ -152,7 +154,7 @@ To filter retrieve operations, you **MUST** follow this canonical filtering sequ
 ### 2. Supported Filter Types in `EditAttributeValueFilter`:
 The unified `EditAttributeValueFilter` tool supports the following `EditAction` operations:
 *   `"IncludeAttribute"` / `"ExcludeAttribute"`
-*   `"SetStringValue"` (supports `Equals`, `NotEquals`, `Contains`, `NotContains`, `Empty`, `NotEmpty`)
+*   `"SetStringValue"` (supports singular `Equal`, `NotEqual`, `Contains`, `NotContains`, `StartsWith`, `EndsWith`; for empty, pass `SetValueToEmpty="_True"`)
 *   `"SetIntegerValue"` / `"SetMinimumAndMaximumIntegerValues"`
 *   `"SetLongValue"` / `"SetMinimumAndMaximumLongValues"`
 *   `"SetDecimalValue"` / `"SetMinimumAndMaximumDecimalValues"`
@@ -323,10 +325,10 @@ To assert expected exceptions or error handling on a microflow call:
 
 1. **Validation Feedback Compare:**
    - Call `CreateAssertValidationFeedbackMessageCompare(TestCaseKey, MemberType="Attribute", AttributeName="Email", ModuleName="Sales", EntityName="Order", ComparisonOperator="Equals", Quantifier="AtLeastOne", ComparisonString="Invalid email format")`.
-   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey, EditAction="SetComparisonString", ComparisonString=...)`.
+   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey, EditAction="SetComparisonString", ComparisonString=...)`. To update the comparison operator, call with `EditAction="SetComparisonOperator"` and `ComparisonOperator` (`"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`).
 2. **Validation Feedback Count:**
    - Call `CreateAssertValidationFeedbackMessageCount(TestCaseKey, ComparisonOperator="Equals", ComparisonNumber=1)`.
-   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCount(AssertValidationFeedbackMessageCountKey, EditAction="SetComparisonNumber", ComparisonNumber=...)`.
+   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCount(AssertValidationFeedbackMessageCountKey, EditAction="SetComparisonNumber", ComparisonNumber=...)`. To update the count comparison operator, call with `EditAction="SetComparisonOperator"` and `ComparisonOperator` (`"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"`).
 
 ---
 

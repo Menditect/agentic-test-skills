@@ -50,14 +50,22 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 
 | MCP Tool | Parameter | Required Constant Value & Description |
 | :--- | :--- | :--- |
+| **`CreateObjectActionTestStep`** | `ObjectAction` | `"CreateObject"`, `"ChangeObjects"`, `"RetrieveObjects"`, `"DeleteObjects"`, or `"Persist"`<br>*(CRITICAL: Singular `"CreateObject"`, but plural `"ChangeObjects"`, `"RetrieveObjects"`, `"DeleteObjects"`)* |
 | **`EditTestStepRetrieve`** | `RetrieveOption` | `"Database"`, `"Association"`, or `"Teststep"`<br>*(Note the specific PascalCase: `"Teststep"` has a lowercase "s")* |
 | **`EditTestStepRetrieve`** | `RetrieveSet` | `"Head"` or `"All"`<br>*(Retrieves the first object or the entire collection respectively)* |
 | **`EditTestStep`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
 | **`EditTestStep`** | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"`<br>*(CRITICAL: `"_Continue"` MUST have the leading underscore)* |
-| **`CreateAssertMicroflowReturnValue`** / **`EditAssertMicroflowReturnValueCompare`** | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"LessThan"`, `"Contains"` |
+| **`CreateAssertMicroflowReturnValue`** | `ComparisonOperator` | **Plural**: `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| **`EditAssertMicroflowReturnValueCompare`** | `ComparisonOperator` | **Singular**: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`<br>*(CRITICAL: `EditAssertMicroflowReturnValueCompare` requires singular `"Equal"`, whereas `CreateAssertMicroflowReturnValue` requires plural `"Equals"`)* |
+| **`EditAssertAttributeValueCompare`** | `ComparisonOperator` | **Singular**: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| **`EditAttributeValueFilter`** | `FilterComparisonOperator` | **Singular**: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| **`EditAssertObjectCount`** | `ComparisonOperator` | **Plural / Mixed**: `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
+| **`CreateAssertValidationFeedbackMessageCompare`** / **`EditAssertValidationFeedbackMessageCompare`** | `ComparisonOperator` | **Plural**: `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
+| **`CreateAssertValidationFeedbackMessageCount`** / **`EditAssertValidationFeedbackMessageCount`** | `ComparisonOperator` | **Plural / Mixed**: `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | **`CreateAssertMicroflowReturnValue`** / **`EditAssertMicroflowReturnValueCompare`** | `ActionFailedAssert` | `"ContinueTestRun"` or `"StopTestRun"` |
-| **`EditTestStepAssociation`** | `EditAction` | `"Add"`, `"Set"`, `"Remove"`, `"Clear"` |
-| **`CreateTestCase`** / **`EditTestCase`** | `RollbackTcseAfterExecution` | `"true"` or `"false"` |
+| **`EditTestStepAssociation`** | `EditAction` | `"SetOperation"`, `"SetTestStepOutput"`, or `"SetInputToEmpty"` |
+| **`EditTestStepAssociation`** | `Operation` | `"Set"`, `"Add"`, or `"Remove"`<br>*(Required when `EditAction="SetOperation"`. Note: To clear/unlink an association, use `EditAction="SetInputToEmpty"`, NOT an Operation value)* |
+| **`CreateTestCase`** / **`EditTestCase`** | `RollbackTcseAfterExecution` | `"Yes"` or `"No"` |
 | **`CreateTestSuite`** / **`EditTestSuite`** | `ExecutionCondition` | `"None"`, `"Always"`, or `"Skip"` |
 
 ---

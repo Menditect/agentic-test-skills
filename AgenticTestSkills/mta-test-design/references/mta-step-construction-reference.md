@@ -68,12 +68,13 @@ Asserts that the number of objects retrieved or present in a list matches an exp
 ### 4. Microflow Return Value Assertion (`CreateAssertMicroflowReturnValue`)
 Asserts that a microflow returns a value matching expected conditions.
 *   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertMicroflowReturnValueCompareKey`.
-*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (mandatory!), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
+*   **Creation vs. Edit Operators:** `CreateAssertMicroflowReturnValue` requires plural `"Equals"`, whereas `EditAssertMicroflowReturnValueCompare` strictly requires singular `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`.
+*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (singular `"Equal"`, `"NotEqual"`, etc.), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
 *   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
 
 ### 5. Validation Feedback Message Assertions (Backend Only)
-*   **Message Compare:** `CreateAssertValidationFeedbackMessageCompare` (TestCaseKey, MemberType, AttributeName, ComparisonOperator, Quantifier, ComparisonString) + `EditAssertValidationFeedbackMessageCompare`.
-*   **Message Count:** `CreateAssertValidationFeedbackMessageCount` (TestCaseKey, ComparisonOperator, ComparisonNumber) + `EditAssertValidationFeedbackMessageCount`.
+*   **Message Compare:** `CreateAssertValidationFeedbackMessageCompare` (TestCaseKey, MemberType, AttributeName, ComparisonOperator=`"Equals"`, Quantifier, ComparisonString) + `EditAssertValidationFeedbackMessageCompare` (operators: plural `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`).
+*   **Message Count:** `CreateAssertValidationFeedbackMessageCount` (TestCaseKey, ComparisonOperator=`"Equals"`, ComparisonNumber) + `EditAssertValidationFeedbackMessageCount` (operators: plural `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"`).
 
 ---
 

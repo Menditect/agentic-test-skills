@@ -40,7 +40,7 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 Once all step keys are resolved, batch-dispatch the following tools concurrently across ALL steps in the test case:
 - `EditAttributeValue(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` for all attributes across all Create Object steps.
 - `EditTestStepRetrieve(RetrieveOption=...)` to configure retrieve mode, and `EditAttributeValueFilter(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` to include filter attributes for all retrieve steps.
-- Embedded assertions: `CreateAssertMicroflowReturnValue` (using plural `"Equals"`), `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, and `CreateAssertException`.
+- Embedded assertions: `CreateAssertMicroflowReturnValue` (using plural `"Equals"`), `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`, and `CreateAssertException`.
 
 > **Safe Batch Sizing:** Group calls into safe batches of **15 to 20 tool calls per turn** (`ANTI-32`). For large test cases, chunk across sequential turns while remaining within `BATCH_INCLUSION`.
 
@@ -57,7 +57,7 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 - Retrieve attribute filter setters: `EditAttributeValueFilter` (`SetStringValue`, `SetIntegerValue`, `SetBooleanValue`, `SetDateTime*`, `SetEnumerationValue`, passing `AttributeValueKey`, `FilterComparisonOperator`, and value).
 - Association bindings: `CreateSelectObjectForAssociation` and `EditTestStepAssociation`.
 - Microflow parameters: `EditMicroflowParameterValue` (literals) and `EditMicroflowObjectParameter` (piped object variables).
-- Assertions configuration: Call typed comparison setters. Use singular `"Equal"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`; use PLURAL `"Equals"` for `EditAssertObjectCount` and `EditAssertValidationFeedbackMessageCompare`.
+- Assertions configuration: Call typed comparison setters. Use singular `"Equal"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`; use PLURAL `"Equals"` for `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount`.
 - Step descriptions & pattern annotations: `EditTestStep(EditAction="SetDescription")` with `[Pattern: <Name> - <Rationale>]` (`PAT-12`).
 - Step execution settings: `EditTestStep` with `ExecutionCondition` (`_Always` / `None`) and `ResumeExecutionAfterException` (`_Continue` / `_Stop`).
 

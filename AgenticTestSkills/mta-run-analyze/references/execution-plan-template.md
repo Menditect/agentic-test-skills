@@ -162,12 +162,12 @@ test_case_keys: []
 
 ### Step Sequence Matrix
 
-| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` | Direct Initialization on Create Object [^PAT-06] |
-| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` | Explicit Filter & Count Assertion [^PAT-07], [^PAT-08] |
-| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` | Business Process Execution & Assertion [^PAT-09] |
-| **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` | Direct Piping Backend Delete [^PAT-20] |
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` |
+| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` |
+| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` |
+| **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
 

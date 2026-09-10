@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.11.0"
-changes: "Enforced File-First Execution Plan Drafting & Executive Chat Summary (PAT-89, ANTI-41), top navigation links table, unified audit note, Execution Plan Metadata container, and user-friendly gate titles."
+version: "6.12.0"
+changes: "Enforced 7-column Step Sequence Matrix overview, scoped note callouts for PAT-84, banned ASCII border art, and standardized comparison operators."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -55,11 +55,13 @@ You must progress sequentially through these three interactive planning micro-st
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${MTA_OUTPUT_PATH}/execution-plans/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
-    *   *Tri-Choice Lineage Decision Card:* Present the audit summary and prompt the user with the 3 lineage paths:
-        1. **[Path A: Evolve & Supersede (Recommended)]** Increment revision to [N+1]. Inherit edge cases, boundary matrix, and risk profiles, updating steps to match the live AST. Upon Gate 2 approval, the prior plan will be automatically archived and superseded.
-        2. **[Path B: Branch Companion Case]** Create a distinct companion test case (e.g. `TC_[Target]_ValidationErrors` alongside `TC_[Target]_HappyPath`). Both execution plans remain active without superseding.
-        3. **[Path C: Clean Slate]** Discard prior plan as obsolete, archive it, and draft a fresh Revision 1 plan from scratch.
-    *   *Prohibition:* Blindly overwriting prior plans or discarding prior context with amnesia is strictly prohibited (`ANTI-38`).
+    *   *Tri-Choice Lineage Decision Card:* Present the audit summary and prompt the user with the 3 lineage paths adhering strictly to the Scoped Note Box & Clean Markdown Standard:
+        1. **Strictly Scoped `> [!NOTE]` Box:** Only the detection header line and metadata bullet points (including a 1–2 line AST delta summary) are inside the note box.
+        2. **Tri-Choice Decision Table Outside Note:** The 3 canonical lineage choices (Path A: Evolve & Supersede, Path B: Branch Companion Case, Path C: Clean Slate) are rendered in a clean, focused 4-column Markdown table (`Path`, `Action`, `Revision`, `When to Choose`) directly beneath the note box.
+        3. **Zero ASCII / Unicode Box Characters:** Strictly prohibit ASCII border art (`╔`, `═`, `║`, `╠`, `╚`, `┌`, `─`, `│`, `└`). Use standard GitHub Flavored Markdown.
+        4. **No Multi-Table Cascading in Chat:** Do not dump URL navigation tables or giant AST delta tables into chat during Phase 0 discovery. All AST comparison happens internally and is summarized in the 1–2 line AST Delta Summary bullet.
+        5. **Strictly 3 Canonical Paths:** Only Paths A, B, and C are allowed. Never invent unverified options (such as 'Path D').
+    *   *Prohibition:* Blindly overwriting prior plans, discarding prior context with amnesia, or dumping unreadable ASCII-art borders and multi-table cascades into chat is strictly prohibited (`ANTI-38`).
 *   **⚡ Targeted Single-Pass Model Discovery & Deep Semantic Path Tracing (`PAT-71`, `ANTI-26`)**:
     *   *Single-Pass CLI Execution:* When a target microflow or component is specified, immediately execute the targeted command `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) in a single pass on turn 1.
     *   *Self-Contained AST Extraction:* Extract input parameters, return types, variables, called sub-microflows, member expressions, and enum literals directly from the self-contained AST. You are **strictly prohibited** from running broad exploratory listing queries (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) when all required elements are present in the target AST (`ANTI-26`).
@@ -109,7 +111,7 @@ You must progress sequentially through these three interactive planning micro-st
     2. *Parity Verification:* Call the read-only MTA tool `GetAppModelData` to verify whether all planned microflows, entities, and attributes match identically in MTA.
        - *If Parity Matches (In-Sync):* Both Option A (Local Exploratory) and Option B (Direct Persistent MTA) are available.
        - *If Delta/Mismatch Detected (Out-of-Sync / Stale MTA Revision):* To prevent server build failures (`ANTI-36`), Option B is strictly blocked. The plan is automatically restricted to **Option A (Immediate Local Exploratory Testing)** until MTA is synchronized.
-    3. *Executive Chat Summary Presentation (`PAT-89`, `ANTI-41`):* In the chat response, do **NOT** print the full hundreds-of-lines execution plan tables. Instead, render ONLY the concise **Executive Summary Box** (~35 lines), a direct clickable Markdown file link to the generated `.md` file, and the Checkpoint 1 Decision Card.
+    3. *Executive Chat Summary Presentation (`PAT-89`, `ANTI-41`):* In the chat response, do **NOT** print the full hundreds-of-lines execution plan tables. Instead, render ONLY the concise **Executive Summary Box** (~35 lines, formatted strictly with standard native Markdown blockquotes/lists and NEVER with ASCII/Unicode box-drawing borders `╔═...═╗`), a direct clickable Markdown file link to the generated `.md` file, and the Checkpoint 1 Decision Card.
 *   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (Execution Plan Review)**: Present the Executive Summary Box and clickable plan link, conclude with the structured **Checkpoint 1: Test Plan Review & Execution Strategy Decision Card**, and **HALT**. You **MUST** ask for explicit user approval of the Execution Plan and handle the Execution Strategy based on the test category and parity audit results: [^PAT-43] [^PAT-60] [^PAT-82] [^PAT-89] [^ANTI-36] [^ANTI-41]
     *   **For Backend Microflow & Domain Logic Tests (`Category == Backend`):**
         *   **Case 1: When Model Delta is Detected (Option B Blocked ➔ Option A Only):**

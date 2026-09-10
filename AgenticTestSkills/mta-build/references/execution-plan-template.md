@@ -1,6 +1,6 @@
 # Standardized AI-Generated Execution Plan Blueprint
 
-**📍 Location:** `references/execution-plan-template.md` | **🏠 Parent:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) / [MTA Build Skill](../SKILL.md)  
+**📍 Location:** `references/execution-plan-template.md` | **🏠 Parent:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
 *Patterns Enforced: `PAT-12`, `PAT-34`, `PAT-43`, `PAT-44`, `PAT-60`, `PAT-65`, `PAT-77`, `PAT-82`, `PAT-84`, `PAT-88`, `PAT-89`, `ANTI-31`, `ANTI-32`, `ANTI-36`, `ANTI-41`*
 
 This document defines the canonical layout and schema for an approved MTA Execution Plan (`EP_<TestCaseName>.md`). Both `mta-test-design` (during plan generation) and `mta-build` (during pre-construction ingestion and post-construction smoke auditing) MUST adhere to this exact specification.
@@ -162,12 +162,12 @@ test_case_keys: []
 
 ### Step Sequence Matrix
 
-| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings | Description & Pattern Rationale |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` | Direct Initialization on Create Object [^PAT-06] |
-| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` | Explicit Filter & Count Assertion [^PAT-07], [^PAT-08] |
-| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` | Business Process Execution & Assertion [^PAT-09] |
-| **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` | Direct Piping Backend Delete [^PAT-20] |
+| Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `_Stop` |
+| **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `_Stop` |
+| **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `_Stop` |
+| **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
 
