@@ -71,47 +71,131 @@ agentic-test-skills/
 If you are using standalone AI coding tools (such as Cursor, Claude Code, GitHub Copilot, Cline, or Antigravity / Gemini), use the **[Menditect Agent Workspace Template (`agentic-test-tools`)](https://github.com/Menditect/agentic-test-tools)**.
 
 The workspace template provides:
-- A 60-second interactive setup wizard (`npm run setup` / `setup.ps1`).
-- Automatic synchronization of skills from this repository (`npm run update:skills`).
-- Resilient MCP proxies that handle Mendix app restarts without crashing the AI agent.
-- Pre-configured IDE settings for Cursor, VS Code, and Claude.
+- **Interactive Setup Wizard (`npm run setup` / `setup.ps1`)**: Automatically inspects your Mendix `.mpr` project file via `mxcli`, detects the Mendix version, discovers application instance tokens (`ApplicationInstanceToken`), MTA connection URLs (`MTAConnectionUrl`), runtime ports (`ApplicationRootUrl`), and access tokens (`McpServerAccessToken`), and generates your local `mta_config.json` and `.env`.
+- **Three Supported Workspace Modes**:
+  1. `clone_root` (Dedicated Tools Workspace): Keeps your Mendix project repository 100% clean while acting as a centralized testing cockpit.
+  2. `mendix_project` (Direct Mendix Project Workspace): Opens your Mendix project folder directly in the IDE, co-locating skills, execution plans, and MCP configurations.
+  3. `custom` (Custom Directory / Monorepo): Flexible path configuration for custom CI/CD or monorepo environments.
+- **Resilient MCP Proxies (`mta-proxy.js`)**: Stdio-to-HTTP/SSE bridge with auto-buffering and session recovery that prevents AI agent crashes during Mendix application restarts.
+- **Pre-Configured IDE Settings**: Native MCP configs for Cursor (`.cursor/mcp.json`), VS Code (`.vscode/mcp.json`), and Claude Code (`.claude/settings.json`).
+- **Independent Upstream Updates**:
+  - `npm run update:skills`: Updates skills from this repository (`agentic-test-skills`).
+  - `npm run update:mxcli`: Fetches the latest `mxcli` platform binary from Mendix Labs.
+  - `npm run update`: Updates both skills and `mxcli` binary simultaneously.
+- **Built-in Diagnostics (`npm run verify`)**: Validates `mta_config.json` schema compliance, checks MCP endpoint reachability, tests authentication tokens, and verifies `mxcli` health.
 
 ### Option 2: Mendix Studio Pro / MAIA Users
 
-1. Import the `Menditect_AgenticTestSkills` module from the Mendix Marketplace into your project, or copy the `AgenticTestSkills/` directory into your project root.
+1. Import the `Menditect_AgenticTestSkills` module from the Mendix Marketplace into your project, or copy the `AgenticTestSkills/` directory into your project.
+   - **Mendix 11.12+**: When using the Marketplace module, skills are placed directly into `skillssource/_modules/menditect_agentictestskills/` and versioned with your project (`skills_style: "mendix_module"`).
+   - **Mendix < 11.12**: Skills are placed in `<project_root>/skills/` (`skills_style: "standard"`).
 2. If using the Marketplace module, copy the configuration block from the `AgentSetupGuide` snippet located in the module's `USE_ME` folder.
 3. Paste the configuration block into your project root `AGENTS.md`.
-4. The AI assistant automatically derives the MCP endpoint as `[MtaUrl]/primitivetools/mcp`.
+4. The AI assistant automatically derives the MCP endpoint as `[MtaUrl]/primitivetools/mcp` and resolves instance tokens.
 
 ### Option 3: Direct Manual Integration
 
 If adding skills directly into an existing repository without using the workspace template:
 
-1. Copy the `AgenticTestSkills/` directory into your project root.
-2. Add the following block to your project root `AGENTS.md` (or reference `AgenticTestSkills/AGENTS.md` in your tool's directives such as `CLAUDE.md`, `GEMINI.md`, or `.cursorrules`):
+1. Copy the `AgenticTestSkills/` directory into your project (e.g. at `./skills/` or `./AgenticTestSkills/`).
+2. **Recommended (SSOT)**: Place a minimal `mta_config.json` (conforming to `mta_config.schema.json`) in your project root alongside your directives.
+3. **Directive Integration**: Add the Menditect Architecture Setup block to your project root `AGENTS.md` (or reference `skills/AGENTS.md` in `CLAUDE.md`, `GEMINI.md`, or `.cursorrules`):
 
 ```markdown
 # Menditect Architecture Setup
-- **CRITICAL OPERATIONAL COMMAND:** Always execute tasks using the core rules defined in: [AgenticTestSkills/AGENTS.md].
-- **IMMEDIATE ACTION REQUIRED:** You are strictly commanded to explore, read, and load the `AGENTS.md` and context of the `AgenticTestSkills/` directory before answering any user prompt.
+- **CRITICAL OPERATIONAL COMMAND:** Always execute tasks using the core rules defined in: [skills/AGENTS.md].
+- **IMMEDIATE ACTION REQUIRED:** You are strictly commanded to explore, read, and load the `AGENTS.md` and context of the `skills/` directory before answering any user prompt.
 - ** Application name is: [YourApplicationName] **
 - ** MTA Url: [YourMtaUrl] **
+  - [Local Development] (Default): [YourAppInstanceToken]
 ```
 
-> Note: Replace `[YourApplicationName]` with your Mendix application name and `[YourMtaUrl]` with your MTA web address (e.g. `https://mta-instance.mendixcloud.com/`).
+> Note: Replace `[YourApplicationName]` with your Mendix application name, `[YourMtaUrl]` with your MTA web address (e.g. `https://mta-instance.mendixcloud.com/`), and `[YourAppInstanceToken]` with your MTA Application Instance Token GUID.
 
 ---
 
-## Fallback URL Resolution Order
+<!-- BEGIN_SHARED_MTA_CONFIG_CONTRACT -->
+## Configuration Contract (`mta_config.json`) & Resolution Hierarchy
 
-When an MTA skill executes, it automatically resolves the active MTA URL and MCP endpoint by evaluating the following order:
+All Menditect Agentic Test Skills strictly consume `mta_config.json` as the primary **Single Source of Truth (SSOT)** for workspace paths, MTA server endpoints, authentication tokens, model discovery sources, and application instances.
 
-1. **Project-level `AGENTS.md`**: Reads `- ** MTA Url: <URL> **`.
-2. **`mta_config.json`**: Reads `"mta_base_url"`, `"mcp_endpoint"`, and `"plugin_mcp_url"`.
-3. **Environment Variables**: Reads `MTA_MCP_ENDPOINT` and `PLUGIN_MCP_URL`.
-4. **`.vscode/settings.json`**: Reads `"MTA_BASE_URL"`.
-5. **`mta_state.json`**: Reads `"mta_base_url"`.
-6. **Interactive Prompt**: Prompts the user on turn 1 if no URL is configured.
+### Canonical JSON Structure (v1.3.1)
+
+```json
+{
+  "$schema": "./mta_config.schema.json",
+  "workspace_type": "clone_root",
+  "workspace_dir": "C:\Projecten\mta-trial",
+  "skills_dir": "C:\Projecten\mta-trial\skills",
+  "skills_style": "standard",
+  "mta_output_path": "C:\Projecten\mta-trial\menditect-output",
+  "execution_plans_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans",
+  "execution_plans_archive_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans\archive",
+  "mendix_version": "11.12.011",
+  "application_name": "MyMendixApp",
+  "mta_base_url": "https://mta-instance.mendixcloud.com",
+  "mcp_endpoint": "https://mta-instance.mendixcloud.com/primitivetools/mcp",
+  "mta_auth_header": "Bearer <your_mta_session_token>",
+  "plugin_mcp_url": "http://localhost:8081/plugin/mcp",
+  "plugin_mcp_token": "Bearer 1",
+  "app_instances": [
+    {
+      "name": "Local Development",
+      "token": "00000000-0000-0000-0000-000000000000",
+      "mtaUrl": "https://mta-instance.mendixcloud.com",
+      "runtimeUrl": "http://localhost:8081/",
+      "pluginUrl": "http://localhost:8081/plugin/mcp",
+      "pluginToken": "Bearer 1",
+      "pluginPort": "8081"
+    }
+  ],
+  "default_app_instance": "Local Development",
+  "default_app_instance_token": "00000000-0000-0000-0000-000000000000",
+  "model_source": "mxcli",
+  "mendix_project_dir": "C:\Projects\MyMendixApp",
+  "mendix_mpr_path": "C:\Projects\MyMendixApp\MyMendixApp.mpr"
+}
+```
+
+### Core Properties Reference
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `mta_base_url` | string (URI) | Base URL of the Menditect Test Automation web portal (e.g. `https://mta-instance.mendixcloud.com`). Used for clickable web navigation links. |
+| `mcp_endpoint` | string (URI) | MCP endpoint URL for the MTA primitive tools server (`[mta_base_url]/primitivetools/mcp`). |
+| `mta_auth_header` | string | HTTP Authorization header (`Bearer <session_token>`) for authenticating with the MTA server. |
+| `plugin_mcp_url` | string (URI) | Local runtime plugin MCP endpoint (`[ApplicationRootUrl]/plugin/mcp`) for sub-second in-memory exploratory test execution. |
+| `plugin_mcp_token` | string | Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. |
+| `app_instances` | array | Discovered application runtime instances with `name`, `token`, `mtaUrl`, `runtimeUrl`, `pluginUrl`, `pluginToken`, and `pluginPort`. |
+| `default_app_instance` | string | Name of the primary default application runtime instance. |
+| `default_app_instance_token` | string (UUID) | MTA Application Instance Token used for executing tests via `ExecuteTest`. Eliminates manual prompts. |
+| `model_source` | string | AST discovery mechanism: `"mxcli"` (headless offline `.mpr` inspection) or `"studiopro"` (Studio Pro live MCP server). |
+| `mendix_project_dir` | string | Absolute path to the target Mendix project folder. |
+| `mendix_mpr_path` | string | Absolute path to the Mendix `.mpr` project file used by `mxcli`. |
+| `execution_plans_dir` | string | Storage directory for draft and approved Execution Plans (`EP_*.md`). |
+| `execution_plans_archive_dir` | string | Storage directory for superseded Execution Plan revisions. |
+| `workspace_type` | string | Mode where the agent runs: `"clone_root"` (isolated tools workspace), `"mendix_project"` (direct Mendix project), or `"custom"`. |
+| `skills_style` | string | Installation style: `"standard"` (project-level `skills/`) or `"mendix_module"` (Mendix 11.12+ `skillssource/_modules/menditect_agentictestskills`). |
+
+### Automated Application Instance Token Resolution (`ExecuteTest`)
+
+Executing test suites or test cases via the `ExecuteTest` MCP tool requires a valid `ApplicationInstanceToken`:
+1. **Targeted Instance**: If the user targets a specific environment by name (e.g., *"run test on local"* or *"use instance Markus demo"*), the agent searches `app_instances[]` for a matching `name` and extracts its `token`.
+2. **Default Instance**: Otherwise, the agent automatically uses `default_app_instance_token` from `mta_config.json`.
+3. **Environment Variable Fallback**: If missing in `mta_config.json`, the agent falls back to `MTA_APPLICATION_INSTANCE_TOKEN` in `.env`.
+4. **Interactive Prompt**: The agent prompts the user only if no instance token can be resolved across any source.
+
+### Strict Configuration Resolution Hierarchy
+
+When resolving configuration settings, AI agents must evaluate sources in this strict order of precedence:
+
+1. **`mta_config.json` (Priority #1 - SSOT)**: Evaluates `mcp_endpoint`, `mta_base_url`, `mta_auth_header`, `app_instances`, `default_app_instance_token`, `mendix_mpr_path`, and `execution_plans_dir`.
+2. **Project `AGENTS.md`**: Reads `- ** MTA Url: <URL> **` and instance token mappings (`- [Name] (Default): <Token>`).
+3. **Environment Variables (`.env` / process env)**: Reads `MTA_MCP_ENDPOINT`, `PLUGIN_MCP_URL`, `MTA_APP_INSTANCE_TOKEN`, and `MENDIX_MPR_PATH`.
+4. **IDE Settings (`.vscode/settings.json`, `.cursor/mcp.json`)**: Reads `MTA_BASE_URL` and `MENDIX_PROJECT_PATH`.
+5. **Session State (`mta_state.json`)**: Reads `mta_base_url`.
+6. **Interactive Prompt**: Prompts the user on turn 1 only if a required setting is absent across all configuration sources.
+<!-- END_SHARED_MTA_CONFIG_CONTRACT -->
 
 ---
 

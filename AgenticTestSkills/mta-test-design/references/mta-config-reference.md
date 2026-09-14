@@ -15,10 +15,11 @@ This reference document defines the complete structure, properties, resolution r
 
 ---
 
-## 2. Canonical JSON Structure (v1.3.0)
+## 2. Canonical JSON Structure (v1.3.1)
 
 ```json
 {
+  "$schema": "./mta_config.schema.json",
   "workspace_type": "clone_root",
   "workspace_dir": "C:\\Projecten\\mta-trial",
   "skills_dir": "C:\\Projecten\\mta-trial\\skills",
@@ -58,6 +59,7 @@ This reference document defines the complete structure, properties, resolution r
 
 | Field | Type | Required | Description |
 | :--- | :--- | :---: | :--- |
+| `$schema` | string (URI) | No | URI of the JSON Schema defining this document. |
 | `workspace_type` | string | No | Mode where the agent is running: `"clone_root"` (isolated tools workspace), `"mendix_project"` (direct Mendix project workspace), or `"custom"`. |
 | `workspace_dir` | string | No | Absolute path to the active workspace directory. |
 | `skills_dir` | string | No | Absolute path where MTA skills are deployed. |
