@@ -47,6 +47,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 ## 3. Configuration SSOT (mta_config.json)
 - Resolve endpoints, tokens, and paths in order: (1) `mta_config.json`, (2) `.env`, (3) `.vscode/settings.json`, (4) prompt user.
 - Resolve `ApplicationInstanceToken` automatically from `mta_config.json` (`default_app_instance_token` or matching `app_instances[]`).
+- **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-tools` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
 
 ---
 
