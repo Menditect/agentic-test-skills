@@ -117,9 +117,9 @@ If adding skills directly into an existing repository without using the workspac
 <!-- BEGIN_SHARED_MTA_CONFIG_CONTRACT -->
 ## Configuration Contract (`mta_config.json`) & Resolution Hierarchy
 
-All Menditect Agentic Test Skills strictly consume `mta_config.json` as the primary **Single Source of Truth (SSOT)** for workspace paths, MTA server endpoints, authentication tokens, model discovery sources, and application instances.
+All Menditect Agentic Test Skills strictly consume `mta_config.json` as the primary **Single Source of Truth (SSOT)** for workspace paths, MTA server endpoints, model discovery sources, and application instances. Sensitive authentication tokens (`MTA_MCP_AUTH_HEADER`, `PLUGIN_MCP_TOKEN`) are securely maintained in `.env`.
 
-### Canonical JSON Structure (v1.3.1)
+### Canonical JSON Structure (v1.4.0)
 
 ```json
 {
@@ -135,9 +135,7 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
   "application_name": "MyMendixApp",
   "mta_base_url": "https://mta-instance.mendixcloud.com",
   "mcp_endpoint": "https://mta-instance.mendixcloud.com/primitivetools/mcp",
-  "mta_auth_header": "Bearer <your_mta_session_token>",
   "plugin_mcp_url": "http://localhost:8081/plugin/mcp",
-  "plugin_mcp_token": "Bearer 1",
   "app_instances": [
     {
       "name": "Local Development",
@@ -163,9 +161,9 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
 | :--- | :--- | :--- |
 | `mta_base_url` | string (URI) | Base URL of the Menditect Test Automation web portal (e.g. `https://mta-instance.mendixcloud.com`). Used for clickable web navigation links. |
 | `mcp_endpoint` | string (URI) | MCP endpoint URL for the MTA primitive tools server (`[mta_base_url]/primitivetools/mcp`). |
-| `mta_auth_header` | string | HTTP Authorization header (`Bearer <session_token>`) for authenticating with the MTA server. |
+| `mta_auth_header` | string | *(Deprecated)* HTTP Authorization header (`Bearer <session_token>`) for authenticating with MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |
 | `plugin_mcp_url` | string (URI) | Local runtime plugin MCP endpoint (`[ApplicationRootUrl]/plugin/mcp`) for sub-second in-memory exploratory test execution. |
-| `plugin_mcp_token` | string | Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. |
+| `plugin_mcp_token` | string | *(Deprecated)* Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. Stored in `.env` as `PLUGIN_MCP_TOKEN`. |
 | `app_instances` | array | Discovered application runtime instances with `name`, `token`, `mtaUrl`, `runtimeUrl`, `pluginUrl`, `pluginToken`, and `pluginPort`. |
 | `default_app_instance` | string | Name of the primary default application runtime instance. |
 | `default_app_instance_token` | string (UUID) | MTA Application Instance Token used for executing tests via `ExecuteTest`. Eliminates manual prompts. |
@@ -189,9 +187,9 @@ Executing test suites or test cases via the `ExecuteTest` MCP tool requires a va
 
 When resolving configuration settings, AI agents must evaluate sources in this strict order of precedence:
 
-1. **`mta_config.json` (Priority #1 - SSOT)**: Evaluates `mcp_endpoint`, `mta_base_url`, `mta_auth_header`, `app_instances`, `default_app_instance_token`, `mendix_mpr_path`, and `execution_plans_dir`.
+1. **`mta_config.json` (Priority #1 - SSOT)**: Evaluates `mcp_endpoint`, `mta_base_url`, `app_instances`, `default_app_instance_token`, `mendix_mpr_path`, and `execution_plans_dir`. Backward-compatible fallback for `mta_auth_header`.
 2. **Project `AGENTS.md`**: Reads `- ** MTA Url: <URL> **` and instance token mappings (`- [Name] (Default): <Token>`).
-3. **Environment Variables (`.env` / process env)**: Reads `MTA_MCP_ENDPOINT`, `PLUGIN_MCP_URL`, `MTA_APP_INSTANCE_TOKEN`, and `MENDIX_MPR_PATH`.
+3. **Environment Variables (`.env` / process env)**: Primary secure storage for authentication headers (`MTA_MCP_AUTH_HEADER`, `PLUGIN_MCP_TOKEN`) and environment overrides (`MTA_MCP_ENDPOINT`, `PLUGIN_MCP_URL`, `MTA_APP_INSTANCE_TOKEN`, `MENDIX_MPR_PATH`).
 4. **IDE Settings (`.vscode/settings.json`, `.cursor/mcp.json`)**: Reads `MTA_BASE_URL` and `MENDIX_PROJECT_PATH`.
 5. **Session State (`mta_state.json`)**: Reads `mta_base_url`.
 6. **Interactive Prompt**: Prompts the user on turn 1 only if a required setting is absent across all configuration sources.

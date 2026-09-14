@@ -15,10 +15,11 @@ This reference document defines the complete structure, properties, resolution r
 
 ---
 
-## 2. Canonical JSON Structure (v1.3.0)
+## 2. Canonical JSON Structure (v1.4.0)
 
 ```json
 {
+  "$schema": "./mta_config.schema.json",
   "workspace_type": "clone_root",
   "workspace_dir": "C:\\Projecten\\mta-trial",
   "skills_dir": "C:\\Projecten\\mta-trial\\skills",
@@ -30,9 +31,7 @@ This reference document defines the complete structure, properties, resolution r
   "application_name": "Menditect_CarRental_Insurance",
   "mta_base_url": "https://mta-trial.mendixcloud.com",
   "mcp_endpoint": "https://mta-trial.mendixcloud.com/primitivetools/mcp",
-  "mta_auth_header": "Bearer menditect_mta_session_token_b2UZ9D5oxD7anSZq66xDFNf0gRkmPR5JgloHWiDUmz89",
   "plugin_mcp_url": "http://localhost:8081/plugin/mcp",
-  "plugin_mcp_token": "Bearer 1",
   "app_instances": [
     {
       "name": "mta-trial-1",
@@ -58,6 +57,7 @@ This reference document defines the complete structure, properties, resolution r
 
 | Field | Type | Required | Description |
 | :--- | :--- | :---: | :--- |
+| `$schema` | string (URI) | No | URI of the JSON Schema defining this document. |
 | `workspace_type` | string | No | Mode where the agent is running: `"clone_root"` (isolated tools workspace), `"mendix_project"` (direct Mendix project workspace), or `"custom"`. |
 | `workspace_dir` | string | No | Absolute path to the active workspace directory. |
 | `skills_dir` | string | No | Absolute path where MTA skills are deployed. |
@@ -69,9 +69,9 @@ This reference document defines the complete structure, properties, resolution r
 | `application_name` | string | No | Name of the target Mendix application. |
 | `mta_base_url` | string (URI) | **Yes** | Base URL of the Menditect Test Automation portal (e.g. `https://mta-trial.mendixcloud.com`). Used for clickable web navigation links. |
 | `mcp_endpoint` | string (URI) | **Yes** | Full URL of the MTA Primitive Tools MCP endpoint (e.g. `[mta_base_url]/primitivetools/mcp`). |
-| `mta_auth_header` | string | No | Full HTTP Authorization header (`Bearer <session_token>`) for authenticating with the MTA server MCP endpoint. |
+| `mta_auth_header` | string | No | *(Deprecated)* Full HTTP Authorization header (`Bearer <session_token>`) for authenticating with the MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |
 | `plugin_mcp_url` | string (URI) | No | URL of the local MTA runtime plugin MCP endpoint (`[ApplicationRootUrl]/plugin/mcp`). Used for Option A exploratory test execution (`PAT-73`). |
-| `plugin_mcp_token` | string | No | Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. |
+| `plugin_mcp_token` | string | No | *(Deprecated)* Authorization header (e.g. `Bearer 1`) for runtime plugin MCP endpoint. Stored in `.env` as `PLUGIN_MCP_TOKEN`. |
 | `app_instances` | array | No | Discovered application runtime instances containing `name`, `token`, `mtaUrl`, `runtimeUrl`, `pluginUrl`, `pluginToken`, and `pluginPort`. |
 | `default_app_instance` | string | No | Name of the primary default instance (e.g. `"mta-trial-1"`). |
 | `default_app_instance_token` | string | No | **MTA Application Instance Token (GUID)** used for executing tests via `ExecuteTest`. Eliminates manual token prompts! |
@@ -85,12 +85,13 @@ This reference document defines the complete structure, properties, resolution r
 
 AI agents must evaluate configuration sources in this strict order:
 
-### A. MTA Server URL & MCP Endpoint
-1. `mta_config.json` (`mcp_endpoint`, `mta_base_url`, `mta_auth_header`)
-2. Project `AGENTS.md` (`MTA Url: [url]`)
-3. `.vscode/settings.json` (`MTA_BASE_URL`)
-4. `mta_state.json` (`mta_base_url`)
-5. Interactive prompt to user (only if missing in all sources)
+### A. MTA Server URL & MCP Endpoint Authentication
+1. `.env` / Environment Variables: `MTA_MCP_AUTH_HEADER` (or `MTA_MCP_TOKEN`), `PLUGIN_MCP_TOKEN`
+2. `mta_config.json`: `mcp_endpoint`, `mta_base_url` (and legacy fallback for `mta_auth_header`, `plugin_mcp_token`)
+3. Project `AGENTS.md` (`MTA Url: [url]`)
+4. `.vscode/settings.json` (`MTA_BASE_URL`)
+5. `mta_state.json` (`mta_base_url`)
+6. Interactive prompt to user (only if missing in all sources)
 
 ### B. Mendix Model & MPR Path (`mxcli`)
 1. `mta_config.json` (`mendix_mpr_path`, `mendix_project_dir`)

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MTAConfiguration",
   "description": "Canonical configuration schema for Menditect Test Automation (MTA) workspace, MCP servers, runtime plugin, and tooling.",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "type": "object",
   "properties": {
     "$schema": {
@@ -59,7 +59,8 @@
     },
     "mta_auth_header": {
       "type": "string",
-      "description": "Authentication header (e.g. Bearer <token>) for the MTA MCP endpoint."
+      "deprecated": true,
+      "description": "DEPRECATED for local security: Bearer tokens are now stored in .env as MTA_MCP_AUTH_HEADER to prevent credential leakage. Maintained as a fallback for backwards compatibility."
     },
     "plugin_mcp_url": {
       "type": "string",
@@ -68,7 +69,8 @@
     },
     "plugin_mcp_token": {
       "type": "string",
-      "description": "Access token header (e.g. Bearer 1) for the MTA local runtime plugin MCP endpoint."
+      "deprecated": true,
+      "description": "DEPRECATED for local security: Plugin access tokens are now stored in .env as PLUGIN_MCP_TOKEN to prevent credential leakage. Maintained as a fallback for backwards compatibility."
     },
     "app_instances": {
       "type": "array",
