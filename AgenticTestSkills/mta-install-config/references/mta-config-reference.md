@@ -15,7 +15,7 @@ This reference document defines the complete structure, properties, resolution r
 
 ---
 
-## 2. Canonical JSON Structure (v1.4.0)
+## 2. Canonical JSON Structure (v1.5.0)
 
 ```json
 {
@@ -26,7 +26,6 @@ This reference document defines the complete structure, properties, resolution r
   "skills_style": "standard",
   "mta_output_path": "C:\\Projecten\\mta-trial\\menditect-output",
   "execution_plans_dir": "C:\\Projecten\\mta-trial\\menditect-output\\execution-plans",
-  "execution_plans_archive_dir": "C:\\Projecten\\mta-trial\\menditect-output\\execution-plans\\archive",
   "mendix_version": "11.12.011",
   "application_name": "Menditect_CarRental_Insurance",
   "mta_base_url": "https://mta-trial.mendixcloud.com",
@@ -63,10 +62,10 @@ This reference document defines the complete structure, properties, resolution r
 | `skills_dir` | string | No | Absolute path where MTA skills are deployed. |
 | `skills_style` | string | No | Installation style: `"standard"` (project-level `skills/`) or `"mendix_module"` (`skillssource/_modules/menditect_agentictestskills` for Mendix 11.12+). |
 | `mta_output_path` | string | No | Root path for test output artifacts, reports, and logs. |
-| `execution_plans_dir` | string | No | Dedicated directory where draft and approved Execution Plans (`EP_*.md`) are persisted (`PAT-44`, `PAT-89`). |
-| `execution_plans_archive_dir` | string | No | Directory where superseded Execution Plan revisions are archived (`PAT-84`). |
+| `execution_plans_dir` | string | **Yes** | Dedicated directory where active Execution Plans (`EP_*.md`) are stored and updated in-place (`PAT-44`, `PAT-89`). |
+| `execution_plans_archive_dir` | string | No | *(Deprecated)* Formerly used for archiving superseded plans. Replaced by in-place plan revisions tracked in Git. |
 | `mendix_version` | string | No | Mendix Studio Pro version detected from `.mpr` header (e.g. `"11.12.011"`). |
-| `application_name` | string | No | Name of the target Mendix application. |
+| `application_name` | string | **Yes** | Name of the target Mendix application in MTA. Eliminates manual application disambiguation prompts. |
 | `mta_base_url` | string (URI) | **Yes** | Base URL of the Menditect Test Automation portal (e.g. `https://mta-trial.mendixcloud.com`). Used for clickable web navigation links. |
 | `mcp_endpoint` | string (URI) | **Yes** | Full URL of the MTA Primitive Tools MCP endpoint (e.g. `[mta_base_url]/primitivetools/mcp`). |
 | `mta_auth_header` | string | No | *(Deprecated)* Full HTTP Authorization header (`Bearer <session_token>`) for authenticating with the MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |
@@ -76,7 +75,7 @@ This reference document defines the complete structure, properties, resolution r
 | `default_app_instance` | string | No | Name of the primary default instance (e.g. `"mta-trial-1"`). |
 | `default_app_instance_token` | string | No | **MTA Application Instance Token (GUID)** used for executing tests via `ExecuteTest`. Eliminates manual token prompts! |
 | `model_source` | string | No | AST discovery mechanism: `"mxcli"` (offline headless `.mpr` inspection) or `"studiopro"` (Studio Pro 11.10+ live MCP server). |
-| `mendix_project_dir` | string | No | Absolute path to the Mendix project root folder. |
+| `mendix_project_dir` | string | **Yes** | Absolute path to the Mendix project root folder. |
 | `mendix_mpr_path` | string | No | Absolute path to the Mendix `.mpr` file used by `mxcli.bat` / `./mxcli`. |
 
 ---

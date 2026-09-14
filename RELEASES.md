@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.18.2](releases/v1.18.2.md) | 2026-09-14 | added more required fiels to mta_config |
 | [🚀 v1.18.1](releases/v1.18.1.md) | 2026-09-14 | feat(ci): add marketplace version pruner and harden public repo sync |
 | [🚀 v1.18.0](releases/v1.18.0.md) | 2026-09-14 | feat(release): v1.18.0 - improved skills and updated agents.md |
 | [🚀 v1.17.3](releases/v1.17.3.md) | 2026-09-10 | feat(release): v1.17.3 - improved consistency with tools and mta_config file |

@@ -119,7 +119,7 @@ If adding skills directly into an existing repository without using the workspac
 
 All Menditect Agentic Test Skills strictly consume `mta_config.json` as the primary **Single Source of Truth (SSOT)** for workspace paths, MTA server endpoints, model discovery sources, and application instances. Sensitive authentication tokens (`MTA_MCP_AUTH_HEADER`, `PLUGIN_MCP_TOKEN`) are securely maintained in `.env`.
 
-### Canonical JSON Structure (v1.4.0)
+### Canonical JSON Structure (v1.5.0)
 
 ```json
 {
@@ -130,7 +130,6 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
   "skills_style": "standard",
   "mta_output_path": "C:\Projecten\mta-trial\menditect-output",
   "execution_plans_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans",
-  "execution_plans_archive_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans\archive",
   "mendix_version": "11.12.011",
   "application_name": "MyMendixApp",
   "mta_base_url": "https://mta-instance.mendixcloud.com",
@@ -159,8 +158,12 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `mta_base_url` | string (URI) | Base URL of the Menditect Test Automation web portal (e.g. `https://mta-instance.mendixcloud.com`). Used for clickable web navigation links. |
-| `mcp_endpoint` | string (URI) | MCP endpoint URL for the MTA primitive tools server (`[mta_base_url]/primitivetools/mcp`). |
+| `mta_base_url` | string (URI) | **(Required)** Base URL of the Menditect Test Automation web portal (e.g. `https://mta-instance.mendixcloud.com`). Used for clickable web navigation links. |
+| `mcp_endpoint` | string (URI) | **(Required)** MCP endpoint URL for the MTA primitive tools server (`[mta_base_url]/primitivetools/mcp`). |
+| `application_name` | string | **(Required)** Name of the target Mendix application in MTA. Eliminates manual application disambiguation prompts. |
+| `execution_plans_dir` | string | **(Required)** Directory where active Execution Plans (`EP_*.md`) are stored and updated in-place. |
+| `mendix_project_dir` | string | **(Required)** Absolute path to the target Mendix project folder containing the app model. |
+| `mendix_mpr_path` | string | Absolute path to the Mendix `.mpr` project file used by `mxcli`. |
 | `mta_auth_header` | string | *(Deprecated)* HTTP Authorization header (`Bearer <session_token>`) for authenticating with MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |
 | `plugin_mcp_url` | string (URI) | Local runtime plugin MCP endpoint (`[ApplicationRootUrl]/plugin/mcp`) for sub-second in-memory exploratory test execution. |
 | `plugin_mcp_token` | string | *(Deprecated)* Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. Stored in `.env` as `PLUGIN_MCP_TOKEN`. |
@@ -168,10 +171,7 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
 | `default_app_instance` | string | Name of the primary default application runtime instance. |
 | `default_app_instance_token` | string (UUID) | MTA Application Instance Token used for executing tests via `ExecuteTest`. Eliminates manual prompts. |
 | `model_source` | string | AST discovery mechanism: `"mxcli"` (headless offline `.mpr` inspection) or `"studiopro"` (Studio Pro live MCP server). |
-| `mendix_project_dir` | string | Absolute path to the target Mendix project folder. |
-| `mendix_mpr_path` | string | Absolute path to the Mendix `.mpr` project file used by `mxcli`. |
-| `execution_plans_dir` | string | Storage directory for draft and approved Execution Plans (`EP_*.md`). |
-| `execution_plans_archive_dir` | string | Storage directory for superseded Execution Plan revisions. |
+| `execution_plans_archive_dir` | string | *(Deprecated)* Formerly used for archiving superseded plans. Replaced by in-place plan revisions tracked in Git. |
 | `workspace_type` | string | Mode where the agent runs: `"clone_root"` (isolated tools workspace), `"mendix_project"` (direct Mendix project), or `"custom"`. |
 | `skills_style` | string | Installation style: `"standard"` (project-level `skills/`) or `"mendix_module"` (Mendix 11.12+ `skillssource/_modules/menditect_agentictestskills`). |
 
@@ -194,6 +194,14 @@ When resolving configuration settings, AI agents must evaluate sources in this s
 5. **Session State (`mta_state.json`)**: Reads `mta_base_url`.
 6. **Interactive Prompt**: Prompts the user on turn 1 only if a required setting is absent across all configuration sources.
 <!-- END_SHARED_MTA_CONFIG_CONTRACT -->
+
+---
+
+## Skills Immutability & Customization Architecture
+
+- **Orphan Prevention via Full Replacement**: When updating skills via `agentic-test-skills` releases, the skills distribution is replaced completely to eliminate orphan files or obsolete instructions.
+- **No Inline Modifications in MTA Skills**: Never modify official MTA skills inline inside `skills/` (or the Marketplace module). Any local customizations made directly inside official MTA skill files will be erased on updates.
+- **Custom Skills Isolation**: If your organization requires custom skills, add them as separate, independent skill folders (e.g. `skills/my-org-custom-skill/`) alongside the MTA skills.
 
 ---
 

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MTAConfiguration",
   "description": "Canonical configuration schema for Menditect Test Automation (MTA) workspace, MCP servers, runtime plugin, and tooling.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "object",
   "properties": {
     "$schema": {
@@ -37,7 +37,8 @@
     },
     "execution_plans_archive_dir": {
       "type": "string",
-      "description": "Directory where superseded Execution Plan revisions are archived."
+      "description": "Deprecated: Execution plans are updated in-place and versioned via Git.",
+      "deprecated": true
     },
     "mendix_version": {
       "type": "string",
@@ -137,6 +138,9 @@
   },
   "required": [
     "mta_base_url",
-    "mcp_endpoint"
+    "mcp_endpoint",
+    "application_name",
+    "execution_plans_dir",
+    "mendix_project_dir"
   ]
 }

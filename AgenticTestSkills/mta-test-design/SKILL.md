@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.14.1"
-changes: "Updated mta_config schema and reference to v1.4.0 (deprecated in-file auth tokens in favor of .env)."
+version: "6.14.2"
+changes: "Updated mta_config schema and reference to v1.5.0 (added required fields: application_name, execution_plans_dir, mendix_project_dir)."
 ---
 
 # MTA Test Scoping & Design Skill
