@@ -24,6 +24,7 @@ status: "APPROVED"
 approved_at: "2026-09-09T12:00:00Z"
 approved_by: "marku"
 approver_system_user: "marku"
+build_started_at: null
 built_at: null
 builder_system_user: null
 verified_at: null
@@ -43,7 +44,7 @@ test_case_keys: []
 > **Category:** [Backend | Frontend]  
 > *(Upon Smoke Audit completion, the following lines are appended directly without an empty line:)*  
 > **Post-Construction Build & Smoke Audit:** `BUILT_AND_VERIFIED` (0 Discrepancies)  
-> **Built By:** `[builder_system_user]` at `[built_at]` | **Verified By:** `[verifier_system_user]` at `[verified_at]`
+> **Build Started:** `[build_started_at]` | **Built & Verified:** `[verified_at]` by `[builder_system_user]` (Elapsed: `[duration]`)
 
 ### Direct MTA Web Navigation Links
 *(Appended immediately beneath the top note upon successful smoke verification)*
@@ -58,15 +59,15 @@ test_case_keys: []
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
-| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`Always`), Case 2 Execute, Case 3 Teardown (`Always`) | `PASS` / `NA` |
-| **2** | **TestCase Container Formatting & Execution User** | `PAT-11`, `PAT-10`, `PAT-79` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
-| **3** | **Backend-First Direct Piping Deletes** | `PAT-20`, `PAT-16` | Backend-created objects deleted via direct handle piping without redundant retrieves | `PASS` / `NA` |
+| **1** | **Frontend Split, Self-Contained Seeding & Symmetric Teardown Law** | `PAT-18`, `PAT-03`, `PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43` | Case 1 Setup includes explicit Database Seeding (Create + batch Persist) for transactional page entities, Case 2 UI Execution, Case 3 Teardown Cleanup (reverse deletes + batch Persist, `Always`/`_Continue`). Precondition text alone prohibited. | `PASS` / `NA` |
+| **2** | **TestCase Container Formatting & Execution User** | `PAT-10`, `PAT-79` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-95` | Backend-created objects deleted via direct handle piping without redundant retrieves | `PASS` / `NA` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` / `NA` |
-| **5** | **Explicit Filter Attributes, Input Handles & Variation Matrix** | `PAT-07`, `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77`, `ANTI-08`, `ANTI-11`, `ANTI-31` | Retrieve handles specified; NULL variations use explicit attribute filters; max 8 cols; variation names and descriptions defined (`PAT-77`, `ANTI-31`) | `PASS` |
+| **5** | **Explicit Filter Attributes, Input Handles & Variation Matrix** | `PAT-07`, `PAT-19`, `PAT-27`, `PAT-53`, `PAT-54`, `PAT-77`, `ANTI-08`, `ANTI-11`, `ANTI-31` | Retrieve handles specified; NULL variations use explicit attribute filters; max 8 cols; variation names and descriptions defined (`PAT-77`, `ANTI-31`) | `PASS` |
 | **6** | **Embedded Step Assertions & Output Object Count** | `PAT-08`, `PAT-06`, `ANTI-03` | Assert Object Count / Value compares embedded in producer steps; no standalone steps | `PASS` |
 | **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | `GetAppModelData` (Pages/Widgets) or `DESCRIBE PAGE/SNIPPET/ENTITY` executed; exhaustive widget inventory | `PASS` / `NA` |
 | **8** | **Uniform 8-Field Step Sequence Schema** | `PAT-12`, `PAT-34` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
-| **9** | **Frontend Execution Plan Quality Protocol** | `PAT-41`..`PAT-53`, `PAT-67`, `ANTI-23` | 8-point frontend verification (seed data, multiple seed items, navigation, scalar piping) | `PASS` / `NA` |
+| **9** | **Frontend Execution Plan Quality Protocol** | `PAT-41`..`PAT-53`, `PAT-67`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45` | 8-point frontend verification: self-contained Case 1 seeding steps, symmetric Case 3 teardown with trailing batch Persist, reverse deletion order, DatePicker BSON dump extraction | `PASS` / `NA` |
 | **10** | **Dual-Track Execution Strategy Explicit Declaration** | `PAT-60`, `PAT-62` | Option A vs Option B declared for Backend; Option B Persistent MTA declared for Frontend | `PASS` |
 | **11** | **Backend Exploratory Single-Payload Plan Blueprint** | `PAT-63`, `PAT-75`, `ANTI-29` | Verifies Backend exploratory flow with complete JSON blueprint, ExecutorUsername default, and verified domain attributes (`PAT-75`) | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Verifies UI actions drive browser via TestKit microflows, not domain microflows | `PASS` / `NA` |
@@ -90,7 +91,6 @@ test_case_keys: []
   "Category": "[Backend | Frontend]",
   "MtaBaseUrl": "[RetrievedUrl]",
   "ExecutionPlanFile": "[Path to local .md file for Option B | null for Option A]",
-  "ExecutionPlanKey": null,
   "Context": "[Execution Plan approved for Components Under Test | Backend Exploratory Plan ready for in-memory execution]"
 }
 ```
@@ -149,6 +149,11 @@ test_case_keys: []
 | **Page** *(Frontend)* | `[ModuleName].[PageName]` | Page Key: `[PageKey]`, Layout Context: `[LayoutGrid / DataView]` |
 | **Widget** *(Frontend)* | `[WidgetName]` | Type: `[Button / TextBox / DropDown]`, Action / Operator: `[ACT_Click / ELO_SetText]` |
 
+#### Exhaustive Input Widget Inventory (Frontend UI Tests - PAT-67, PAT-94)
+| Widget Name | Widget Type | Container / Scope | Domain Binding | Date Format / Constraint (PAT-94) | Testkit Locator Microflow |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `[WidgetName]` | `[TextBox / DatePicker / DropDown]` | `[DataView / Snippet / Tab]` | `[Module.Entity/Attribute]` | `[CustomDateFormat e.g. "dd-MM-yyyy" / MaxLength]` | `[MenditectMxFrontendTestKit.ACT_*]` |
+
 </details>
 
 <details>
@@ -167,7 +172,8 @@ test_case_keys: []
 | **1** | Case 1 | `Create Object` | `[ModuleName].[EntityName]` | Memory | `[Step1_Output]` | `None` / `Stop` |
 | **2** | Case 1 | `Retrieve Object` | `[ModuleName].[EntityName]` | Database | `[Step2_Retrieved]` | `None` / `Stop` |
 | **3** | Case 1 | `Microflow Call` | `[ModuleName].[MicroflowName]` | `[Step1_Output]` | `[Step3_Result]` | `None` / `Stop` |
-| **4** | Case 1 | `Delete Object & Persist` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` |
+| **4** | Case 1 | `Delete Object` | `[Step1_Output]` | `[Step1_Output]` | `N/A` | `Always` / `_Continue` |
+| **5** | Case 1 | `Persist Changes` | `Persist` | `N/A` | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
 
@@ -192,7 +198,7 @@ test_case_keys: []
 *   **2. Target / Action:** `[Entity Name] (Method: Database / Teststep / By Association | Range: First / All)`
 *   **3. Input Source / Handles:** `[N/A for Database | Predecessor Handle for Teststep / Association]`
 *   **4. Output Variable Handle:** `[Step2_Retrieved]`
-*   **5. Parameters & Filters:** `[Filter Criteria: Explicit Attribute Name, Operator, Value / 'NON_EXISTENT']`
+*   **5. Parameters & Filters:** `[Filter Criteria: Explicit Attribute Name, Operator, Value / 'NONE']`
 *   **6. Embedded Step Assertions:** `Assert Object Count == [Equals 1 (or N for lists)]`, `Assert Attribute Value: [Attribute Operator Value]`
 *   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
 *   **8. Step Description & Rationale:** `[Pattern: Explicit Attribute Filter Query & Count Assertion [^PAT-07], [^PAT-08]]`
@@ -209,21 +215,35 @@ test_case_keys: []
 *   **5. Parameters & Bindings:** `Pipe: [Step1_Output], [Step2_Retrieved]`
 *   **6. Embedded Step Assertions:** `Assert Return Value == [Expected Return Value]`, `Assert Validation Feedback Count == 0`
 *   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
-*   **8. Step Description & Rationale:** `[Pattern: Business Process Execution & Direct Return Assertion [^PAT-09]]`
+*   **8. Step Description & Rationale:** `[Pattern: Business Microflow Execution & Direct Return Assertion [^PAT-96]]`
 
 </details>
 
 <details>
-<summary><b>Step 4: Delete Object & Persist ([Step1_Output])</b></summary>
+<summary><b>Step 4: Delete Object ([Step1_Output])</b></summary>
 
-*   **1. Step Type:** `Delete Object & Persist`
-*   **2. Target / Action:** `[Step1_Output] (Direct handle piping used for backend-created objects)`
+*   **1. Step Type:** `Delete Object`
+*   **2. Target / Action:** `[Step1_Output] (Direct handle piping used for backend-created objects and Case 1 setup seeded objects)`
 *   **3. Input Source / Handles:** `[Step1_Output]`
 *   **4. Output Variable Handle:** `N/A`
 *   **5. Parameters & Bindings:** `None`
 *   **6. Embedded Step Assertions:** `None`
 *   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-*   **8. Step Description & Rationale:** `[Pattern: Direct Piping Backend Delete [^PAT-20]]`
+*   **8. Step Description & Rationale:** `[Pattern: Direct Handle Piping Delete [^PAT-92], [^PAT-95]]`
+
+</details>
+
+<details>
+<summary><b>Step 5: Persist Changes (Teardown Commit)</b></summary>
+
+*   **1. Step Type:** `Persist Changes`
+*   **2. Target / Action:** `Persist (Commits all preceding deletions to database)`
+*   **3. Input Source / Handles:** `N/A`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Bindings:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Symmetric Seeding Teardown Cleanup Law [^PAT-92] - Commits all teardown deletions to the database]`
 
 </details>
 
@@ -257,11 +277,11 @@ test_case_keys: []
 
 ### Data Variation Matrix
 #### Table 1: Scenarios #1 to #7 (Primary Scenarios)
-| Attribute / Step | #1 (variation-name-1) | #2 (variation-name-2) | #3 (variation-name-3) |
-| :--- | :--- | :--- | :--- |
-| **`Entity.FilterAttribute`** | `'VALID_VAL'` | `'NON_EXISTENT'` | `'VALID_VAL'` |
-| **`Entity.TestAttribute`** | `100` | `100` | `0` |
-| **Assert Return Value** | `ExpectedVal1` | `empty` | `0` |
+| Step / Variable Element | Domain Type / Constraint | #1 (variation-name-1) | #2 (variation-name-2) | #3 (variation-name-3) |
+| :--- | :---: | :--- | :--- | :--- |
+| **`Step 1: Entity.FilterAttribute`** | `String(8)` | `'VALID'` (5) | `'NONE'` (4) | `'VALID'` (5) |
+| **`Step 2: Entity.TestAttribute`** | `Integer` | `100` | `100` | `0` |
+| **`Step 3: Assert Return Value`** | `Decimal` | `ExpectedVal1` | `empty` | `0` |
 
 <details>
 <summary><b>Scenario Registration Metadata & Variation Recipes</b></summary>
@@ -280,7 +300,8 @@ test_case_keys: []
 | :--- | :--- | :--- | :--- |
 | **Direct Initialization on Create Object** | Step 1 | `PAT-06`, `ANTI-01` | Initial attributes set directly on creation step, preventing unnecessary Change Object steps |
 | **Retrieve Output Object Count Assertion** | Step 2 -> Step 3 | `PAT-08`, `ANTI-03` | Verifies database query count immediately before passing handle to downstream step, preventing silent null pointers |
-| **Backend-First Direct Piping Delete** | Step 10 | `PAT-20`, `PAT-16` | Deletes created handle directly without redundant database retrieve queries |
+| **Business Microflow Execution & Return Assertion** | Step 3 | `PAT-96` | Asserts directly on microflow return value and feedback messages |
+| **Backend Direct Handle Piping Delete** | Step 4 | `PAT-95` | Deletes created handle directly without redundant database retrieve queries |
 
 </details>
 
@@ -297,6 +318,6 @@ test_case_keys: []
 | **Step Sequence Audit** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence and settings |
 | **Variation Items Audit** | Matrix Items | `PASS` | Zero unapproved additions, names/descriptions persisted |
 | **MTA Compiler Validation** | Server Validation Engine | `PASS` | 0 compilation errors, 0 warnings |
-| **Platform Quality Check** | 10 MTA Quality Laws | `PASS` | 100% compliant with MTA architecture standards |
+| **Platform Quality Check** | MTA Architectural Pattern Matrix | `PASS` | 100% compliant with MTA architecture standards |
 
 </details>

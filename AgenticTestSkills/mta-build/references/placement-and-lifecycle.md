@@ -2,7 +2,7 @@
 **📍 You are here:** `references/placement-and-lifecycle.md` | **🏠 Return to:** [MTA Core Skill](../SKILL.md)
 *Metadata: Version 5.0 | Last Updated: 2026-09-02*
 
-This reference guide establishes the principles, trade-offs, and rules for **Test Case Placement**, **MTA Entity Hierarchy**, **Setup/Teardown Data Management**, and **Data Piping Mechanics (Memory vs. Database)** using the consolidated 53-tool MTA-ACCP API (`/primitivetools/mcp`).
+This reference guide establishes the principles, trade-offs, and rules for **Test Case Placement**, **MTA Entity Hierarchy**, **Setup/Teardown Data Management**, and **Data Piping Mechanics (Memory vs. Database)** using the consolidated 51-tool MTA-ACCP API (`/primitivetools/mcp`).
 
 ---
 
@@ -80,22 +80,39 @@ To prevent token bloat, resolve placement interactively:
 
 ---
 
-## 🔀 DATA PIPING MECHANICS (MEMORY VS. DATABASE)
+## 🔀 DATA PIPING MECHANICS (SHARED SUITE SESSION MEMORY & PIPING)
 
 ```
-[Test Case X] ─── (Memory Isolated) ───► [Test Case Y]
-      │                                       ▲
-      ▼ (Persist)                             │ (Retrieve)
-[Mendix Database] ────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   UNIFIED MTA TEST SUITE EXECUTION SESSION                       │
+│                                                                                  │
+│  [Case 1: Setup / Seeding]                                                       │
+│    • Step 1: Create Object (Handle: #101)                                        │
+│    • Step 2: Batch Persist (Commits #101 to DB)                                  │
+│         │                                        │                               │
+│         │ Dynamic Scalar Piping                  │ Direct Handle Piping          │
+│         │ (SelectValueForValue: #101.Attribute)  │ (TestStepOutputKey = #101)    │
+│         ▼                                        ▼                               │
+│  [Case 2: Execution / UI]                        [Case 3: Teardown Cleanup]      │
+│    • Input/Filter/Assert with #101.Attribute     • Delete Object (#101 directly) │
+│    • User interaction creates runtime record     • Retrieve Case 2 record by     │
+│                                                    synthetic filter & Delete     │
+│                                                  • Trailing Batch Persist        │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1. Piping Inside a Test Case (Via Memory)
-Memory-based piping links the output of Step A directly to Step B inside the same Test Case using `TestStepOutputKey` or `SelectValueForValue` (`SetTestStepOutputForSelectValueForValue`).
+### 1. Unified Suite Session Memory
+In MTA, all test cases within the same Test Suite execute inside a unified runner session. Step outputs (`TestStepOutputKey`) created in earlier test cases remain accessible and bindable by subsequent test cases in that suite run.
 
-### 2. Piping Between Test Cases (Via Database or Suite Variables)
-*   **Pattern A: Database Persistence & Retrieve:** Commit with `Persist` in Case X, retrieve with `RetrieveObjects` in Case Y.
-*   **Pattern B: Suite Variables:** Pass non-persisted scalar values across cases in the same suite run.
-*   **Pattern C: Cross-Case Output Piping for Teardown Deletes:** Frontend Case 3 Teardown deletes directly target Case 1 Setup creation output keys without intermediate retrieves.
+### 2. Cross-Case Piping Patterns for Frontend Suites
+*   **Pattern 1: Case 1 Setup ➔ Case 2 UI Execution (Dynamic Scalar Value Piping):**
+    Steps in Case 2 that enter data into text inputs (`ACT_Fill_TextInput_Input`), filter repeating containers or search inputs (`ACT_Fill_SearchInput`, `ELO_Filter_*_by_Text`), select options in dropdowns/selectors (`ACT_SelectOption_DropDown_Select_By_Label`), or assert text on screen (`ACT_Assert_ElementText_Equal`) MUST pipe the scalar attribute value directly from Case 1's creation step using `SetTestStepOutputForSelectValueForValue` (`TestStepOutputKey = Case1_StepKey`, `TestStepOutputAttributeName = "AttributeName"`). Hardcoding duplicate literal strings across cases is an anti-pattern.
+*   **Pattern 2: Case 1 Setup ➔ Case 3 Teardown (Direct Cross-Case Handle Deletion):**
+    Case 3 Teardown deletion steps target Case 1's creation step handle directly (`CreateObjectActionTestStep(ObjectAction="DeleteObjects", TestStepOutputKey=Case1_StepKey)`). Redundant database `RetrieveObjects` queries in Case 3 for objects already known from Case 1 setup are strictly prohibited.
+*   **Pattern 3: Case 2 Execution ➔ Case 3 Teardown (Browser-Created Runtime Data Retrieval):**
+    Transactional records created by the browser during Case 2 have no runner step output handle. Case 3 MUST retrieve these records from the database using explicit synthetic attribute filters (e.g. `'TEST_'` prefix) before deleting them with `DeleteObjects`.
+*   **Pattern 4: Trailing Batch Persist:**
+    All deletions in Case 3 conclude with a single trailing batch `Persist` step (`ObjectAction = "Persist"`, `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`), committing all deletions to the database in reverse dependency order (`PAT-93`).
 
 ---
 
@@ -190,6 +207,7 @@ Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLAN
         approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
         approved_by: "<UserEmailOrName>"
         approver_system_user: "<OSUsername>"
+        build_started_at: null
         built_at: null
         builder_system_user: null
         verified_at: null
@@ -239,6 +257,7 @@ Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLAN
      7. **Post-Build Verification & Link Sealing in Smoke Audit (`PAT-88`):** Upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 discrepancies:
         - **Machine-Readable Header Update:** Read `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` and update the collapsible YAML provenance header with:
           - `status: "BUILT_AND_VERIFIED"`
+          - `build_started_at: "<ISO 8601 Timestamp>"`
           - `built_at: "<ISO 8601 Timestamp>"`
           - `builder_system_user: "<OSUsername>"`
           - `verified_at: "<ISO 8601 Timestamp>"`
@@ -255,12 +274,13 @@ Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLAN
           > [!NOTE] Built & Verified in MTA Platform
           > - **Lifecycle Status:** `BUILT_AND_VERIFIED`
           > - **Approved:** `<approved_at>` by `<approved_by>` (`<approver_system_user>`)
-          > - **Built:** `<built_at>` by `<builder_system_user>`
-          > - **Verified:** `<verified_at>` (Post-Construction Smoke Audit: 0 discrepancies)
+          > - **Build Started:** `<build_started_at>`
+          > - **Built & Verified:** `<verified_at>` by `<builder_system_user>` (Elapsed: `<duration>`)
+          > - **Post-Construction Smoke Audit:** 0 discrepancies (Conformity 100%)
           > - **Test Configuration:** [<TargetConfig>]([MtaBaseUrl]/p/TestConfiguration/<TargetConfigKey>) (Key: `<TargetConfigKey>`)
           > - **Test Suite:** [<TargetSuite>]([MtaBaseUrl]/p/TestSuite/<TargetSuiteKey>) (Key: `<TargetSuiteKey>`)
           > - **Test Case(s):**
           >   - [<TestCaseName>]([MtaBaseUrl]/p/TestCase/<TestCaseKey>) (Key: `<TestCaseKey>`)
           ```
-        - **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_built_at`, and `execution_plan_verified_at`.
+        - **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_build_started_at`, `execution_plan_built_at`, and `execution_plan_verified_at`.
 *   **Chat Track (Memory-Only / Write-Disabled):** If the environment lacks local file writing tools, warn the user (`> ⚠️ NOTICE: LOCAL STORAGE UNAVAILABLE...`), generate the UUID v4 and ISO 8601 timestamp, preserve the complete Execution Plan and metadata in the active chat context, set `ExecutionPlanFile: "chat-context"`, and continue the build process seamlessly.

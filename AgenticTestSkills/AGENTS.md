@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.20.0"
-changes: "Streamlined to lean root orchestrator adhering to Open Agent Skill Standard; delegated detailed schemas and SOPs to domain skills."
+version: "4.23.0"
+changes: "Codified Frontend Cross-Case Data Piping: Case 2 scalar piping and Case 3 direct handle deletion (PAT-92)."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -44,8 +44,8 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ---
 
-## 3. Configuration SSOT (mta_config.json)
-- Resolve endpoints, tokens, and paths in order: (1) `mta_config.json`, (2) `.env`, (3) `.vscode/settings.json`, (4) prompt user.
+## 3. Configuration SSOT & Path Resolution
+- **Path Resolution Hierarchy**: Resolve the Mendix project file (`.mpr`), `mta_config.json`, endpoints, tokens, and output paths in this strict order: (1) `mta_config.json` (e.g., `mendix_mpr_path`, `execution_plans_dir`), (2) `.env` (e.g., `MENDIX_MPR_PATH`), (3) `.vscode/settings.json` (e.g., `MENDIX_PROJECT_PATH`), (4) command-line arguments (for `mxcli`), (5) prompt user. The directory specified MUST ONLY contain exactly one `.mpr` file.
 - Resolve `ApplicationInstanceToken` automatically from `mta_config.json` (`default_app_instance_token` or matching `app_instances[]`).
 - **Playwright Trace Viewer Resolution (PAT-90):** For frontend test runs where `GetTestRunResults` provides a `FileUUID`, assemble the viewer URL using: `playwright_viewer_url` (default `https://trace.playwright.dev/?trace=`) + `tracefile_base_url` (from `mta_config.json`, `.env`, or derived from `${mta_base_url}/rest/private/tracefile?fileUUID=`) + `FileUUID`. Always include the clickable trace viewer link in failure diagnostics.
 - **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-tools` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
@@ -54,10 +54,12 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 4. Global Safety & Approval Gates
 - **Read-Only Tools Always Authorized:** All read-only `Get*` MTA tools (`GetAppModelData`, `GetTestCaseDetails`, `GetTestRunResults`, etc.) are authorized in any state to discover context.
-- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-14):** All test creation and data seeding requests—including ad-hoc or vague entity creation prompts—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
+- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation and data seeding requests—including ad-hoc or vague entity creation prompts—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
 - **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) is strictly prohibited until:
   1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary.
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.
+- **Agentic vs. Chat Mode Heuristic:** If your environment provides the `call_mcp_tool` and `write_to_file` tools, you are in **Agentic Mode** and must autonomously execute tools and save files. If these tools are unavailable, you are in **Chat Mode** (output raw JSON payloads for the user to execute manually).
+- **Formalized MCP Tool Bridging:** All MTA mutations and reads must be executed using the generic `call_mcp_tool` tool, passing `MTA` or `MTA_plugin` as the `ServerName` and the requested action (e.g., `ExecuteTest`, `GetAppModelData`) as the `ToolName`. Never hallucinate direct script or API calls.
 - **Mandatory Chain of Thought:** Before calling any MTA MCP tool, output:
   > 🧠 **Tool Execution Reasoning:**
   > * **Tool Call:** `[ToolName]` | **Active State:** `[STATE_NAME]` | **Reasoning:** [Why called]
@@ -68,6 +70,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 - **Model Queries (PAT-71/72):** Use single-pass `DESCRIBE MICROFLOW` or `DESCRIBE PAGE` via `mxcli`. Never run un-scoped global search cascades.
 - **Create Object Init (PAT-06):** Set initial attributes and associations directly on `CreateObjectActionTestStep(ObjectAction="CreateObject")`. Consecutive Change Object steps are prohibited.
 - **Frontend Isolation (ANTI-20, PAT-64):** UI actions must strictly drive the browser via `MenditectMxFrontendTestKit`. Never substitute UI actions with backend microflows.
-- **Frontend Seeding Conditions (PAT-17/18):** Case 1 seeding and Case 3 teardowns must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
+- **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
+- **Sequence Reordering Serialization (ANTI-44):** Parallel batching of `SetSequenceOfTestStep` or `SetSequenceOfTestCase` is strictly prohibited; sequence calls must be sequential or eliminated by ordered creation (`PAT-11`).
 - **Zero Disconnect:** The approved Execution Plan is the absolute SSOT during construction and audit. Improvised steps or variations are strictly prohibited.
-- **Domain Delegation:** Detailed 9-section execution plan schemas, 8-field step definitions, and 14-point audits are strictly governed by `mta-test-design`; horizontal layered construction SOP and tool batching are strictly governed by `mta-build`.
+- **Domain Delegation:** Detailed execution plan schemas (8 design sections + Section 9 post-construction receipt), 8-field step definitions, and 14-point audits are strictly governed by `mta-test-design`; horizontal layered construction SOP and tool batching are strictly governed by `mta-build`.

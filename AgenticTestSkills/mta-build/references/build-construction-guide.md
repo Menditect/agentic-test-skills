@@ -2,7 +2,7 @@
 **📍 You are here:** `references/build-construction-guide.md` | **🏠 Return to:** [MTA Core Skill](../SKILL.md)
 *Metadata: Version 5.0 | Last Updated: 2026-09-02*
 
-This guide outlines the precise operational checklists, evaluation questions, construction rules, and pre-execution compliance checks required during the test planning, active building, smoke auditing, and run verification phases (States 2-5) using the consolidated 53-tool MTA-ACCP API (`/primitivetools/mcp`).
+This guide outlines the precise operational checklists, evaluation questions, construction rules, and pre-execution compliance checks required during the test planning, active building, smoke auditing, and run verification phases (States 2-5) using the consolidated 51-tool MTA-ACCP API (`/primitivetools/mcp`).
 
 ---
 

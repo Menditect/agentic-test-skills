@@ -2,7 +2,7 @@
 **📍 You are here:** `references/troubleshooting.md` | **🏠 Return to:** [MTA Core Skill](../SKILL.md)
 *Metadata: Version 3.0 | Last Updated: 2026-09-02*
 
-Reference for diagnosing, resolving test run failures, sequence compilation errors, and performance blocks in MTA using the consolidated 53-tool MTA-ACCP API (`/primitivetools/mcp`).
+Reference for diagnosing, resolving test run failures, sequence compilation errors, and performance blocks in MTA using the consolidated 51-tool MTA-ACCP API (`/primitivetools/mcp`).
 
 ---
 
@@ -155,7 +155,9 @@ If state leakage is caused by unmanaged external side-effects:
 | Error Message Observed / Symptom | Root Cause | Instant Fix (No Debugging Needed) |
 | :--- | :--- | :--- |
 | `Cannot , because the EditAction is not given` | Called `EditAttributeValueFilter` to include attribute. | Call `EditAttributeValue(EditAction="IncludeAttribute")` on both Create and Retrieve steps. |
-| `given ComparisonOperator is not valid` or `Value '...' is not valid for ComparisonOperator` | Used wrong singular/plural casing or guessing count syntax. | Consult the Assertion Operator Matrix in `api-helpers.md`: plural `Equals`/`NotEquals` for microflows and feedback messages; singular `Equal`/`NotEqual` for attribute values and filters; mixed format (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`) for count assertions. |
+| `Cannot set enumeration for attribute value, because FilterComparisonOperator is not given` | Passed singular `"Equal"` or omitted `FilterComparisonOperator` on `EditAttributeValueFilter`. | Pass plural `FilterComparisonOperator: "Equals"` (plural PascalCase required by MTA backend enum). |
+| `Cannot set ... for assert ... compare (...), because the given ComparisonOperator is not valid` | Called value setter (`SetDecimalValue`, `SetIntegerValue`, `SetStringValue`) on `EditAssertMicroflowReturnValueCompare` without passing `ComparisonOperator`. | Always pass `ComparisonOperator: "Equals"` (or target operator) in the same call as `EditAction`. |
+| `given ComparisonOperator is not valid` or `Value '...' is not valid for ComparisonOperator` | Used wrong singular/plural casing or guessing count syntax. | Consult the Assertion Operator Matrix in `api-helpers.md`: plural `Equals`/`NotEquals` for microflows, feedback messages, and retrieve attribute filters (`EditAttributeValueFilter`); singular `Equal`/`NotEqual` for attribute value assertions (`EditAssertAttributeValueCompare`); mixed format (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`) for count assertions. |
 | `ResumeExecutionAfterException invalid` | Passed `"Continue"` instead of `"_Continue"`. | Prepend underscore to Mendix keyword: `"_Continue"`. |
 | `EditAction 'SetRollbackTestCaseAfterExecution' parameter missing` | Used parameter name `RollbackTestCaseAfterExecution`. | Use abbreviated parameter name: `RollbackTcseAfterExecution="Yes"`. |
 | Cloned variation fails with `ExpectedObjectCount: 0, Actual: 1` | Cloned `AssertObjectCount` containers default to `ExpectedObjectCount: 0` when created via `CreateTestCaseVariation`. | Explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N` for any variation expecting $\ge 1$ objects. |

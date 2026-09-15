@@ -2,7 +2,7 @@
 **📍 You are here:** `references/data-variations.md` | **🏠 Return to:** [MTA Core Skill](../SKILL.md)
 *Metadata: Version 6.0 | Last Updated: 2026-09-02*
 
-This reference defines the sequence, parameters, and naming rules for creating data-driven test scenarios (variations) in MTA using the consolidated 53-tool MTA-ACCP API (`/primitivetools/mcp`).
+This reference defines the sequence, parameters, and naming rules for creating data-driven test scenarios (variations) in MTA using the consolidated 51-tool MTA-ACCP API (`/primitivetools/mcp`).
 
 > [!TIP]
 > **⚡ SPEED OPTIMIZATION: Headless Backend Case for Frontend Variations**
@@ -50,7 +50,7 @@ This metadata is **mandatory for all workflows**. Failing to set names and descr
 
 ## 🏗️ DATA VARIATIONS CONSTRUCTION PROTOCOL (PAT-54, PAT-78, PAT-85, PAT-86, PAT-87, ANTI-32, ANTI-40)
 
-With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). To maximize build efficiency and eliminate conversational latency, the construction protocol operates across 4 horizontal sub-phases:
+With the 51-tool primitive API, calling `CreateTestCaseVariation` duplicates the column structure with **empty item values** instead of duplicating previous values (`ANTI-11`). To maximize build efficiency and eliminate conversational latency, the construction protocol operates across 4 horizontal sub-phases:
 
 > [!IMPORTANT]
 > **Zero Disconnect SSOT Invariant (`ANTI-32`):** The variation items registered via `AddTestCaseVariationItem` **MUST strictly match** Section 7 of the approved Execution Plan. You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, or assertion to the variation matrix that is not explicitly declared as a variation item in Section 7 of the approved plan.
@@ -122,16 +122,16 @@ For dates, use relative offsets to prevent test decay via `EditAttributeValue` o
 
 ✅ **YES** ➔ You **MUST** use the **Empty Object Retrieve Pattern** with **Retrieve from Teststep**!
 
-**Step-by-Step Recipe with the 53-Tool Primitive API:**
+**Step-by-Step Recipe with the 51-Tool Primitive API:**
 1. **Create Object Step:** Call `CreateObjectActionTestStep(ObjectAction="CreateObject")` for the base entity.
-2. **Bind Initial Attributes:** Call `EditAttributeValue` to set the filtering attribute (e.g., `OrderNumber = "VALID_MATCH"`).
+2. **Bind Initial Attributes:** Call `EditAttributeValue` to set the filtering attribute (e.g., `OrderNumber = "VALID"`).
 3. **Retrieve Object Step:** Call `CreateObjectActionTestStep(ObjectAction="RetrieveObjects")`.
 4. **Link Retrieve to Teststep:** Call `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveOption", RetrieveOption="Teststep")` and `EditTestStepRetrieve(TestStepKey, EditAction="SetTestStepForRetrieveByTeststep", TestStepOutputKey=Step1Key)` to bind it to Step 1's memory output.
-5. **Set Retrieve Filter:** Call `EditAttributeValueFilter` to filter on the same attribute (`OrderNumber = "VALID_MATCH"`).
+5. **Set Retrieve Filter:** Call `EditAttributeValueFilter` to filter on the same attribute (`OrderNumber = "VALID"`).
 6. **Register Variation Item:** Call `AddTestCaseVariationItem` (`Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`) on the **Create Object step's attribute value**.
 7. **Populate Variations:**
-    *   **Valid scenario:** Set Create step attribute value to `"VALID_MATCH"`. (Object matches Retrieve filter, returns object).
-    *   **Null/Empty scenario:** Set Create step attribute value to `"NON_EXISTENT"`. (Object fails Retrieve filter, memory returns null/empty).
+    *   **Valid scenario:** Set Create step attribute value to `"VALID"`. (Object matches Retrieve filter, returns object).
+    *   **Null/Empty scenario:** Set Create step attribute value to `"NONE"`. (Object fails Retrieve filter, memory returns null/empty. Comply with the Universal Short Sentinel Law [^PAT-53] using <=4-char values).
 8. **Bind Microflow Parameter:** Bind the microflow input parameter directly to the **Retrieve step output**, never the Create step.
 
 ❌ **NEVER** use `RetrieveOption = "Database"` for this pattern.

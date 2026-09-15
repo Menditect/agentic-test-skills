@@ -2,7 +2,7 @@
 **📍 You are here:** `references/spec-setup-guide.md` | **🏠 Return to:** [MTA Build Skill](../SKILL.md) | [MTA Test Design Skill](../../mta-test-design/SKILL.md)
 *Metadata: Version 3.0 | Last Updated: 2026-09-02*
 
-This guide outlines the precise operational checklists, safety gates, and validation checks required across the 5 consolidated macro states of Menditect Test Automation (MTA) using the consolidated 53-tool MTA-ACCP API (`/primitivetools/mcp`).
+This guide outlines the precise operational checklists, safety gates, and validation checks required across the 5 consolidated macro states of Menditect Test Automation (MTA) using the consolidated 51-tool MTA-ACCP API (`/primitivetools/mcp`).
 
 ---
 

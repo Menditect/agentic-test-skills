@@ -1,7 +1,7 @@
 # Deterministic Horizontal Layered Construction SOP
 
 **📍 Location:** `references/construction-sop.md` | **🏠 Parent:** [MTA Build Skill](../SKILL.md)  
-*Patterns Enforced: `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`*
+*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`*
 
 This Standard Operating Procedure (SOP) governs the active construction of test cases, steps, assertions, and data variations on the Menditect Test Automation (MTA) platform.
 
@@ -28,10 +28,11 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 ---
 
 ### Phase 1: Sequential Step Pipeline (`Temp State: SKELETON_PROVISIONING`)
-1. **Multi-Case Allocation:** In multi-case test suites (e.g., Frontend 3-Case lifecycle: Case 1 Setup, Case 2 Action, Case 3 Teardown [`PAT-03`]), dispatch all planned `CreateTestCase` calls concurrently. Ensure `ExecutionUserKey` is resolved beforehand (`PAT-79`).
+1. **Multi-Case Allocation:** In multi-case test suites (e.g., Frontend 3-Case lifecycle: Case 1 Setup with seeding + batch Persist, Case 2 Action, Case 3 Teardown with reverse deletes + batch Persist [`PAT-03`, `PAT-91`, `PAT-92`, `PAT-93`]), dispatch all planned `CreateTestCase` calls concurrently. Ensure `ExecutionUserKey` is resolved beforehand (`PAT-79`).
 2. **Step Forward-Chaining:** Create empty steps in chronological order using predecessor chaining (`TestStepBeforeKey = PreviousStepKey`, `PAT-11`).
    - For the very first step in a test case, pass `TestStepBeforeKey = 0`.
    - Steps in the same test case cannot be batched concurrently because each step requires its predecessor's generated key.
+   - **Sequence Modification Serialization (`ANTI-44`):** If reordering steps or test cases after creation via `SetSequenceOfTestStep` or `SetSequenceOfTestCase`, you MUST execute these calls sequentially one-by-one across separate turns. Dispatching multiple sequence reordering calls in parallel causes uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences. Wherever possible, construct steps forward in correct sequence order from the start (`PAT-11`) to eliminate the need for `SetSequenceOfTestStep` entirely.
 3. **Direct Output Binding:** For `ChangeObjects` and `DeleteObjects` steps, pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` at creation time (`PAT-80`).
 
 ---

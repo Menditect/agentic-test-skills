@@ -55,7 +55,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     3.  *Validation constraints:* Both suites must reside in the exact same parent Test Configuration. Self-references or circular references are strictly prohibited.
 *   **🔄 THE TEST STEP REORGANIZATION RULE (`MoveTestStepToOtherTestCase`):**
     When refactoring sequence structures (e.g., separating UI steps into modular setup or teardown test cases), you can relocate a teststep to a different testcase in the same suite:
-    1.  *Syntax:* Call `MoveTestStepToOtherTestCase(TestStepKey=..., TargetTestCaseKey=...)`. The 53-tool primitive API accepts only `TestStepKey` and `TargetTestCaseKey`.
+    1.  *Syntax:* Call `MoveTestStepToOtherTestCase(TestStepKey=..., TargetTestCaseKey=...)`. The 51-tool primitive API accepts only `TestStepKey` and `TargetTestCaseKey`.
     2.  *Target Placement & Sequencing:* To position the moved step at a specific location within the destination testcase, immediately call `SetSequenceOfTestStep(TestStepKey=..., TestStepBeforeKey=...)`. Symmetrically, to place the moved step at the absolute beginning of the target testcase, pass `0` for `TestStepBeforeKey`.
     3.  *Validation:* After moving and sequencing, always query `GetTestCaseDetails(TestCaseKey)` to verify that the predecessor and successor sequences in both source and target cases are intact.
 *   **🚨 THE MANUAL INTERVENTION HIGHLIGHT PROTOCOL (`EditTestStep` with `Highlight="_True"`):** When you cannot fully automate a step as planned due to system limitations, lack of tool support, or because manual configuration is required, you MUST implement a placeholder step, highlight it to make it stand out (the official highlight/mark color is **blue**), and suggest manual finishing.

@@ -29,7 +29,7 @@ MTA allows you to target and measure test coverage metrics across Mendix microfl
 
 When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the agent formats the output as a formal **Execution Plan Blueprint** (`# MTA EXECUTION PLAN SIGN-OFF`) adhering to the uniform 8-section visual schema:
 
-*   **Pre-Approval Quality Audit Banner & Checklist:** 3-tier status alert + expandable 13-point compliance checklist table (`[CHECK 1]` to `[CHECK 13]`).
+*   **Pre-Approval Quality Audit Banner & Checklist:** 3-tier status alert + expandable 14-point compliance checklist table (`[CHECK 1]` to `[CHECK 14]`).
 1. **Section 1: State Compaction & Target Placement:** Collapsible `<details>` block with Session Compaction JSON block and target application metadata bullets.
 2. **Section 2: Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY):** Collapsible `<details>` block with conflict audit table and automatic skill corrections.
 3. **Section 3: Test Case Scope & Dual-Risk Profile:** Structured markdown tables for Functional Specification Profile and Dual-Risk Alignment & Mitigation Profile.
@@ -38,5 +38,6 @@ When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the a
 6. **Section 6: Playwright / Browser Settings (10 Keys):** Collapsible `<details>` block with 10-key browser environment settings table (`open` for Frontend, closed/NA for Backend).
 7. **Section 7: Data Variation Matrix & Metadata:** Structured horizontal $M \times N$ matrix table (max 8 columns) + collapsible Scenario Registration Metadata and Recipes block.
 8. **Section 8: Applied Testing Patterns & Rationale:** Collapsible `<details>` block with Applied Testing Patterns & Architecture Laws table (`Applied Pattern`, `Target Step(s)`, `Law Citation`, `Applied Rationale`).
+*(Post-construction, sealed with **Section 9: MTA Build & Smoke Verification Receipt** during `STATE_SMOKE_AUDIT`).*
 
 *   Read: [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Master Pattern Index](mta-patterns-and-antipatterns-reference.md)

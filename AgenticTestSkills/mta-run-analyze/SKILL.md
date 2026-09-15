@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.13.3"
-changes: "Synchronized shared references with Path 0 (Use Existing Plan As-Is) fast-path addition to placement-and-lifecycle (PAT-84)."
+version: "6.13.6"
+changes: "Removed obsolete ExecutionPlanKey from promotion state block; updated shared references to 51-tool MTA-ACCP API."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -74,6 +74,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 `[State: STATE_RUN_ANALYZE | Temp State: MICRO_STATE | Active Skill: mta-run-analyze]`
 
 1.  `STATE_EXPLORATORY_EXECUTION`: Running local exploratory tests and data seeding directly against the Mendix JVM for Backend Microflows and domain logic via `MTA_plugin.execute-testcase`.
+    *   **Handoff Acceptance:** This state accepts direct handoffs from `mta-test-design` (Option A Execution). When transitioning into this state, immediately assume responsibility for compiling the execution payload from the active Execution Plan, running the test, and presenting telemetry.
     *   **The 6 Universal MTA Plugin Execution Principles:** (1) Targeted Cluster Discovery (`mxcli` batch queries for all entities/flows), (2) Mandatory Execution User Context (`ExecutorUsername: "MxAdmin"` / `ApplySecurityExecutor: "NONE"`), (3) Verified Entity Fixture Attribute Binding (`PAT-75`, `ANTI-29`), (4) Canonical Data Type Serialization (strict ISO-8601 UTC `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` for `DateTimeType`, typed scalars, bare enums), (5) Explicit Object Topology & Handle Binding (`TCEX_RQ_Sfar` / `TCEX_RQ_Sfcr`), (6) Execution Mode Governance (`RollbackTcseAfterExecution = "Yes"` with NO trailing `Persist` step by default for exploratory tests to guarantee zero database pollution, or `RollbackTcseAfterExecution = "No"` with a trailing batch `Persist` step for live test data seeding per `PAT-68`).
     *   **Pre-Flight Probing & Fallback:** Verify that the local Mendix runtime is active and the `MTA_plugin` MCP endpoint is reachable. If unreachable, notify the user and offer fallback to Option B (Direct Persistent MTA Test).
     *   **Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`):**
@@ -187,7 +188,6 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                  "ExecutionPlanApprovedBy": "[ApprovedBy | null]",
                  "ExecutionPlanRevision": null,
                  "ExecutionPlanSupersedesId": null,
-                 "ExecutionPlanKey": null,
                  "Context": "Promoting verified exploratory test for [Components Under Test] to persistent MTA suite. Proceed to Gate 2 placement."
                }
                ```

@@ -382,13 +382,14 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-07`: Dual Retrieve/Filter Empty Object Pattern
 * **Scope:** Backend | **Classification:** Methodological Law
-* **Description:** Provides a dynamic mechanism to test both valid objects and `empty`/NULL object scenarios across MTA Data Variations without hardcoding separate test cases. A `Retrieve Object` step filters an upstream `Create Object` handle using a variable attribute filter (`'VALID_VAL'` on valid variations vs `'NON_EXISTENT'` on empty variations). To enforce this safely, 4 strict constraints must be followed:
+* **Description:** Provides a dynamic mechanism to test both valid objects and `empty`/NULL object scenarios across MTA Data Variations without hardcoding separate test cases. A `Retrieve Object` step filters an upstream `Create Object` handle using a variable attribute filter (`'VALID'` on valid variations vs `'NONE'` or `'NULL'` on empty variations). To enforce this safely, 5 strict constraints must be followed:
   1. **Source Option Constraint:** `RetrieveOption` MUST be set to `"Teststep"` (`Retrieve from Teststep`), strictly prohibiting `RetrieveOption = "Database"`.
   2. **Attribute Type Constraint:** The filter attribute MUST be a `String` or `Integer`, NEVER an `Enumeration` (as empty/unmatched enumerations crash during memory filtering).
-  3. **Parameter Binding Rule:** Downstream microflow parameter bindings MUST be mapped to the **Retrieve step's output handle**, NEVER directly to the upstream Create step.
-  4. **Pattern Recipes:** Can be implemented via the Standard Pattern (fixed dummy filter attribute), Alternative Pattern A (Same-Attribute neutral baseline), or Alternative Pattern B (Different-Attribute coordination).
+  3. **Universal Short Sentinel Law (`PAT-53` Parity):** When filtering to retrieve 0 objects for empty object testing, ALWAYS use short $\le 4$-character sentinels such as `'NONE'` or `'NULL'`. Never use descriptive phrases like `'NON_EXISTENT'`, `'DOES_NOT_EXIST'`, or `'NOT_FOUND'`, which routinely exceed restrictive `String(4..8)` attribute length limits in the Mendix Domain Model.
+  4. **Parameter Binding Rule:** Downstream microflow parameter bindings MUST be mapped to the **Retrieve step's output handle**, NEVER directly to the upstream Create step.
+  5. **Pattern Recipes:** Can be implemented via the Standard Pattern (fixed dummy filter attribute), Alternative Pattern A (Same-Attribute neutral baseline), or Alternative Pattern B (Different-Attribute coordination).
 * **Related Rules:**
-  * **Related Patterns:** `PAT-08` (Retrieve Output Object Count Assertion), `PAT-19` (Data Variation Consolidation), `PAT-31` (Retrieve-for-Asserting Set & Count Law).
+  * **Related Patterns:** `PAT-08` (Retrieve Output Object Count Assertion), `PAT-19` (Data Variation Consolidation), `PAT-31` (Retrieve-for-Asserting Set & Count Law), `PAT-53` (Domain Model Attribute Length & Constraint Verification).
 
 ---
 
@@ -644,9 +645,9 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-53`: Domain Model Attribute Length & Constraint Verification
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Checks entity attribute (e.g. max-length) constraints and enumeration definitions in the Mendix Domain Model via `mxcli` (`SHOW ENTITY`) before proposing test data values (part of Requirement 7 of the Frontend Quality Protocol) to prevent runtime truncation or validation failures.
+* **Description:** Checks entity attribute constraints (such as `String(N)` maximum length limits, decimal precision, and non-empty validation rules) and enumeration definitions in the Mendix Domain Model via `mxcli` (`SHOW ENTITY` or `DESCRIBE ENTITY`) or `GetAppModelData` before proposing test data values or fixture parameters in ANY test scope (Backend unit/integration tests, in-memory exploratory fixtures, and Frontend UI tests). Prohibits proposing literal test values where `length(value) > N` (e.g. proposing `'NON_EXISTENT'` for `String(8)`), preventing database commit exceptions, validation errors, and runtime test failures.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-32` (Dynamic Scalar Value Piping), `PAT-42` (Date-Time Offset & Format Pattern Inspection).
+  * **Related Patterns:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern), `PAT-32` (Dynamic Scalar Value Piping), `PAT-42` (Date-Time Offset & Format Pattern Inspection), `PAT-75` (Verified Entity Fixture Attribute Binding Law).
 
 ---
 
@@ -823,7 +824,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-65`: Execution Plan Visual Formatting & Markdown Component Law
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Mandates that every Execution Plan presented to the user (`# MTA EXECUTION PLAN SIGN-OFF`) strictly adheres to the standardized 8-section layout and required markdown components: (1) Pre-Approval Quality Audit Banner with 13-check collapsible checklist; (2) State Compaction & Target Placement collapsible details block; (3) Prompt vs. Skill Conflict Audit table; (4) Test Case Scope & Dual-Risk Profile open tables; (5) Chronological Step Sequence formatted with a clean summary matrix table (zero in-cell HTML or nested details blocks) followed by standalone collapsible per-step drilldowns (`<details><summary><b>Step N: ...</b></summary>`); (6) Playwright / Browser Settings details block; (7) Data Variation Matrix horizontal table; (8) Applied Testing Patterns & Rationale table citing canonical PAT/ANTI rule IDs. Embedding HTML blocks (`<details>`, `<summary>`, `<br>`) inside Markdown table cells is strictly prohibited, and all emojis/icons must be omitted from headers and plans.
+* **Description:** Mandates that every Execution Plan presented to the user (`# MTA EXECUTION PLAN SIGN-OFF`) strictly adheres to the standardized 8-section design layout and required markdown components: (1) State Compaction & Target Placement collapsible details block; (2) Prompt vs. Skill Conflict Audit table; (3) Executive Test Architecture & Scope Strategy open tables; (4) Verified Model Elements & Testability Profile (including Input Widget Inventory); (5) Chronological Step Sequence formatted with a clean summary matrix table (zero in-cell HTML or nested details blocks) followed by standalone collapsible per-step drilldowns (`<details><summary><b>Step N: ...</b></summary>`); (6) Playwright / Browser Settings details block; (7) Data Variation Matrix horizontal table; (8) Applied Testing Patterns & Rationale table citing canonical PAT/ANTI rule IDs; preceded by the Pre-Approval Quality Audit Banner with 14-check collapsible checklist, and sealed post-construction with Section 9 (MTA Build & Smoke Verification Receipt). Embedding HTML blocks (`<details>`, `<summary>`, `<br>`) inside Markdown table cells is strictly prohibited, and all emojis/icons must be omitted from headers and plans.
 * **Related Rules:**
   * **Related Patterns:** `PAT-12` (Uniform Step Sequence Schema Law), `PAT-43` (Mandatory Dual-Gate Approval), `PAT-60` (Dual-Track Execution Strategy Explicit Declaration in Execution Plan).
 
@@ -896,7 +897,7 @@ For each rule, this document outlines its scope, category, detailed operational 
   2. *Option 2: Automated Frontend Test Suite (3-Case UI Pattern)* - Transitions to `mta-test-design` to prompt for the target page, executes single-pass page AST discovery (`PAT-72`), presents the full 10-setting Playwright table, and generates a Frontend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Playwright UI Actions` using `MenditectMxFrontendTestKit`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`).
   3. *Option 3: Automated Backend Integration Suite (3-Case Backend Pattern)* - Prompts for target backend logic, runs `DESCRIBE MICROFLOW` (`PAT-71`), and generates a Backend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Microflow Calls & Assertions`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`; Section 6 Playwright is marked NA).
 * **Related Rules:**
-  * **Direct Counterpart Anti-Pattern:** `ANTI-16` (Unpromoted Exploratory Test Drift), `ANTI-14` (Execution Plan Bypass).
+  * **Direct Counterpart Anti-Pattern:** `ANTI-16` (Unpromoted Exploratory Test Drift), `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern).
   * **Related Patterns:** `PAT-02` (3-Test-Case Automated Pattern), `PAT-03` (Universal Teardown Cleanup Law), `PAT-21` (Dual-Requirement Persistence Law), `PAT-41` (Anonymous vs. Role Navigation Resolution), `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-68` (Live Test Data Provisioning & Manual Test Plan Protocol), `PAT-72` (Single-Pass Page AST Seed Derivation).
 
 ---
@@ -1169,10 +1170,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-88`: Execution Plan Post-Build Verification & Link Sealing Law
 * **Scope:** General | **Classification:** Platform Execution Law
 * **Description:** Mandates that upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 construction discrepancies, the agent MUST update and seal the local Execution Plan markdown file (`${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`):
-  1. *Machine-Readable Header Sealing:* Update the collapsible YAML header (`schema_version: "1.2.0"`) inside `<details><summary><b>Execution Plan Metadata</b></summary>` to record `status: "BUILT_AND_VERIFIED"`, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
-  2. *Top-of-Page Audit Callout & Direct Links:* Append post-construction build & smoke audit status to the single top-level callout note, and insert the Direct MTA Web Navigation Links table directly beneath the note at the top of the plan for immediate 1-click access without scrolling.
+  1. *Machine-Readable Header Sealing:* Update the collapsible YAML header (`schema_version: "1.2.0"`) inside `<details><summary><b>Execution Plan Metadata</b></summary>` to record `status: "BUILT_AND_VERIFIED"`, `build_started_at` timestamp, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
+  2. *Top-of-Page Audit Callout & Direct Links:* Append post-construction build & smoke audit status to the single top-level callout note with duration telemetry (`**Build Started:** <build_started_at> | **Built & Verified:** <verified_at> by <builder_system_user> (Elapsed: <duration>)`), and insert the Direct MTA Web Navigation Links table directly beneath the note at the top of the plan for immediate 1-click access without scrolling.
   3. *Section 9 Verification Details:* Append Section 9 (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`) at the bottom of the plan containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) and detailed 7-point verification checks.
-  4. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
+  4. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_build_started_at`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
 * **Related Rules:**
   * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable MTA Web Navigation Link Formatting), `PAT-47` (Real-Time Placement Key Persistence), `PAT-59` (Zero Construction Error Pre-Flight Law), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
 
@@ -1195,6 +1196,15 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-91`: Self-Contained Frontend Seeding Invariant
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Mandates that all Frontend UI Execution Plans and test suites default to self-contained data seeding in Case 1 (Setup) to guarantee complete test autonomy across clean, CI/CD, or containerized environments. Primary business entities bound to page widgets (e.g., records displayed in DataViews, selection DropDowns, ComboBoxes, or repeating DataGrid2/ListViews) MUST be created via explicit `Create Object` steps and committed via batch `Persist` steps in Case 1 prior to launching the browser (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`), seeding multiple records (at least 2 distinct objects) for collection/selection widgets. Static master or reference data that is pre-populated in environments and read-only (such as Countries, Currencies, System Roles, or Postal Codes) is exempt from mandatory creation; agents are authorized to use explicit `Retrieve` steps with attribute filters in Case 1 to bind these reference associations. All seeded entities MUST use disjoint synthetic identifiers (e.g., prefixing codes/names with `'TEST_'` or dynamic timestamps) to prevent Unique Constraint Violations or collisions with dirty database leftovers from prior aborted runs. Textual descriptions in a plan's "Preconditions" section can NEVER substitute for physical Case 1 seeding steps. Omit Case 1 seeding ONLY if the user prompt explicitly specifies to use existing database records.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-42` (Ambient Precondition Reliance & Legacy Pattern Copying).
+  * **Related Patterns:** `PAT-03` (Frontend Test Case Split Law), `PAT-18` (Mandatory Frontend Setup/Teardown Split), `PAT-40` (Multiple Seed Objects for Lists & Selection Widgets), `PAT-72` (Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping).
+
+---
+
 ### `ANTI-41`: Chat Plan Flooding & Delayed File Persistence Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
 * **Description:** Dumping hundreds of lines of full uncollapsed markdown execution plans, internal pattern applicability checklists, or raw ASCII/Unicode box-drawing borders (`╔═...═╗`) directly into conversational chat output before persisting to disk. This floods user context, produces severe UI scrolling fatigue, increases token usage, visually breaks on responsive screens, and delays disk-level file persistence until after user approval, risking plan loss across session boundaries or tool crashes.
@@ -1204,10 +1214,112 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-42`: Ambient Precondition Reliance & Legacy Pattern Copying
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Satisfying transactional or operational test data requirements in a frontend UI test by writing passive text in the "Preconditions" section of a plan (e.g., "Precondition: Database contains 1 active record...") instead of implementing physical `Create Object` and batch `Persist` steps in Case 1. This anti-pattern also includes querying pre-existing test suites or test cases from the MTA server (`GetTestSuiteDetails`, `GetTestCaseDetails`) and copying or inheriting their legacy unseeded step structures rather than deriving a self-contained seed graph from the local Mendix AST. This produces brittle, flaky tests that fail immediately when executed in clean CI/CD pipelines, fresh Docker containers, or environments lacking ambient database state.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-91` (Self-Contained Frontend Seeding Invariant).
+  * **Related Anti-Patterns:** `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern), `ANTI-20` (Frontend UI to Backend Domain Microflow Substitution Anti-Pattern).
+
+---
+
+### `PAT-92`: Symmetric Seeding Teardown Cleanup Law
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Any transactional business entity instantiated during Case 1 setup (`PAT-91`) MUST be deleted in Case 3 (Teardown) via **direct cross-case handle piping** (`ObjectAction = "DeleteObjects"`, `TestStepOutputKey = Case1_CreateStepKey`) without redundant database `Retrieve` steps. In contrast, runtime transactional records created by the browser during Case 2 MUST be retrieved from the database with explicit synthetic attribute filters prior to deletion. The teardown deletion pipeline concludes with a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`) at the end of the deletion block to commit all deletions to the database. Enforces the strict symmetry invariant: $\text{Entities}(\text{Case 3 Purge}) == \text{Entities}(\text{Case 1 Seed}) \cup \text{Entities}(\text{Case 2 Runtime Created})$. All teardown steps (retrieves, direct piped deletes, and the trailing persist) must be configured with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"` to guarantee complete database hygiene even if intermediate test assertions fail in Case 2.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-43` (Asymmetric Teardown Seeding Leak).
+  * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-18` (Frontend Setup/Teardown Execution Condition Law), `PAT-91` (Self-Contained Frontend Seeding Invariant), `PAT-93` (Reverse Dependency Order Deletion Protocol).
+
+---
+
+### `PAT-93`: Reverse Dependency Order Deletion Protocol
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** Mandates that teardown deletion steps in Case 3 (and intra-block cleanup pipelines) MUST be sequenced in strict reverse association dependency order:
+  $$\text{Leaf / Child Entities (e.g., Booking)} \longrightarrow \text{Intermediate Associations (e.g., Car, Renter, Location)} \longrightarrow \text{Root Categories (e.g., CarSize)}$$
+  Deleting parent or referenced master entities before child transactional records causes Mendix runtime delete behavior blocks (e.g., `DeleteBehavior: Block`), cascading foreign key constraint errors, or orphaned database rows.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-91` (Self-Contained Frontend Seeding Invariant), `PAT-92` (Symmetric Seeding Teardown Cleanup Law).
+  * **Related Anti-Patterns:** `ANTI-43` (Asymmetric Teardown Seeding Leak).
+
+---
+
+### `PAT-94`: Mandatory DatePicker Format Model Extraction Protocol
+* **Scope:** Frontend | **Classification:** Platform Execution Law
+* **Description:** An agent must never assume or default a DatePicker format (e.g. `"MM/dd/yyyy"` or `"dd/MM/yyyy"`). When using `mxcli` for model discovery, the agent MUST execute ONLY this command:
+  `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json`
+  (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
+  and locate the widget's `FormattingInfo` object:
+  - If `DateFormat == "Custom"`, extract `CustomDateFormat` (e.g. `"dd-MM-yyyy"`).
+  - If `DateFormat == "Date"`, extract the project language date format.
+  Standard `DESCRIBE PAGE` does not expose `FormattingInfo`; speculative CLI commands are strictly prohibited. The extracted format MUST be documented in Section 4 Input Widget Inventory and bound to `ACT_Fill_DatePicker_Input`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-45` (Date Format Assumption / Defaulting Anti-Pattern).
+  * **Related Patterns:** `PAT-42` (Date-Time Offset & Format Pattern Inspection), `PAT-67` (Exhaustive Page & Snippet Input Widget Discovery), `PAT-72` (Single-Pass Page AST Seed Derivation).
+
+---
+
+### `PAT-95`: Backend Direct Handle Piping Delete Pattern
+* **Scope:** Backend | **Classification:** Platform Execution Law
+* **Description:** When constructing teardown cleanup steps in Backend tests for objects created in memory during the test, the test step MUST pipe the created object handle (output key of `Create Object`) directly into the `Delete Object` step via `SetTestStepOutputForSelectObjectForDelete` (or `TCEX_RQ_Sfdr`). Executing redundant database `Retrieve Object` queries in Backend unit tests to find an object whose in-memory handle is already known and in scope is strictly prohibited.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-03` (Unasserted Consumer Piping).
+  * **Related Patterns:** `PAT-06` (Direct Attribute Initialization on Create Object), `PAT-11` (Predecessor Forward Chaining Law), `PAT-80` (Dedicated Output Binding Tools Law).
+
+---
+
+### `PAT-96`: Business Microflow Execution & Direct Return Assertion Pattern
+* **Scope:** Backend | **Classification:** Platform Execution Law
+* **Description:** When testing Mendix business logic in Backend tests, invoke the target microflow via `CreateMicroflowCallTestStep` and assert on the execution outcome directly within Field 6 of the step itself (using `CreateAssertMicroflowReturnValue` for typed return values, or `CreateAssertValidationFeedbackMessageCompare`/`Count` for validation messages). This maintains a compact, deterministic test pipeline with zero redundant downstream retrieve queries.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-13` (Blind Void Microflow Testing Anti-Pattern).
+  * **Related Patterns:** `PAT-08` (Retrieve / Microflow Output Object Count Assertion), `PAT-10` (TestCase Container Execution Settings Law), `PAT-17` (Backend Unit Test Execution Settings Law).
+
+---
+
+### `ANTI-43`: Asymmetric Teardown Seeding Leak
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Cleaning up only transactional entities created during test interaction in Case 2 (e.g., `Booking`, `Renter`) while leaving seeded master or reference data created in Case 1 (e.g., `Car`, `Location`, `CarSize`) orphaned in the database. This violates the teardown symmetry invariant and causes gradual database bloat, unique constraint collisions in subsequent test runs, and test flakiness.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-92` (Symmetric Seeding Teardown Cleanup Law).
+  * **Related Patterns:** `PAT-91` (Self-Contained Frontend Seeding Invariant), `PAT-93` (Reverse Dependency Order Deletion Protocol).
+
+---
+
+### `ANTI-44`: Parallel Sequence Reordering Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls in parallel within the same turn. Reordering operations modify ordinal list positions against uncommitted database state; concurrent execution causes transaction race conditions and inverted sequence order in Mendix. Sequence modification calls MUST be executed sequentially one-by-one or eliminated entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
+* **Related Rules:**
+  * **Related Patterns:** `PAT-11` (Forward Predecessor Chaining), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-39` (Vertical Per-Step Interleaving Anti-Pattern).
+
+---
+
+### `ANTI-45`: Date Format Assumption / Defaulting Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Hardcoding standard US (`"MM/dd/yyyy"`) or ISO date formats into `ACT_Fill_DatePicker_Input` steps without verifying the widget's actual `CustomDateFormat` in the Mendix page model via BSON dump. This leads to invalid date parsing errors, validation feedback failures, or test execution timeouts when the Mendix runtime expects a different date format (e.g., `"dd-MM-yyyy"` or `"dd/MM/yyyy"`).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-94` (Mandatory DatePicker Format Model Extraction Protocol).
+  * **Related Patterns:** `PAT-42` (Date-Time Offset & Format Pattern Inspection).
+
+---
+
+### `ANTI-46`: Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing mutating MTA tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, `ExecuteTest`) or running ad-hoc data seeding tool calls without first drafting an Execution Plan, saving it to disk, and obtaining explicit user sign-off (Gate 1 & Gate 2). Bypassing execution plan planning leads to unverified domain assumptions, missing assertions, unmanaged test data pollution, and architectural drift.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol), `PAT-70` (Ad-Hoc Data & Entity Creation Ingestion Protocol), `PAT-89` (File-First Execution Plan Drafting & Persistence Law).
+  * **Related Anti-Patterns:** `ANTI-15` (Premature Central Container Provisioning Anti-Pattern), `ANTI-41` (Chat Plan Flooding & Delayed File Persistence Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-91`** (Self-Contained Frontend Seeding) | **`ANTI-42`** (Ambient Precondition Reliance) | Explicit Case 1 seeding (Create + Persist) with master data distinction vs relying on ambient DB or copying unseeded server cases |
+| **`PAT-92`** (Symmetric Seeding Teardown Cleanup) | **`ANTI-43`** (Asymmetric Teardown Seeding Leak) | Enforcing Case 3 teardown cleanup for all Case 1 seeded records vs leaking master data |
+| **`PAT-94`** (DatePicker Format Model Extraction) | **`ANTI-45`** (Date Format Assumption / Defaulting) | Extracting exact CustomDateFormat via mxcli bson dump vs guessing default date format strings |
+| **`PAT-11`** / **`PAT-85`** (Forward Chaining & Layered Batching) | **`ANTI-44`** (Parallel Sequence Reordering) | Forward step ordering or sequential sequence calls vs concurrent SetSequenceOfTestStep race conditions |
 | **`PAT-88`** (Post-Build Verification & Link Sealing) | **`ANTI-18`** (Ignored Construction Errors) | Updating execution plan with verified status, timestamps, and clickable MTA links vs leaving plans unverified |
 | **`PAT-89`** (File-First Drafting & Chat Summary) | **`ANTI-41`** (Chat Plan Flooding & Delayed Persistence) | Persisting full plan to disk at draft phase with collapsible headers vs dumping full plans in chat |
 | **`PAT-90`** (Playwright Tracefile & Viewer Integration) | **`ANTI-37`** (Monolithic Log Retrieval) | Assembling clickable Playwright trace viewer link for interactive visual DOM/timeline debugging vs parsing raw logs |
@@ -1253,7 +1365,6 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-85`** (Horizontal Layered Construction & Safe Cross-Step Batching) | **`ANTI-39`** (Vertical Per-Step Interleaving) | Constructing steps in horizontal cross-step layers vs fragmented vertical per-step roundtrips |
 | **`PAT-86`** (Upfront Column Provisioning & Bulk Chunked Population) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Concurrently provisioning all variation columns upfront vs sequential column-by-column roundtrips |
 | **`PAT-87`** (Deterministic Cloned Cell Key Indexing) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Indexing cloned cell keys in-memory by registration order vs redundant GetTeststepDetails queries |
-
-
-
-
+| **`PAT-43`** / **`PAT-70`** / **`PAT-89`** (Universal Execution Plan Mandate) | **`ANTI-46`** (Unplanned Test Construction & Execution Plan Bypass) | Persisting approved Execution Plan prior to construction or seeding vs bypassing planning |
+| **`PAT-95`** (Backend Direct Handle Piping Delete) | **`ANTI-03`** (Unasserted Consumer Piping) / Redundant DB Retrieve | Piping created entity handles directly to Delete Object vs redundant database roundtrips |
+| **`PAT-96`** (Business Microflow Execution & Return Assertion) | **`ANTI-13`** (Blind Void Microflow Testing) | Executing microflow and validating return values or feedback messages vs unverified execution |

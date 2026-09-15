@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.14.4"
-changes: "Integrated Path 0 (Use Existing Plan As-Is) fast-path into Prior Execution Plan Discovery & Lineage Protocol (PAT-84, ANTI-38)."
+version: "6.17.0"
+changes: "Codified Frontend Cross-Case Data Piping: Case 2 dynamic scalar piping across all UI controls and Case 3 direct handle deletion (PAT-92)."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -24,7 +24,7 @@ Or if an AI agent (like MAIA or another AI) has built or modified software in th
 Do NOT assume a specific test case or microflow target. 
 **Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_BUILD_PLANNING (PLAN_STEP_1)`.
 
-### 2. Ad-Hoc Data & Entity Creation Ingestion Protocol (`PAT-70`, `ANTI-14`, `PAT-89`):
+### 2. Ad-Hoc Data & Entity Creation Ingestion Protocol (`PAT-70`, `ANTI-46`, `PAT-89`):
 If the user's prompt requests creating, seeding, or generating business entities or records—regardless of how conversational, informal, or underspecified—such as:
 - *"create 5 cars with 2 carsizes and 2 locations in my app"*
 - *"seed 3 orders with 2 customers"*
@@ -32,7 +32,7 @@ If the user's prompt requests creating, seeding, or generating business entities
 - *"add some test data for products"*
 
 You are **strictly prohibited** from:
-1. Executing tool calls directly to insert data without an Execution Plan (`ANTI-14`).
+1. Executing tool calls directly to insert data without an Execution Plan (`ANTI-46`).
 2. Asking unstructured, open-ended conversational questions (e.g. "which microflow should I use?").
 3. Bypassing `STATE_BUILD_PLANNING`.
 
@@ -62,7 +62,7 @@ You must progress sequentially through these three interactive planning micro-st
 *   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
     Before designing steps, identify which pattern families apply to your target:
     - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `ANTI-02`
-    - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-20` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
+    - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-95` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
     - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `ANTI-07`, `ANTI-10`, `ANTI-13`
     - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`
@@ -74,22 +74,25 @@ You must progress sequentially through these three interactive planning micro-st
     1. *Component Typology:* Evaluate detected targets (e.g., Authenticated Page, Void Microflow, Selection Dropdowns, Repeating DataGrid2, etc.).
     2. *Selected Patterns:* Cross-reference the Taxonomy Index above and identify the active `PAT-xx` and `ANTI-xx` rules governing this test.
     3. *Enforcement Rationale:* Verify internally how the plan will conform to each selected pattern.
-    *(By performing this checklist internally, you anchor your attention onto the relevant rules, eliminating pattern hallucinations and avoiding the cognitive overload of holding all 128 patterns in working memory).*
+    *(By performing this checklist internally, you anchor your attention onto the relevant rules, eliminating pattern hallucinations and avoiding the cognitive overload of holding all 142 patterns in working memory).*
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` (resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) for any existing `EP_*.md` files targeting the same microflow or page.
-    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
+    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `build_started_at`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
     *   *Lineage Decision Card:* Present the audit summary and prompt the user with the canonical lineage paths adhering strictly to the Scoped Note Box & Clean Markdown Standard:
         1. **Strictly Scoped `> [!NOTE]` Box:** Only the detection header line and metadata bullet points (including a 1–2 line AST delta summary) are inside the note box.
         2. **Decision Table Outside Note:** The canonical lineage choices—**Path 0: Use Existing Plan As-Is** (Fast-Path, recommended when in-sync with 0 AST delta), **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, and **Path C: Clean Slate**—are rendered in a clean, focused 4-column Markdown table (`Path`, `Action`, `Revision`, `When to Choose`) directly beneath the note box.
-        3. **Zero ASCII / Unicode Box Characters:** Strictly prohibit ASCII border art (`╔`, `═`, `║`, `╠`, `╚`, `┌`, `─`, `│`, `└`). Use standard GitHub Flavored Markdown.
-        4. **No Multi-Table Cascading in Chat:** Do not dump URL navigation tables or giant AST delta tables into chat during Phase 0 discovery. All AST comparison happens internally and is summarized in the 1–2 line AST Delta Summary bullet.
-        5. **Canonical Paths Only:** Only Path 0, Path A, Path B, and Path C are allowed. Never invent unverified random paths.
-        6. **Path 0 Fast-Path Execution:** Selecting Path 0 immediately re-uses the active execution plan without modifying the file or bumping revisions, skipping redundant `PLAN_STEP_1` drafting and transitioning directly to Gate 2 placement confirmation or test execution (Option A in-memory testing).
-    *   *Prohibition:* Blindly overwriting prior plans, discarding prior context with amnesia, or dumping unreadable ASCII-art borders and multi-table cascades into chat is strictly prohibited (`ANTI-38`).
+        3. **No Multi-Table Cascading in Chat:** Do not dump URL navigation tables or giant AST delta tables into chat during Phase 0 discovery. All AST comparison happens internally and is summarized in the 1–2 line AST Delta Summary bullet.
+        4. **Canonical Paths Only:** Only Path 0, Path A, Path B, and Path C are allowed. Never invent unverified random paths.
+        5. **Path 0 Fast-Path Execution:** Selecting Path 0 immediately re-uses the active execution plan without modifying the file or bumping revisions, skipping redundant `PLAN_STEP_1` drafting and transitioning directly to Gate 2 placement confirmation or test execution (Option A in-memory testing).
+    *   *Prohibition:* Blindly overwriting prior plans, discarding prior context with amnesia, or dumping multi-table cascades into chat is strictly prohibited (`ANTI-38`).
 *   **⚡ Targeted Single-Pass Model Discovery & Deep Semantic Path Tracing (`PAT-71`, `ANTI-26`)**:
     *   *Single-Pass CLI Execution:* When a target microflow or component is specified, immediately execute the targeted command `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) in a single pass on turn 1.
     *   *Self-Contained AST Extraction:* Extract input parameters, return types, variables, called sub-microflows, member expressions, and enum literals directly from the self-contained AST. You are **strictly prohibited** from running broad exploratory listing queries (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) when all required elements are present in the target AST (`ANTI-26`).
-    *   *Verified Entity Fixture Attribute Binding Law (`PAT-75`, `ANTI-29`):* When constructing seed objects or in-memory entity fixtures (`Oact: Create` / `TCEX_RQ_AttributeValueRun`), if target entity members are not fully present in the microflow AST, verify entity attribute names and data types via `DESCRIBE ENTITY <Module.Entity>` before generating test steps/payloads. Prohibit assuming or hallucinating synthetic placeholder attributes (such as `Code`, `Id`, `Name`) without domain model verification.
+    *   *Verified Entity Fixture Attribute & Constraint Binding Law (`PAT-75`, `PAT-53`, `ANTI-29`):* Before proposing test fixture attributes, test step parameters, or variation values (for both in-memory exploratory fixtures and persistent test steps), you **MUST** inspect the entity definition in the local Mendix model via `mxcli SHOW ENTITY <Module.Entity>` or `DESCRIBE ENTITY <Module.Entity>` (or `GetAppModelData` if working remotely) to capture:
+        * Attribute data types (`String`, `Integer`, `Decimal`, `Enumeration`, `DateTime`)
+        * String length limits (`String(N)` vs unlimited)
+        * Validation rules or non-empty constraints
+        Prohibit assuming or hallucinating synthetic placeholder attributes (such as `Code`, `Id`, `Name`) without domain model verification.
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guard hierarchies, decision combinations, and formula calculations) with 100% logic fidelity. Single-pass discovery optimizes retrieval speed, but deep semantic path analysis must remain fully rigorous to capture all boundary variations.
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is configured and reachable to retrieve page keys, custom CSS classes, widget keys, widget types, and list data source flags in sub-second time. If MTA is not yet synchronized or local model AST is preferred, use `mxcli` single-pass page AST discovery (`PAT-72`).
@@ -110,17 +113,25 @@ You must progress sequentially through these three interactive planning micro-st
            * *Deterministic Text Locator Resolution:* Run `.\mxcli.bat -p "[MPR]" -c "SEARCH STRINGS '<Text>'"` (or `CATALOG.strings`) to resolve exact translatable strings for button captions, tab headers, and filter values without guessing.
         5. **Input Widget Inventory:** In Section 4 ("Verified Model Elements & Testability Profile") of the Execution Plan, construct an explicit **Input Widget Inventory** table listing every form widget, widget type, container/snippet/tab location, bound attribute, and verified Testkit locator microflow (`PAT-67`).
     *   *Page & Widget Summary:* Always show an explicit summary list of all pages and snippets involved in the test under Section 4 ("Verified Elements") of the plan.
-*   **🚨 Mandatory Seed Data Analysis & Strategy Choice (Frontend Plans)**: Based on required pages and widgets, analyze what seed entity records are required for the test. You **MUST** present an explicit choice to the user:
-    *   *Choice A:* Create fresh seed data in Case 1 (Setup) via `Create Object` / `Persist` steps.
-    *   *Choice B:* Retrieve pre-existing seed data from the database via `Retrieve Object` steps.
-*   **🚨 Mandatory Multiple Seed Objects for Lists & Selection Widgets**: For entities appearing in repeating containers (Gallery, ListView, DataGrid2) or selection widgets (DropDown, ComboBox, ReferenceSelector, ReferenceSetSelector), you **MUST** plan to create/retrieve **multiple seed objects** (at least 2-3 records) of the same entity type to validate selection accuracy and list filtering.
+*   **🚨 Mandatory Self-Contained Seed Data Invariant with Master Data Distinction (Frontend Plans) (`PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43`)**: Based on target pages and widgets, derive all required entities from widget data bindings (`PAT-72`). You **MUST** default to **Self-Contained Seeding in Case 1**:
+    *   *Default Invariant (Transactional Seeding):* Plan explicit `Create Object` steps for all primary business entities and selectable catalog records bound to page widgets, concluded by a batch `Persist` step in Case 1 before launching the browser (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
+    *   *Symmetric Teardown Cleanup Law (`PAT-92`, `ANTI-43`):* Every transactional entity instantiated during Case 1 setup MUST have a corresponding `Retrieve Object` + `Delete Object` pair in Case 3 Teardown, followed by a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`, `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`) at the end of the deletion pipeline to commit all deletions to the database. Cleaning up only Case 2 runtime data while leaving Case 1 seeded records orphaned is strictly prohibited (`ANTI-43`).
+    *   *Reverse Dependency Order Deletion Protocol (`PAT-93`):* Teardown deletions in Case 3 MUST strictly proceed in reverse association dependency order ($\text{Leaf / Child Entities} \rightarrow \text{Intermediate Associations} \rightarrow \text{Root Entities}$) to prevent `DeleteBehavior: Block`, foreign key constraint errors, and orphaned rows.
+    *   *Master / Reference Data Retrieval Exemption:* Static infrastructure and configuration entities that are pre-populated in environments and read-only (e.g., `Country`, `Currency`, `UserRole`, `PostalCode`) are exempt from mandatory creation. Agents are authorized to use explicit `Retrieve` steps with attribute filters in Case 1 to bind these reference associations without inflating the creation graph.
+    *   *Disjoint Synthetic Identifiers:* All seeded records in Case 1 MUST use unique synthetic identifiers (e.g., prefixing codes/names with `'TEST_'` or dynamic timestamps) to prevent Unique Constraint Violations or collisions with dirty database leftovers from prior aborted runs.
+    *   *Precondition & Legacy Server Pattern Prohibition (`ANTI-42`):* Preconditions in plan documentation must NEVER state *"Master data pre-seeded in database"* as a substitute for test steps. If transactional data is needed, Case 1 MUST create it. When querying existing test cases from the MTA server (`GetTestCaseDetails`), NEVER copy legacy unseeded step structures.
+    *   *User Prompt Override Exemption:* Omit Case 1 creation ONLY if the user prompt explicitly specifies *"use existing database records"* or *"test against pre-existing data"*.
+*   **🚨 Mandatory Multiple Seed Objects for Lists & Selection Widgets (`PAT-40`, `PAT-67`, `ANTI-26`)**: For entities appearing in repeating containers (Gallery, ListView, DataGrid2) or selection widgets (DropDown, ComboBox, ReferenceSelector, ReferenceSetSelector), you **MUST** create/seed **multiple objects** (at least 2 distinct records) in Case 1 to validate selection accuracy and list filtering.
 *   **🚨 Mandatory Login & Role-Based Navigation Analysis (`PAT-41`)**: Determine whether authentication is required and resolve navigation paths:
     *   *Login Required (Default):* By default, accessing Mendix pages requires authentication using `Start_MxFrontend_Test_With_Login`.
     *   *Anonymous Accessible:* If the target starting page is accessible without authentication, use `Start_MxFrontend_Test_Without_Login`. Note that Anonymous access is only permitted if enabled in App security settings and is **always explicitly mapped to an App-level user role**.
     *   *Navigation Resolution (Universal for Authenticated & Anonymous):* For both authenticated and anonymous flows, inspect Mendix navigation (`SHOW NAVIGATION` via `mxcli`) for the relevant User Role to identify the role-based home page and the menu navigation path leading to the starting page under test. If no role-based home page is defined for that user role, use the **default home page for the applied viewport navigation profile** (Desktop, Tablet, Phone screen settings) as the starting point (`PAT-41`).
 *   **🚨 Mandatory Dynamic Scalar Selection Piping**: For selecting items from dropdowns, comboboxes, reference selectors, or lists, you **MUST** use dynamic scalar value piping (`SelectValueForValue`) referencing the output of upstream seed data steps instead of hardcoding static literal strings.
-*   **🚨 Mandatory Date-Time Offset & Format Pattern Inspection**: For `DatePicker` / date-time widgets, you **MUST** use `CurrentDateTime` with an offset (e.g. `CurrentDateTime + 1 day`, `CurrentDateTime - 7 days`) as the preferred default option (`PAT-42`). Only choose a fixed `DateTime` when strictly necessary for the test purpose. Inspect the Mendix model via `mxcli` / page model for custom date format pattern configurations (`dateformPattern`).
-*   **🚨 Mandatory Domain Model Attribute Length & Constraint Inspection**: When proposing test values or test step parameters for String (or other constrained) attributes, data types are enforced automatically, BUT attribute length restrictions (such as maximum length limits configured on String attributes in the Mendix Domain Model) are NOT automatically checked during value proposal (`PAT-53`). You **MUST** inspect the target entity's domain model definition via `mxcli` (`SHOW ENTITY`, `SHOW DOMAINMODEL`) or model tools to verify attribute constraints—specifically checking String maximum length limits—and ensure all proposed test attribute values strictly comply with these domain model constraints.
+*   **🚨 Mandatory DatePicker Format & Offset Model Extraction Protocol (`PAT-42`, `PAT-94`, `ANTI-45`)**: For date-time widgets, prefer `CurrentDateTime` with an offset (e.g. `CurrentDateTime + 1 day`, `CurrentDateTime - 7 days`). For DatePicker widgets, agents MUST NEVER guess or assume the format string (`ANTI-45`). When using `mxcli` for model discovery, the agent MUST execute ONLY:
+    `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json`
+    (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
+    and inspect `FormattingInfo`: extract `CustomDateFormat` if `DateFormat == "Custom"` (e.g. `"dd-MM-yyyy"`), or project language format if `DateFormat == "Date"`. Document the extracted format in the Section 4 Input Widget Inventory and bind it in `ACT_Fill_DatePicker_Input`. Also verify String attribute length constraints in the domain model via `mxcli` (`SHOW ENTITY`).
+*   **🚨 Mandatory Domain Model Attribute Length & Constraint Inspection (`PAT-53`)**: When proposing test values or test step parameters for String (or other constrained) attributes in ANY test scope (Backend unit/integration tests, in-memory exploratory fixtures, and Frontend UI tests), data types are enforced automatically, BUT attribute length restrictions (such as maximum length limits configured on String attributes in the Mendix Domain Model) are NOT automatically checked during value proposal. Every proposed literal value for an entity attribute in step parameters or the variation matrix MUST have its length checked against `String(N)`. Proposing any value where `length(value) > N` (e.g. proposing `'NON_EXISTENT'` for a `String(8)` attribute) is a fatal planning defect. You **MUST** inspect the target entity's domain model definition via `mxcli` (`SHOW ENTITY`, `DESCRIBE ENTITY`) or model tools to verify attribute constraints—specifically checking String maximum length limits—and ensure all proposed test attribute values strictly comply with these domain model constraints.
 *   **🚨 Mandatory List Selection Filter Options Proposal**: When selecting an item from a list or repeating container, you **MUST** present the available Frontend Testkit filter options (`PAT-52`) directly inside the `ExecutionPlan`:
     *   *Option 1:* Text Filter (`ELO_Filter_*_by_Text`)
     *   *Option 2:* Position / Index Filter (`ELO_Nth_*_Item`)
@@ -229,9 +240,8 @@ You must progress sequentially through these three interactive planning micro-st
         > *"Please review the proposed Frontend Execution Plan above. Frontend UI tests require MTA Platform locator mapping, Playwright settings, and 3-case suite lifecycle management. Therefore, they are constructed directly on the MTA Platform (Option B). Once approved, we will proceed to Checkpoint 2 (Confirm Test Suite Placement & Settings)."*
 *   **⚡ Execution Strategy Decision Flow & Backend Exploratory / Provisioning Blueprint Law (`PAT-63`)**:
     *   **If Backend and User Selects Option A (Immediate Local Exploratory Execution):**
-        *   *Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `PAT-76`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`, `ANTI-30`):* When Section 7 defines multiple data variations (`VAR_01`..`VAR_0N`), selecting Option A compiles all variations into **1 single `TCEX_RQ_TestStepRun` array** in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"` (or active execution user), `"ApplySecurityExecutor": "NONE"`, and `"RollbackTcseAfterExecution": "Yes"` (or `"true"`) with NO trailing `Persist` step, AST conflict vector auditing, intra-block teardown, verified entity attributes (`PAT-75`), mandatory 3-part performance benchmark breakdown (`PAT-76`), and disjoint synthetic keys, executing the entire matrix in sub-second time (< 1s) with zero database pollution. Invoking `execute-testcase` across multiple sequential agent turns is strictly prohibited (`ANTI-27`). If unmanaged external side-effects are detected, trigger the Session Isolation Fallback Protocol (`PAT-74`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
-        *   *Execution Plan Persistence:* Plan is stored locally as a `.md` file or retained in active chat context during exploratory testing. When promoting an exploratory/provisioning test to persistent MTA, the plan is saved to disk at `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` (or retained in chat context if write tools are unavailable) prior to construction.
-        *   *Promotion Bridge:* Upon successful execution, the user can choose to promote the test to the MTA Platform with one click (Store Plan Locally -> Gate 2 Placement -> `STATE_CONSTRUCTION`). [^PAT-57]
+        *   *Execution Plan Persistence:* Plan is stored locally as a `.md` file or retained in active chat context.
+        *   *Handoff Protocol:* Update the state header to `[State: STATE_RUN_ANALYZE | Temp State: STATE_EXPLORATORY_EXECUTION | Active Skill: mta-run-analyze]` and transition immediately to the `mta-run-analyze` skill to handle the payload assembly, execution, and telemetry generation.
     *   **If User Selects Option B (Direct Persistent MTA Test - Default for Frontend):**
         *   *Behavior:* Proceeds to `PLAN_STEP_2` (Placement & Settings Discovery) and `PLAN_STEP_3` (Gate 2 Approval), stores the execution plan locally as a `.md` file (or retains in chat context if write tools are unavailable), and transitions to `STATE_CONSTRUCTION`. [^PAT-43] [^PAT-44]
     *   **If `MTA_plugin` is not detected (Platform-Only Mode):** Automatically proceeds to `PLAN_STEP_2` (Placement & Settings Discovery) for standard MTA Platform creation.
@@ -245,8 +255,8 @@ When the user's intent is manual exploratory testing or structured manual verifi
     2. *Executable Live Data Seeding Recipe:* Construct the complete `TCEX_RQ` payload (`RollbackTcseAfterExecution = "false"`) to instantiate root entities, link parent-child associations (`TCEX_RQ_Sfar`), mutate states (`TCEX_RQ_Sfcr`), or run setup microflows.
     3. *5-Pillar Tracking & Teardown Protocol:* Apply root cascade deletes, test user isolation (`System.owner`), timestamp deltas (`createdDate >= T_start`), recommended prefix conventions (`TEST-%`), and interactive cleanup inspection (`PAT-69`).
     4. *Manual Verification Checklist:* Provide clear, step-by-step navigation, login credentials, and UI verification checkpoints.
-*   **Data Script to MTA Conversion Protocol (`PAT-70`, `PAT-43`, `ANTI-14`):** When converting a live data script (`TCEX_RQ`) or manual test scenario into a persistent MTA Platform asset, the agent strictly enforces the **Universal Execution Plan Mandate**:
-    1. *No Direct Construction Bypasses (`ANTI-14`):* The agent **MUST** generate an official `# MTA EXECUTION PLAN SIGN-OFF` (Gate 1) and resolve target placement (Gate 2) before calling any persistent construction tools.
+*   **Data Script to MTA Conversion Protocol (`PAT-70`, `PAT-43`, `ANTI-46`):** When converting a live data script (`TCEX_RQ`) or manual test scenario into a persistent MTA Platform asset, the agent strictly enforces the **Universal Execution Plan Mandate**:
+    1. *No Direct Construction Bypasses (`ANTI-46`):* The agent **MUST** generate an official `# MTA EXECUTION PLAN SIGN-OFF` (Gate 1) and resolve target placement (Gate 2) before calling any persistent construction tools.
     2. *The 3 Structured Execution Plan Profiles:*
        * **Option 1: Standalone Data Seeding Test Case (Backend Execution Plan):** Generates a 1-case plan with entity instantiations, attribute/association mappings, and trailing `Persist`. **No teardown steps** are included so records remain in the database for manual QA, demos, or downstream tests. Section 6 Playwright is marked NA.
        * **Option 2: Automated Frontend Test Suite (Frontend Execution Plan):** Prompts for target page (`Module.Page`), runs single-pass AST discovery (`PAT-72`), presents the 10-setting Playwright table (Section 6), and generates a 3-case plan (`Case 1: Setup Data Seed` with `Always`/`_Continue`, `Case 2: Frontend UI Test` using verified `MenditectMxFrontendTestKit` microflows, `Case 3: Teardown Cleanup` with cascading delete and `Always`/`_Continue`).
@@ -338,6 +348,7 @@ When the user's intent is manual exploratory testing or structured manual verifi
     > approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
     > approved_by: "<UserEmailOrName>"
     > approver_system_user: "<OSUsername>"
+    > build_started_at: null
     > built_at: null
     > builder_system_user: null
     > verified_at: null
@@ -482,7 +493,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 128 testing patterns/anti-patterns (`PAT-01..88`, `ANTI-01..40`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 142 testing patterns/anti-patterns (`PAT-01..96`, `ANTI-01..46`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---
@@ -500,7 +511,7 @@ Depending on the approved Execution Strategy, output the appropriate handoff tri
 
 ## 🚫 MTA TEST SCOPING & DESIGN PATTERN REGISTRY
 
-All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-88`, and `ANTI-01` through `ANTI-40`) are centrally defined and maintained in the canonical pattern catalog:
+All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-96`, and `ANTI-01` through `ANTI-46`) are centrally defined and maintained in the canonical pattern catalog:
 ➔ **[references/mta-patterns-and-antipatterns-reference.md](references/mta-patterns-and-antipatterns-reference.md)**
 
 Consult that reference for complete rule descriptions, risk rationales, and pattern citations when drafting Execution Plans and auditing Section 2 prompt conflicts.

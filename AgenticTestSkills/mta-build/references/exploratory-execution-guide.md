@@ -50,7 +50,7 @@ When testing boundary branches where a microflow parameter is null or empty, set
 > [!NOTE]
 > **Exploratory vs. Persistent MTA Empty Object Bridge (`PAT-07`):**
 > In local exploratory JSON (`TCEX_RQ`), passing empty/null objects is configured directly per parameter via `"UseEmptyObjectList": true`. 
-> When promoting to or constructing on the persistent MTA Platform, parameter bindings are static; you **MUST** convert this to the **`PAT-07` Empty Object Retrieve Pattern** (`Retrieve Object` from upstream teststep with filter attribute set to `"NON_EXISTENT"` for empty object variations).
+> When promoting to or constructing on the persistent MTA Platform, parameter bindings are static; you **MUST** convert this to the **`PAT-07` Empty Object Retrieve Pattern** (`Retrieve Object` from upstream teststep with filter attribute set to short sentinels like `"NONE"` or `"NULL"` for empty object variations per the Universal Short Sentinel Law).
 
 
 
@@ -848,7 +848,7 @@ Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test C
 ### B. Data Script & Manual Scenario to MTA Conversion Protocol (`PAT-70`)
 When a local live test data seeding script (`TCEX_RQ` executed with `Rollback = "false"`) or a Manual Test Plan (MTP) scenario is completed, the agent offers to convert the underlying seed data recipe into a persistent MTA Platform asset.
 
-#### 🚨 Structure Selection & Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-14`):
+#### 🚨 Structure Selection & Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-46`):
 You are **strictly prohibited** from converting or constructing persistent MTA test cases from a data script without first prompting the user to select one of the **3 Data Provisioning Structure Choices**, generating an official **`# MTA EXECUTION PLAN SIGN-OFF`** (Gate 1), and resolving placement interactively via the **Universal Iterative Placement Protocol** (Gate 2).
 
 #### The 3 Conversion Choices:
@@ -874,7 +874,7 @@ You are **strictly prohibited** from converting or constructing persistent MTA t
 
 ### Step-by-Step Conversion & Promotion Workflow:
 1. **Prompt Structure Choice (Data Seeding Plans Only):** Prompt user to select Type 1, Type 2, or Type 3 structure.
-2. **Draft Execution Plan (Gate 1):** Generate `# MTA EXECUTION PLAN SIGN-OFF` conforming to the selected option, including the 13-point Pre-Approval Quality Checklist.
+2. **Draft Execution Plan (Gate 1):** Generate `# MTA EXECUTION PLAN SIGN-OFF` conforming to the selected option, including the 14-point Pre-Approval Quality Checklist.
 3. **Iterative Gate 2 Placement Discovery:** In `mta-test-design` (`PLAN_STEP_2`), interactively scan and present available Test Configurations, then Test Suites, and propose Test Case Name(s) and Execution User in strict multi-turn sequential steps.
 4. **Present Summary & Sign-Off (Gate 2):** In `mta-test-design` (`PLAN_STEP_3`), present Placement & Target Summary for user approval.
 5. **Pre-Construction Model-to-MTA Schema Audit (PAT-82, ANTI-36):** Call `GetAppModelData` to compare entities, microflows, and pages against local Mendix AST (`mxcli`). If the MTA model revision is outdated or missing planned elements, halt and inform the user that MTA requires model synchronization.

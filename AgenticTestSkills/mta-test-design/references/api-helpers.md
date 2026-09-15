@@ -2,7 +2,7 @@
 **📍 You are here:** `references/api-helpers.md` | **🏠 Return to:** [MTA Core Skill](../SKILL.md)
 *Metadata: Version 3.0 | Last Updated: 2026-09-02*
 
-This reference contains the essential microflows, sequence steps, and entities of the `MenditectMtaCommons` module (which is a standard Mendix `.mxmodule` module) for REST/API, HTTP testing, variable scoping, and core backend object mapping using the consolidated 53-tool MTA-ACCP MCP API (`/primitivetools/mcp`).
+This reference contains the essential microflows, sequence steps, and entities of the `MenditectMtaCommons` module (which is a standard Mendix `.mxmodule` module) for REST/API, HTTP testing, variable scoping, and core backend object mapping using the consolidated 51-tool MTA-ACCP MCP API (`/primitivetools/mcp`).
 
 ---
 
@@ -60,10 +60,10 @@ Fetches runtime session state during execution:
 
 > [!IMPORTANT]
 > **The Assertion Operator Law: Singular vs. Plural vs. Mixed Casing**
-> You must strictly match the operator format required by each specific assertion tool:
+> You must strictly match the operator format required by each specific assertion and filter tool:
 > 
-> * **Rule of Thumb 1 (Plural Standard):** Microflow return values and validation feedback message comparisons use **Plural PascalCase** (`Equals`, `NotEquals`).
-> * **Rule of Thumb 2 (Singular Standard):** Entity attribute value comparisons and retrieve filter comparisons use **Singular PascalCase** (`Equal`, `NotEqual`).
+> * **Rule of Thumb 1 (Plural Standard):** Microflow return values, validation feedback message comparisons, AND retrieve attribute filters (`EditAttributeValueFilter`) use **Plural PascalCase** (`Equals`, `NotEquals`, `GreaterThan`, etc.).
+> * **Rule of Thumb 2 (Singular Standard):** Entity attribute value comparisons (`EditAssertAttributeValueCompare`) exclusively use **Singular PascalCase** (`Equal`, `NotEqual`, `GreaterThan`, etc.).
 > * **Rule of Thumb 3 (Mixed Casing Count Operators):** Object count assertions and validation message count assertions use a **mixed PascalCase / snake_case format** (`Greater_than` and `Less_than` have underscores and lowercase `than`).
 
 | Tool Name | Target Property | Allowed Operator Values |
@@ -73,7 +73,7 @@ Fetches runtime session state during execution:
 | `CreateAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertAttributeValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAttributeValueFilter` | `FilterComparisonOperator` *(note name!)* | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAttributeValueFilter` | `FilterComparisonOperator` *(note name!)* | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
 | `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `CreateAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `EditAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
@@ -234,13 +234,24 @@ When modifying an object's state **later** in the test case or modifying an **ex
    *(Mandatory Binding: `TestStepOutputKey` MUST be passed directly at creation time per `PAT-80`. Calling an unbound step creation followed by `SetTestStepOutputForSelectObjectForChange` is an anti-pattern `ANTI-34`).*
 2. **Set Attribute Values:** Include attributes via `EditAttributeValue(..., EditAction="IncludeAttribute")`, query `GetTeststepDetails`, and batch-set values via `EditAttributeValue` on `AttributeValueKey` in Turn 3.
 
-### 2. The Delete Object Pipeline (Direct Output Binding - PAT-80)
+### 2. The Delete Object Pipeline (Direct Output Binding - PAT-80, PAT-92, PAT-95)
 To mark an object for deletion from the database:
 1. **Create the Delete step:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="DeleteObjects", EntityQualifiedName="Sales.Order", TestStepName="Delete Order", TestStepOutputKey=ProducerStepKey, TestStepBeforeKey=...)`.
    *(Mandatory Binding: `TestStepOutputKey` MUST be passed directly at creation time per `PAT-80`. Calling an unbound step creation followed by `SetTestStepOutputForSelectObjectForDelete` is an anti-pattern `ANTI-34`).*
-2. **Backend Seeding Optimization:** If the object was created using a backend setup step, reference its creation teststep key directly as `TestStepOutputKey` **without retrieving it first**.
-3. **Browser-Created Data Requirement:** If the object was created natively in the browser session via UI actions, retrieve it first and reference that retrieve step key as `TestStepOutputKey`.
-4. **Cascade Delete Check:** Check if cascade delete is natively enabled in Mendix before creating manual delete steps for associated child objects.
+2. **Setup Seeding Optimization (Direct Cross-Case Piping - PAT-92, PAT-95):** If the object was created using a setup/seeding step (e.g. in Case 1 Setup), reference its creation teststep key directly as `TestStepOutputKey` **without retrieving it first from the database**. Even across different test cases within the same test suite, MTA preserves output handles across the entire suite session!
+   ```json
+   // Example: Case 3 Teardown deleting an object created in Case 1 Setup
+   {
+     "TestCaseKey": 4567, // Case 3: Teardown
+     "ObjectAction": "DeleteObjects",
+     "EntityQualifiedName": "Sales.Order",
+     "TestStepName": "Delete Seeded Order",
+     "TestStepOutputKey": 1234 // Key of Case 1 Step: "Create Order" (Direct Cross-Case Piping!)
+   }
+   ```
+3. **Browser-Created Data Requirement:** If the object was created natively in the browser session via UI actions in Case 2, retrieve it first using an explicit synthetic attribute filter (e.g., `'TEST_'` prefix) and reference that retrieve step key as `TestStepOutputKey`.
+4. **Reverse Dependency Order Deletion (PAT-93):** Always sequence delete steps in reverse association dependency order ($\text{Leaf / Child} \rightarrow \text{Intermediate} \rightarrow \text{Root}$).
+5. **Cascade Delete Check:** Check if cascade delete is natively enabled in Mendix before creating manual delete steps for associated child objects.
 
 ### 3. The Persist Step Framework (`ObjectAction="Persist"`)
 MTA operates in transactional memory. Changes, creations, and deletions are only pushed to the database and finalized once a **Persist** step is executed.
@@ -291,6 +302,15 @@ When executing microflows via `CreateMicroflowCallTestStep`:
    - **Primitive/Scalar Values:** Call `EditMicroflowParameterValue` with:
      - `MicroflowParameterValueKey`: The parameter value key.
      - `EditAction`: `"SetStringValue"`, `"SetBooleanValue"`, `"SetIntegerLongValue"`, `"SetDecimalValue"`, `"SetEnumerationValue"`, `"SetDateTimeValueWithCurrentDateTime"`, or `"SetTestStepOutputForSelectValueForValue"`.
+   - **Dynamic Scalar Value Piping (`SetTestStepOutputForSelectValueForValue`):** To pipe a primitive attribute value (e.g., `Name`, `Description`, `Code`) from an upstream creation step (even from an earlier test case like Case 1 Setup) into a UI microflow parameter (e.g. `Value` on `ACT_Fill_TextInput_Input`, `OptionLabel` on `ACT_SelectOption_DropDown_Select_By_Label`, `Text` on `ELO_Filter_*_by_Text`, or `ExpectedValue` on `ACT_Assert_ElementText_Equal`):
+     ```json
+     {
+       "MicroflowParameterValueKey": 8901,
+       "EditAction": "SetTestStepOutputForSelectValueForValue",
+       "TestStepOutputKey": 1234, // Key of Case 1 Step: "Create Customer" (Direct Cross-Case Piping!)
+       "TestStepOutputAttributeName": "Name" // Attribute to pipe dynamically
+     }
+     ```
 
 ---
 
@@ -301,7 +321,7 @@ For backend testing, return values are verified using:
 2. **Resolve Assertion Key:** Call `GetTeststepDetails(TestStepKey)` to retrieve `AssertMicroflowReturnValueCompareKey`.
 3. **Configure Expected Value:** Call `EditAssertMicroflowReturnValueCompare` with:
    - `AssertMicroflowReturnValueCompareKey`: Key resolved in Step 2.
-   - `ComparisonOperator`: `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`.
+   - `ComparisonOperator`: `"Equals"` (or `"NotEquals"`, `"GreaterThan"`, etc. - **MANDATORY**: You MUST pass `ComparisonOperator` in the same call as `EditAction`; calling value setters like `SetDecimalValue` or `SetStringValue` without passing `ComparisonOperator` throws `Cannot set ... because the given ComparisonOperator is not valid`!).
    - `EditAction`: `"SetStringValue"`, `"SetBooleanValue"`, `"SetIntegerLongValue"`, `"SetDecimalValue"`, `"SetEnumerationValue"`, `"SetDateTimeValueWithCurrentDateTime"`, `"SetDateTimeValueWithSpecifiedDateTime"`, etc.
    - Target expected value arguments (e.g., `StringValue="Success"` or `IntegerLongValue=100`, per `PAT-81`).
 

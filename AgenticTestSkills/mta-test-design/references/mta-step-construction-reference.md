@@ -1,6 +1,6 @@
 # 📋 MTA Test Step Construction Reference Cheat-Sheet
 
-This cheat-sheet provides a highly condensed, high-density technical summary of all MTA Test Steps, Assertions, and Boundary Rules using the consolidated 53-tool MTA-ACCP MCP API (`/primitivetools/mcp`). Use this as a fast-lookup guide during step construction.
+This cheat-sheet provides a highly condensed, high-density technical summary of all MTA Test Steps, Assertions, and Boundary Rules using the consolidated 51-tool MTA-ACCP MCP API (`/primitivetools/mcp`). Use this as a fast-lookup guide during step construction.
 
 ---
 
@@ -19,7 +19,7 @@ This cheat-sheet provides a highly condensed, high-density technical summary of 
 
 ---
 
-## 🛠️ MTA Test Step Payloads & APIs (53-Tool MTA-ACCP)
+## 🛠️ MTA Test Step Payloads & APIs (51-Tool MTA-ACCP)
 
 ### 1. Object Action Steps (`CreateObjectActionTestStep`)
 

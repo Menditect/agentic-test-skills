@@ -40,8 +40,8 @@ Use this template when testing deterministic business logic, calculations, or va
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Backend Unit Test; browser setup/teardown split NA | `NA` |
-| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
-| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | In-memory execution without persistence; cleanup NA | `NA` |
+| **2** | **Container Formatting & User** | `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-95` | In-memory execution without persistence; cleanup NA | `NA` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | In-memory execution without browser setup; URL portability NA | `NA` |
 | **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; NULL variations use explicit attribute filters; max 8 cols | `PASS` |
 | **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | Assert Object Count / Value compares embedded in producer steps; no standalone steps | `PASS` |
@@ -70,7 +70,6 @@ Use this template when testing deterministic business logic, calculations, or va
   "Category": "Backend",
   "MtaBaseUrl": "[RetrievedUrl]",
   "ExecutionPlanFile": "[PathToSavedExecutionPlan.md for Option B | null for Option A]",
-  "ExecutionPlanKey": null,
   "Context": "Backend Unit Test approved for [ElementName]"
 }
 ```
@@ -179,7 +178,7 @@ Use this template when testing deterministic business logic, calculations, or va
 *   **5. Parameters & Bindings:** `Pipe: out_param_obj, out_retrieved_obj`
 *   **6. Embedded Step Assertions:** `Assert Microflow Return Value: ComparisonOperator = "Equals" (creation) / "Equal" (compare config), ComparisonValue = [Expected Value]`
 *   **7. Execution Settings:** `ExecutionCondition = "None"`, `ResumeExecutionAfterException = "Stop"`
-*   **8. Step Description & Rationale:** `[Pattern: Pure Unit Execution & Direct Return Assertion [^PAT-09]]`
+*   **8. Step Description & Rationale:** `[Pattern: Pure Unit Execution & Direct Return Assertion [^PAT-96]]`
 
 </details>
 
@@ -196,11 +195,11 @@ Use this template when testing deterministic business logic, calculations, or va
 
 ### Data Variation Matrix
 #### Table 1: Scenarios #1 to #3
-| Attribute / Step | #1 (HappyPath) | #2 (BoundaryLow) | #3 (EmptyParam) |
-| :--- | :--- | :--- | :--- |
-| **`Entity.FilterAttribute`** | `'VALID_VAL'` | `'VALID_VAL'` | `'NON_EXISTENT'` |
-| **`Entity.Amount`** | `100` | `0` | `100` |
-| **Assert Return Value** | `true` | `false` | `false` |
+| Step / Variable Element | Domain Type / Constraint | #1 (HappyPath) | #2 (BoundaryLow) | #3 (EmptyParam) |
+| :--- | :---: | :--- | :--- | :--- |
+| **`Entity.FilterAttribute`** | `String(8)` | `'VALID'` (5) | `'VALID'` (5) | `'NONE'` (4) |
+| **`Entity.Amount`** | `Integer` | `100` | `0` | `100` |
+| **Assert Return Value** | `Boolean` | `true` | `false` | `false` |
 
 <details>
 <summary><b>Scenario Registration Metadata & Variation Recipes</b></summary>
@@ -269,13 +268,13 @@ Use this template when testing multi-step processes or transactional orchestrati
 > **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Backend Integration Test; browser setup/teardown split NA | `NA` |
-| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
-| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | Seeded objects deleted via direct handle piping in teardown step with `_Always` / `_Continue` | `PASS` / `NA` |
+| **2** | **Container Formatting & User** | `PAT-10` | Rollback & Validation Feedback at TestCase level; `EXUS_ExecutionUser` explicitly assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-95` | Seeded objects deleted via direct handle piping in teardown step with `_Always` / `_Continue` | `PASS` / `NA` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Backend test; URL portability NA | `NA` |
 | **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; single orchestration run or matrix <= 8 cols | `PASS` |
 | **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | TestLogger footprint assertions embedded directly on microflow call step | `PASS` |
@@ -286,6 +285,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 | **11** | **Backend Exploratory Single-Payload Blueprint** | `PAT-63` | Single continuous testcase container with automatic rollback verified for Option A, or NA for Option B | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Backend Integration Test; frontend UI substitution NA | `NA` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | Backend Integration Test; frontend testkit verification NA | `NA` |
+| **14** | **MTA Model Parity Audit** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-approval model parity audit executed via GetAppModelData | `PASS` |
 
 </details>
 
@@ -304,7 +304,6 @@ Use this template when testing multi-step processes or transactional orchestrati
   "Category": "Backend",
   "MtaBaseUrl": "[RetrievedUrl]",
   "ExecutionPlanFile": "[PathToSavedExecutionPlan.md for Option B | null for Option A]",
-  "ExecutionPlanKey": null,
   "Context": "Backend Integration Test approved for [ElementName]"
 }
 ```
@@ -427,7 +426,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 *   **5. Parameters & Bindings:** `None`
 *   **6. Embedded Step Assertions:** `None`
 *   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-*   **8. Step Description & Rationale:** `[Pattern: Backend Teardown Cleanup [^PAT-20] - Removes seeded database record]`
+*   **8. Step Description & Rationale:** `[Pattern: Backend Teardown Cleanup [^PAT-95] - Removes seeded database record]`
 
 </details>
 
@@ -452,7 +451,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 | Applied Testing Pattern | Target Step(s) | Architecture Law Citation | Applied Rationale & Risk Prevention |
 | :--- | :--- | :--- | :--- |
 | **Diagnostic Footprint Verification** | Step 3 | `PAT-01`, `PAT-08` | Asserts complete sub-process execution order without mocking internal components |
-| **Direct Handle Piping & Teardown Cleanup** | Step 1, Step 4 | `PAT-06`, `PAT-20` | Seeds database entity when required and cleans up via direct handle piping |
+| **Direct Handle Piping & Teardown Cleanup** | Step 1, Step 4 | `PAT-06`, `PAT-95` | Seeds database entity when required and cleans up via direct handle piping |
 
 </details>
 ```
@@ -469,23 +468,24 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 > **Category:** Frontend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
-| **1** | **Frontend Split Law** | `PAT-18`, `PAT-03` | Verifies Case 1 Setup (`Always`), Case 2 Execute, Case 3 Teardown (`Always`) | `PASS` |
-| **2** | **Container Formatting & User** | `PAT-11`, `PAT-10` | Rollback & settings configured per TestCase container; `EXUS_ExecutionUser` assigned | `PASS` |
-| **3** | **Backend Direct Piping Deletes** | `PAT-20`, `PAT-16` | Case 3 Teardown cleans up seeded records via cross-case handle piping | `PASS` |
+| **1** | **Frontend Split, Self-Contained Seeding & Symmetric Teardown Law** | `PAT-18`, `PAT-03`, `PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43` | Verifies Case 1 Setup (`Always`), Case 2 Execute, Case 3 Teardown (reverse deletes + batch Persist, `Always`/`_Continue`). Precondition text alone prohibited. | `PASS` |
+| **2** | **Container Formatting & User** | `PAT-10`, `PAT-79` | Rollback & settings configured per TestCase container; `EXUS_ExecutionUser` assigned | `PASS` |
+| **3** | **Backend Direct Piping Deletes** | `PAT-95` | Case 3 Teardown cleans up seeded records via cross-case handle piping | `PASS` |
 | **4** | **Setup Portability** | `PAT-28`, `PAT-41` | Relative logical launch paths used (`/index.html`) rather than absolute host URLs | `PASS` |
-| **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19` | Retrieve handles specified; list filters use dynamic scalar piping | `PASS` |
+| **5** | **Explicit Filter Attributes & Variations** | `PAT-07`, `PAT-19`, `PAT-53`, `PAT-54`, `PAT-77`, `ANTI-31` | Retrieve handles specified; list filters use dynamic scalar piping; variation descriptions defined | `PASS` |
 | **6** | **Embedded Step Assertions** | `PAT-08`, `PAT-06` | Assertions embedded directly in producer steps / UI element operator steps | `PASS` |
 | **7** | **Mandatory Page & Widget Discovery** | `PAT-35`, `PAT-67`, `ANTI-23` | `GetAppModelData` (Pages/Widgets) or `DESCRIBE PAGE/SNIPPET/ENTITY` executed; exhaustive widget inventory | `PASS` |
 | **8** | **Uniform 8-Field Step Schema** | `PAT-12` | All test steps strictly adhere to uniform 8-field schema in exact field order | `PASS` |
-| **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53` | 8-point frontend verification (seed data, multiple seed items, navigation, scalar piping) | `PASS` |
+| **9** | **Frontend Quality Protocol** | `PAT-41`..`PAT-53`, `PAT-67`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45` | 8-point frontend verification: self-contained Case 1 seeding, symmetric Case 3 teardown with trailing batch Persist, reverse deletion order, DatePicker BSON dump extraction | `PASS` |
 | **10** | **Dual-Track Strategy Declaration** | `PAT-60` | Option B (Persistent MTA Platform) explicitly declared in Section 1 | `PASS` |
 | **11** | **Frontend Persistent MTA Construction** | `PAT-62` | Direct 3-Case persistent MTA Platform construction; exploratory single-payload format NA | `PASS` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | All UI actions/assertions drive the browser via Testkit microflows without backend domain substitution | `PASS` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs | `PASS` |
+| **14** | **MTA Server Model Check** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-construction model check via `GetAppModelData` verifies parity; Option B verified | `PASS` |
 
 </details>
 
@@ -504,7 +504,6 @@ Use this template when testing screen layouts, button clicks, client-cache synch
   "Category": "Frontend",
   "MtaBaseUrl": "[RetrievedUrl]",
   "ExecutionPlanFile": "[PathToSavedExecutionPlan.md]",
-  "ExecutionPlanKey": null,
   "Context": "Frontend UI Test approved for [PageName]"
 }
 ```
@@ -562,13 +561,13 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **Domain Entity** | `[ModuleName].[EntityName]` | • Bound Attributes: `[Attr1 (String), Attr2 (Enum)]` |
 | **Navigation** | Default / Role-Based Home Page | Checked via `SHOW NAVIGATION` for target user role |
 
-### Input Widget Inventory (Exhaustive Discovery - PAT-67)
-| # | Widget Name | Widget Type | Container / Snippet / Tab | Data Source / Attribute Binding | Testkit Locator & Action Microflow |
-| :-: | :--- | :--- | :--- | :--- | :--- |
-| **1** | `textBox_CustomerName` | `TextBox` | Main Page (`[ModuleName].[PageName]`) | `Customer.Name` (String 200) | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` |
-| **2** | `dropDown_Status` | `DropDown` | Main Page | `Customer.Status` (Enum) | `Locate_MxWidget_DropDown` ➔ `ACT_Select_DropDown_Option` |
-| **3** | `datePicker_BirthDate` | `DatePicker` | Snippet (`[ModuleName].[SnippetName]`) | `Customer.BirthDate` (DateTime) | `Locate_MxWidget_DatePicker` ➔ `ACT_Fill_DatePicker_Input` |
-| **4** | `btn_Save` | `ActionButton` | Main Page Footer | `ACT_SaveCustomer` (Microflow) | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` |
+### Input Widget Inventory (Exhaustive Discovery - PAT-67, PAT-94)
+| # | Widget Name | Widget Type | Container / Snippet / Tab | Data Source / Attribute Binding | Date Format / Constraint (PAT-94) | Testkit Locator & Action Microflow |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | `textBox_CustomerName` | `TextBox` | Main Page (`[ModuleName].[PageName]`) | `Customer.Name` (String 200) | `Length <= 200` | `Locate_MxWidget_TextBox` ➔ `ACT_Fill_TextBox_Input` |
+| **2** | `dropDown_Status` | `DropDown` | Main Page | `Customer.Status` (Enum) | `N/A` | `Locate_MxWidget_DropDown` ➔ `ACT_Select_DropDown_Option` |
+| **3** | `datePicker_BirthDate` | `DatePicker` | Snippet (`[ModuleName].[SnippetName]`) | `Customer.BirthDate` (DateTime) | `dd-MM-yyyy (CustomDateFormat via mxcli bson dump)` | `Locate_MxWidget_DatePicker` ➔ `ACT_Fill_DatePicker_Input` |
+| **4** | `btn_Save` | `ActionButton` | Main Page Footer | `ACT_SaveCustomer` (Microflow) | `N/A` | `Locate_MxWidget_Button` ➔ `ACT_Click_Button` |
 
 ## 5. Chronological Step Sequence Plan
 
@@ -592,8 +591,9 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 #### Case 3: Teardown & Cleanup (`[ModuleName].TC_UI_[ElementName]_Teardown` — Rollback: `No`, Execution: `Always` / `_Continue`)
 | Step # | Case | Step Type | Target Element / Action | Input Source | Output Handle | Exec Settings |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **301** | Case 3 | `Delete Object & Persist` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` |
-| **302** | Case 3 | `Teardown Playwright` | `Teardown_Playwright` | None | `N/A` | `Always` / `_Continue` |
+| **301** | Case 3 | `Delete Object` | `out_seeded_obj` | `out_seeded_obj` | `N/A` | `Always` / `_Continue` |
+| **302** | Case 3 | `Persist Changes` | `Persist` | `N/A` | `N/A` | `Always` / `_Continue` |
+| **303** | Case 3 | `Teardown Playwright` | `Teardown_Playwright` | None | `N/A` | `Always` / `_Continue` |
 
 ### Detailed Step Configurations & Assertions
 
@@ -696,21 +696,35 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 </details>
 
 <details>
-<summary><b>Step 301: Delete Object & Persist (out_seeded_obj)</b></summary>
+<summary><b>Step 301: Delete Object (out_seeded_obj)</b></summary>
 
-*   **1. Step Type:** `Delete Object & Persist`
+*   **1. Step Type:** `Delete Object`
 *   **2. Target / Action:** `out_seeded_obj (Case 1 Step 102 via cross-case piping)`
 *   **3. Input Source / Handles:** `out_seeded_obj`
 *   **4. Output Variable Handle:** `N/A`
 *   **5. Parameters & Initial Values:** `None`
 *   **6. Embedded Step Assertions:** `None`
 *   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
-*   **8. Step Description & Rationale:** `[Pattern: Cross-Case Output Piping Teardown [^PAT-20] [^PAT-18] - Cleans up seeded setup record]`
+*   **8. Step Description & Rationale:** `[Pattern: Cross-Case Output Piping Teardown [^PAT-95] [^PAT-18] - Cleans up seeded setup record]`
 
 </details>
 
 <details>
-<summary><b>Step 302: Teardown Playwright (MenditectPlaywrightConnector.Teardown_Playwright)</b></summary>
+<summary><b>Step 302: Persist Changes (Teardown Commit)</b></summary>
+
+*   **1. Step Type:** `Persist Changes`
+*   **2. Target / Action:** `Persist (Commits all teardown deletions to database)`
+*   **3. Input Source / Handles:** `N/A`
+*   **4. Output Variable Handle:** `N/A`
+*   **5. Parameters & Initial Values:** `None`
+*   **6. Embedded Step Assertions:** `None`
+*   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
+*   **8. Step Description & Rationale:** `[Pattern: Symmetric Seeding Teardown Cleanup Law [^PAT-92] - Commits all teardown deletions to the database]`
+
+</details>
+
+<details>
+<summary><b>Step 303: Teardown Playwright (MenditectPlaywrightConnector.Teardown_Playwright)</b></summary>
 
 *   **1. Step Type:** `Teardown Playwright`
 *   **2. Target / Action:** `MenditectPlaywrightConnector.Teardown_Playwright`
