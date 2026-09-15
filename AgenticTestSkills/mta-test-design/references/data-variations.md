@@ -67,10 +67,21 @@ With the 53-tool primitive API, calling `CreateTestCaseVariation` duplicates the
    * Object count assertions: `Action="AddAssertObjectCountTestCaseVariationItem"`, `ObjectKey=AssertObjectCountKey`.
 4. Maintain an in-memory index dictionary mapping `ItemIndex -> {StepKey, Entity, AttributeOrAssertName, ItemType}` to prepare for deterministic key resolution.
 
-### Step 2: Upfront Bulk Column Provisioning (`PAT-86`, `ANTI-40`)
-1. **Concurrently Provision All Columns in 1 Turn:** Call `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) in **1 single turn**.
+### Step 2: Upfront Bulk Column Provisioning & Sequential Direct-Mapping Pattern (`PAT-86`, `ANTI-40`)
+1. **Concurrently Provision All Columns in 1 Turn:** Call `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) in **1 single turn** in parallel.
    * *Anti-Pattern Prohibited (`ANTI-40`):* Do NOT create columns one-by-one or halt between columns to query keys or edit cells.
-2. Immediately apply `PAT-77`: call `EditTestCaseVariation` with `EditAction="SetName"` and `EditAction="SetDescription"` for Variation #1 and all Variations $2..N$. Batch all name and description setters in safe chunks (max 15-20 per turn).
+2. **Collect Returned Keys Directly:** Collect the returned `TestCaseVariationKey`s directly from the tool responses: $[K_2, K_3, \dots, K_N]$.
+3. **COMPLETELY IGNORE MTA's internal `Number` property:**
+   * MTA allocates internal `Number` properties in descending order (e.g. key $K_2$ might receive `Number: N`). This is an internal database artifact and has **zero impact** on execution order or test correctness.
+   * **Do NOT write scripts or inspect snapshots to sort variations by `Number`.**
+4. **Assign Keys Directly in Sequence:**
+   * Scenario #1 ➔ Baseline Variation ($K_1$)
+   * Scenario #2 ➔ Returned Key $K_2$
+   * Scenario #3 ➔ Returned Key $K_3$, ..., Scenario #N ➔ Returned Key $K_N$.
+5. **Immediately Label Each Column (`PAT-77`):**
+   * Call `EditTestCaseVariation(TestCaseVariationKey=K_i, EditAction="SetName", Name="<ScenarioName>")`
+   * Call `EditTestCaseVariation(TestCaseVariationKey=K_i, EditAction="SetDescription", Description="<ScenarioDesc>")`
+   * Batch all name and description setters in safe chunks (max 15-20 per turn).
 
 ### Step 3: Single Matrix Schema Snapshot (`PAT-86`)
 1. Call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** after all columns #2..#N are provisioned.

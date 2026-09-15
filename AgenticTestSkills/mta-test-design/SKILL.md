@@ -1,14 +1,15 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.14.2"
-changes: "Updated mta_config schema and reference to v1.5.0 (added required fields: application_name, execution_plans_dir, mendix_project_dir)."
+version: "6.14.4"
+changes: "Integrated Path 0 (Use Existing Plan As-Is) fast-path into Prior Execution Plan Discovery & Lineage Protocol (PAT-84, ANTI-38)."
 ---
 
 # MTA Test Scoping & Design Skill
 
-## 🚦 Entry Rule: Vague Testing Requests & AI-Generated Software Triggers
+## 🚦 Entry Rule: Vague Testing Requests & Ad-Hoc Data Creation Triggers
 
+### 1. General Vague Testing Ingestion:
 If the user's request is vague, exploratory, or indicates they are starting fresh — such as:
 - "I want to test this app"
 - "How should I start testing?"
@@ -22,6 +23,28 @@ Or if an AI agent (like MAIA or another AI) has built or modified software in th
 …you MUST load and follow this skill FIRST, before `mta-build` or `mta-run-analyze`.
 Do NOT assume a specific test case or microflow target. 
 **Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_BUILD_PLANNING (PLAN_STEP_1)`.
+
+### 2. Ad-Hoc Data & Entity Creation Ingestion Protocol (`PAT-70`, `ANTI-14`, `PAT-89`):
+If the user's prompt requests creating, seeding, or generating business entities or records—regardless of how conversational, informal, or underspecified—such as:
+- *"create 5 cars with 2 carsizes and 2 locations in my app"*
+- *"seed 3 orders with 2 customers"*
+- *"generate 10 invoices in module Billing"*
+- *"add some test data for products"*
+
+You are **strictly prohibited** from:
+1. Executing tool calls directly to insert data without an Execution Plan (`ANTI-14`).
+2. Asking unstructured, open-ended conversational questions (e.g. "which microflow should I use?").
+3. Bypassing `STATE_BUILD_PLANNING`.
+
+**Mandatory Autonomous Action Protocol:**
+1. **Autonomous Domain Entity Resolution (Single-Pass `mxcli`):** Extract the entity and association nouns (e.g. `cars` -> `Car`, `carsizes` -> `CarSize`, `locations` -> `Location`). Silently execute `mxcli SHOW ENTITIES` (or `SHOW MODULES`) to resolve fully qualified entity names (e.g., `CarRental.Car`, `CarRental.CarSize`, `CarRental.Location`) and their cross-entity associations (`Car_CarSize`, `Car_Location`).
+2. **Draft Standalone Data Seeding Execution Plan (`PAT-70` Option 1):** Immediately draft an `# MTA EXECUTION PLAN SIGN-OFF` (`EP_Seed_<Entity>.md`) with `status: "DRAFT"` in `${execution_plans_dir}/`:
+   - *Profile:* Standalone Data Seeding Test Case (1-Case Generator with trailing `Persist` step and no teardown steps).
+   - *Attribute & Association Init:* Map initial attributes and associations directly onto `CreateObjectActionTestStep(ObjectAction="CreateObject")` (`PAT-06`).
+   - *Data Variations Matrix (Section 7):* Compile the requested counts into a balanced $N$-variation matrix (`VAR_01`..`VAR_0N`) systematically distributing the permutations (e.g., distributing the 2 sizes and 2 locations across the 5 cars).
+3. **Present Checkpoint 1 Decision Card (`PAT-89`):** Render the concise Executive Summary Box (~35 lines) and present the decision:
+   - **Choice A (Recommended - Standalone Seeding):** Persist created records permanently in the database for manual QA, demos, or downstream tests (`PAT-70` Option 1).
+   - **Choice B (Automated Regression Suite):** Convert into a 3-case automated suite with setup seeding, UI/logic assertions, and teardown cleanup (`PAT-02`, `PAT-03`).
 
 This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
 
@@ -55,12 +78,13 @@ You must progress sequentially through these three interactive planning micro-st
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` (resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header (supporting both outer `<details><summary><b>Execution Plan Metadata</b></summary>` and legacy header formats to extract `revision`, `plan_id`, `status`, `approved_at`, `approved_by`, `built_at`, `verified_at`, `test_case_name`) and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed parameters, return types, called subflows, entity attributes, or enum literals.
-    *   *Tri-Choice Lineage Decision Card:* Present the audit summary and prompt the user with the 3 lineage paths adhering strictly to the Scoped Note Box & Clean Markdown Standard:
+    *   *Lineage Decision Card:* Present the audit summary and prompt the user with the canonical lineage paths adhering strictly to the Scoped Note Box & Clean Markdown Standard:
         1. **Strictly Scoped `> [!NOTE]` Box:** Only the detection header line and metadata bullet points (including a 1–2 line AST delta summary) are inside the note box.
-        2. **Tri-Choice Decision Table Outside Note:** The 3 canonical lineage choices (Path A: Evolve & Supersede, Path B: Branch Companion Case, Path C: Clean Slate) are rendered in a clean, focused 4-column Markdown table (`Path`, `Action`, `Revision`, `When to Choose`) directly beneath the note box.
+        2. **Decision Table Outside Note:** The canonical lineage choices—**Path 0: Use Existing Plan As-Is** (Fast-Path, recommended when in-sync with 0 AST delta), **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, and **Path C: Clean Slate**—are rendered in a clean, focused 4-column Markdown table (`Path`, `Action`, `Revision`, `When to Choose`) directly beneath the note box.
         3. **Zero ASCII / Unicode Box Characters:** Strictly prohibit ASCII border art (`╔`, `═`, `║`, `╠`, `╚`, `┌`, `─`, `│`, `└`). Use standard GitHub Flavored Markdown.
         4. **No Multi-Table Cascading in Chat:** Do not dump URL navigation tables or giant AST delta tables into chat during Phase 0 discovery. All AST comparison happens internally and is summarized in the 1–2 line AST Delta Summary bullet.
-        5. **Strictly 3 Canonical Paths:** Only Paths A, B, and C are allowed. Never invent unverified options (such as 'Path D').
+        5. **Canonical Paths Only:** Only Path 0, Path A, Path B, and Path C are allowed. Never invent unverified random paths.
+        6. **Path 0 Fast-Path Execution:** Selecting Path 0 immediately re-uses the active execution plan without modifying the file or bumping revisions, skipping redundant `PLAN_STEP_1` drafting and transitioning directly to Gate 2 placement confirmation or test execution (Option A in-memory testing).
     *   *Prohibition:* Blindly overwriting prior plans, discarding prior context with amnesia, or dumping unreadable ASCII-art borders and multi-table cascades into chat is strictly prohibited (`ANTI-38`).
 *   **⚡ Targeted Single-Pass Model Discovery & Deep Semantic Path Tracing (`PAT-71`, `ANTI-26`)**:
     *   *Single-Pass CLI Execution:* When a target microflow or component is specified, immediately execute the targeted command `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) in a single pass on turn 1.

@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.13.2"
-changes: "Updated mta_config schema and reference to v1.5.0 (added required fields: application_name, execution_plans_dir, mendix_project_dir)."
+version: "6.13.3"
+changes: "Synchronized shared references with Path 0 (Use Existing Plan As-Is) fast-path addition to placement-and-lifecycle (PAT-84)."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -217,9 +217,16 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         *   **Step 1 (Summary):** Call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestRunSummary")` to check overall execution status and identify any failing test case run keys (`TestCaseRunKey`).
         *   **Step 2 (Targeted Details):** For each failed test case, call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=<numeric_key>)` to retrieve isolated step receipts and logs strictly for that case.
         *   **Prohibition (`ANTI-37`):** Never invoke `RetrieveAction="GetTestRunDetails"` blindly across an entire suite or configuration, as monolithic dumps cause rapid context window exhaustion.
+        *   **Playwright Tracefile & Interactive Viewer Integration (`PAT-90`):**
+            When verifying frontend test execution results (`GetTestRunResults` with `RetrieveAction="GetTestCaseRunDetails"`), inspect the response for a `FileUUID` property representing the recorded Playwright trace artifact.
+            If a `FileUUID` is present (whether the run failed or succeeded):
+            1. **Resolve Playwright Viewer URL:** Evaluate `mta_config.json` (`playwright_viewer_url`), fallback to `.env` (`PLAYWRIGHT_VIEWER_URL`), fallback to default: `https://trace.playwright.dev/?trace=`.
+            2. **Resolve Tracefile Base URL:** Evaluate `mta_config.json` (`tracefile_base_url`), fallback to `.env` (`MTA_TRACEFILE_BASE_URL`), fallback to dynamic default derived from `mta_base_url`: `${mta_base_url.replace(/\/$/, '')}/rest/private/tracefile?fileUUID=`.
+            3. **Assemble Clickable Viewer URL:** Combine into `${playwright_viewer_url}${tracefile_base_url}${FileUUID}` (e.g. `https://trace.playwright.dev/?trace=http://localhost:8081/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`).
+            4. **Present Clickable Link:** Always render the clickable viewer link in the diagnostic report or execution receipt for instant visual inspection of browser actions, network logs, and DOM snapshots.
     *   **🚨 THE AUTOMATED SELF-REPAIR PROTOCOL (CRITICAL):**
         If a test execution fails during runtime verification, you **MUST NOT** simply report the failure and wait. You **MUST** immediately initiate this automated self-repair loop in the same turn:
-        1. **Auto-Retrieve logs via PAT-83 Drill-Down:** Call `GetTestRunResults(RetrieveAction="GetTestRunSummary")` to get `TestCaseRunKey`, followed by `GetTestRunResults(RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=...)`, and `GetTeststepDetails(TestStepKey=...)` for the failing step to programmatically extract the failure receipt.
+        1. **Auto-Retrieve logs via PAT-83 Drill-Down:** Call `GetTestRunResults(RetrieveAction="GetTestRunSummary")` to get `TestCaseRunKey`, followed by `GetTestRunResults(RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=...)`, and `GetTeststepDetails(TestStepKey=...)` for the failing step to programmatically extract the failure receipt. Check for and extract any `FileUUID` tracefile artifact.
         2. **Perform a Cognitive Reverse Trace:** Analyze the transaction memory of the 5 steps preceding the failing step to check if the error is a cascade from an upstream state modification or invalid validation.
         3. **Formulate the Surgical Fix:** Map the root cause to a precise, actionable modification (e.g., updating a specific input attribute, correcting date format casing, or unskipping a cascading provider).
         4. **Lock in Self-Repair State:** Update your State Header to: `[State: STATE_RUN_ANALYZE | Temp State: STATE_SELF_REPAIR | Active Skill: mta-run-analyze]`.
@@ -229,6 +236,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         *   **Failing Test Case:** `[TestCaseName]`
         *   **Failing Step Index:** `[StepNumber] - [StepName]`
         *   **Failure Category:** `[e.g., AssertMismatch | Timeout | ClassNotFound | NetworkError]`
+        *   **Playwright Trace Viewer:** `[Open Trace in Playwright Viewer](${TraceViewerUrl})` *(if FileUUID is present in frontend test run)*
         *   **Mendix Exception Log:** `[Exact log snippet or exception trace]`
         *   **Root Cause Analysis (RCA):** `[Concise, technical description pinpointed by the Cognitive Reverse Trace]`
         *   **Proposed Surgical Fix:** `[The exact step edit or attribute correction required to fix the test]`

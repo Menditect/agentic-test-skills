@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.14.2"
-changes: "Updated mta_config schema and reference to v1.5.0 (added required fields: application_name, execution_plans_dir, mendix_project_dir)."
+version: "6.14.4"
+changes: "Updated MTA tool quirks: plural Equals for EditAssertMicroflowReturnValueCompare, EditAttributeValue for retrieve inclusion, sequential direct-mapping pattern, and quick-lookup diagnostics."
 ---
 
 # MTA Build, Design, & Optimization Skill

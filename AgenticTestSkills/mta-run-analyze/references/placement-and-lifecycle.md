@@ -113,16 +113,17 @@ If a prior plan file is discovered:
    - Identify called subflows, domain entity attribute changes, and enum literal changes.
    - Note previously identified technical and business risks, custom edge cases, and boundary variations.
 
-#### Phase 2: Tri-Choice Lineage Decision Card
-Present the audit summary and the interactive Tri-Choice Lineage Decision Card to the user.
+#### Phase 2: Lineage Decision Card (PAT-84)
+Present the audit summary and the interactive Lineage Decision Card to the user.
 
 > [!IMPORTANT]
 > **Presentation Formatting Standard (PAT-84, PAT-89, ANTI-38, ANTI-41):**
 > * **Strictly Scoped `> [!NOTE]` Box:** Only the header line and metadata bullet points are contained within the `> [!NOTE]` callout.
-> * **Tri-Choice Decision Table Outside Note:** Render the 3 lineage options in a clean, focused 4-column Markdown table directly beneath the note box.
+> * **Decision Table Outside Note:** Render the canonical lineage options in a clean, focused 4-column Markdown table directly beneath the note box.
 > * **Zero ASCII / Unicode Box Characters:** Strictly prohibit ASCII border art (`╔`, `═`, `║`, `╠`, `╚`, `┌`, `─`, `│`, `└`). Use standard GitHub Flavored Markdown.
 > * **No Multi-Table Cascading in Chat:** Do not dump URL navigation tables or giant AST delta tables into chat during Phase 0 discovery. All AST comparison happens internally and is summarized in the 1–2 line AST Delta Summary bullet.
-> * **Strictly 3 Canonical Paths:** Only Paths A, B, and C are allowed. Never invent unverified options (such as 'Path D').
+> * **Strictly Canonical Paths:** Only Path 0, Path A, Path B, and Path C are allowed. Never invent unverified random paths.
+> * **Recommendation Logic:** If AST Delta == 0 (100% in-sync), mark **Path 0** as *(Recommended)*. If AST Delta > 0 (model changed), mark **Path A** as *(Recommended)*.
 
 ```markdown
 > [!NOTE]
@@ -131,19 +132,28 @@ Present the audit summary and the interactive Tri-Choice Lineage Decision Card t
 > * **Target:** `[TargetName]` | **Existing Test Case:** `[test_case_name]`  
 > * **AST Delta Summary:** [1–2 concise lines, e.g. "Microflow signature matches live AST 100%; 0 model changes detected (100% in-sync)."]
 
-### Tri-Choice Lineage Decision
+### Execution Plan Lineage Decision
 
 Please choose how you would like to proceed with this test plan:
 
 | Path | Action | Revision | When to Choose |
 | :--- | :--- | :---: | :--- |
-| **Path A: Evolve & Supersede** *(Recommended)* | Inherits prior boundary cases & risk profiles; updates steps to match live AST. Prior plan is archived upon Gate 2. | `v[N] ➔ v[N+1]` | Refining or updating the existing test case. |
+| **Path 0: Use Existing Plan As-Is** *(Recommended when in-sync)* | Re-uses the active plan without re-drafting or bumping revision. Skips directly to Gate 2 confirmation or test execution. | `v[N]` (No change) | Live model AST matches 100% and test scope is complete. |
+| **Path A: Evolve & Supersede** | Inherits prior boundary cases & risk profiles; updates steps to match live AST. Prior plan is archived upon Gate 2. | `v[N] ➔ v[N+1]` | Refining or updating the existing test case to reflect model/logic changes. |
 | **Path B: Branch Companion Case** | Creates an independent companion test case (e.g. `TC_[Target]_ValidationErrors`). Both plans remain active. | New Case | Testing distinct concerns (e.g., error handling or edge cases). |
 | **Path C: Clean Slate** | Discards prior plan as obsolete, archives it, and drafts a fresh plan from scratch. | `Rev 1` (Fresh) | Re-architecting the test strategy from the ground up. |
 
-*Reply with **A**, **B**, or **C** (or tell me what adjustments you'd like to make).*
+*Reply with **0**, **A**, **B**, or **C** (or tell me what adjustments you'd like to make).*
 ```
 Prohibits blindly overwriting prior plans or discarding prior context (`ANTI-38`).
+
+#### Handling User Lineage Decisions:
+* **Path 0 (Use Existing Plan As-Is):** Loads the discovered execution plan as the active Single Source of Truth (SSOT) without modifying or re-drafting the file.
+  - If already approved, prompts user whether to proceed directly to **Local Exploratory Execution (Option A)** via `execute-testcase` or **Gate 2 Placement Confirmation** for MTA platform build (`STATE_CONSTRUCTION`).
+  - Skips redundant `PLAN_STEP_1` drafting and prevents unnecessary revision churn.
+* **Path A (Evolve & Supersede):** Retains prior boundary cases, updates steps and Section 4 to reflect AST deltas, and prepares revision `v[N+1]`. The prior plan is moved to `archive/` upon Gate 2.
+* **Path B (Branch Companion Case):** Creates a new companion test case (e.g. `TC_[Target]_Companion`) with `revision: 1`. Both plans remain active.
+* **Path C (Clean Slate):** Archives the prior plan immediately and drafts a fresh plan (`revision: 1`) from the ground up.
 
 ### Saving the Approved Execution Plan (Gate 2 Approval)
 Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLANNING`, save the approved Execution Plan locally before entering `STATE_CONSTRUCTION`:

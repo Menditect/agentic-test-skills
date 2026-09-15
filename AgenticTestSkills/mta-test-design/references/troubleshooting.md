@@ -152,10 +152,25 @@ If state leakage is caused by unmanaged external side-effects:
 
 ## 🛠️ SCHEMA & VARIATION CONSTRUCTION TROUBLESHOOTING
 
-| Error / Failure Symptom | Underlying Cause | Corrective Action |
+| Error Message Observed / Symptom | Root Cause | Instant Fix (No Debugging Needed) |
 | :--- | :--- | :--- |
-| MCP tool error: `Value 'Equals' is not valid for ComparisonOperator` on `EditAssert*` | Using plural `"Equals"` on tools requiring singular `"Equal"`. | Pass singular `"Equal"` to `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter` (`FilterComparisonOperator`). Note: `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount` strictly require plural `"Equals"`. |
+| `Cannot , because the EditAction is not given` | Called `EditAttributeValueFilter` to include attribute. | Call `EditAttributeValue(EditAction="IncludeAttribute")` on both Create and Retrieve steps. |
+| `given ComparisonOperator is not valid` or `Value '...' is not valid for ComparisonOperator` | Used wrong singular/plural casing or guessing count syntax. | Consult the Assertion Operator Matrix in `api-helpers.md`: plural `Equals`/`NotEquals` for microflows and feedback messages; singular `Equal`/`NotEqual` for attribute values and filters; mixed format (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`) for count assertions. |
+| `ResumeExecutionAfterException invalid` | Passed `"Continue"` instead of `"_Continue"`. | Prepend underscore to Mendix keyword: `"_Continue"`. |
+| `EditAction 'SetRollbackTestCaseAfterExecution' parameter missing` | Used parameter name `RollbackTestCaseAfterExecution`. | Use abbreviated parameter name: `RollbackTcseAfterExecution="Yes"`. |
 | Cloned variation fails with `ExpectedObjectCount: 0, Actual: 1` | Cloned `AssertObjectCount` containers default to `ExpectedObjectCount: 0` when created via `CreateTestCaseVariation`. | Explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N` for any variation expecting $\ge 1$ objects. |
 | Variation requires NULL/empty value, but empty string `""` fails type validation | Passing empty string to integer/date/decimal or non-string attribute. | Set `SetValueToEmpty: "_True"` instead of passing empty string literal. |
 | Intermediate key lookups slow down variation population | Calling `GetTeststepDetails` repeatedly between variations (`ANTI-40`). | Call `GetTestCaseDetails` once after bulk provisioning and index cloned keys in-memory (`PAT-86`, `PAT-87`). |
+
+---
+
+## 🎭 PLAYWRIGHT TRACEFILE & VIEWER TROUBLESHOOTING (`PAT-90`)
+
+| Issue / Symptom | Root Cause | Corrective Action |
+| :--- | :--- | :--- |
+| `FileUUID` is missing from `GetTestRunResults` for frontend test run | Tracing was not enabled in `StartMxFrontendTestOptions`. | Ensure `Trace = true` is set on the `StartMxFrontendTestOptions` object in Case 2. |
+| Trace viewer displays 404 / Connection Refused when opening trace link | Tracefile base URL pointing to incorrect host or port where Mendix runtime is not serving `/rest/private/tracefile`. | Verify `tracefile_base_url` in `mta_config.json` points to the reachable Mendix application URL (e.g. `http://localhost:8081/rest/private/tracefile?fileUUID=`). |
+| Playwright Trace Viewer (`trace.playwright.dev`) reports CORS error downloading trace | Remote tracefile endpoint does not expose CORS headers for `trace.playwright.dev`. | Ensure the Mendix application runtime allows CORS on `/rest/private/tracefile`, or download the trace file directly via browser and drag-and-drop into `https://trace.playwright.dev`. |
+| Custom internal network cannot access public `trace.playwright.dev` | Enterprise network block on public internet sites. | Configure an internal trace viewer or local playwright trace server via `playwright_viewer_url` in `mta_config.json`. |
+
 

@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.6.2"
-changes: "Updated mta_config schema and reference to v1.5.0 (added required fields: application_name, execution_plans_dir, mendix_project_dir)."
+version: "1.6.3"
+changes: "Updated mta_config schema and reference to v1.6.0 with playwright_viewer_url, tracefile_base_url, and tracefileUrl."
 ---
 
 # MTA Installation & Configuration Skill

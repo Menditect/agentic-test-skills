@@ -244,4 +244,19 @@ Configure tracing strictly via the simple pattern:
 ### 🚨 Mandatory Piping Rule
 You **MUST** link Case 1's returned `Browser` object output to Case 2's starting step input using `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)`. Skipping this output binding is strictly prohibited as it breaks all downstream frontend actions.
 
+### 🔍 Playwright Tracefile Inspection & Viewer Link Assembly (`PAT-90`)
+When a test case executes with tracing enabled, MTA records the trace and stores it on the MTA application server. The test run receipt (`GetTestRunResults(RetrieveAction="GetTestCaseRunDetails")`) returns a `FileUUID` for the trace artifact.
+
+To view the recorded trace in the interactive Playwright Trace Viewer:
+1. **Viewer URL:** `playwright_viewer_url` in `mta_config.json` (defaults to `https://trace.playwright.dev/?trace=`).
+2. **Tracefile Download URL:** `tracefile_base_url` in `mta_config.json` (or dynamic default: `${mta_base_url.replace(/\/$/, '')}/rest/private/tracefile?fileUUID=`).
+3. **Combined URL Formula:**
+   ```
+   ${playwright_viewer_url}${tracefile_base_url}${FileUUID}
+   ```
+   *Example:*
+   `https://trace.playwright.dev/?trace=http://localhost:8081/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`
+4. Both AI agents and developers can open this URL to inspect timeline actions, DOM snapshots, network payloads, console messages, and screenshots for every step in the frontend test run.
+
+
 

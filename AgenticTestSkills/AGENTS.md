@@ -37,7 +37,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 2. Skill Routing Index
 - **Setup, Install, Config** -> `STATE_DISCOVERY` (`mta-install-config`)
-- **Scoping, Planning, Test Design, Execution Plans** -> `STATE_BUILD_PLANNING` (`mta-test-design`)
+- **Scoping, Planning, Test Design, Execution Plans, Data Seeding/Generation** -> `STATE_BUILD_PLANNING` (`mta-test-design`)
 - **Building Steps, Data Variations, Test Containers** -> `STATE_CONSTRUCTION` (`mta-build`)
 - **Smoke Audits, Post-Build Verification** -> `STATE_SMOKE_AUDIT` (`mta-build`)
 - **Running Tests, Analyzing Results, Benchmarks** -> `STATE_RUN_ANALYZE` (`mta-run-analyze`)
@@ -47,12 +47,14 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 ## 3. Configuration SSOT (mta_config.json)
 - Resolve endpoints, tokens, and paths in order: (1) `mta_config.json`, (2) `.env`, (3) `.vscode/settings.json`, (4) prompt user.
 - Resolve `ApplicationInstanceToken` automatically from `mta_config.json` (`default_app_instance_token` or matching `app_instances[]`).
+- **Playwright Trace Viewer Resolution (PAT-90):** For frontend test runs where `GetTestRunResults` provides a `FileUUID`, assemble the viewer URL using: `playwright_viewer_url` (default `https://trace.playwright.dev/?trace=`) + `tracefile_base_url` (from `mta_config.json`, `.env`, or derived from `${mta_base_url}/rest/private/tracefile?fileUUID=`) + `FileUUID`. Always include the clickable trace viewer link in failure diagnostics.
 - **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-tools` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
 
 ---
 
 ## 4. Global Safety & Approval Gates
 - **Read-Only Tools Always Authorized:** All read-only `Get*` MTA tools (`GetAppModelData`, `GetTestCaseDetails`, `GetTestRunResults`, etc.) are authorized in any state to discover context.
+- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-14):** All test creation and data seeding requests—including ad-hoc or vague entity creation prompts—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
 - **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) is strictly prohibited until:
   1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary.
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.

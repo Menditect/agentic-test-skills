@@ -38,16 +38,18 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 
 ### Phase 2A: Bulk Attribute Inclusion & Assertions (`Temp State: BATCH_INCLUSION`)
 Once all step keys are resolved, batch-dispatch the following tools concurrently across ALL steps in the test case:
-- `EditAttributeValue(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` for all attributes across all Create Object steps.
-- `EditTestStepRetrieve(RetrieveOption=...)` to configure retrieve mode, and `EditAttributeValueFilter(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` to include filter attributes for all retrieve steps.
+- `EditAttributeValue(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` for all attributes across all Create Object and Retrieve steps (never use `EditAttributeValueFilter` for inclusion).
+- `EditTestStepRetrieve(RetrieveOption=...)` to configure retrieve mode.
 - Embedded assertions: `CreateAssertMicroflowReturnValue` (using plural `"Equals"`), `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`, and `CreateAssertException`.
 
 > **Safe Batch Sizing:** Group calls into safe batches of **15 to 20 tool calls per turn** (`ANTI-32`). For large test cases, chunk across sequential turns while remaining within `BATCH_INCLUSION`.
 
 ---
 
-### Mid-Phase Bulk Sync (1 Single Tool Call)
-Execute a single `GetTestCaseDetails(TestCaseKey)` (or `GetTestSuiteDetails`) call. This captures all newly generated `AttributeValueKey`s, retrieve filter keys, and assertion keys across all steps in a single response.
+### Mid-Phase Bulk Sync
+Execute `GetTestCaseDetails(TestCaseKey)` (or `GetTestSuiteDetails`) to capture all newly generated `AttributeValueKey`s, retrieve filter keys, and assertion keys across all steps.
+> [!TIP]
+> **Targeted Step Details vs Full Dumps:** When inspecting or configuring a specific step (e.g. a Microflow Call step to obtain `SelectObjectForMicroflowParameterKey`), call **`GetTeststepDetails(TestStepKey)`**. This returns < 1 KB directly in context, completely avoiding disk-dump truncation (`output.txt`).
 
 ---
 
@@ -57,7 +59,7 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 - Retrieve attribute filter setters: `EditAttributeValueFilter` (`SetStringValue`, `SetIntegerValue`, `SetBooleanValue`, `SetDateTime*`, `SetEnumerationValue`, passing `AttributeValueKey`, `FilterComparisonOperator`, and value).
 - Association bindings: `CreateSelectObjectForAssociation` and `EditTestStepAssociation`.
 - Microflow parameters: `EditMicroflowParameterValue` (literals) and `EditMicroflowObjectParameter` (piped object variables).
-- Assertions configuration: Call typed comparison setters. Use singular `"Equal"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`; use PLURAL `"Equals"` for `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount`.
+- Assertions configuration: Call typed comparison setters. Use PLURAL `"Equals"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount`; use singular `"Equal"` for `EditAssertAttributeValueCompare` and `EditAttributeValueFilter`.
 - Step descriptions & pattern annotations: `EditTestStep(EditAction="SetDescription")` with `[Pattern: <Name> - <Rationale>]` (`PAT-12`).
 - Step execution settings: `EditTestStep` with `ExecutionCondition` (`"Always"`, `"Skip"`, `"None"`) and `ResumeExecutionAfterException` (`"_Continue"`, `"Stop"` — note: `"Stop"` has NO leading underscore).
 
@@ -79,16 +81,10 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 ### Phase 4: Upfront Column Provisioning & Bulk Chunked Population (`Temp State: VARIATION_POPULATION`)
 Enforce `PAT-86`, `PAT-87`, and `ANTI-40`:
 
-1. **Step 4.1 (Bulk Allocation):** Concurrently dispatch `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) in 1 single turn (`PAT-86`).
+1. **Step 4.1 (Bulk Allocation):** Concurrently dispatch `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) in 1 single turn (`PAT-86`). Collect returned keys directly in sequence ($K_2..K_N$) and ignore MTA internal descending `Number` assignments.
 2. **Step 4.2 (Matrix Snapshot):** Execute 1 single `GetTestCaseDetails(TestCaseKey)` to capture all cloned variation container and cell keys.
-3. **Step 4.3 (Mandatory CoT Variation Key Mapping Table):**
-   After retrieving the snapshot in Step 4.2, you are **strictly prohibited** from calling cell setter tools immediately. You **MUST** first output a markdown mapping table directly in chat matching the MTA `TestCaseVariationKey`s and cloned cell keys to the Scenario Names from Section 7 of the Execution Plan:
-
-   | Scenario # | Scenario Name | TestCaseVariationKey | Target Item | Cloned Setter Key | Planned Value |
-   | :--- | :--- | :--- | :--- | :--- | :--- |
-   | Scenario 2 | Boundary Discount | 201 | Discount Param | MicroflowParameterValueKey: 301 | 20 |
-   | Scenario 2 | Boundary Discount | 201 | Assert Approved | AssertMicroflowReturnValueCompareKey: 302 | true |
-
+3. **Step 4.3 (Streamlined In-Memory Mapping & Reasoning):**
+   In your tool execution reasoning block (`🧠 Tool Execution Reasoning`), state the scenario batch being updated (e.g., `Populating Batch 1: Scenarios 2–4 with Keys 1646, 1645, 1644`). Do NOT render giant multi-column markdown tables in chat before dispatching calls; this keeps response sizes compact and eliminates stream interruptions.
    *Deterministic In-Memory Indexing:* Map cloned cell keys directly in-memory against `TCVI_TestCaseVariationItems` list order without intermediate `GetTeststepDetails` roundtrips (`PAT-87`, `ANTI-40`).
 
 4. **Step 4.4 (Batch by Scenario / Column):**

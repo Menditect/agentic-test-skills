@@ -59,24 +59,46 @@ Fetches runtime session state during execution:
 ### 4. Assertions Capabilities & Comparison Operator Wire Format Reference
 
 > [!IMPORTANT]
-> **Schema Invariant: Plural vs. Singular Comparison Operators**
-> MTA enforces a strict distinction in wire format naming conventions across tools:
-> - **Singular (`Equal`, `NotEqual`):** Required by `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter`.
-> - **Plural (`Equals`, `NotEquals`):** Required by `CreateAssertMicroflowReturnValue`, `CreateAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCompare`.
-> - **Plural with mixed casing (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`):** Required by `EditAssertObjectCount`, `CreateAssertValidationFeedbackMessageCount`, and `EditAssertValidationFeedbackMessageCount`.
-> ⚠️ *Important:* Do NOT apply a blanket "singular Equal" rule to all `Edit*` tools. Calling `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, or `EditAssertValidationFeedbackMessageCount` with singular `"Equal"` will fail schema validation.
+> **The Assertion Operator Law: Singular vs. Plural vs. Mixed Casing**
+> You must strictly match the operator format required by each specific assertion tool:
+> 
+> * **Rule of Thumb 1 (Plural Standard):** Microflow return values and validation feedback message comparisons use **Plural PascalCase** (`Equals`, `NotEquals`).
+> * **Rule of Thumb 2 (Singular Standard):** Entity attribute value comparisons and retrieve filter comparisons use **Singular PascalCase** (`Equal`, `NotEqual`).
+> * **Rule of Thumb 3 (Mixed Casing Count Operators):** Object count assertions and validation message count assertions use a **mixed PascalCase / snake_case format** (`Greater_than` and `Less_than` have underscores and lowercase `than`).
 
-| Tool | Property Name | Valid Operator Enum Values |
+| Tool Name | Target Property | Allowed Operator Values |
 | :--- | :--- | :--- |
 | `CreateAssertMicroflowReturnValue` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAssertMicroflowReturnValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAssertAttributeValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAttributeValueFilter` | `FilterComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
+| `EditAssertMicroflowReturnValueCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
 | `CreateAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
+| `EditAssertAttributeValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAttributeValueFilter` | `FilterComparisonOperator` *(note name!)* | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `CreateAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `EditAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
+
+> [!CAUTION]
+> **`CreateAssertObjectCount` does NOT accept `ComparisonOperator`!**  
+> `CreateAssertObjectCount` only takes `TestStepKey`. The operator and expected count must be set in a subsequent call to `EditAssertObjectCount`.
+
+#### Mendix Keyword Escape & Flag Formatting Law
+Mendix runtime tools strictly differentiate between keyword-escaped flags, boolean strings, and action names:
+
+1. **Keyword-Escaped Enums (Require Leading Underscore `_`):**
+   * `ResumeExecutionAfterException`: Must be `"_Continue"` or `"Stop"`. Passing `"Continue"` will fail!
+   * `BooleanValue`: Must be `"_True"` or `"_False"`.
+   * `SetValueToEmpty`: Must be `"_True"` or `"_False"`.
+   * `TrimStringValue`: Must be `"_True"` or `"_False"`.
+   * `Highlight`: Must be `"_True"` or `"_False"`.
+   * `IsGlobalWidget`: Must be `"_True"` or `"_False"`.
+
+2. **Compound Action Enums (NO Underscore):**
+   * `ActionFailedAssert`: Must be `"ContinueTestRun"` or `"StopTestRun"` (no underscore).
+
+3. **TestCase Container Flags (Yes/No Strings):**
+   * `RollbackTcseAfterExecution`: Must be `"Yes"` or `"No"`.
+   * `ApplySecurity`: Must be `"Yes"` or `"No"`.
 
 #### Cloned AssertObjectCount Default Invariant
 When test case variations are cloned via `CreateTestCaseVariation`, cloned `AssertObjectCount` containers in newly minted variations default to `ExpectedObjectCount: 0`. If a scenario expects $\ge 1$ objects, you MUST explicitly call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N`.
@@ -134,26 +156,30 @@ Before creating persistent test suites, test cases, or test steps in MTA (or whe
 
 To query and retrieve existing objects from the database within your test cases, use `CreateObjectActionTestStep` with `ObjectAction="RetrieveObjects"`.
 
-### 1. The Retrieve Filter Configuration Flow
-To filter retrieve operations, you **MUST** follow this canonical filtering sequence:
-1. **Create the Retrieve step:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="RetrieveObjects", EntityQualifiedName="Sales.Order", TestStepName="Retrieve Order")`. This returns `TestStepKey`.
-2. **Configure Retrieve Mode (Memory vs Database):** Call `EditTestStepRetrieve` passing:
-   - `TestStepKey`: The key from Step 1.
-   - `EditAction`: `"SetRetrieveOption"` (with `RetrieveOption="Database"` or `"Teststep"`), `"SetRetrieveSet"` (`RetrieveSet="All"` or `"Head"`), and optionally `"SetTestStepForRetrieveByTeststep"` (`TestStepOutputKey` pointing to the provider step).
-3. **Include Filter Attribute (Phase 2A):** Call `EditAttributeValueFilter` with:
-   - `TestStepKey`: The key from Step 1.
-   - `AttributeName`: The entity attribute to filter on (e.g., `"OrderStatus"`).
-   - `EditAction`: `"IncludeAttribute"`.
-4. **Resolve Filter Keys (Mid-Phase Sync):** Call `GetTestCaseDetails(TestCaseKey)` to capture the newly generated `AttributeValueKey` for each included filter.
-5. **Set Filter Value & Operator (Phase 2B):** Call `EditAttributeValueFilter` with:
-   - `AttributeValueKey`: The key resolved in Step 4.
-   - `EditAction`: The typed setter action (`"SetStringValue"`, `"SetIntegerValue"`, `"SetBooleanValue"`, `"SetDateTimeValueWithSpecifiedDateTime"`, etc.).
-   - `FilterComparisonOperator`: The comparison operator enum (use singular `"Equal"`, `"NotEqual"`, `"Contains"`, `"NotContains"` for Strings; range or comparison operators for numbers and Dates).
-   - The filtering target value (`StringValue`, `DecimalValue`, etc.).
+### 1. The Retrieve Configuration & Filtering Flow
+To configure memory or database retrieves and apply attribute filters:
+
+1. **Create the Step:**
+   `CreateObjectActionTestStep(TestCaseKey, ObjectAction="RetrieveObjects", EntityQualifiedName="Sales.Order", TestStepName="Retrieve Order")`
+2. **Configure Retrieve Mode (Memory vs Database):**
+   * For Memory:
+     `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveOption", RetrieveOption="Teststep")`
+     `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveSet", RetrieveSet="Head")`
+     `EditTestStepRetrieve(TestStepKey, EditAction="SetTestStepForRetrieveByTeststep", TestStepOutputKey=ProviderStepKey)`
+   * For Database:
+     `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveOption", RetrieveOption="Database")`
+     `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveSet", RetrieveSet="Head" | "All")`
+3. **Include Filter Attributes (CRITICAL RULE):**
+   > [!IMPORTANT]
+   > Always call **`EditAttributeValue`** (NOT `EditAttributeValueFilter`) to include attributes on Retrieve steps:
+   > `EditAttributeValue(TestStepKey=..., AttributeName="...", EditAction="IncludeAttribute")`
+   > `EditAttributeValueFilter` is strictly for updating filter values/ranges on database retrieves after inclusion, never for `IncludeAttribute`.
+4. **Set Filter Value:**
+   * On memory retrieves: Call `EditAttributeValue` (`SetStringValue`, `SetEnumerationValue`, etc.).
+   * On database retrieves with complex ranges/operators: Call `EditAttributeValueFilter` with `FilterComparisonOperator` and target value.
 
 ### 2. Supported Filter Types in `EditAttributeValueFilter`:
-The unified `EditAttributeValueFilter` tool supports the following `EditAction` operations:
-*   `"IncludeAttribute"` / `"ExcludeAttribute"`
+The `EditAttributeValueFilter` tool is used to configure filter values and comparison ranges on database retrieves (after inclusion via `EditAttributeValue`):
 *   `"SetStringValue"` (supports singular `Equal`, `NotEqual`, `Contains`, `NotContains`, `StartsWith`, `EndsWith`; for empty, pass `SetValueToEmpty="_True"`)
 *   `"SetIntegerValue"` / `"SetMinimumAndMaximumIntegerValues"`
 *   `"SetLongValue"` / `"SetMinimumAndMaximumLongValues"`
@@ -275,7 +301,7 @@ For backend testing, return values are verified using:
 2. **Resolve Assertion Key:** Call `GetTeststepDetails(TestStepKey)` to retrieve `AssertMicroflowReturnValueCompareKey`.
 3. **Configure Expected Value:** Call `EditAssertMicroflowReturnValueCompare` with:
    - `AssertMicroflowReturnValueCompareKey`: Key resolved in Step 2.
-   - `ComparisonOperator`: `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`.
+   - `ComparisonOperator`: `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`.
    - `EditAction`: `"SetStringValue"`, `"SetBooleanValue"`, `"SetIntegerLongValue"`, `"SetDecimalValue"`, `"SetEnumerationValue"`, `"SetDateTimeValueWithCurrentDateTime"`, `"SetDateTimeValueWithSpecifiedDateTime"`, etc.
    - Target expected value arguments (e.g., `StringValue="Success"` or `IntegerLongValue=100`, per `PAT-81`).
 

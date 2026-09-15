@@ -27,7 +27,7 @@ This cheat-sheet provides a highly condensed, high-density technical summary of 
 | :--- | :--- | :--- | :--- |
 | **Create Object** | `"CreateObject"` | `EditAttributeValue`, `CreateSelectObjectForAssociation`, `EditTestStepAssociation` | Instantiates an entity in memory. Set all initial attributes and associations directly on this step. |
 | **Change Object** | `"ChangeObjects"` | `SetTestStepOutputForSelectObjectForChange`, `EditAttributeValue` | Modifies attributes of an existing retrieved or created object. |
-| **Retrieve Object** | `"RetrieveObjects"` | `EditTestStepRetrieve`, `EditAttributeValueFilter` | Retrieves objects from database or teststep output. Apply filters via `EditAttributeValueFilter`. |
+| **Retrieve Object** | `"RetrieveObjects"` | `EditTestStepRetrieve`, `EditAttributeValue`, `EditAttributeValueFilter` | Retrieves objects from database or teststep output. Include attributes via `EditAttributeValue`; configure filter values/ranges via `EditAttributeValueFilter`. |
 | **Delete Object** | `"DeleteObjects"` | `SetTestStepOutputForSelectObjectForDelete` | Marks target objects for deletion. |
 | **Persist** | `"Persist"` | *(Position chronologically after write/delete steps)* | Commits all uncommitted in-memory object changes to the database (PAT-21). |
 
@@ -38,6 +38,23 @@ This cheat-sheet provides a highly condensed, high-density technical summary of 
 | **Microflow Call** | `CreateMicroflowCallTestStep` | `EditMicroflowObjectParameter`, `EditMicroflowParameterValue` | Executes a Mendix microflow. Return values, exceptions, and side-effects can be asserted. |
 | **Locate Page Step** | `GenerateMicroflowCallTestStepLocatePage` | Automated page context generation | Generates a frontend locator step for a Mendix page. |
 | **Locate Widget Step**| `GenerateMicroflowCallTestStepLocateWidget`| Automated widget context generation | Generates a frontend locator step for a specific widget. |
+
+### 3. Object Action Verbs & Container Settings Directory
+
+#### Object Action Verbs (`CreateObjectActionTestStep`)
+* `CreateObject` (Singular)
+* `ChangeObjects` (Plural)
+* `RetrieveObjects` (Plural)
+* `DeleteObjects` (Plural)
+* `Persist` (Verb)
+
+#### TestCase Container Settings (`EditTestCase`)
+| Desired Setting | `EditAction` | Argument Name | Value Format |
+| :--- | :--- | :--- | :--- |
+| Set Rollback | `"SetRollbackTestCaseAfterExecution"` | `RollbackTcseAfterExecution` | `"Yes"` or `"No"` |
+| Set Security | `"SetApplySecurity"` | `ApplySecurity` | `"Yes"` or `"No"` |
+| Set Delay | `"SetExecutionDelayInMilliseconds"` | `ExecutionDelayInMilliSeconds` | Number (ms) |
+| Exception Mode | `"SetResumeExecutionAfterException"` | `ResumeExecutionAfterException` | `"_Continue"` or `"Stop"` |
 
 ---
 
@@ -68,8 +85,8 @@ Asserts that the number of objects retrieved or present in a list matches an exp
 ### 4. Microflow Return Value Assertion (`CreateAssertMicroflowReturnValue`)
 Asserts that a microflow returns a value matching expected conditions.
 *   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertMicroflowReturnValueCompareKey`.
-*   **Creation vs. Edit Operators:** `CreateAssertMicroflowReturnValue` requires plural `"Equals"`, whereas `EditAssertMicroflowReturnValueCompare` strictly requires singular `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`.
-*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (singular `"Equal"`, `"NotEqual"`, etc.), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
+*   **Creation & Edit Operators:** Both `CreateAssertMicroflowReturnValue` and `EditAssertMicroflowReturnValueCompare` require plural PascalCase (`"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`).
+*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (plural `"Equals"`, `"NotEquals"`, etc.), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
 *   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
 
 ### 5. Validation Feedback Message Assertions (Backend Only)
