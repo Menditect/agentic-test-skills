@@ -36,13 +36,20 @@ Quick reference card for key acronyms, microflow prefixes, and parameter definit
 | Parameter Key | Name / Role | Meaning & System Usage |
 | :--- | :--- | :--- |
 | **`TestStepKey`** | Step Key | Targets an existing step for reading, updating, or sequencing. |
-| **`TestStepBeforeKey`** | Before Key | Placement/predecessor key for step operations. For creating the absolute first step in an empty testcase, or sequencing a step to the first position using `SetSequenceOfTestStep`, this parameter **MUST** be set to `0`. For subsequent steps, use the key of the immediate predecessor. |
+| **`TestStepBeforeKey`** | Before Key | Placement/predecessor key for step operations. Passing **`0` ALWAYS places the step at Position 1 (the absolute beginning / head)** of the testcase (e.g. for the first step in an empty testcase or sequencing to the head via `SetSequenceOfTestStep`). It **NEVER** appends to the end. For subsequent steps, use the key of the immediate predecessor. |
 | **`TestStepOutputKey`** | Output Key | Unique identifier of a step's returned object (e.g., `Browser`, `MxPageLocator`). |
 | **`TestStepProvidesPlaywrightPageKey`** | Parent Context Key | Output key of a parent locator (e.g. `MxPageLocator`, `MxGalleryItemLocator`) scoping a nested widget. |
 | **`TestCaseKey`** | Case Key | Targets a specific test case. |
 | **`TestCaseBeforeKey`** | Case Before Key | Placement/predecessor key for case creation. For creating the absolute first case in an empty test suite, or sequencing a case to the first position using `SetSequenceOfTestCase`, this parameter **MUST** be set to `0`. For subsequent cases, use the key of the immediate predecessor. |
 | **`TestSuiteKey`** | Suite Key | Targets a specific test suite. Used for reading, executing, or reordering suites. |
 | **`TestSuiteBeforeKey`** | Suite Before Key | Placement/predecessor key for suite sequencing using `SetSequenceOfTestSuite`. If a suite needs to be the absolute first in the Test Configuration, this parameter **MUST** be set to `0`. For subsequent suites, use the key of the immediate predecessor. |
+
+> [!WARNING]
+> **⚠️ `TestStepBeforeKey = 0` IS HEAD INSERTION ONLY:**
+> Passing `0` for `TestStepBeforeKey` in `CreateMicroflowCallTestStep`, `CreateObjectActionTestStep`, or `SetSequenceOfTestStep` ALWAYS places the step at **Position 1 (the absolute beginning)** of the test case. It NEVER appends to the end.
+>
+> **Deterministic Reverse-Order Re-indexing Pattern ($N \rightarrow 1$):**
+> If an existing multi-step test case needs its sequence completely re-ordered, execute `SetSequenceOfTestStep(stepKey, 0)` in **reverse order** (from Step $N$ down to Step 1). This deterministically establishes the contiguous sequence $[1..N]$ without ordinal list collisions.
 
 ---
 

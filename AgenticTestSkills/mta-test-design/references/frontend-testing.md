@@ -7,6 +7,32 @@ This reference contains the widget locator maps, nested repeating container stra
 ---
 
 ## 📐 UNIVERSAL RULES
+
+## 🏗️ MANDATORY 3-CASE FRONTEND SUITE BLUEPRINT (CRITICAL)
+Every Frontend UI Test Suite MUST strictly implement the following 3-case pipeline. Omitting browser lifecycle microflows in Case 1, 2, or 3 is strictly prohibited:
+
+### Case 1: Browser Setup & Domain Seeding (`Always` / `_Continue`)
+1. **Create Object:** `MenditectPlaywrightConnector.LocalStartOptions` (Set `SlowMo = 1000`).
+2. **Microflow Call:** `MenditectPlaywrightConnector.Start_Frontend_Test_Locally` (`BrowserType = "Chromium"`, `Headless = false`, `Options` from step 1) ➔ **Produces `Browser` object**.
+3..N. **Transactional Domain Seeding:** Create and persist domain entities (`Car`, `Location`, etc.) needed for UI test data (`PAT-91`).
+
+### Case 2: Test Execution & UI Interactions (`None` / `_Continue`)
+1. **Create Object:** `MenditectMxFrontendTestKit.StartMxFrontendTestOptions` (Set `Trace = true`).
+2. **Microflow Call:** `MenditectMxFrontendTestKit.Start_MxFrontend_Test_Without_Login` (or `With_Login`):
+   - `Browser`: Binds `Browser` output from **Case 1 Step 2**.
+   - `Options`: Binds `StartMxFrontendTestOptions` from **Case 2 Step 1**.
+   - `Mendix_URL`: Target app URL (e.g. `"http://localhost:8081"`).
+   ➔ **Produces `Page` object**.
+3..N-1. **Widget Interactions & Assertions:** Follow Rule 1 (2-step non-repeating chain) and Rule 2 (4-step repeating container chain).
+N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` from Case 2 Step 2) ➔ **Produces `TraceFile` object**.
+
+### Case 3: Browser Teardown & Domain Cleanup (`Always` / `_Continue`)
+1. **Microflow Call:** `MenditectPlaywrightConnector.Teardown_Playwright` (Mandatory: releases browser processes and node driver).
+2..N. **Transactional Domain Cleanup:** Delete/clean up test data seeded in Case 1.
+
+---
+
+### Universal Rules & Invariants
 *   **The Options Parameter Rule:** If a frontend/testkit microflow has an Object-type `options` parameter, ALWAYS set it to empty by calling `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetInputToEmpty")` (or use Options Protocol). Do not leave unbound.
 *   **The Frontend Testkit Default Law (CRITICAL):** For all Mendix applications, the **Menditect Frontend Testkit** (represented by the module `MenditectMxFrontendTestKit`) is the strict default and MUST be used exclusively to construct frontend UI tests. Falling back to low-level Playwright Connector commands (e.g. raw clicks, fills, presses) due to encountering an issue is strictly prohibited, unless the user has explicitly and unambiguously approved this workaround in the active session.
 *   **The Module Packaging Rule:** The Menditect Frontend Testkit (`MenditectMxFrontendTestKit`), Menditect Playwright Connector (`MenditectPlaywrightConnector`), and MTA Commons (`MenditectMtaCommons`) modules are packaged and imported as standard Mendix `.mxmodule` modules.
@@ -22,7 +48,11 @@ This reference contains the widget locator maps, nested repeating container stra
     *   **Case 1 Transactional Seeding:** All primary domain entities bound to target page widgets (e.g. `Car`, `Booking`, `Order`) and selectable catalog records in lists or dropdowns MUST be instantiated via explicit `Create Object` steps and committed via a batch `Persist` step in Case 1 before launching the browser (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`). Multiple objects (2+ records) MUST be seeded for lists/selection widgets (`PAT-40`).
     *   **Master / Reference Data Retrieval Exemption:** Static infrastructure and configuration entities pre-populated in environments and read-only (such as Countries, Currencies, User Roles, Postal Codes) are exempt from mandatory creation. Explicit `Retrieve` steps with attribute filters in Case 1 are authorized to fetch them.
     *   **Unique Synthetic Keys:** All seeded records in Case 1 MUST use unique synthetic identifiers (e.g., prefixing codes/names with `'TEST_'` or dynamic timestamps) to prevent Unique Constraint Violations or collisions with dirty database leftovers.
-    *   **Precondition & Legacy Pattern Prohibition (`ANTI-42`):** Stating test data requirements as passive text in "Preconditions" instead of physical Case 1 test steps is strictly prohibited. When inspecting existing server test cases (`GetTestCaseDetails`), copying legacy unseeded step structures is strictly prohibited.
+*   **The Mandatory DatePicker Discovery Gate (CRITICAL) (`PAT-94`, `ANTI-45`):** Whenever `DESCRIBE PAGE` or `GetAppModelData` reveals one or more `DatePicker` widgets on a target page:
+    1. **IMMEDIATELY PAUSE** before writing the Execution Plan or creating test steps.
+    2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
+    3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
+    4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
 *   **The Frontend Persistent MTA Construction Law (CRITICAL):** Frontend UI automation requires browser lifecycle management, session contexts, and DOM locator maps provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the MTA Platform across the standard 3-Case Suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser configurations. [^PAT-62]
 
 ---

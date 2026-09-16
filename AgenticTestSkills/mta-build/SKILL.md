@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.16.1"
-changes: "Synced shared exploratory execution references for neutral option selection and PAT-70 standalone seeding."
+version: "6.18.0"
+changes: "Added mandatory 1-to-1 Plan-to-Server Step Reconciliation protocol (PAT-59, PAT-88) and Step Reconciliation Table to STATE_SMOKE_AUDIT with INCOMPLETE_BUILD_DISCREPANCY gate."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -18,7 +18,7 @@ changes: "Synced shared exploratory execution references for neutral option sele
 🚨 **GLOBAL MTA GUARDRAILS & PLANNING REDIRECTION** 🚨
 
 > [!IMPORTANT]
-> - **Read-Only MTA `Get*` Tools Always Authorized:** Refer to `AGENTS.md` for global guardrails. Read-only MTA `Get*` MCP tools are authorized in any state to inspect model data, discover targets, build context, or verify application state.
+> - **Read-Only MTA `Get*` Tools Always Authorized:** Refer to `AGENTS.md` for global guardrails. Read-only MTA `Get*` MCP tools are authorized in any state to inspect model data, discover targets, build context, or verify application state. To build clickable MTA navigation links and resolve configuration parameters, evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user.
 > - **Planning Redirection:** If designing a new test, scoping microflows/pages, resolving placement, configuring Playwright browser settings, or if the request is exploratory/fresh, you **MUST** switch to **`mta-test-design`** (`.agent/skills/mta-test-design/SKILL.md`). Never construct steps without Gate 1 and Gate 2 sign-offs.
 
 ---
@@ -166,7 +166,27 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 
 3. **Phase 3: `STATE_SMOKE_AUDIT`**
    - *State Header:* `[State: STATE_SMOKE_AUDIT | Temp State: None | Active Skill: mta-build]`
-   - *Milestone:* Audit saved Execution Plan against local `.md` file (or chat context), verify Plan ID, revision sequence, and approval timestamp integrity, audit created test cases and steps (`GetTestCaseDetails`), verify 0 construction discrepancies, and output the Post-Construction Smoke Audit Report.
+   - *Milestone:* Audit saved Execution Plan against local `.md` file (or chat context), verify Plan ID, revision sequence, and approval timestamp integrity, audit created test cases and steps (`GetTestCaseDetails`), execute **Mandatory 1-to-1 Plan-to-Server Step Reconciliation** (`PAT-59`, `PAT-88`), verify 0 construction discrepancies and 0 compiler errors, and output the Post-Construction Smoke Audit Report.
+   - **Mandatory 1-to-1 Plan-to-Server Step Reconciliation Protocol (`PAT-59`, `PAT-88`):**
+     * The agent MUST read the local `.md` Execution Plan (Section 5 Detailed Step Configurations) and compare every planned step against the actual test steps returned by `GetTestCaseDetails`.
+     * The Smoke Audit Report MUST include the **Step Reconciliation Table**:
+       ```markdown
+       | Case # | Planned Step Name / Action | Built MTA Step Key | Status |
+       | :--- | :--- | :--- | :--- |
+       | Case 1 | LocalStartOptions | Step 6501 | ✅ MATCH |
+       | Case 1 | Start_Frontend_Test_Locally | Step 6502 | ✅ MATCH |
+       | Case 1 | Create Seed Object (<Entity>) | Step 6503 | ✅ MATCH |
+       | Case 1 | Persist Seed Data | Step 6504 | ✅ MATCH |
+       | Case 2 | StartMxFrontendTestOptions | Step 6510 | ✅ MATCH |
+       | Case 2 | Navigate to Page | Step 6511 | ✅ MATCH |
+       | Case 2 | Stop_MxFrontendTest | Step 6520 | ✅ MATCH |
+       | Case 3 | Teardown Playwright | Step 6522 | ✅ MATCH |
+       | Case 3 | Retrieve runtime <Entity> | Step 6523 | ✅ MATCH |
+       | Case 3 | Delete runtime <Entity> | Step 6524 | ✅ MATCH |
+       | Case 3 | Delete Seeded <Entity> | Step 6525 | ✅ MATCH |
+       | Case 3 | Persist Deletions | Step 6526 | ✅ MATCH |
+       ```
+     * **Discrepancy Hard Gate:** If $\text{Planned Step Count} \neq \text{Built Step Count}$ or any planned step is missing (`❌ MISSING`), or unexpected extra steps exist (`⚠️ EXTRA`), the Smoke Audit **MUST FAIL** with status `INCOMPLETE_BUILD_DISCREPANCY`, remain in `STATE_CONSTRUCTION` to build missing steps, and strictly block transition to `STATE_RUN_ANALYZE`.
    - **Mandatory 8-Section Plan Conformity Audit:**
      1. **Section 1 (Metadata, Provenance & Placement):** App, Config, Suite, Case Name, Category, Execution User (`GetExecutionUsers`), Plan ID (`execution_plan_id`), Revision (`execution_plan_revision`), Supersedes Plan ID (`execution_plan_supersedes_id`), Approved Timestamp (`execution_plan_approved_at`), Approved By (`execution_plan_approved_by`), and Revision Sealing status (`execution_plan_revision`, `execution_plan_approved_at`).
      2. **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
@@ -181,13 +201,13 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
      8. **Section 8 (Applied Testing Patterns & Rationale):** Verify pattern explanations match pattern annotations written into step descriptions via `EditTestStep(EditAction="SetDescription")`.
    - **Mode-Specific Execution Style:**
      - **Post-Build Execution Plan Verification & Link Sealing Law (`PAT-88`):**
-      Upon confirming 0 construction discrepancies in the Post-Construction Smoke Audit:
+      Upon confirming 0 compiler errors AND 0 step discrepancies from the 1-to-1 Step Reconciliation Audit:
        * **Machine-Readable Metadata Sealing:** Update the collapsible metadata YAML block (`<details><summary><b>Execution Plan Metadata</b></summary>`, `schema_version: "1.2.0"`) in `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) to record `status: "BUILT_AND_VERIFIED"`, `build_started_at` timestamp, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user` (`$env:USERNAME`), `target_configuration_key`, `target_suite_key`, and `test_case_keys`.
        * **Unified Top Audit Note & Direct Navigation Links Table:** Update the top `> [!NOTE]` callout of the execution plan by appending the smoke verification lines directly beneath the pre-approval lines without an empty line (`**Post-Construction Build & Smoke Audit:** BUILT_AND_VERIFIED (0 Discrepancies)` and `**Build Started:** <build_started_at> | **Built & Verified:** <verified_at> by <builder_system_user> (Elapsed: <duration>)`). Insert the `### Direct MTA Web Navigation Links` markdown table immediately beneath the top note providing 1-click access to the Test Configuration, Test Suite, and all created Test Cases (`[MtaBaseUrl]/p/[ObjectType]/[Key]`).
        * **Section 9 Collapsible Verification Receipt:** Append Section 9 at the bottom of the execution plan enclosed in a collapsible container (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`), containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) with the 7-row verification table.
        * **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_build_started_at`, `execution_plan_built_at`, and `execution_plan_verified_at`.
 
-      * **Agentic Mode:** Read the local Execution Plan markdown file (at `${execution_plans_dir}/EP_<TestCaseName>.md` resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` or path in `mta_state.json`) to retrieve the approved specifications. **Staggered Smoke Audit Reading:** When auditing multi-case test suites (e.g. 3-case frontend suites), dispatch `GetTestCaseDetails(TestCaseKey)` for **ONE test case per turn** rather than querying all test cases simultaneously. Because `GetTestCaseDetails` returns extensive JSON trees of all steps, parameters, and variation items, querying multiple cases concurrently risks token saturation and context truncation. Staggering the inspection across test cases guarantees clean, exhaustive verification of each case. Audit steps and variations line-by-line. Generate and output the Post-Construction Smoke Audit Report, including direct clickable MTA Web navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for target Config, Suite, and Case(s), along with a link to the local Execution Plan file.
+      * **Agentic Mode:** Read the local Execution Plan markdown file (at `${execution_plans_dir}/EP_<TestCaseName>.md` resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` or path in `mta_state.json`) to retrieve the approved specifications. **Staggered Smoke Audit Reading:** When auditing multi-case test suites (e.g. 3-case frontend suites), dispatch `GetTestCaseDetails(TestCaseKey)` for **ONE test case per turn** rather than querying all test cases simultaneously. Because `GetTestCaseDetails` returns extensive JSON trees of all steps, parameters, and variation items, querying multiple cases concurrently risks token saturation and context truncation. Staggering the inspection across test cases guarantees clean, exhaustive verification of each case. Audit steps and variations line-by-line. Generate and output the Post-Construction Smoke Audit Report featuring the Step Reconciliation Table, including direct clickable MTA Web navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for target Config, Suite, and Case(s), along with a link to the local Execution Plan file.
      * **Chat Mode:** Instruct the user to verify checks in the MTA Web console, and copy-paste variation/step details into chat. Then compile and output the Post-Construction Smoke Audit Report based on their input, including direct clickable MTA Web navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`).
 
 When the smoke audit is successfully validated and approved by the user, prompt the user: *"The test cases and steps have successfully passed validation and are fully built. Would you like to transition to execution (`STATE_RUN_ANALYZE`) and run the tests?"*

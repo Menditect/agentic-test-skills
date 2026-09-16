@@ -315,7 +315,7 @@ test_case_keys: []
 | **Plan ID Alignment** | `[plan_id]` | `PASS` | Matches approved execution plan ID |
 | **Revision Integrity** | Rev `[revision]` | `PASS` | No uncommitted plan drift |
 | **Test Case Placement** | `[TestCaseName]` (Key: `[TestCaseKey]`) | `PASS` | Verified under Suite `[SuiteKey]` and Config `[ConfigKey]` |
-| **Step Sequence Audit** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence and settings |
+| **1-to-1 Step Reconciliation** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence, actions, and settings (`PAT-59`) |
 | **Variation Items Audit** | Matrix Items | `PASS` | Zero unapproved additions, names/descriptions persisted |
 | **MTA Compiler Validation** | Server Validation Engine | `PASS` | 0 compilation errors, 0 warnings |
 | **Platform Quality Check** | MTA Architectural Pattern Matrix | `PASS` | 100% compliant with MTA architecture standards |

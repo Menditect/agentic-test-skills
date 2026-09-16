@@ -272,4 +272,56 @@ When file-writing tools are unavailable (Chat Mode), output this block at the en
 ```
 
 </details>
+
+---
+
+## 6. 🔍 Checkpoint 3: Post-Construction Smoke Audit Report (`PAT-59`, `PAT-88`)
+
+Output this structured report upon completing step construction and batch binding in `STATE_SMOKE_AUDIT`:
+
+```markdown
+### 🔍 Post-Construction Smoke Audit Report
+
+> [!NOTE]
+> **Audit Status:** ✅ PASS (0 Compiler Errors, 0 Step Discrepancies)  
+> **Target:** `<TestConfigurationName>` / `<TestSuiteName>` / `<TestCaseName>`  
+> **Execution Plan:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/menditect-output/execution-plans/EP_<TestCaseName>.md) (Sealed: `BUILT_AND_VERIFIED`)
+
+#### 1. Mandatory 1-to-1 Step Reconciliation (`PAT-59`)
+| Case # | Planned Step Name / Action | Built MTA Step Key | Status |
+| :--- | :--- | :--- | :--- |
+| Case 1 | LocalStartOptions | Step 6501 | ✅ MATCH |
+| Case 1 | Start_Frontend_Test_Locally | Step 6502 | ✅ MATCH |
+| Case 1 | Create Seed Object (<Entity>) | Step 6503 | ✅ MATCH |
+| Case 1 | Persist Seed Data | Step 6504 | ✅ MATCH |
+| Case 2 | StartMxFrontendTestOptions | Step 6510 | ✅ MATCH |
+| Case 2 | Navigate to Page | Step 6511 | ✅ MATCH |
+| Case 2 | Stop_MxFrontendTest | Step 6520 | ✅ MATCH |
+| Case 3 | Teardown Playwright | Step 6522 | ✅ MATCH |
+| Case 3 | Retrieve runtime <Entity> | Step 6523 | ✅ MATCH |
+| Case 3 | Delete runtime <Entity> | Step 6524 | ✅ MATCH |
+| Case 3 | Delete Seeded <Entity> | Step 6525 | ✅ MATCH |
+| Case 3 | Persist Deletions | Step 6526 | ✅ MATCH |
+
+#### 2. Compiler & Server Validation (`GetTestCaseDetails`)
+* **Construction Errors:** 0 errors reported by MTA compiler.
+* **Variation Matrix:** Verified cell-by-cell ($M \times N$ matrix matches Section 7).
+* **Execution Topologies & Settings:** Verified (`ExecutionCondition` & `ResumeExecutionAfterException` conform to `PAT-17`/`PAT-18`).
+
+#### 3. Direct MTA Web Navigation Links
+| Level | Name | Direct Link |
+| :--- | :--- | :--- |
+| **Test Configuration** | `<ConfigName>` | [`<ConfigName>`]([MtaBaseUrl]/p/testconfiguration/<ConfigKey>) |
+| **Test Suite** | `<SuiteName>` | [`<SuiteName>`]([MtaBaseUrl]/p/testsuite/<SuiteKey>) |
+| **Test Case(s)** | `<TestCaseName>` | [`<TestCaseName>`]([MtaBaseUrl]/p/testcase/<CaseKey>) |
+
+---
+
+### 🚀 Checkpoint 3 Decision Card
+All steps and variations have been verified on the server with 0 errors and 0 discrepancies.
+
+**Would you like to execute the test suite now (`STATE_RUN_ANALYZE`)?**
+* **Option 1:** Execute Test Suite Now (`STATE_RUN_ANALYZE`)
+* **Option 2:** Inspect Test in MTA Web UI First
+```
 ```

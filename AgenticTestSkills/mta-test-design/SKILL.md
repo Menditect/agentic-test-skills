@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.19.0"
-changes: "Modularized decision cards, metadata headers, and receipt templates into references/checkpoint-templates.md, achieving a ~60% reduction in skill token size while preserving all laws, AST derivation rules, and quality audits."
+version: "6.20.0"
+changes: "Updated core playbook and reference templates with Mandatory 1-to-1 Plan-to-Server Step Reconciliation protocol and Checkpoint 3 post-construction smoke audit verification receipt."
 ---
 
 # MTA Test Scoping & Design Skill

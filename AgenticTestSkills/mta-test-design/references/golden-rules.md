@@ -13,6 +13,9 @@ This manual contains the detailed Golden Rules, zero-data naming templates, opti
 ### 1. The Predecessor Chaining Law (Forward Chaining)
 To prevent step, case, or suite sequence corruption, elements must be created in chronological forward order:
 *   **The Predecessor 0 Rule (First Element in Empty Container):** For the absolute first element (step, case, or suite) in an empty container (empty testcase, empty suite, or empty test configuration), you **MUST** pass `0` for the predecessor parameter (`TestStepBeforeKey`, `TestCaseBeforeKey`, or `TestSuiteBeforeKey`) in the tool call. This explicitly indicates to the MTA backend that the element should be placed at the absolute beginning.
+    > [!WARNING]
+    > **⚠️ `TestStepBeforeKey = 0` IS HEAD INSERTION ONLY:**
+    > Passing `0` for `TestStepBeforeKey` in `CreateMicroflowCallTestStep`, `CreateObjectActionTestStep`, or `SetSequenceOfTestStep` **ALWAYS** places the step at **Position 1 (the absolute beginning / head)** of the test case. It **NEVER** appends to the end.
 *   **The Non-Empty Container Predecessor Sub-Rule (Subsequent Elements):** For non-empty suites, cases, or configurations, you **MUST** first query the existing elements (via `GetTestConfigurationDetails`, `GetTestSuiteDetails`, or `GetTestCaseDetails`) to retrieve the last element's key, using it as the predecessor key to append chronologically. For subsequent elements created within the same turn cycle, you MUST use the actual non-zero numeric key returned by their immediate predecessor to chain them forward chronologically (e.g., Step B uses Step A's returned key as `TestStepBeforeKey`).
 
 ```
@@ -41,10 +44,11 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
             *   **Configuring assertions:** Calling `EditAssert*` tools across multiple assertions in 1 single turn.
             *   **Overriding variation scenario columns:** Calling `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*` for all cells in a variation scenario in 1 single turn.
             *   **Step metadata & execution settings:** Calling `EditTestStep` (to set step names, descriptions with pattern annotations `[Pattern: <Name> - <Rationale>]`, highlights `Highlight="_True"`, or execution conditions) across multiple steps in 1 single turn.
-*   **🚨 THE `SetSequenceOfTestStep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to three strict safety gates:
+*   **🚨 THE `SetSequenceOfTestStep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to four strict safety gates:
     1.  *Same-Case Validation:* Both `TestStepKey` and `TestStepBeforeKey` MUST reside within the exact same parent Test Case. Linking across case boundaries is strictly prohibited.
     2.  *No Self-Reference or Loops:* Never pass the same key for both parameters, and never point a step's predecessor to a downstream step (which creates circular references and crashes the runner).
-    3.  *First-Position Sequencing Pattern:* To sequence an existing teststep to the absolute first position of a testcase, call `SetSequenceOfTestStep` with the target `TestStepKey` and pass `0` for the `TestStepBeforeKey` parameter.
+    3.  *First-Position (Head Insertion) Pattern:* To sequence an existing teststep to the absolute first position (Position 1) of a testcase, call `SetSequenceOfTestStep` with the target `TestStepKey` and pass `0` for the `TestStepBeforeKey` parameter. (Passing `0` ALWAYS inserts at the head, NEVER at the tail).
+    4.  *Deterministic Reverse-Order Re-indexing Pattern:* If an existing multi-step test case needs its sequence completely re-ordered, execute `SetSequenceOfTestStep(stepKey, 0)` in **reverse order** (from Step $N$ down to Step 1). This deterministically establishes the contiguous sequence $[1..N]$ without ordinal list collisions.
 *   **🚨 THE `SetSequenceOfTestCase` SAFEGUARDS:** When sequencing test cases within a test suite:
     1.  *First-Position Pattern:* Symmetrically, to sequence a testcase to the absolute first position of a suite, call `SetSequenceOfTestCase` with the target `TestCaseKey` and pass `0` for `TestCaseBeforeKey`.
     2.  *Chaining Subsequent Cases:* To sequence a case elsewhere, pass the immediate predecessor `TestCaseBeforeKey` representing the case that should directly precede it.
@@ -83,6 +87,12 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     When configuring attribute values (`EditAttributeValue`) or microflow parameters (`EditMicroflowParameterValue`) of type Integer, Long, or AutoNumber, you **MUST** pass the numeric value in the dedicated `IntegerLongValue` property (e.g., `IntegerLongValue: 42`). String-based properties (`StringValue`) must only be used for string, enumeration, or date strings. All database keys (`TestStepKey`, `TestCaseKey`, `TestSuiteKey`, `TestStepOutputKey`, `ExecutionUserKey`) MUST be passed as raw JSON integers (e.g. `12345`), never string-quoted (`"12345"`).
 *   **🔍 MANDATORY PRE-CONSTRUCTION MODEL-TO-MTA SCHEMA AUDIT (PAT-82, ANTI-36):**
     You are strictly prohibited from attempting trial-and-error building or relying on step creation errors to discover missing model elements (`ANTI-36`). Before creating any persistent test artifacts in MTA (or when evaluating whether an exploratory test can be promoted directly to MTA), you **MUST** execute `GetAppModelData` (checking entities, attributes, microflows, parameters, enumerations, pages, and widgets) against local Mendix AST (`mxcli`) as the absolute first step. If any structural delta exists, HALT immediately and notify the user that MTA requires a model revision synchronization first.
+*   **🛑 MANDATORY DATEPICKER DISCOVERY GATE (PAT-94, ANTI-45):**
+    Whenever `DESCRIBE PAGE` or `GetAppModelData` reveals one or more `DatePicker` widgets on a target page:
+    1. **IMMEDIATELY PAUSE** before writing the Execution Plan or creating test steps.
+    2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
+    3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
+    4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
 
 ---
 

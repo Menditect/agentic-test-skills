@@ -143,9 +143,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-15`: The Predecessor `0` Rule
 * **Scope:** General | **Classification:** Platform API Quirk
-* **Description:** Specifies that passing `0` for `TestStepBeforeKey`, `TestCaseBeforeKey`, or `TestSuiteBeforeKey` forces the MTA server to place the newly created element at the absolute top (first position) of its parent container.
+* **Description:** Specifies that passing `0` for `TestStepBeforeKey`, `TestCaseBeforeKey`, or `TestSuiteBeforeKey` forces the MTA server to place the element at the absolute top (Position 1 / Head) of its parent container. Passing `0` for `TestStepBeforeKey` ALWAYS inserts at Position 1 and NEVER appends to the end. If an existing multi-step test case needs its sequence completely re-ordered, executing `SetSequenceOfTestStep(stepKey, 0)` in reverse order (from Step N down to Step 1) deterministically establishes the contiguous sequence [1..N] without ordinal list collisions.
 * **Related Rules:**
   * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law).
+  * **Related Anti-Patterns:** `ANTI-44` (Parallel Sequence Reordering Anti-Pattern).
 
 ---
 
@@ -720,12 +721,12 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-59`: Zero Construction Error Pre-Flight Law & Build Mismatch Diagnostic
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Governs construction error verification and pre-flight execution gates:
-  1. *Smoke Audit Gatekeeper (`STATE_SMOKE_AUDIT`):* Immediately following test step construction, the assistant MUST invoke `GetTestCaseDetails(TestCaseKey)`. If construction errors > 0, progression to `STATE_RUN_ANALYZE` is strictly blocked, errors are detailed in the Smoke Audit report, and the assistant remains in `STATE_CONSTRUCTION` to resolve the mismatch. Note that upfront model element verification is strictly handled by `PAT-82` (`GetAppModelData`), completely superseding the legacy reactive "try and build" failure handling (`ANTI-36`).
-  2. *Pre-Flight Execution Guard (`STATE_RUN_ANALYZE`):* Before calling `ExecuteTest`, verify that `GetTestCaseDetails` returns 0 construction errors. If errors exist, reject execution and guide revision synchronization or binding fixes.
+* **Description:** Governs construction error verification, mandatory 1-to-1 plan-to-server step reconciliation, and pre-flight execution gates:
+  1. *Smoke Audit Gatekeeper & Mandatory 1-to-1 Step Reconciliation (`STATE_SMOKE_AUDIT`):* Immediately following test step construction, the assistant MUST invoke `GetTestCaseDetails(TestCaseKey)` (via staggered reading, 1 case per turn). A server compiler error count of zero (`TCER_TestConstructionErrors == []`) is necessary but NOT sufficient. The assistant MUST read the approved local `.md` Execution Plan (Section 5 Detailed Step Configurations) and reconcile every planned step against the built MTA test steps returned by the server, compiling the mandatory **Step Reconciliation Table** (`Case #`, `Planned Step Name / Action`, `Built MTA Step Key`, `Status: ✅ MATCH / ❌ MISSING / ⚠️ EXTRA`). If $\text{Planned Step Count} \neq \text{Built Step Count}$ or any planned step is missing, the Smoke Audit **MUST FAIL** with status `INCOMPLETE_BUILD_DISCREPANCY`, remain in `STATE_CONSTRUCTION` to build missing steps, and strictly block transition to `STATE_RUN_ANALYZE`. Note that upfront model element verification is strictly handled by `PAT-82` (`GetAppModelData`), completely superseding the legacy reactive "try and build" failure handling (`ANTI-36`).
+  2. *Pre-Flight Execution Guard (`STATE_RUN_ANALYZE`):* Before calling `ExecuteTest`, verify that `GetTestCaseDetails` returns 0 construction errors and 0 step reconciliation discrepancies. If errors or omissions exist, reject execution and guide revision synchronization or step construction fixes.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern).
-  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-44` (Atomic Multi-Case Construction), `PAT-49` (Incremental Construction Success Verification), `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law).
+  * **Related Patterns:** `PAT-36` (MTA Model Revision Synchronization & Structural Delta Classification), `PAT-44` (Atomic Multi-Case Construction), `PAT-49` (Incremental Construction Success Verification), `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law), `PAT-88` (Execution Plan Post-Build Verification & Link Sealing Law).
 
 ---
 
@@ -1169,13 +1170,13 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-88`: Execution Plan Post-Build Verification & Link Sealing Law
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Mandates that upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 construction discrepancies, the agent MUST update and seal the local Execution Plan markdown file (`${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`):
+* **Description:** Mandates that upon successful completion of the Post-Construction Smoke Audit (`STATE_SMOKE_AUDIT`) with 0 compiler errors AND 0 step discrepancies from the mandatory 1-to-1 Step Reconciliation Audit (`PAT-59`), the agent MUST update and seal the local Execution Plan markdown file (`${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`):
   1. *Machine-Readable Header Sealing:* Update the collapsible YAML header (`schema_version: "1.2.0"`) inside `<details><summary><b>Execution Plan Metadata</b></summary>` to record `status: "BUILT_AND_VERIFIED"`, `build_started_at` timestamp, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user`, and all numeric MTA server database keys (`target_configuration_key`, `target_suite_key`, `test_case_keys`).
   2. *Top-of-Page Audit Callout & Direct Links:* Append post-construction build & smoke audit status to the single top-level callout note with duration telemetry (`**Build Started:** <build_started_at> | **Built & Verified:** <verified_at> by <builder_system_user> (Elapsed: <duration>)`), and insert the Direct MTA Web Navigation Links table directly beneath the note at the top of the plan for immediate 1-click access without scrolling.
-  3. *Section 9 Verification Details:* Append Section 9 (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`) at the bottom of the plan containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) and detailed 7-point verification checks.
+  3. *Section 9 Verification Details:* Append Section 9 (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`) at the bottom of the plan containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) and detailed 7-point verification checks (including 1-to-1 Step Count & Action Reconciliation).
   4. *State Synchronization:* Record `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_build_started_at`, `execution_plan_built_at`, and `execution_plan_verified_at` in `mta_state.json`.
 * **Related Rules:**
-  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable MTA Web Navigation Link Formatting), `PAT-47` (Real-Time Placement Key Persistence), `PAT-59` (Zero Construction Error Pre-Flight Law), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
+  * **Related Patterns:** `PAT-44` (Atomic Multi-Case Construction & Execution Plan Gating), `PAT-46` (Clickable MTA Web Navigation Link Formatting), `PAT-47` (Real-Time Placement Key Persistence), `PAT-59` (Zero Construction Error Pre-Flight Law & 1-to-1 Step Reconciliation), `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
 
 ---
 
@@ -1287,9 +1288,9 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-44`: Parallel Sequence Reordering Anti-Pattern
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls in parallel within the same turn. Reordering operations modify ordinal list positions against uncommitted database state; concurrent execution causes transaction race conditions and inverted sequence order in Mendix. Sequence modification calls MUST be executed sequentially one-by-one or eliminated entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
+* **Description:** Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls in parallel within the same turn, or misinterpreting `TestStepBeforeKey = 0` as a tail append instead of head insertion. Reordering operations modify ordinal list positions against uncommitted database state; concurrent execution causes transaction race conditions and inverted sequence order in Mendix. Sequence modification calls MUST be executed sequentially one-by-one or eliminated entirely by constructing steps forward in correct sequence order from the start (`PAT-11`). If full re-indexing of an existing test case is necessary, execute `SetSequenceOfTestStep(stepKey, 0)` in deterministic reverse order (from Step N down to Step 1).
 * **Related Rules:**
-  * **Related Patterns:** `PAT-11` (Forward Predecessor Chaining), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
+  * **Related Patterns:** `PAT-11` (Forward Predecessor Chaining), `PAT-15` (The Predecessor `0` Rule), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
   * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-39` (Vertical Per-Step Interleaving Anti-Pattern).
 
 ---

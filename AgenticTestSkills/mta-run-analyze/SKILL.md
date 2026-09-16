@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.14.0"
-changes: "Updated PAT-70 data script conversion prompt to default to standalone data generator without prompting for teardown suites unless requested."
+version: "6.16.0"
+changes: "Updated Rule 7 pre-flight verification to enforce zero construction errors and 1-to-1 step reconciliation before test execution."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -19,7 +19,7 @@ changes: "Updated PAT-70 data script conversion prompt to default to standalone 
 
 > [!IMPORTANT]
 > ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
-> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationDetails`, `GetTestConfigurationDetails`, `GetAppModelData`, `GetExecutionUsers`, `GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`, `GetTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve the MCP server endpoint (`[MtaUrl]/primitivetools/mcp`), evaluate in order: (1) project-level `AGENTS.md` (`MTA Url`), (2) `mta_config.json` (`mta_base_url`), (3) `.vscode/settings.json` (`MTA_BASE_URL`), (4) `mta_state.json` (`mta_base_url`), or (5) prompt the user on turn 1.
+> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationDetails`, `GetTestConfigurationDetails`, `GetAppModelData`, `GetExecutionUsers`, `GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`, `GetTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve configuration parameters (including the MCP server endpoint `[MtaUrl]/primitivetools/mcp`), evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user on turn 1.
 > Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
 
 > [!IMPORTANT]
@@ -50,7 +50,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly. Available `ObjectTypes`: `testconfiguration`, `testsuite`, `testcase`, `testrun`, `testsuiterun`, `testcaserun`.
 5. **State File Key Resolution Law**: Before executing any persistent test case, test suite, or configuration on the MTA platform, check `mta_state.json` (if in Agentic Mode) or the Session Compaction Block (if in Chat Mode) to load the exact numeric `key` for the target test case (`test_cases[].key`) or test suite (`test_suite.key`). If missing keys, use read-only discovery tools (`GetTestConfigurationDetails`, `GetTestSuiteDetails`) to locate the entity on the MTA server, and immediately persist them. *(Note: Local in-memory exploratory tests executed under `STATE_EXPLORATORY_EXECUTION` via `MTA_plugin.execute-testcase` are strictly EXEMPT from key requirements).*
 6. **Pattern Audit & Auto-Registration Protocol**: When analyzing existing test cases or auditing step sequences in `STATE_QA_ASSISTANCE`, verify step patterns against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-xx] [^ANTI-xx]. If a new pattern or anti-pattern is identified or learned, auto-register it in `mta-patterns-and-antipatterns-reference.md` and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files.
-7. **Pre-Flight Zero Construction Error Verification Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTest`, you **MUST** verify that `GetTestCaseDetails` returns **0 construction errors**. If construction errors exist on the server, you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors to the user, and explain that execution cannot proceed until model revision synchronization or step binding issues are resolved.
+7. **Pre-Flight Zero Construction Error & 1-to-1 Step Reconciliation Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTest`, you **MUST** verify that `GetTestCaseDetails` returns **0 construction errors** and has passed the mandatory **1-to-1 Plan-to-Server Step Reconciliation** without discrepancies. If construction errors exist on the server or planned steps are missing (`INCOMPLETE_BUILD_DISCREPANCY`), you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors or missing steps to the user, and explain that execution cannot proceed until model revision synchronization or step construction issues are resolved.
 
 ---
 
@@ -209,7 +209,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
     *   **Execution Initiation & Scoping (`ExecuteTest`):**
         *   Call `ExecuteTest(ApplicationInstanceToken="...", ExecutionLevel="TestCase"|"TestSuite"|"TestConfiguration", TestCaseKey=... | TestSuiteKey=... | TestConfigurationKey=...)`.
-        *   *App Instance Token Auto-Resolution:* `ApplicationInstanceToken` is mandatory for `ExecuteTest`. Automatically resolve it from `mta_config.json` (`default_app_instance_token` or matching `token` in `app_instances[]`). If the user specifies an environment name (e.g. 'Local', 'Staging', or custom name), search `app_instances[]` for a matching `name` to extract its `token`, `mtaUrl`, and `runtimeUrl`. Fall back to `.env` (`MTA_APP_INSTANCE_TOKEN`) or prompt the user for their App Instance Token only if missing across all configuration sources.
+        *   *App Instance Token Auto-Resolution (`STATE_EXECUTION`):* `ApplicationInstanceToken` is mandatory for `ExecuteTest`. Before calling `ExecuteTest`, resolve `ApplicationInstanceToken` directly from `mta_config.json.default_app_instance_token` (or matching `token` in `app_instances[]`). If the user specifies an environment name (e.g. 'Local', 'Staging', or custom name), search `app_instances[]` for a matching `name` to extract its `token`, `mtaUrl`, and `runtimeUrl`. Fall back to project-level `AGENTS.md`, `.env` (`MTA_APP_INSTANCE_TOKEN`), or prompt the user for their App Instance Token only if missing across all configuration sources.
         *   Prefer single test case execution (`ExecutionLevel="TestCase"`) during active construction or verification for fast, isolated feedback loops.
         *   The call returns `TestRunKey` and `TestRunExecutionId`.
     *   **Context-Preserving Diagnostic Drill-Down Protocol (`PAT-83` / `ANTI-37`):**

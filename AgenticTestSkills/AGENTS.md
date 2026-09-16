@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.23.0"
-changes: "Codified Frontend Cross-Case Data Piping: Case 2 scalar piping and Case 3 direct handle deletion (PAT-92)."
+version: "4.24.0"
+changes: "Updated token and configuration resolution precedence to prioritize mta_config.json as SSOT over project-level AGENTS.md."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -45,8 +45,8 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 ---
 
 ## 3. Configuration SSOT & Path Resolution
-- **Path Resolution Hierarchy**: Resolve the Mendix project file (`.mpr`), `mta_config.json`, endpoints, tokens, and output paths in this strict order: (1) `mta_config.json` (e.g., `mendix_mpr_path`, `execution_plans_dir`), (2) `.env` (e.g., `MENDIX_MPR_PATH`), (3) `.vscode/settings.json` (e.g., `MENDIX_PROJECT_PATH`), (4) command-line arguments (for `mxcli`), (5) prompt user. The directory specified MUST ONLY contain exactly one `.mpr` file.
-- Resolve `ApplicationInstanceToken` automatically from `mta_config.json` (`default_app_instance_token` or matching `app_instances[]`).
+- **Path Resolution Hierarchy**: Resolve configuration parameters, tokens, endpoints, and paths in this strict order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url` / `mendix_mpr_path` / `execution_plans_dir`), (2) `project-level AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), (4) `.env` / command-line arguments, (5) prompt user. The directory specified MUST ONLY contain exactly one `.mpr` file.
+- **App Instance Token Resolution (`STATE_EXECUTION`):** Before calling `ExecuteTest`, resolve `ApplicationInstanceToken` directly from `mta_config.json.default_app_instance_token` (or matching `app_instances[]`).
 - **Playwright Trace Viewer Resolution (PAT-90):** For frontend test runs where `GetTestRunResults` provides a `FileUUID`, assemble the viewer URL using: `playwright_viewer_url` (default `https://trace.playwright.dev/?trace=`) + `tracefile_base_url` (from `mta_config.json`, `.env`, or derived from `${mta_base_url}/rest/private/tracefile?fileUUID=`) + `FileUUID`. Always include the clickable trace viewer link in failure diagnostics.
 - **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-tools` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
 

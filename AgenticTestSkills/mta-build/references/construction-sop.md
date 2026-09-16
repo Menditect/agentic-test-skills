@@ -31,8 +31,12 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 1. **Multi-Case Allocation:** In multi-case test suites (e.g., Frontend 3-Case lifecycle: Case 1 Setup with seeding + batch Persist, Case 2 Action, Case 3 Teardown with reverse deletes + batch Persist [`PAT-03`, `PAT-91`, `PAT-92`, `PAT-93`]), dispatch all planned `CreateTestCase` calls concurrently. Ensure `ExecutionUserKey` is resolved beforehand (`PAT-79`).
 2. **Step Forward-Chaining:** Create empty steps in chronological order using predecessor chaining (`TestStepBeforeKey = PreviousStepKey`, `PAT-11`).
    - For the very first step in a test case, pass `TestStepBeforeKey = 0`.
+     > [!WARNING]
+     > **⚠️ `TestStepBeforeKey = 0` IS HEAD INSERTION ONLY:**
+     > Passing `0` for `TestStepBeforeKey` in `CreateMicroflowCallTestStep`, `CreateObjectActionTestStep`, or `SetSequenceOfTestStep` **ALWAYS** places the step at **Position 1 (the absolute beginning / head)** of the test case. It **NEVER** appends to the end.
    - Steps in the same test case cannot be batched concurrently because each step requires its predecessor's generated key.
    - **Sequence Modification Serialization (`ANTI-44`):** If reordering steps or test cases after creation via `SetSequenceOfTestStep` or `SetSequenceOfTestCase`, you MUST execute these calls sequentially one-by-one across separate turns. Dispatching multiple sequence reordering calls in parallel causes uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences. Wherever possible, construct steps forward in correct sequence order from the start (`PAT-11`) to eliminate the need for `SetSequenceOfTestStep` entirely.
+   - **Deterministic Reverse-Order Re-indexing Pattern ($N \rightarrow 1$):** If an existing multi-step test case needs its sequence completely re-ordered, execute `SetSequenceOfTestStep(stepKey, 0)` in **reverse order** (from Step $N$ down to Step 1). This deterministically establishes the contiguous sequence $[1..N]$ without ordinal list collisions.
 3. **Direct Output Binding:** For `ChangeObjects` and `DeleteObjects` steps, pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` at creation time (`PAT-80`).
 
 ---

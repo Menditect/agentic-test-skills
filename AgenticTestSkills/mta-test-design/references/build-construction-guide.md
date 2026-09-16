@@ -98,15 +98,35 @@ If interrupted mid-flow:
 ---
 
 ### 4. `STATE_SMOKE_AUDIT` (State 4)
-*   **Mandatory Halt Gate:** Transitioning directly from construction to execution is prohibited. Enter `STATE_SMOKE_AUDIT`, run validation queries, present the **Post-Construction Verification & Compliance Report**, and **HALT** for user confirmation.
+*   **Mandatory Halt Gate:** Transitioning directly from construction to execution is strictly prohibited. Enter `STATE_SMOKE_AUDIT`, execute the **Mandatory 1-to-1 Plan-to-Server Step Reconciliation Audit** (`PAT-59`, `PAT-88`), present the **Post-Construction Verification & Compliance Report**, and **HALT** for user confirmation.
 
 ##### 🤖 Dual-Track Smoke Audit Styles:
-*   **Agentic Track:** Read the locally saved execution plan file (`.md`) via file viewing tools. **Staggered Smoke Audit Reading:** Query `GetTestCaseDetails(TestCaseKey)` for one test case at a time per turn to prevent context window saturation while inspecting every case. Audit created steps, attributes, parameters, assertions, and variation overrides against Section 7 of the plan. Verify zero unapproved additions exist. Generate the Smoke Audit Report.
+*   **Agentic Track:** Read the locally saved execution plan file (`.md`) via file viewing tools. **Staggered Smoke Audit Reading:** Query `GetTestCaseDetails(TestCaseKey)` for one test case at a time per turn to prevent context window saturation while inspecting every case. Audit created steps, attributes, parameters, assertions, and variation overrides against Section 5 and Section 7 of the plan. Perform 1-to-1 step reconciliation. Verify zero unapproved additions exist. Generate the Smoke Audit Report.
 *   **Chat Track:** Audit created steps, attributes, parameters, assertions, and variations against the execution plan retained in the active chat context.
 
 #### The Post-Construction Verification & Compliance Report Structure:
-Your report **MUST** contain four distinct sections:
-1. **100% Entire Execution Plan Content Audit (Execution Plan vs. Reality - ALL 8 SECTIONS):** Compare the approved execution plan (State 2) section-by-section with the actual created assets on MTA:
+Your report **MUST** contain five distinct sections:
+1. **Mandatory 1-to-1 Plan-to-Server Step Reconciliation Table (`PAT-59`, `PAT-88`):** Compare the approved execution plan (Section 5 Detailed Step Configurations) step-by-step against the actual steps returned by `GetTestCaseDetails`:
+    *   Match every planned step (Case #, Step Name, Action/Target, Input Handle, Exec Settings) against the physical MTA database step key.
+    *   Include the **Step Reconciliation Table**:
+        ```markdown
+        | Case # | Planned Step Name / Action | Built MTA Step Key | Status |
+        | :--- | :--- | :--- | :--- |
+        | Case 1 | LocalStartOptions | Step 6501 | ✅ MATCH |
+        | Case 1 | Start_Frontend_Test_Locally | Step 6502 | ✅ MATCH |
+        | Case 1 | Create Seed Object (Car) | Step 6503 | ✅ MATCH |
+        | Case 1 | Persist Seed Data | Step 6504 | ✅ MATCH |
+        | Case 2 | StartMxFrontendTestOptions | Step 6510 | ✅ MATCH |
+        | Case 2 | Navigate to Page | Step 6511 | ✅ MATCH |
+        | Case 2 | Stop_MxFrontendTest | Step 6520 | ✅ MATCH |
+        | Case 3 | Teardown Playwright | Step 6522 | ✅ MATCH |
+        | Case 3 | Retrieve runtime Booking | Step 6523 | ✅ MATCH |
+        | Case 3 | Delete runtime Booking | Step 6524 | ✅ MATCH |
+        | Case 3 | Delete Seeded Car | Step 6525 | ✅ MATCH |
+        | Case 3 | Persist Deletions | Step 6526 | ✅ MATCH |
+        ```
+    *   **Discrepancy Hard Gate:** If $\text{Planned Step Count} \neq \text{Built Step Count}$ or any planned step is missing (`❌ MISSING`), or unexpected extra steps exist (`⚠️ EXTRA`), the Smoke Audit **MUST FAIL** with status `INCOMPLETE_BUILD_DISCREPANCY`, remain in `STATE_CONSTRUCTION` to build missing steps, and strictly block transition to `STATE_RUN_ANALYZE`.
+2. **100% Entire Execution Plan Content Audit (Execution Plan vs. Reality - ALL 8 SECTIONS):** Compare the approved execution plan (State 2) section-by-section with the actual created assets on MTA:
     *   **Section 1 (State Compaction & Target Placement):** App, Test Configuration, Test Suite, Test Case Name, Category, Execution User (`EXUS_ExecutionUser`).
     *   **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
     *   **Section 3 (Test Case Scope & Dual-Risk Profile):** Objective, Preconditions, Expected Results, Auth Requirement (`GetTestCaseDetails`), Technical Risk, Business Risk.
@@ -118,8 +138,8 @@ Your report **MUST** contain four distinct sections:
         * Every input attribute value, microflow parameter, return value assertion, object count, exception string, and validation feedback string matches Section 7 (`PAT-54`).
         * **Zero Disconnect Check:** Verify that **zero unapproved additions** exist (no extra assertions, variation items, attributes, or retrieve filters exist on the server that were not declared in Section 7 or Section 5).
     *   **Section 8 (Applied Testing Patterns & Rationale):** Verify pattern explanations match pattern annotations written into step descriptions via `EditTestStep`.
-2. **MTA Server Validation Audit (Compiler Check):** Show retrieved compiler or configuration errors from `GetTestCaseDetails`. Report the output. If any compilation errors are found, they **MUST** be resolved before proceeding.
-3. **MTA Platform Quality & Execution Safety Checklist:**
+3. **MTA Server Validation Audit (Compiler Check):** Show retrieved compiler or configuration errors from `GetTestCaseDetails`. Report the output. If any compilation errors are found, they **MUST** be resolved before proceeding.
+4. **MTA Platform Quality & Execution Safety Checklist:**
     * **Execution User Check:** `ExecutionUserKey` is bound and valid.
     * **Atomic Batching Check:** Multi-case suites batched concurrently.
     * **Piping Integrity:** Every consumer step references its producer's returned memory outputs (like created object keys) dynamically, with zero hardcoding.
@@ -137,7 +157,7 @@ Your report **MUST** contain four distinct sections:
     * **Cascading Provider Check:** If a teardown/cleanup step is `"Always"`, all of its upstream input provider steps are also set to `"Always"`.
     * **Order of Operations Check:** Memory retrieves called `EditTestStepRetrieve(RetrieveOption = "Teststep")` before attempting to retrieve or set select objects.
     * **Integer Piping Datatype Check:** All binding and piping keys passed in tool payloads (e.g. `TestStepOutputKey`) are raw, unquoted integers, never quoted strings.
-4. **Direct MTA Web Navigation Links & Plan Verification:** Provide direct clickable markdown links (plain text without emojis) to the constructed/verified MTA assets using the official MTA URL pattern `[MtaBaseUrl]/p/[ObjectType]/[Key]`:
+5. **Direct MTA Web Navigation Links & Plan Verification:** Provide direct clickable markdown links (plain text without emojis) to the constructed/verified MTA assets using the official MTA URL pattern `[MtaBaseUrl]/p/[ObjectType]/[Key]`:
     * **Test Configuration:** `[ConfigName]([MtaBaseUrl]/p/testconfiguration/[ConfigKey])`
     * **Test Suite:** `[SuiteName]([MtaBaseUrl]/p/testsuite/[SuiteKey])`
     * **Test Case(s):** `[TestCaseName]([MtaBaseUrl]/p/testcase/[CaseKey])`
