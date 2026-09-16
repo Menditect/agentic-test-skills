@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.16.0"
-changes: "Enforced Frontend Cross-Case Data Piping: Case 2 dynamic scalar piping and Case 3 direct handle deletion (PAT-92)."
+version: "6.16.1"
+changes: "Synced shared exploratory execution references for neutral option selection and PAT-70 standalone seeding."
 ---
 
 # MTA Build, Design, & Optimization Skill

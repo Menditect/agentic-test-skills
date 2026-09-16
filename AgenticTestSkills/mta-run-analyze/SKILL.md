@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.13.6"
-changes: "Removed obsolete ExecutionPlanKey from promotion state block; updated shared references to 51-tool MTA-ACCP API."
+version: "6.14.0"
+changes: "Updated PAT-70 data script conversion prompt to default to standalone data generator without prompting for teardown suites unless requested."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -200,11 +200,10 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
     *   **Dual-Requirement Persistence Law (`PAT-21`):** In-memory creations/mutations are only committed to the database when BOTH (1) `RollbackTcseAfterExecution: "No"` is set, and (2) a standalone batch `Persist` step (`{"Action": "Persist"}`) is appended to the end of the step sequence. The `Persist` step is parameterless and MUST NOT have `EntityQualifiedName` or `TCEX_RQ_Sf*` handle mappings.
     *   **Local Executor Context Protocol:** Standard local execution context requires `ExecutorUsername: "MxAdmin"` combined with `ApplySecurityExecutor: "NONE"` to satisfy runtime user identity while bypassing entity access constraints for unhindered seeding.
     *   **Direct Execution Protocol (`PAT-69`):** Execute live data seeding and business microflows directly with `Rollback = "No"` and trailing batch `Persist` by default (committing records directly to the local database without requiring preliminary dry-run loops, unless explicit rollback is requested).
-    *   **Data Script Conversion Bridge (`PAT-70`):** After live test data provisioning completes, prompt the user with the explicit 3-choice menu:
-        > *"Live test data provisioning completed. Would you like to convert this data setup script into a persistent MTA Platform asset?"*
-        > *   **1. Standalone Data Seeding Test Case:** Single persistent test case to generate and keep this data in the database (no teardown).
-        > *   **2. Automated Frontend Test Suite (3-Case UI Pattern):** Case 1 (Setup/Seed) + Case 2 (Playwright UI interactions) + Case 3 (Teardown Cleanup).
-        > *   **3. Automated Backend Integration Suite (3-Case Backend Pattern):** Case 1 (Setup/Seed) + Case 2 (Microflow calls & assertions) + Case 3 (Teardown Cleanup).
+    *   **Data Script Conversion Bridge (`PAT-70`):** After live test data provisioning completes, prompt the user:
+        > *"Live test data provisioning completed. Would you like to save this data seeding script as a persistent Data Generator test case on the MTA Platform?"*
+        > *   **1. Standalone Data Seeding Test Case (Default):** Single persistent test case to generate and keep this data in the database (no teardown).
+        > *   **2. Automated Regression Test Suite (Optional):** 3-case suite with setup, UI or backend assertions, and teardown cleanup.
         *   **Promotion Reverse-Handoff Protocol:** Upon the user selecting an option, transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_1 | Active Skill: mta-test-design]`) to draft the formal `# MTA EXECUTION PLAN SIGN-OFF` corresponding to the chosen profile. Direct construction without an approved Execution Plan (Gate 1) and Placement Summary (Gate 2) is strictly **PROHIBITED** (`PAT-43`, `ANTI-14`).
 
 3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.

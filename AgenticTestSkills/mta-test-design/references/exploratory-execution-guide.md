@@ -848,32 +848,35 @@ Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test C
 ### B. Data Script & Manual Scenario to MTA Conversion Protocol (`PAT-70`)
 When a local live test data seeding script (`TCEX_RQ` executed with `Rollback = "false"`) or a Manual Test Plan (MTP) scenario is completed, the agent offers to convert the underlying seed data recipe into a persistent MTA Platform asset.
 
-#### 🚨 Structure Selection & Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-46`):
-You are **strictly prohibited** from converting or constructing persistent MTA test cases from a data script without first prompting the user to select one of the **3 Data Provisioning Structure Choices**, generating an official **`# MTA EXECUTION PLAN SIGN-OFF`** (Gate 1), and resolving placement interactively via the **Universal Iterative Placement Protocol** (Gate 2).
+#### 🚨 Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-46`):
+You are **strictly prohibited** from converting or constructing persistent MTA test cases from a data script without first generating an official **`# MTA EXECUTION PLAN SIGN-OFF`** (Gate 1) and resolving placement interactively via the **Universal Iterative Placement Protocol** (Gate 2).
 
-#### The 3 Conversion Choices:
-1. **Type 1: Standalone Data Seeding Test Case (Persistent Data Generator)**
-   * *Generates:* A **Backend Execution Plan** (1-Case Data Generator).
-   * *Step Sequence:* Entity creation and association linking steps, direct attribute bindings, trailing batch `Persist`.
-   * *Teardown:* **NO teardown steps in this test case.** Seeded records remain in the database for subsequent manual testing, QA validation, or demo environments (`Rollback = No`).
-   * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
-2. **Type 2: Automated Backend Integration Suite (3-Case Backend Pattern)**
-   * *Generates:* A **Backend Execution Plan** (3-Case Integration Lifecycle).
-   * *Step Sequence:*
-     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
-     * `Case 2 (Backend Logic)`: Microflow execution and return value / state assertions mapped from `DESCRIBE MICROFLOW` (`PAT-71`).
-     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
-   * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
-3. **Type 3: Automated Frontend Test Suite (3-Case UI Pattern)**
-   * *Generates:* A **Frontend Execution Plan** (3-Case UI Lifecycle).
-   * *Step Sequence:*
-     * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
-     * `Case 2 (Frontend UI Test)`: Playwright UI actions using verified `MenditectMxFrontendTestKit` microflows mapped from single-pass page AST discovery (`PAT-72`).
-     * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
-   * *Section 6 (Playwright):* Full **10-Setting Playwright Table** (Environment, Browser Type, Headless Mode, Viewport, Video, Trace, SlowMo, Timeout, Base URL, Execution User).
+#### Conversion Profiles & Default Behavior:
+* **Default Conversion Profile: Type 1: Standalone Data Seeding Test Case (Persistent Data Generator)**
+  * When converting an ad-hoc data script or manual seeding request into a persistent server asset, default directly to **Type 1** without prompting for 3-case teardown (unless the user explicitly requested an automated regression test suite).
+  * *Generates:* A **Backend Execution Plan** (1-Case Data Generator).
+  * *Step Sequence:* Entity creation and association linking steps, direct attribute bindings, trailing batch `Persist`.
+  * *Teardown:* **NO teardown steps in this test case.** Seeded records remain in the database for subsequent manual testing, QA validation, or demo environments (`Rollback = No`).
+  * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
+
+* **Alternative Profiles (Only when user explicitly requests a full Regression Suite with Teardown):**
+  * **Type 2: Automated Backend Integration Suite (3-Case Backend Pattern)**
+    * *Generates:* A **Backend Execution Plan** (3-Case Integration Lifecycle).
+    * *Step Sequence:*
+      * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
+      * `Case 2 (Backend Logic)`: Microflow execution and return value / state assertions mapped from `DESCRIBE MICROFLOW` (`PAT-71`).
+      * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
+    * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
+  * **Type 3: Automated Frontend Test Suite (3-Case UI Pattern)**
+    * *Generates:* A **Frontend Execution Plan** (3-Case UI Lifecycle).
+    * *Step Sequence:*
+      * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
+      * `Case 2 (Frontend UI Test)`: Playwright UI actions using verified `MenditectMxFrontendTestKit` microflows mapped from single-pass page AST discovery (`PAT-72`).
+      * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
+    * *Section 6 (Playwright):* Full **10-Setting Playwright Table** (Environment, Browser Type, Headless Mode, Viewport, Video, Trace, SlowMo, Timeout, Base URL, Execution User).
 
 ### Step-by-Step Conversion & Promotion Workflow:
-1. **Prompt Structure Choice (Data Seeding Plans Only):** Prompt user to select Type 1, Type 2, or Type 3 structure.
+1. **Default to Standalone Seeding Asset (or Profile Choice if Suite Requested):** For ad-hoc data seeding, default to Type 1 (1-Case Data Generator with `Rollback = No` and no teardown).
 2. **Draft Execution Plan (Gate 1):** Generate `# MTA EXECUTION PLAN SIGN-OFF` conforming to the selected option, including the 14-point Pre-Approval Quality Checklist.
 3. **Iterative Gate 2 Placement Discovery:** In `mta-test-design` (`PLAN_STEP_2`), interactively scan and present available Test Configurations, then Test Suites, and propose Test Case Name(s) and Execution User in strict multi-turn sequential steps.
 4. **Present Summary & Sign-Off (Gate 2):** In `mta-test-design` (`PLAN_STEP_3`), present Placement & Target Summary for user approval.
