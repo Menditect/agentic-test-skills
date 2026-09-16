@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [🚀 v1.19.0](releases/v1.19.0.md) | 2026-09-15 | improved skills for frontend testing and datavariations |
+| [🚀 v1.19.0](releases/v1.19.0.md) | 2026-09-16 | improved skills for frontend testing and datavariations |
 | [🚀 v1.18.4](releases/v1.18.4.md) | 2026-09-15 | improved handling of datavariations and playwright trace viewer |
 | [🚀 v1.18.2](releases/v1.18.2.md) | 2026-09-14 | added more required fiels to mta_config |
 | [🚀 v1.18.1](releases/v1.18.1.md) | 2026-09-14 | feat(ci): add marketplace version pruner and harden public repo sync |
