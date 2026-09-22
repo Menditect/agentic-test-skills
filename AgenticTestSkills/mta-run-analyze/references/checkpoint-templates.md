@@ -39,7 +39,7 @@ When an existing Execution Plan (`EP_*.md`) targeting the same microflow or page
 
 Render the Executive Summary Box (~35 lines) and clickable file link in chat, followed by the appropriate Checkpoint 1 card below:
 
-### Case 1: When Model Delta is Detected (Option B Blocked ➔ Option A Only)
+### Case 1: When Model Delta is Detected or MTA MCP Server is Unavailable (Option B Blocked ➔ Option A Only)
 
 ```markdown
 ---
@@ -47,11 +47,16 @@ Render the Executive Summary Box (~35 lines) and clickable file link in chat, fo
 ## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
 
 > [!WARNING]
-> **MTA Server Model Check:** Out of Sync — Persistent MTA Building Blocked (`ANTI-36`)  
-> One or more planned elements do not exist in the active MTA server revision.
+> **MTA Server Availability & Model Check:** Persistent MTA Building Blocked (`ANTI-36`)  
+> **Status:** [Out of Sync — Model Delta Detected | MTA MCP Server Unavailable]  
+> [If Model Delta: One or more planned elements do not exist in the active MTA server revision.  
+> If MTA Server Unavailable: The remote `MTA` MCP server is not registered or reachable in your assistant environment.]
 >
-> 💡 **Automate Model Updates on Every Commit:**  
+> 💡 **Automate Model Updates on Every Commit (Model Delta):**  
 > If you want MTA to automatically update its model revision whenever you commit, you can subscribe your Test Configuration to your git branch. Expand the setup guide below for step-by-step instructions.
+>
+> 🔌 **Enabling the MTA MCP Server (Server Unavailable):**  
+> Option B (Persistent MTA Tests) requires the remote `MTA` MCP server to construct test assets. Option A (Local Exploratory Testing) remains fully operational via `MTA_plugin`. To enable Option B, ensure the `MTA` MCP server is configured in your tool environment (`mta_config.json` or IDE MCP settings).
 
 <details>
 <summary><b>MTA Branch Subscription Setup Guide (Automate Model Sync on Every Git Commit)</b></summary>
@@ -71,28 +76,40 @@ Official documentation: [Menditect Branch Subscription Guide](https://documentat
 
 </details>
 
-### 🔍 Model Discrepancy Summary
+<details>
+<summary><b>MTA MCP Server Configuration Guide (Enable Persistent Building)</b></summary>
 
-| Inspected Element | Local AST (`mxcli`) | MTA Server Revision | Parity Status | Impact |
+To construct persistent test cases on the MTA server (Option B), the `MTA` MCP server must be registered in your environment:
+1. **Verify `mta_config.json`:** Ensure `mcp_endpoint` or `mta_base_url` points to your MTA server (e.g., `https://mta.yourcompany.com/primitivetools/mcp`).
+2. **Configure Authentication:** Ensure `MTA_MCP_AUTH_HEADER` (or session token) is present in your environment / `.env`.
+3. **IDE Tool Configuration:** Ensure the `MTA` MCP server is listed in your IDE's MCP tool settings (`.gemini/settings.json`, `.vscode/settings.json`, or assistant tool manifest).
+4. **Local Testing Independence:** Option A (Local Exploratory Testing) does NOT require the remote MTA server and runs directly against your local application via `MTA_plugin`.
+
+</details>
+
+### 🔍 Model & Environment Parity Summary
+
+| Check Item | Local Environment | MTA Server / MCP Status | Parity / Availability Status | Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| `[Element Qualified Name]` | Verified Present | **Not Found on Server** | **MISMATCH** | Causes immediate step creation failure (`ANTI-36`) on MTA |
+| **`MTA` MCP Server** | Local Tools Active (`MTA_plugin`) | `[Connected | Not Registered / Unavailable]` | **`[PASS | BLOCKED]`** | Option B requires `MTA` MCP tools to build test assets |
+| **Model Elements** | Verified Present (`mxcli`) | `[Verified | Not Found on Server | Not Checked]` | **`[PASS | MISMATCH | BLOCKED]`** | Outdated revision causes step creation failure (`ANTI-36`) |
 
 ### 🧭 Execution Strategy Availability
 
 | Strategy Option | Target Environment | Status | Description |
 | :--- | :--- | :---: | :--- |
-| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`ACTIVE`** | **1-Click In-Memory Execution.** Runs all scenarios in `< 1s` with `Rollback = Yes`. Zero database pollution, instant feedback. |
-| **Option B: Persistent MTA Test** | MTA Server Platform | **`BLOCKED`** | **Temporarily Disabled.** Blocked until project model is synchronized (via [Branch Subscription](https://documentation.menditect.com/mta/branch-subscription) or manual upload). |
+| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`ACTIVE`** | **1-Click In-Memory Execution.** Runs all scenarios in `< 1s` with `Rollback = Yes`. Zero database pollution, instant feedback. Fully active via `MTA_plugin`. |
+| **Option B: Persistent MTA Test** | MTA Server Platform | **`BLOCKED`** | **Disabled.** Blocked because `[MTA MCP server is not registered | project model revision is out of sync]`. |
 
 ### 💬 Decision Required:
 > **Do you approve this Execution Plan for immediate local execution?**
-> - **[Yes, Execute Option A]** ➔ Dispatches local in-memory exploratory test (`< 1s` execution).
+> - **[Yes, Execute Option A]** ➔ Dispatches local in-memory exploratory test (`< 1s` execution via `MTA_plugin`).
 > - **[Adjust Plan]** ➔ Make changes to test steps, assertions, or data variations first.
-> - **[Sync MTA First]** ➔ Set up [Branch Subscription](https://documentation.menditect.com/mta/branch-subscription) or trigger a manual model upload so Option B can be unlocked.
+> - **[Enable Option B]** ➔ `[Register the MTA MCP server in your settings | Set up Branch Subscription or trigger a manual model upload]` to unlock Option B.
 
 > [!WARNING]
 > **Local Runtime Unreachable Fallback:**
-> If the local application is not running or the `MTA_plugin` endpoint (`http://localhost:8080/primitivetools/mcp`) is unreachable:
+> If the local application is not running or the `MTA_plugin` endpoint (`http://localhost:8081/plugin/mcp` or `[RuntimeUrl]/plugin/mcp`) is unreachable:
 > 1. Start the local Mendix application from Studio Pro (or run `mendix-cli` / start local server).
 > 2. Alternatively, commit your local changes and sync MTA ([Branch Subscription](https://documentation.menditect.com/mta/branch-subscription) or manual upload) to unblock Option B.
 > 3. You can still review, refine, and store the Execution Plan locally (`EP_<TestCaseName>.md`) in `STATE_BUILD_PLANNING` without requiring an active application runtime.
@@ -160,9 +177,83 @@ Official documentation: [Menditect Branch Subscription Guide](https://documentat
 
 ---
 
+### Case 4: When Both Remote MTA and Local MTA Plugin MCP Servers are Unavailable (Dual Outage / Offline Mode)
+
+```markdown
+---
+
+## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
+
+> [!WARNING]
+> **MTA Tooling Availability Check:** Execution Temporarily Blocked (Both MCP Servers Offline)  
+> **Status:** Remote MTA Server & Local Plugin Unavailable (`PAT-82`, `ANTI-36`)  
+> Neither the remote `MTA` platform server nor the local `MTA_plugin` runtime endpoint is currently reachable.
+>
+> 💾 **Plan Stored Successfully:** The complete Execution Plan has been saved locally as a sealed draft (`status: "DRAFT"`) at `[file:///path/to/EP_TestCase.md]`. No work is lost.
+
+### 🔍 Model & Environment Parity Summary
+
+| Check Item | Local Environment | MTA Server / MCP Status | Availability Status | Impact |
+| :--- | :--- | :--- | :---: | :--- |
+| **`MTA` Platform Server** | Local AST Verified (`mxcli`) | `Not Registered / Reachable` | **`BLOCKED`** | Option B requires remote `MTA` MCP server |
+| **`MTA_plugin` (Local JVM)** | Runtime Endpoint Offline | `Connection Refused / Offline` | **`BLOCKED`** | Option A requires local Mendix runtime |
+
+### 🧭 Execution Strategy Status
+
+| Strategy Option | Target Environment | Status | Resolution Step |
+| :--- | :--- | :---: | :--- |
+| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`BLOCKED`** | Start your Mendix App Under Test in Studio Pro (port `8080`) |
+| **Option B: Persistent MTA Test** | MTA Server Platform | **`BLOCKED`** | Configure `MTA` MCP server in `mta_config.json` / settings |
+
+### 💬 Decision Required:
+> **How would you like to proceed?**
+> - **[Save & Exit]** ➔ Retain the draft plan on disk. When a server becomes available later, simply ask to build/execute it.
+> - **[Start Local App]** ➔ Launch your app in Studio Pro, then reply **"Retry Option A"** to run immediate in-memory testing.
+> - **[Enable MTA Server]** ➔ Register your MTA server endpoint/token, then reply **"Retry Option B"** to resolve placement (Gate 2) and build persistent tests.
+> - **[Adjust Plan]** ➔ Modify test steps, entity attributes, or assertions while offline.
+
+---
+```
+
+---
+
+### Case 5: When Remote MTA Server is Active but Local Plugin is Offline (Asymmetric Outage ➔ Option B Active)
+
+```markdown
+---
+
+## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
+
+> [!NOTE]
+> **MTA Server Model Check:** Verified (`PAT-82`)  
+> All planned microflows, entities, and attributes exist in the MTA server.
+>
+> 🔌 **Local Plugin Status:** `MTA_plugin` runtime endpoint is offline / connection refused. Local exploratory testing (Option A) is currently unavailable.
+
+### 🧭 Execution Strategy Availability
+
+| Strategy Option | Target Environment | Status | Description |
+| :--- | :--- | :---: | :--- |
+| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`BLOCKED`** | Local Mendix app is not running. Start app in Studio Pro to enable in-memory testing. |
+| **Option B: Persistent MTA Test** | MTA Server Platform | **`ACTIVE`** | Persistent test asset creation on MTA server (`~15s`). Fully available. |
+
+### 💬 Decision Required:
+> **Do you approve this Execution Plan? How would you like to proceed?**
+> - **[Yes, Proceed with Option B]** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to construct persistent test cases in MTA.
+> - **[Start Local App for Option A]** ➔ Launch your app in Studio Pro on port 8080, then reply **"Retry Option A"**.
+> - **[Adjust Plan]** ➔ Modify test steps, assertions, or data variations first.
+
+---
+```
+
+---
+
 ### Frontend UI Tests Policy Notice (`PAT-62`)
-For Frontend UI tests (`Category == Frontend`), tests route exclusively to **Option B (Persistent MTA Platform)**:
-> *"Please review the proposed Frontend Execution Plan above. Frontend UI tests require MTA Platform locator mapping, Playwright settings, and 3-case suite lifecycle management. Therefore, they are constructed directly on the MTA Platform (Option B). Once approved, we will proceed to Checkpoint 2 (Confirm Test Suite Placement & Settings)."*
+For Frontend UI tests (`Category == Frontend`), browser test steps drive Playwright sessions on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`:
+- **When `MTA` Server is Active:** Tests route exclusively to **Option B (Persistent MTA Platform)**:
+  > *"Please review the proposed Frontend Execution Plan above. Frontend UI tests require MTA Platform locator mapping, Playwright settings, and 3-case suite lifecycle management. Therefore, they are constructed directly on the MTA Platform (Option B). Once approved, we will proceed to Checkpoint 2 (Confirm Test Suite Placement & Settings)."*
+- **When `MTA` Server is Offline / Unavailable:**
+  > *"The remote MTA MCP server is currently unavailable. Because Frontend UI tests require the MTA Platform and cannot run via the local JVM plugin (Option A is unavailable for UI tests), this Execution Plan has been saved locally as a draft (`status: 'DRAFT'`). Once your MTA server is available, we will proceed directly to Checkpoint 2 (Placement & Settings) to construct your test suite."*
 
 ---
 

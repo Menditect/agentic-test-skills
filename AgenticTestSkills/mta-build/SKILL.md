@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.18.0"
-changes: "Added mandatory 1-to-1 Plan-to-Server Step Reconciliation protocol (PAT-59, PAT-88) and Step Reconciliation Table to STATE_SMOKE_AUDIT with INCOMPLETE_BUILD_DISCREPANCY gate."
+version: "6.18.1"
+changes: "Updated Rule 24 and Step 1 pre-flight verification to strictly check MTA MCP server availability before attempting persistent test construction."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -93,9 +93,9 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   *Option 2 (Override Suite Settings):* Execute Playwright configuration microflow steps on the suite key to apply the new 10 Playwright settings before appending test steps.
     *   *Option 3 (New 3-Case Pattern Block):* Call `CreateTestCase` to provision a dedicated new 3-case set (*Setup*, *Action*, *Teardown*) in the suite below existing tests, apply Playwright configuration steps to the setup case, and construct action steps inside the new case.
 24. **Proactive Pre-Construction Model-to-MTA Schema Audit & Bypass [^PAT-82] [^PAT-36] [^ANTI-36]**:
-    *   **The Single Responsibility Rule:** Model parity audit is the single responsibility of `mta-test-design` (Check 14 of Pre-Approval Quality Audit). When transitioning directly from an active planning session where Check 14 has passed, re-running `GetAppModelData` in `mta-build` is redundant and bypassed by default.
-    *   **Mandatory Execution Triggers:** Run the schema audit via `GetAppModelData` ONLY when: (1) cold-restoring a session without active verification, (2) promoting an exploratory test after a previously detected out-of-sync state, or (3) manual execution plan drift was detected and accepted (`PAT-44`).
-    *   **Action on Mismatch:** If any required element is missing or outdated in MTA, halt immediately. Inform the user of the exact missing element and offer immediate in-memory exploratory testing via `MTA_plugin.execute-testcase` in the interim.
+    *   **The Single Responsibility Rule:** Model parity and MCP tool availability audit is the single responsibility of `mta-test-design` (Check 14 of Pre-Approval Quality Audit). When transitioning directly from an active planning session where Check 14 has passed and MTA MCP server is active, re-running `GetAppModelData` in `mta-build` is redundant and bypassed by default.
+    *   **Mandatory Execution Triggers:** Run the schema audit via `GetAppModelData` ONLY when: (1) cold-restoring a session without active verification, (2) promoting an exploratory test after a previously detected out-of-sync state, or (3) manual execution plan drift was detected and accepted (`PAT-44`). Verify that the remote `MTA` MCP server is registered and accessible; if unavailable, halt immediately (`ANTI-36`).
+    *   **Action on Mismatch or Missing Server:** If the `MTA` MCP server is unavailable, or if any required element is missing or outdated in MTA, halt immediately. Inform the user and offer immediate in-memory exploratory testing via `MTA_plugin.execute-testcase` in the interim.
 25. **Sequence Modification Serialization Law [^ANTI-44]**:
     *   Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls concurrently in parallel is strictly **PROHIBITED**. Sequence reordering calls cause uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences.
     *   When sequence reordering is required, dispatch calls sequentially one-by-one across separate turns, or eliminate them entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
@@ -108,13 +108,6 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 
 | User request mentions... | ...then load ONLY this file: |
 | --- | --- |
-| *MTA request startup, workflow modes, transitions, or core rules* | **`references/core-playbook.md`** (Preemptive) |
-| *Backend/API testing, taxonomies, associations, assertions, REST APIs* | **`references/api-helpers.md`** |
-| *Data matrices, scenarios, date offsets, variation items, or matrices* | **`references/data-variations.md`** |
-| *UI widgets, buttons, inputs, pages, or element locators* | **`references/frontend-testing.md`** |
-| *Playwright connector APIs, options, coordinate entities, or enums* | **`references/playwright-api.md`** |
-| *Design-time warnings, step compilation warnings, sequence issues* | **`references/troubleshooting.md`** |
-| *Unfamiliar technical acronyms, prefixes, or parameter glossary* | **`references/glossary.md`** |
 | *Test case placement, hierarchy, lifecycles, database/memory piping, setups* | **`references/placement-and-lifecycle.md`** |
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
@@ -139,17 +132,23 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 1. **Phase 2: `STATE_CONSTRUCTION`**
    - *State Header:* `[State: STATE_CONSTRUCTION | Temp State: [SKELETON_PROVISIONING | BATCH_INCLUSION | BATCH_BINDING | VARIATION_REGISTRATION | VARIATION_POPULATION] | Active Skill: mta-build]`
    - *Milestone:* Actively construct test steps, option bindings, parameters, and assertions on the server (unlocked only if an approved Execution Plan is saved locally or verified in chat context).
-      - **Step 0: Pre-Construction Plan Integrity, Ingestion & Drift Check (PAT-44):**
-        *   **Agentic Mode:** Read the local Execution Plan `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/` or path in `mta_state.json`). Inspect metadata block (supporting `<details><summary><b>Execution Plan Metadata</b></summary>`, legacy `<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>`, and legacy top-level YAML frontmatter) to extract `plan_id`, `schema_version`, `revision`, `approved_at`, `approved_by`, `approver_system_user`, and `supersedes_plan_id`. Compare against `execution_plan_id`, `execution_plan_revision`, and `execution_plan_approved_at` recorded in `mta_state.json`.
+      - **Step 0: Pre-Construction Plan Integrity, Ingestion, Placement Gating & Drift Check (PAT-43, PAT-44, PAT-89):**
+        *   **Agentic Mode:** Read the local Execution Plan `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/` or path in `mta_state.json`). Inspect metadata block (supporting `<details><summary><b>Execution Plan Metadata</b></summary>`, legacy `<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>`, and legacy top-level YAML frontmatter) to extract `plan_id`, `schema_version`, `revision`, `status`, `approved_at`, `approved_by`, `approver_system_user`, `target_configuration`, `target_configuration_key`, `target_suite`, `target_suite_key`, and `supersedes_plan_id`. Compare against `execution_plan_id`, `execution_plan_revision`, and `execution_plan_approved_at` recorded in `mta_state.json`.
+        *   **🛑 Missing Placement Gate Invariant (PAT-43):** If `target_configuration_key` is null/unresolved or the plan was drafted offline during an MTA server outage without Gate 2 placement, you are **strictly prohibited** from calling construction tools (`CreateTestSuite`, `CreateTestCase`, etc.). Immediately hand off to `mta-test-design` (`PLAN_STEP_2: Placement Discovery`) to query `GetApplicationDetails` / `GetTestConfigurationDetails` on the newly available MTA server, present Checkpoint 2 (Placement & Target Summary Box), and obtain Gate 2 approval before proceeding with construction.
+        *   **⚡ Offline-to-Online Promotion Provenance Archiving (`PAT-89`):** When promoting an offline draft (`status: "DRAFT"`) to an online persistent test upon Gate 2 approval:
+            1. Automatically archive the offline file to `${execution_plans_dir}/archive/EP_<TestCaseName>_<timestamp>_v1.md`.
+            2. Increment `revision` (`revision: 2`), set `supersedes_plan_id: "<TestCaseName>-v1"`, update `status: "APPROVED"`, and record the live Gate 2 `approved_at` timestamp.
+            3. Present the dual active/archived receipt notification to the user.
         *   **Mandatory Plan Ingestion & Variation Item Lock:** Parse and extract the exact list of Data Variation Items declared in **Section 7 (Data Variation Matrix & Metadata)** and cross-check against Section 5. The variation items in Section 7 are the absolute Single Source of Truth (SSOT). You are **strictly prohibited** from improvising, speculating, or adding any attributes, parameters, retrieve filters, or assertions to the variation matrix that are not explicitly defined in Section 7 (`ANTI-32`).
-        *   **Integrity Verified:** If revision and approved timestamp match state, plan integrity is intact; record `execution_plan_build_started_at` in `mta_state.json` and proceed directly to Step 1.
+        *   **Integrity Verified:** If revision and approved timestamp match state and placement is confirmed, record `execution_plan_build_started_at` in `mta_state.json` and proceed directly to Step 1.
         *   **Drift Reconciliation Gate:** If drift or unapproved file edits are detected, halt and present the Soft Reconciliation Choice:
             1. *Accept Changes & Re-Sign:* Increment `revision` (`<old_revision + 1>`), update `approved_at` timestamp and `approved_by`, re-save header, update `mta_state.json`, and proceed to construction.
             2. *Halt & Revert:* Halt construction to allow the user to restore the original approved plan file.
-      - **Step 1: Pre-Construction Model Parity Verification & Bypass Rule (PAT-82, ANTI-36):**
-        *   **Single Responsibility Bypass:** If transitioning directly from `STATE_BUILD_PLANNING` within the active session where Check 14 verified model parity, bypass this redundant check and proceed directly to Phase 1 (`SKELETON_PROVISIONING`).
-        *   **Re-Verification Required:** If entering via cold session restore (`mta_state.json`), promoting after an out-of-sync state, or reconciling plan drift, execute `GetAppModelData` to verify that all planned entities, attributes, microflows, parameters, enumerations, pages, and widgets exist in MTA before creating assets.
-        *   **Mismatch Gate:** If any model element planned in the Execution Plan is missing or outdated in MTA, **HALT** construction immediately. Inform the user that the MTA Model Revision must be updated/synchronized before persistent building or promotion can proceed.
+      - **Step 1: Pre-Construction Model Parity & MCP Server Verification (PAT-82, PAT-95, ANTI-36):**
+        *   **Single Responsibility Bypass:** If transitioning directly from `STATE_BUILD_PLANNING` within the active session where Check 14 verified model parity and MTA MCP server availability, bypass this redundant check and proceed directly to Phase 1 (`SKELETON_PROVISIONING`).
+        *   **Re-Verification Required:** If entering via cold session restore (`mta_state.json`), promoting after an out-of-sync state, promoting/resuming an offline draft created during an MTA server outage, or reconciling plan drift, verify that the remote `MTA` MCP server is registered and accessible, and execute `GetAppModelData` to verify that all planned entities, attributes, microflows, parameters, enumerations, pages, and widgets exist in MTA before creating assets.
+        *   **Sanitized Auth & Token Interception (`PAT-95`):** If `GetAppModelData` or placement queries fail with HTTP 401/403, transport connection errors (`ECONNREFUSED`), or invalid token on cold restore, intercept the error and return the Sanitized Layered Return Message directing the user to update their token or server endpoint in `mta_config.json` or `.env` without exposing internal session tokens.
+        *   **Mismatch / Unavailable Server Gate:** If the `MTA` MCP server is unavailable, or if any model element planned in the Execution Plan is missing or outdated in MTA, **HALT** construction immediately. Inform the user that the `MTA` MCP server must be configured or the MTA Model Revision synchronized before persistent building or promotion can proceed. If the test is a Backend test, offer in-memory exploratory testing via `MTA_plugin.execute-testcase` in the interim.
       - **Mode-Specific Execution Style:**
         *   **Agentic Mode:** Execute the **Deterministic Horizontal Layered Construction Protocol** as detailed in **`references/construction-sop.md`**:
             - **Phase 1 (`SKELETON_PROVISIONING`):** Concurrently allocate test cases (`PAT-79`), then sequentially chain empty test steps forward (`PAT-11`).

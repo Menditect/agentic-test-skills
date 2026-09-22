@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.19.3](releases/v1.19.3.md) | 2026-09-22 | improved workflow to prevent deadlock situations if one or more MCP servers are down or not available |
 | [🚀 v1.19.2](releases/v1.19.2.md) | 2026-09-16 | improved skills for frontend testing and smoke audit |
 | [🚀 v1.19.1](releases/v1.19.1.md) | 2026-09-16 | streamlined skills for optimized loading and workflow |
 | [🚀 v1.19.0](releases/v1.19.0.md) | 2026-09-16 | improved skills for frontend testing and datavariations |

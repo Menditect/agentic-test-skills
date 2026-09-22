@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.6.3"
-changes: "Updated mta_config schema and reference to v1.6.0 with playwright_viewer_url, tracefile_base_url, and tracefileUrl."
+version: "1.6.4"
+changes: "Synchronized reference documentation and pre-approval audit templates for MTA MCP server availability gating."
 ---
 
 # MTA Installation & Configuration Skill
@@ -140,11 +140,22 @@ Guide the user through these four sequential setup micro-states, halting to veri
             ```
         *   **Health Verification (`npm run verify`):**
             Execute `npm run verify` to test connectivity to MTA Primitive Tools MCP, local MTA Plugin MCP, and ensure `mxcli.exe` is present and functional.
+    *   **Service Account & Automated Tools Access Configuration:**
+        *   Guide user to configure an automated Service Account in the MTA Portal under **Account Settings** > **Service Accounts**.
+        *   Ensure automated tools access ("Call Primitive Tools") is enabled on the service account to prevent `403 Forbidden` errors.
+        *   Generate a service session token and store it in `.env` as `MTA_MCP_AUTH_HEADER="Bearer <token>"`.
+        *   If connection errors occur (missing, expired, or invalid tokens), enforce the **Sanitized Layered Return Message** protocol (`PAT-95`, `CWE-209`), never disclosing internal Mendix entities, microflows, or database states.
     *   Enforce high-DPI scaling checks: Ensure Windows display scaling and browser zoom are set strictly to **100%** to prevent click-alignment offset failures during frontend visual test steps.
 *   **🔍 Success Verification Check:**
     *   The MTA Portal Application Instance shows a green status light.
     *   Running a model-discovery query via the MTA MCP tools (e.g. `GetAppModelData` or `GetTestConfigurationDetails`) returns a valid, non-empty JSON structure.
     *   `mta_config.json` is validated without errors against `mta_config.schema.json`.
+*   **🔄 Post-Configuration Resumption & Draft Handoff Protocol:**
+    *   Upon successfully verifying server connectivity and configuration, silently inspect `mta_state.json` (or `${execution_plans_dir}/`) for pending draft plans (`execution_plan_status: "DRAFT"` or `status: "DRAFT"`).
+    *   *If a pending draft exists (e.g. `EP_<TestCaseName>.md` created during an earlier outage):* Proactively prompt the user:
+        > *"Configuration and connectivity verified successfully. A pending draft execution plan was detected at `[EP_<TestCaseName>.md]`. Would you like to proceed with placement discovery and persistent test construction on the MTA Platform?"*
+        - **Yes ➔** Transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_2 | Active Skill: mta-test-design]`).
+    *   *If no draft exists:* Ask the user what test flow, microflow, or page they would like to design tests for.
 
 ---
 

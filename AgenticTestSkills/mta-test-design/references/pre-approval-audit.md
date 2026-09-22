@@ -105,10 +105,16 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Verification Criteria:** All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs with exact parameter signatures. Zero synthetic microflows invented.
 - **Compliance Status:** `PASS` or `NA`.
 
-### [CHECK 14] MTA Server Model Check (`PAT-82`, `PAT-53`, `ANTI-36`)
+### [CHECK 14] MTA Server Model Parity & Dual MCP Server Availability (`PAT-82`, `PAT-53`, `ANTI-36`)
 - **Scope:** All Tests.
-- **Verification Criteria:** Plan drafted at local model level (`mxcli`) is audited against the MTA server via `GetAppModelData`. All planned microflows, entities, and attributes must exist in the MTA server, and domain model constraint parity is verified (e.g., verifying `StringLimitedMaxLength` from `GetAppModelData` matches planned test values). If any delta or missing element is detected: Option B is strictly blocked, and the plan is restricted to Option A (Exploratory Testing Only) until MTA is synchronized.
-- **Compliance Status:** `PASS`.
+- **Verification Criteria:** 
+  1. **Dual MCP Server Availability Probing:** Check the active tool catalog and reachability for both the remote `MTA` platform server (`GetAppModelData`, `CreateTestCase`, etc.) and the local `MTA_plugin` MCP server (`execute-testcase`).
+     - *If `MTA` is unregistered or unreachable:* Status is `BLOCKED (MTA Server Unavailable)`. Option B is strictly prohibited (`ANTI-36`).
+     - *If `MTA_plugin` is unregistered or unreachable (connection refused `ECONNREFUSED` / offline):* Option A (Local Exploratory Testing) is blocked.
+     - *If BOTH are unreachable (Dual Outage):* Status is `BLOCKED (Both MCP Servers Offline)`. Both execution routes are blocked. The plan is stored locally as `status: "DRAFT"` with metadata in `mta_state.json`.
+  2. **Model Parity Audit:** When the `MTA` MCP server is available, audit the plan drafted at local model level (`mxcli`) against the MTA server via `GetAppModelData`. All planned microflows, entities, and attributes must exist in the active MTA server revision, and domain model constraint parity is verified (e.g., verifying `StringLimitedMaxLength` from `GetAppModelData` matches planned test values). If any delta or missing element is detected, status is `BLOCKED (Model Delta / Out of Sync)` and Option B is strictly blocked.
+  3. **Resumption & Retry Parity Law:** When resuming an offline draft plan created during an outage or retrying Option B, Check 14 (`GetAppModelData`) MUST be re-executed before proceeding to placement discovery (`PLAN_STEP_2`) or test construction.
+- **Compliance Status:** `PASS (Both Active & In-Sync)`, `PASS (MTA Verified) | BLOCKED (Plugin Offline)`, `BLOCKED (MTA Unavailable | Plugin Active)`, or `BLOCKED (Both MCP Servers Offline)`.
 
 ---
 
@@ -120,7 +126,7 @@ The Pre-Approval Self-Audit banner at the top of the Execution Plan is rendered 
 ```markdown
 > [!NOTE]
 > **Pre-Approval Quality Audit:** 14/14 checks executed (100% compliant)  
-> **MTA Server Model Check:** Verified (All planned microflows, entities, and attributes exist in the MTA server)  
+> **MTA Server Availability & Model Check:** Verified (MTA MCP server active, all planned elements exist in server revision)  
 > **Category:** [Category]
 ```
 
@@ -128,7 +134,7 @@ The Pre-Approval Self-Audit banner at the top of the Execution Plan is rendered 
 ```markdown
 > [!IMPORTANT]
 > **Pre-Approval Quality Audit:** [X] of 14 checks executed (Corrections Applied)  
-> **MTA Server Model Check:** [Verified | Out of Sync]  
+> **MTA Server Availability & Model Check:** [Verified | Out of Sync | MTA MCP Server Unavailable]  
 > **Category:** [Category]
 ```
 
@@ -136,6 +142,6 @@ The Pre-Approval Self-Audit banner at the top of the Execution Plan is rendered 
 ```markdown
 > [!CAUTION]
 > **Pre-Approval Quality Audit:** Critical Violations Detected (Plan Blocked)  
-> **MTA Server Model Check:** [Verified | Out of Sync]  
+> **MTA Server Availability & Model Check:** [Verified | Out of Sync | MTA MCP Server Unavailable]  
 > **Category:** [Category]
 ```

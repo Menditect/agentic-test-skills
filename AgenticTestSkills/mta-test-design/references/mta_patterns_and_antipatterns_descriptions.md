@@ -1044,8 +1044,8 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-82`: Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law
 * **Scope:** General | **Classification:** Platform Execution Law
-* **Description:** Enforces a single-responsibility model parity audit workflow between Mendix and MTA:
-  1. *Test Design Responsibility (Check 14):* During `STATE_BUILD_PLANNING` (Check 14 of the Pre-Approval Quality Audit), the agent audits domain entities, microflow signatures, and page widgets via `GetAppModelData` against the local Mendix AST (`mxcli`) before Gate 1 approval. If any elements are missing or unequal in MTA, Option B (Persistent MTA Test) is strictly blocked, restricting execution exclusively to Option A (Local Exploratory Testing via `MTA_plugin.execute-testcase`).
+* **Description:** Enforces a single-responsibility model parity and tool availability audit workflow between Mendix and MTA:
+  1. *MCP Tool Availability & Parity Audit (Check 14):* During `STATE_BUILD_PLANNING` (Check 14 of the Pre-Approval Quality Audit), the agent first verifies that the remote `MTA` MCP server is registered and accessible in the active tool catalog, and audits domain entities, microflow signatures, and page widgets via `GetAppModelData` against the local Mendix AST (`mxcli`) before Gate 1 approval. If the `MTA` MCP server is unavailable or any elements are missing or unequal in MTA, Option B (Persistent MTA Test) is strictly blocked, restricting execution exclusively to Option A (Local Exploratory Testing via `MTA_plugin.execute-testcase`).
   2. *Build Phase Parity Bypass:* In `STATE_CONSTRUCTION` Step 1, redundant calls to `GetAppModelData` are strictly bypassed if parity was already verified in the active session and pre-construction drift detection confirms no manual edits occurred. `GetAppModelData` is executed conditionally in `STATE_CONSTRUCTION` only on cold session restoration, post-sync exploratory promotion, or if manual plan drift reconciliation occurred under `PAT-44`.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern).
@@ -1081,7 +1081,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-36`: Blind Construction on Stale MTA Revision Anti-Pattern
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Attempting to build persistent test containers, steps, parameters, or assertions in MTA (or promoting an exploratory test) without first running the Pre-Construction Model-to-MTA Schema Audit (`GetAppModelData`), or relying on step creation errors to discover missing model elements through trial-and-error building. When local code has evolved past the MTA revision, this leads to cascading build rejections (`Entity not found`, `Microflow not found`, `Parameter not found`) and corrupt test definitions on the server.
+* **Description:** Attempting to build persistent test containers, steps, parameters, or assertions in MTA (or promoting an exploratory test) when the remote `MTA` MCP server is unavailable or unregistered, or without first running the Pre-Construction Model-to-MTA Schema Audit (`GetAppModelData`), or relying on step creation errors to discover missing model elements through trial-and-error building. When tools are not registered or local code has evolved past the MTA revision, this leads to tool execution failures, cascading build rejections (`Entity not found`, `Microflow not found`, `Parameter not found`), and corrupt test definitions on the server.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law).
   * **Related Anti-Patterns:** `ANTI-17` (Premature Step Construction on Stale MTA Revision), `ANTI-18` (Ignored Construction Errors).

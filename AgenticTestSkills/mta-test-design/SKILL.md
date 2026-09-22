@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.20.0"
-changes: "Updated core playbook and reference templates with Mandatory 1-to-1 Plan-to-Server Step Reconciliation protocol and Checkpoint 3 post-construction smoke audit verification receipt."
+version: "6.20.1"
+changes: "Enhanced Pre-Approval Quality Audit Check 14 to verify MTA MCP server availability and model parity, strictly gating Option B when the MTA MCP server is unavailable or unregistered."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -94,7 +94,7 @@ You must progress sequentially through these three interactive planning micro-st
 *   **🚨 Mandatory Self-Contained Seed Data Invariant with Master Data Distinction (Frontend Plans) (`PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43`)**:
     *   *Default Invariant (Transactional Seeding):* Plan explicit `Create Object` steps for all primary business entities and selectable catalog records bound to page widgets, concluded by a batch `Persist` step in Case 1 before launching the browser (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
     *   *Symmetric Teardown Cleanup Law (`PAT-92`, `ANTI-43`):* Every transactional entity instantiated during Case 1 setup MUST have a corresponding direct handle delete in Case 3 Teardown (`TestStepOutputKey = Case1_CreateStepKey`), followed by a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`, `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
-    *   *Reverse Dependency Order Deletion Protocol (`PAT-93`):* Teardown deletions in Case 3 MUST strictly proceed in reverse association dependency order ($	ext{Leaf / Child Entities} ightarrow 	ext{Intermediate Associations} ightarrow 	ext{Root Entities}$) to prevent constraint errors.
+    *   *Reverse Dependency Order Deletion Protocol (`PAT-93`):* Teardown deletions in Case 3 MUST strictly proceed in reverse association dependency order ($\text{Leaf / Child Entities} \rightarrow \text{Intermediate Associations} \rightarrow \text{Root Entities}$) to prevent constraint errors.
     *   *Master / Reference Data Retrieval Exemption:* Static configuration entities (e.g. `Country`, `Currency`, `UserRole`) use explicit `Retrieve` steps with attribute filters in Case 1.
     *   *Disjoint Synthetic Identifiers:* All seeded records in Case 1 MUST use unique synthetic identifiers (e.g., prefixing codes with `'TEST_'`).
     *   *Precondition Prohibition (`ANTI-42`):* Preconditions must NEVER state *"Master data pre-seeded"* as a substitute for test steps.
@@ -107,14 +107,27 @@ You must progress sequentially through these three interactive planning micro-st
 *   **🚨 Mandatory Closed Catalog Frontend Testkit Microflow Verification (`PAT-64`, `ANTI-21`)**: All Frontend UI test steps must strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` documented in [frontend-testing.md](references/frontend-testing.md).
 *   **Intended Purpose & Void Flow Audit**: If target microflow returns Void, audit database side-effects for retrieve/count assertions (`PAT-04`). For Backend microflows, audit validation feedback actions (`AssertValidationFeedbackMessageCompare`/`Count`).
 *   **Local-Level Execution Plan Drafting & Pre-Approval Parity Audit (`PAT-82`, `PAT-89`, `ANTI-36`, `ANTI-41`)**:
-    1. *File-First Plan Persistence (`PAT-89`):* Write the complete Execution Plan directly to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical 8-section blueprint in [execution-plan-template.md](references/execution-plan-template.md).
-    2. *Parity Verification:* Call read-only `GetAppModelData` to verify whether planned elements exist on the MTA server. If mismatched, Option B is blocked (`ANTI-36`) and only Option A (Local Exploratory) is available.
-    3. *Executive Chat Summary Presentation (`PAT-89`, `ANTI-41`):* Render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41).
+    1. *File-First Plan Persistence (`PAT-89`):* Write the complete Execution Plan directly to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical 8-section blueprint in [execution-plan-template.md](references/execution-plan-template.md). Persist draft metadata (`execution_plan_file`, `execution_plan_id`, `execution_plan_status: "DRAFT"`) into `mta_state.json` to preserve draft provenance across sessions and tool dispatches.
+    2. *Dual-Server MCP Availability & Parity Verification (`PAT-82`, `ANTI-36`):* Check the active tool catalog for both the remote `MTA` MCP server (`GetAppModelData`, `CreateTestCase`, etc.) and the local `MTA_plugin` MCP server (`execute-testcase`).
+        - *Server Status Probing:*
+            - If `MTA` is registered & active: Call read-only `GetAppModelData` to audit planned elements against the active MTA model revision.
+            - If `MTA_plugin` is registered & active: Option A is available for Backend Microflows and Data Seeding.
+        - *Outcome Classification:*
+            - **Case 1 (`MTA` Down / Out-of-Sync & `MTA_plugin` Active):** Mark Check 14 as `BLOCKED (MTA Server Unavailable | Model Delta)`. Strictly block Option B (`ANTI-36`). For Backend tests, Option A remains active. Present **Checkpoint 1 Case 1**.
+            - **Case 2 (`MTA` In-Sync & Active AND `MTA_plugin` Active):** Mark Check 14 as `PASS (Verified)`. Present **Checkpoint 1 Case 2** (Dual Track Option A vs Option B).
+            - **Case 3 (Standalone Data Seeding):** Present **Checkpoint 1 Case 3** (Option A Direct Seeding vs Option B Persistent Seeding).
+            - **Case 4 (Dual Outage — `MTA` Down AND `MTA_plugin` Down):** Mark Check 14 as `BLOCKED (Both MCP Servers Offline)`. Strictly block both Option A and Option B execution. Save the draft plan to disk (`status: "DRAFT"`), record `execution_plan_status: "DRAFT"` in `mta_state.json`, present **Checkpoint 1 Case 4 (Offline / Dual-Outage Mode)**, and provide setup/diagnostic instructions without deadlocking the user.
+            - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Connection Refused):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked because the local Mendix runtime or plugin endpoint is offline. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
+    3. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
+    4. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
+    5. *Executive Chat Summary Presentation (`PAT-89`, `ANTI-41`):* Render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the appropriate Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41).
 *   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (Execution Plan Review)**: Present the Executive Summary Box and clickable link, render the appropriate Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41), and **HALT** for explicit user approval:
-    - **Case 1 (Model Delta / Mismatch):** Render Case 1 card (Option B Blocked, Branch Subscription guide, Option A Active).
-    - **Case 2 (In-Sync Parity):** Render Case 2 card (Dual Track Option A vs Option B).
+    - **Case 1 (Model Delta / Mismatch or MTA MCP Server Unavailable, MTA_plugin Active):** Render Case 1 card (Option B Blocked, Option A Active for Backend).
+    - **Case 2 (In-Sync Parity & Both MCP Servers Active):** Render Case 2 card (Dual Track Option A vs Option B).
     - **Case 3 (Standalone Data Seeding):** Render Case 3 card (Option A Direct Local Seeding vs Option B Persistent Seeding).
-    - **Frontend UI Tests Policy Notice (`PAT-62`):** Frontend tests route exclusively to Option B (Persistent MTA Platform).
+    - **Case 4 (Dual Outage — Both MCP Servers Unavailable):** Render Case 4 card (Both Execution Routes Blocked, Draft Saved to Disk, Diagnostic Steps).
+    - **Case 5 (Asymmetric Outage — MTA Active & In-Sync, Local Plugin Offline):** Render Case 5 card (Option A Blocked, Option B Active).
+    - **Frontend UI Tests Policy Notice (`PAT-62`):** Frontend tests route exclusively to Option B (Persistent MTA Platform) when the MTA MCP server is available.
 *   **⚡ Execution Strategy Decision Flow & Fast-Path Local Execution Law (`PAT-63`)**:
     *   **If User Selects Option A (Immediate Local Execution - Exploratory Test or Live Data Seeding):** Zero server scanning. Transition immediately to `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION` or `STATE_LIVE_DATA_PROVISIONING`) to execute via `MTA_plugin.execute-testcase` in 1 turn.
     *   **If User Selects Option B (Direct Persistent MTA Test - Default for Frontend):** Proceed to `PLAN_STEP_2` (Placement Discovery) and `PLAN_STEP_3` (Gate 2 Approval).
@@ -128,6 +141,10 @@ When the user's intent is manual exploratory testing or structured manual verifi
 
 ### 2. `PLAN_STEP_2: Placement & Settings Discovery (Part 2 - User Input Phase)`
 *   **Action**: Interactively scan and resolve placement parameters and execution settings based on user input.
+*   **🛑 Pre-Flight MTA MCP Server Availability Gate:** Before querying `GetApplicationDetails` or `GetTestConfigurationDetails`, verify that the remote `MTA` MCP server is registered and responsive. If unreachable (offline, connection error, or missing auth token per `PAT-95`):
+    - Do NOT throw an unhandled error or attempt write operations.
+    - Retain the Execution Plan on disk as `status: "DRAFT"` and update `mta_state.json`.
+    - Output the `PAT-95` Sanitized Layered Return Message with diagnostic configuration steps, keeping the conversation active without deadlocking.
 *   **Promotion Routing Rules**:
     *   **From In-Memory Exploratory Test (`PAT-57` — `Rollback = Yes`):** Promote directly 1:1 to a persistent Backend Test Case with Data Variations without prompting for structure type.
     *   **From Live Data Seeding (`PAT-70` — `Rollback = No`):** Default directly to **Type 1: Standalone Data Seeding Test Case (1-Case Generator)**.

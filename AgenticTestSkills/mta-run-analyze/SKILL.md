@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.16.0"
-changes: "Updated Rule 7 pre-flight verification to enforce zero construction errors and 1-to-1 step reconciliation before test execution."
+version: "6.16.1"
+changes: "Synchronized reference documentation and pre-approval audit templates for MTA MCP server availability gating."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -75,8 +75,13 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 
 1.  `STATE_EXPLORATORY_EXECUTION`: Running local exploratory tests and data seeding directly against the Mendix JVM for Backend Microflows and domain logic via `MTA_plugin.execute-testcase`.
     *   **Handoff Acceptance:** This state accepts direct handoffs from `mta-test-design` (Option A Execution). When transitioning into this state, immediately assume responsibility for compiling the execution payload from the active Execution Plan, running the test, and presenting telemetry.
+    *   **🛑 Frontend Prohibition Invariant (PAT-62):** `MTA_plugin.execute-testcase` runs exclusively in-memory within the local Mendix JVM and cannot drive browser sessions or execute Playwright locators. If the Execution Plan's category is `Frontend`, you are **strictly prohibited** from compiling or executing it via `MTA_plugin`. Immediately inform the user that Frontend tests require the MTA Platform, and route to `mta-test-design` (`PLAN_STEP_2`) if the MTA server is online, or retain the plan on disk as `status: "DRAFT"` if the server is offline.
     *   **The 6 Universal MTA Plugin Execution Principles:** (1) Targeted Cluster Discovery (`mxcli` batch queries for all entities/flows), (2) Mandatory Execution User Context (`ExecutorUsername: "MxAdmin"` / `ApplySecurityExecutor: "NONE"`), (3) Verified Entity Fixture Attribute Binding (`PAT-75`, `ANTI-29`), (4) Canonical Data Type Serialization (strict ISO-8601 UTC `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` for `DateTimeType`, typed scalars, bare enums), (5) Explicit Object Topology & Handle Binding (`TCEX_RQ_Sfar` / `TCEX_RQ_Sfcr`), (6) Execution Mode Governance (`RollbackTcseAfterExecution = "Yes"` with NO trailing `Persist` step by default for exploratory tests to guarantee zero database pollution, or `RollbackTcseAfterExecution = "No"` with a trailing batch `Persist` step for live test data seeding per `PAT-68`).
-    *   **Pre-Flight Probing & Fallback:** Verify that the local Mendix runtime is active and the `MTA_plugin` MCP endpoint is reachable. If unreachable, notify the user and offer fallback to Option B (Direct Persistent MTA Test).
+    *   **Pre-Flight Probing & Transport Fallback (`PAT-95`):** Verify that the local Mendix runtime is active and the `MTA_plugin` MCP endpoint is reachable. If unreachable (connection refused `ECONNREFUSED`, network timeout, 404, or 401/403 auth error):
+        - Intercept the error using `PAT-95` Sanitized Layered Return Message.
+        - Silently probe whether the remote `MTA` MCP server is registered and responsive.
+        - If the remote `MTA` MCP server is available: Offer immediate promotion/fallback to **Option B (Direct Persistent MTA Test)** via `mta-test-design` `PLAN_STEP_2`.
+        - If the remote `MTA` MCP server is also unavailable (Dual Outage): Guide the user to start the local application in Studio Pro on port 8080 (or runtime URL) and verify `MTA_plugin` in `mta_config.json`, while confirming that the Execution Plan remains safely stored on disk (`status: "DRAFT"`).
     *   **Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`):**
         *   *Zero-CLI Re-Query Law:* Pre-compile all variation blocks directly from Section 7 of the approved Execution Plan. Do **NOT** re-run any CLI or model inspection commands during execution.
         *   *Single-Payload Execution Law (`PAT-73`, `ANTI-27`):* When Section 7 defines multiple variations (`VAR_01` through `VAR_0N`), compile all variations into **1 single `TCEX_RQ_TestStepRun` array** dispatched in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"`, `"ApplySecurityExecutor": "NONE"`, `"RollbackTcseAfterExecution": "Yes"` (or `"true"`), NO trailing `Persist` step, and verified entity attribute members (`PAT-75`). Invoking `execute-testcase` across multiple sequential agent turns is strictly **PROHIBITED** (`ANTI-27`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
@@ -164,9 +169,19 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         </details>
         ```
     *   **Promotion Prompt & Reverse-Handoff Protocol (`PAT-57`):**
-        *   If the run passes, prompt the user:
-            > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
-        *   **If User Confirms Promotion:**
+        *   **If the run passes (`PASS`):**
+            *   *Silent Pre-Flight MTA Server Probing:* Check if the remote `MTA` MCP server is registered and responsive.
+            *   *If `MTA` Server is Active:* Prompt the user:
+                > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
+            *   *If `MTA` Server is Offline / Unavailable:* Do NOT offer immediate persistent promotion. Instead, output:
+                > *"The exploratory test executed and passed in [X] ms with full rollback. 💾 **Note:** Promotion to persistent MTA storage is currently suspended because the remote MTA Platform server is offline. Your Execution Plan is safely stored on disk as a draft (`status: 'DRAFT'`). Once the MTA server is available, you can request persistent construction."*
+        *   **If the run encounters failures (`FAIL` or `ERROR`):**
+            *   Output the diagnostic log and provide actionable next-step guidance:
+                > ❓ **Next Steps:**
+                > - **Adjust Execution Plan** ➔ Return to `mta-test-design` to update inputs, expected outputs, or data variations.
+                > - **Fix Microflow in Studio Pro** ➔ Update your logic in Mendix Studio Pro and reply **"Re-run exploratory test"** to re-test in memory.
+                > - **Inspect Diagnostics** ➔ Ask for deeper root-cause analysis or stack trace inspection.
+        *   **If User Confirms Promotion (When MTA Server is Active):**
             1. Update State Header: `[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_2 | Active Skill: mta-test-design]`
             2. Output the **Reverse State Compaction Block (Promotion Bridge Restore)**:
                ```markdown
@@ -200,16 +215,21 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
     *   **Dual-Requirement Persistence Law (`PAT-21`):** In-memory creations/mutations are only committed to the database when BOTH (1) `RollbackTcseAfterExecution: "No"` is set, and (2) a standalone batch `Persist` step (`{"Action": "Persist"}`) is appended to the end of the step sequence. The `Persist` step is parameterless and MUST NOT have `EntityQualifiedName` or `TCEX_RQ_Sf*` handle mappings.
     *   **Local Executor Context Protocol:** Standard local execution context requires `ExecutorUsername: "MxAdmin"` combined with `ApplySecurityExecutor: "NONE"` to satisfy runtime user identity while bypassing entity access constraints for unhindered seeding.
     *   **Direct Execution Protocol (`PAT-69`):** Execute live data seeding and business microflows directly with `Rollback = "No"` and trailing batch `Persist` by default (committing records directly to the local database without requiring preliminary dry-run loops, unless explicit rollback is requested).
-    *   **Data Script Conversion Bridge (`PAT-70`):** After live test data provisioning completes, prompt the user:
-        > *"Live test data provisioning completed. Would you like to save this data seeding script as a persistent Data Generator test case on the MTA Platform?"*
-        > *   **1. Standalone Data Seeding Test Case (Default):** Single persistent test case to generate and keep this data in the database (no teardown).
-        > *   **2. Automated Regression Test Suite (Optional):** 3-case suite with setup, UI or backend assertions, and teardown cleanup.
-        *   **Promotion Reverse-Handoff Protocol:** Upon the user selecting an option, transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_1 | Active Skill: mta-test-design]`) to draft the formal `# MTA EXECUTION PLAN SIGN-OFF` corresponding to the chosen profile. Direct construction without an approved Execution Plan (Gate 1) and Placement Summary (Gate 2) is strictly **PROHIBITED** (`PAT-43`, `ANTI-14`).
+    *   **Data Script Conversion Bridge (`PAT-70`):** After live test data provisioning completes:
+        *   *Silent MTA Server Availability Probe:*
+            *   *If `MTA` Server is Active:* Prompt the user:
+                > *"Live test data provisioning completed. Would you like to save this data seeding script as a persistent Data Generator test case on the MTA Platform?"*
+                > *   **1. Standalone Data Seeding Test Case (Default):** Single persistent test case to generate and keep this data in the database (no teardown).
+                > *   **2. Automated Regression Test Suite (Optional):** 3-case suite with setup, UI or backend assertions, and teardown cleanup.
+            *   *If `MTA` Server is Offline:* Inform the user:
+                > *"Live test data provisioning completed. Records have been committed to your local database. 💾 Note: Conversion to persistent MTA storage is currently suspended because the MTA Platform server is offline. When your server is available, you can convert this session to a persistent test suite."*
+        *   **Promotion Reverse-Handoff Protocol:** Upon the user selecting an option when MTA is active, transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_1 | Active Skill: mta-test-design]`) to draft the formal `# MTA EXECUTION PLAN SIGN-OFF` corresponding to the chosen profile. Direct construction without an approved Execution Plan (Gate 1) and Placement Summary (Gate 2) is strictly **PROHIBITED** (`PAT-43`, `ANTI-14`).
 
 3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
     *   **Execution Initiation & Scoping (`ExecuteTest`):**
         *   Call `ExecuteTest(ApplicationInstanceToken="...", ExecutionLevel="TestCase"|"TestSuite"|"TestConfiguration", TestCaseKey=... | TestSuiteKey=... | TestConfigurationKey=...)`.
         *   *App Instance Token Auto-Resolution (`STATE_EXECUTION`):* `ApplicationInstanceToken` is mandatory for `ExecuteTest`. Before calling `ExecuteTest`, resolve `ApplicationInstanceToken` directly from `mta_config.json.default_app_instance_token` (or matching `token` in `app_instances[]`). If the user specifies an environment name (e.g. 'Local', 'Staging', or custom name), search `app_instances[]` for a matching `name` to extract its `token`, `mtaUrl`, and `runtimeUrl`. Fall back to project-level `AGENTS.md`, `.env` (`MTA_APP_INSTANCE_TOKEN`), or prompt the user for their App Instance Token only if missing across all configuration sources.
+        *   *Sanitized Token & Auth Failure Guard (`PAT-95`, `CWE-209`):* If `ApplicationInstanceToken` cannot be resolved prior to dispatch, OR if `ExecuteTest` (or any read/write MCP call) fails with HTTP `401 Unauthorized`, HTTP `403 Forbidden`, or server token rejection, do NOT throw an unhandled exception or dump internal Mendix stack traces. Immediately format and output the appropriate **Sanitized Layered Return Message** (Option 1: Missing Token, Option 2: Expired Token, Option 3: Invalid Token, Option 4: Insufficient Permissions, or Option 5: Missing Target Instance) as defined in `references/troubleshooting.md`, completely free of internal entity, microflow, or cryptographic names.
         *   Prefer single test case execution (`ExecutionLevel="TestCase"`) during active construction or verification for fast, isolated feedback loops.
         *   The call returns `TestRunKey` and `TestRunExecutionId`.
     *   **Context-Preserving Diagnostic Drill-Down Protocol (`PAT-83` / `ANTI-37`):**

@@ -175,4 +175,129 @@ If state leakage is caused by unmanaged external side-effects:
 | Playwright Trace Viewer (`trace.playwright.dev`) reports CORS error downloading trace | Remote tracefile endpoint does not expose CORS headers for `trace.playwright.dev`. | Ensure the Mendix application runtime allows CORS on `/rest/private/tracefile`, or download the trace file directly via browser and drag-and-drop into `https://trace.playwright.dev`. |
 | Custom internal network cannot access public `trace.playwright.dev` | Enterprise network block on public internet sites. | Configure an internal trace viewer or local playwright trace server via `playwright_viewer_url` in `mta_config.json`. |
 
+---
+
+## 🔐 SANITIZED TOKEN & AUTHENTICATION TROUBLESHOOTING MATRIX (PAT-95, CWE-209)
+
+When tool invocations fail due to missing, expired, invalid, or unauthorized tokens, agents and users MUST intercept the error and return the standardized **Sanitized Layered Return Message**. Under no circumstances should internal entity names, microflow names, database states, or cryptographic details be exposed.
+
+| Failure Scenario | Trigger Condition | Standard Protocol Status | Sanitized Reason | Resolution Action |
+| :--- | :--- | :--- | :--- | :--- |
+| **Option 1: Missing Token** | No token configured in environment or `.env` | `401 Unauthorized` | Missing authorization header | Run `npm run setup` or set `MTA_MCP_AUTH_HEADER` in `.env` |
+| **Option 2: Expired Token** | Token expiration timestamp passed on server | `401 Unauthorized` | Token expiration date passed | Generate new session token in MTA Portal under Account Settings > Service Accounts |
+| **Option 3: Invalid / Unrecognized Token** | Token revoked, replaced, or malformed | `401 Unauthorized` | Invalid or unrecognized credentials | Verify token string, generate new token in MTA Portal, update `.env` |
+| **Option 4: Insufficient Permissions** | Account authenticated but tool execution disabled | `403 Forbidden` | Service account lacks tool execution permissions | Edit service account in MTA Portal and enable automated tools access |
+| **Option 5: Unresolved Target Instance** | `ExecuteTest` called with missing/unmapped runtime instance | Client resolution error | Target runtime environment not found or inactive | Run `npm run setup` or configure `default_app_instance_token` in `mta_config.json` |
+
+### Standardized Layered Message Templates
+
+#### Template 1: Missing Token
+```markdown
+> [!WARNING]
+> **Action Needed: Authentication Token Missing**
+> 
+> The assistant cannot connect to the MTA server because no authentication token is configured.
+> 
+> **How to fix this:**
+> 1. In your workspace, run: `npm run setup` to configure your service credentials.
+> 2. Or, paste your token into your `.env` file:
+>    `MTA_MCP_AUTH_HEADER="Bearer <your-token>"`
+> 3. Tell the assistant: *"Retry connection"*.
+> 
+> <details>
+> <summary><b>Technical Details</b></summary>
+> 
+> * **Service:** MTA Server
+> * **Status:** `401 Unauthorized`
+> * **Reason:** Missing authorization header.
+> </details>
+```
+
+#### Template 2: Expired Token
+```markdown
+> [!CAUTION]
+> **Session Expired: Token Expired**
+> 
+> Your connection token has expired. The assistant has been disconnected from the MTA server.
+> 
+> **How to fix this:**
+> 1. Log in to the MTA Portal and navigate to **Account Settings** > **Service Accounts**.
+> 2. Generate a new session token.
+> 3. Update the token in your `.env` file (`MTA_MCP_AUTH_HEADER`) or reply in the chat:
+>    *"Use service token: <paste-new-token>"*.
+> 
+> <details>
+> <summary><b>Technical Details</b></summary>
+> 
+> * **Service:** MTA Server
+> * **Status:** `401 Unauthorized`
+> * **Reason:** Token expiration date passed.
+> </details>
+```
+
+#### Template 3: Invalid or Unrecognized Token
+```markdown
+> [!CAUTION]
+> **Authentication Failed: Invalid or Unrecognized Token**
+> 
+> The provided authentication token is invalid or unrecognized.
+> 
+> **How to fix this:**
+> 1. Verify that the entire token was copied completely without trailing spaces or missing characters.
+> 2. If the token was revoked or replaced, generate a fresh token in the MTA Portal under **Account Settings** > **Service Accounts**.
+> 3. Update your `.env` file (`MTA_MCP_AUTH_HEADER`) and retry.
+> 
+> <details>
+> <summary><b>Technical Details</b></summary>
+> 
+> * **Service:** MTA Server
+> * **Status:** `401 Unauthorized`
+> * **Reason:** Invalid or unrecognized credentials.
+> </details>
+```
+
+#### Template 4: Insufficient Permissions (Access Denied)
+```markdown
+> [!CAUTION]
+> **Permission Denied: Access Disabled**
+> 
+> Your service account is authenticated, but it does not have permission to execute automated tools on the MTA server.
+> 
+> **How to fix this:**
+> 1. In the MTA Portal, go to **Account Settings** > **Service Accounts**.
+> 2. Edit your service account and enable automated tools access.
+> 3. Save your changes and retry your command.
+> 
+> <details>
+> <summary><b>Technical Details</b></summary>
+> 
+> * **Service:** MTA Server
+> * **Status:** `403 Forbidden`
+> * **Reason:** Service account lacks tool execution permissions.
+> </details>
+```
+
+#### Template 5: Missing or Invalid Target Application Instance Token
+```markdown
+> [!WARNING]
+> **Action Needed: Target Application Instance Missing or Invalid**
+> 
+> The test cannot be dispatched because the target application instance is not recognized or not configured.
+> 
+> **How to fix this:**
+> 1. Run `npm run setup` to detect your running Mendix application instance automatically.
+> 2. Or, verify your application instances in the MTA Portal under your application's **App Instances** tab.
+> 3. Add the instance token to `mta_config.json` (`default_app_instance_token`) or tell the assistant:
+>    *"Use instance token: <paste-token>"*.
+> 
+> <details>
+> <summary><b>Technical Details</b></summary>
+> 
+> * **Service:** MTA Test Execution Engine
+> * **Status:** Target instance resolution failure.
+> * **Reason:** Target runtime environment not found or inactive.
+> </details>
+```
+
+
 

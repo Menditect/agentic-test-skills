@@ -41,6 +41,28 @@ To push build and test results in real-time to your deployment dashboards, you m
 
 ---
 
+## 🤖 Service Accounts & Automated Tool Access
+
+For automated test runners, AI assistants, and CI/CD pipelines to interact with the MTA platform without interactive human SSO sessions, configure a Service Account:
+
+1. **Create a Service Account:**
+   * Navigate to **Account Settings** > **Service Accounts** in the MTA Portal.
+   * Add a new service account with a descriptive name representing your automation context (e.g. `ci_pipeline_runner` or `ai_assistant_agent`).
+2. **Enable Automated Tools Access:**
+   * Ensure the **"Call Primitive Tools"** / **"Automated Tools Access"** setting is enabled on the service account.
+   * If disabled, tool executions will be blocked with a `403 Forbidden` response.
+3. **Generate a Session Token:**
+   * Open the service account and generate a new session token.
+   * Set an appropriate expiration window per your team's security policy.
+   * Copy the token immediately and store it securely in your project's `.env` file:
+     ```bash
+     MTA_MCP_AUTH_HEADER="Bearer <your-token>"
+     ```
+4. **Token Rotation & Revocation:**
+   * When tokens expire or need rotation, generate a new token from this menu and update your `.env` or pipeline secrets. Expired or revoked tokens will produce standardized `401 Unauthorized` return messages.
+
+---
+
 ## 🔍 Success Verification Checklist
 
 To verify that your MTA Account linking, screen settings, and secure platform connect step was successful, complete this checklist:

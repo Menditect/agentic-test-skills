@@ -31,11 +31,11 @@ Use this template when testing deterministic business logic, calculations, or va
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 1 - UNIT TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13/13 checks executed
+> **Pre-Approval Quality Audit:** 14/14 checks executed
 > **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
-<summary><b>Pre-Approval Quality Checklist (13 of 13 Checks Executed)</b></summary>
+<summary><b>Pre-Approval Quality Checklist (14 of 14 Checks Executed)</b></summary>
 
 | # | Check Name | Rule Citation | Scope & Compliance Verification | Status |
 | :-: | :--- | :--- | :--- | :--- |
@@ -52,6 +52,7 @@ Use this template when testing deterministic business logic, calculations, or va
 | **11** | **Backend Exploratory Single-Payload Blueprint** | `PAT-63` | Single continuous testcase container with automatic rollback verified for Option A, or NA for Option B | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Backend Unit Test; frontend UI substitution NA | `NA` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | Backend Unit Test; frontend testkit verification NA | `NA` |
+| **14** | **MTA Server Model Parity & MCP Availability** | `PAT-82`, `PAT-53`, `ANTI-36` | Verifies `MTA` MCP server is registered and audits local model (`mxcli`) against server via `GetAppModelData`. If server is unavailable or model is stale: Option B is blocked, and execution is restricted to Option A | `PASS` / `BLOCKED` |
 
 </details>
 
@@ -264,7 +265,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 2 - INTEGRATION TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13/13 checks executed
+> **Pre-Approval Quality Audit:** 14/14 checks executed
 > **Category:** Backend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
@@ -285,7 +286,7 @@ Use this template when testing multi-step processes or transactional orchestrati
 | **11** | **Backend Exploratory Single-Payload Blueprint** | `PAT-63` | Single continuous testcase container with automatic rollback verified for Option A, or NA for Option B | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Backend Integration Test; frontend UI substitution NA | `NA` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | Backend Integration Test; frontend testkit verification NA | `NA` |
-| **14** | **MTA Model Parity Audit** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-approval model parity audit executed via GetAppModelData | `PASS` |
+| **14** | **MTA Server Model Parity & MCP Availability** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-approval model parity and MCP tool availability verified via GetAppModelData | `PASS` |
 
 </details>
 
@@ -464,7 +465,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 # MTA BUILD SPECIFICATION HANDOFF (TEMPLATE 3 - FUNCTIONAL UI TEST)
 
 > [!NOTE]
-> **Pre-Approval Quality Audit:** 13/13 checks executed
+> **Pre-Approval Quality Audit:** 14/14 checks executed
 > **Category:** Frontend | **Execution User:** `MxAdmin` | **Gate Status:** Ready for Gate 1 Review
 
 <details>
@@ -485,7 +486,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **11** | **Frontend Persistent MTA Construction** | `PAT-62` | Direct 3-Case persistent MTA Platform construction; exploratory single-payload format NA | `PASS` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | All UI actions/assertions drive the browser via Testkit microflows without backend domain substitution | `PASS` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs | `PASS` |
-| **14** | **MTA Server Model Check** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-construction model check via `GetAppModelData` verifies parity; Option B verified | `PASS` |
+| **14** | **MTA Server Model Parity & MCP Availability** | `PAT-82`, `PAT-53`, `ANTI-36` | Pre-construction model and MCP tool availability check via `GetAppModelData` verifies parity; Option B verified | `PASS` |
 
 </details>
 

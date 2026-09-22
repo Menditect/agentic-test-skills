@@ -40,7 +40,7 @@ test_case_keys: []
 
 > [!NOTE]
 > **Pre-Approval Quality Audit:** 14/14 checks executed (100% compliant)  
-> **MTA Server Model Check:** Verified (All planned microflows, entities, and attributes exist in the MTA server)  
+> **MTA Server Availability & Model Check:** Verified (MTA MCP server active, all planned elements exist in server revision)  
 > **Category:** [Backend | Frontend]  
 > *(Upon Smoke Audit completion, the following lines are appended directly without an empty line:)*  
 > **Post-Construction Build & Smoke Audit:** `BUILT_AND_VERIFIED` (0 Discrepancies)  
@@ -72,7 +72,7 @@ test_case_keys: []
 | **11** | **Backend Exploratory Single-Payload Plan Blueprint** | `PAT-63`, `PAT-75`, `ANTI-29` | Verifies Backend exploratory flow with complete JSON blueprint, ExecutorUsername default, and verified domain attributes (`PAT-75`) | `PASS` / `NA` |
 | **12** | **Frontend UI to Backend Microflow Substitution Prohibition** | `ANTI-20` | Verifies UI actions drive browser via TestKit microflows, not domain microflows | `PASS` / `NA` |
 | **13** | **Closed Catalog Frontend Testkit Verification** | `PAT-64`, `ANTI-21` | All Frontend steps strictly use verified microflows from closed catalogs | `PASS` / `NA` |
-| **14** | **MTA Server Model Check** | `PAT-82`, `ANTI-36` | Plan drafted at local model level (`mxcli`). Parity audit via `GetAppModelData` verifies all planned microflows, entities, and attributes exist in the MTA server. If mismatch/stale: Option B is blocked, and plan is restricted to Option A (Exploratory Testing Only) | `PASS` |
+| **14** | **MTA Server Model Parity & MCP Availability** | `PAT-82`, `PAT-53`, `ANTI-36` | Verifies `MTA` MCP server is registered and audits local model (`mxcli`) against server via `GetAppModelData`. If server is unavailable or model is stale/mismatched: Option B is strictly blocked (`BLOCKED`), and execution is restricted to Option A | `PASS` / `BLOCKED` |
 
 </details>
 
