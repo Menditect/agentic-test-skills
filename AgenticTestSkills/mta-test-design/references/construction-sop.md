@@ -64,7 +64,7 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 - Retrieve attribute filter setters: `EditAttributeValueFilter` (`SetStringValue`, `SetIntegerValue`, `SetBooleanValue`, `SetDateTime*`, `SetEnumerationValue`, passing `AttributeValueKey`, `FilterComparisonOperator`, and value).
 - Association bindings: `CreateSelectObjectForAssociation` and `EditTestStepAssociation`.
 - Microflow parameters: `EditMicroflowParameterValue` (literals) and `EditMicroflowObjectParameter` (piped object variables).
-- Assertions configuration: Call typed comparison setters. Use PLURAL `"Equals"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertObjectCount`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount`; use singular `"Equal"` for `EditAssertAttributeValueCompare` and `EditAttributeValueFilter`.
+- Assertions configuration: Call typed comparison setters. Use singular `"Equal"` for `EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, and `EditAttributeValueFilter` (`FilterComparisonOperator`); use plural `"Equals"` for `CreateAssertMicroflowReturnValue`, `EditAssertValidationFeedbackMessageCompare`, and `EditAssertValidationFeedbackMessageCount`; use mixed format (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo`) for `EditAssertObjectCount`.
 - Step descriptions & pattern annotations: `EditTestStep(EditAction="SetDescription")` with `[Pattern: <Name> - <Rationale>]` (`PAT-12`).
 - Step execution settings: `EditTestStep` with `ExecutionCondition` (`"Always"`, `"Skip"`, `"None"`) and `ResumeExecutionAfterException` (`"_Continue"`, `"Stop"` — note: `"Stop"` has NO leading underscore).
 

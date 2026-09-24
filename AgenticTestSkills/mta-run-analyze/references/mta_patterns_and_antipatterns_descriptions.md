@@ -1311,6 +1311,165 @@ For each rule, this document outlines its scope, category, detailed operational 
   * **Direct Counterpart Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol), `PAT-70` (Ad-Hoc Data & Entity Creation Ingestion Protocol), `PAT-89` (File-First Execution Plan Drafting & Persistence Law).
   * **Related Anti-Patterns:** `ANTI-15` (Premature Central Container Provisioning Anti-Pattern), `ANTI-41` (Chat Plan Flooding & Delayed File Persistence Anti-Pattern).
 
+### `PAT-97`: Recursive Side-Effect Discovery Law
+* **Scope:** Backend | **Classification:** Methodological Law
+* **Description:** When analyzing a target microflow via `DESCRIBE MICROFLOW`, the agent MUST recursively inspect called sub-microflows to discover nested database mutations (Create/Change/Delete Object actions), external REST/SOAP service calls, and validation feedback messages. If the root microflow delegates state mutations to sub-microflows, test assertions must verify the nested side-effects rather than merely checking the top-level return value or crash-free completion.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-13` (Blind Void Microflow Crash-Only Testing).
+  * **Related Patterns:** `PAT-04` (Void Microflow Side-Effect Audit), `PAT-104` (State Mutation Verification Law).
+
+---
+
+### `PAT-98`: Negative Validation Variation Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** In multi-scenario Data Variation matrices, every negative variation (scenarios testing invalid input, boundary violation, missing mandatory attributes, or unauthorized access) MUST explicitly assert validation feedback messages (`CreateAssertValidationFeedbackMessageCompare` or `CreateAssertValidationFeedbackMessageCount` > 0) or expected exception triggers (`CreateAssertException`). A negative variation must NEVER pass based solely on the absence of a return value or unverified microflow completion.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-48` (Complex Object Graph in Flat Variation Matrix).
+  * **Related Patterns:** `PAT-10` (Universal Validation Feedback Assertion Pattern), `PAT-19` (Data Variation Consolidation), `PAT-102` (Empty Variation Cell Default Protocol).
+
+---
+
+### `PAT-99`: Provider-Consumer Execution Condition Parity
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** If a downstream assertion step, consumer step, or cleanup step has `ExecutionCondition = "Always"`, all upstream provider steps that instantiate, retrieve, or calculate the output handles (`TestStepOutputKey`) referenced by that consumer MUST also have `ExecutionCondition = "Always"`. If an upstream provider is configured with `ExecutionCondition = "None"` (default) and skips due to an earlier error, downstream steps with `Always` will execute against null or uninstantiated handles, resulting in fatal platform runtime crashes.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-07` (Applying Always / _Continue to Backend Unit Tests).
+  * **Related Patterns:** `PAT-18` (Frontend Setup/Teardown Execution Condition Law), `PAT-33` (Default Assertion Failure Behavior).
+
+---
+
+### `PAT-100`: Wire Enum Token Strictness Law
+* **Scope:** General | **Classification:** Platform API Quirk
+* **Description:** When configuring step settings, execution conditions, or assertion actions via the 51-tool MTA Primitive API (`EditTestStep`, `EditTestCase`, `CreateAssert*`), the agent MUST use the exact schema enum wire tokens, including leading underscores (e.g. `ResumeExecutionAfterException = "_Continue"`, `Highlight = "_True"` / `"_False"`). Natural language normalization (passing `"Continue"` or `"True"`) is strictly prohibited and causes silent validation rejections or API exceptions on the MTA server.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-81` (IntegerLongValue Primitive Wire Format & Integer Key Law).
+  * **Related Anti-Patterns:** `ANTI-35` (Mismatched Integer Wire Format & Quoted Key Anti-Pattern).
+
+---
+
+### `PAT-101`: Pre-Construction Idempotency & Suite Audit
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Prior to executing `CreateTestCase` on the MTA server in `STATE_CONSTRUCTION`, the agent MUST query `GetTestSuiteDetails` on the target Test Suite to verify whether a test case with the planned name already exists. If an existing testcase with the same name is found, the agent must halt, perform a drift check against the existing testcase, and confirm with the user whether to supersede/replace it or assign an incremented revision name, preventing unintended duplicates or silent container pollution.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-84` (Prior Execution Plan Discovery & Tri-Choice Lineage Law).
+  * **Related Anti-Patterns:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern), `ANTI-38` (Blind Prior Plan Overwrite or Amnesic Discard Anti-Pattern).
+
+---
+
+### `PAT-102`: Empty Variation Cell Default Protocol
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** In MTA Data Variations, when a new variation column is created via `CreateTestCaseVariation`, all cloned variation items are instantiated with empty (NULL) values by default. To set a cell to empty or NULL in a specific variation column, the agent MUST simply omit the setter tool call (`EditAttributeValue`, `EditMicroflowParameterValue`) for that cell. Prohibits passing string literals like `"NULL"` or `"EMPTY"`, and prohibits using deprecated legacy wire flags like `SetValueToEmpty = "_True"`.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern).
+  * **Related Patterns:** `PAT-54` (Exhaustive M x N Matrix Cell Reconciliation Law), `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law).
+
+---
+
+### `PAT-103`: Exploratory Single-Session Unique Constraint Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** In Option A exploratory test execution via `MTA_plugin.execute-testcase`, all variations execute sequentially within a single shared Mendix runtime transaction session. Therefore, any entity created in one variation remains visible to downstream variations. When entities have attributes with unique constraints (e.g. unique `Code`, `Email`, `Username`), the agent MUST use dynamic timestamp entropy (e.g. `'TEST_' + CurrentDateTime`), disjoint synthetic keys, or explicit intra-block teardown steps between variations to prevent `UniqueConstraintViolation` errors. In contrast, Option B persistent MTA variation scenarios execute in isolated sessions and are exempt from cross-variation session collisions.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-28` (Cross-Variation State Contamination & Blind Chaining Anti-Pattern).
+  * **Related Patterns:** `PAT-73` (Chained Single-Payload Matrix Execution Law), `PAT-74` (Exploratory Single-Session Conflict Detection & Isolation Protocol).
+
+---
+
+### `PAT-104`: State Mutation Verification Law
+* **Scope:** Backend | **Classification:** Methodological Law
+* **Description:** Whenever a microflow under test modifies database entities (via Create, Change, or Delete Object actions), the test case MUST include a dedicated downstream verification step. The agent must retrieve the mutated entity from the database using its unique synthetic identifier and assert that the target attributes and associations were modified to their expected post-condition values. Relying solely on microflow return values or exception absence without verifying actual entity state mutation is strictly prohibited.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-54` (Void Mutation Assertion Hallucination).
+  * **Related Patterns:** `PAT-04` (Void Microflow Side-Effect Audit), `PAT-31` (Retrieve-for-Asserting Set & Count Law), `PAT-96` (Business Microflow Execution & Direct Return Assertion Pattern).
+
+---
+
+### `PAT-105`: Microflow List Parameter Binding
+* **Scope:** Backend | **Classification:** Platform Execution Law
+* **Description:** When a microflow accepts a parameter of type `List of [Entity]`, MTA supports two distinct binding mechanisms: (1) if a `Retrieve Object` step produces a list of objects, its `TestStepOutputKey` can be bound directly to the microflow parameter handle; or (2) multiple `Select Object for Parameter` steps can be bound to the exact same parameter key, assembling an in-memory list from individually created or retrieved objects. The agent must never attempt to pass a single-object handle where a list parameter is expected without explicit list retrieval or multiple object parameter attachments.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-80` (Dedicated Output Binding Tools Law), `PAT-32` (Dynamic Scalar Value Piping).
+
+---
+
+### `ANTI-47`: Redundant Unit Test Teardown
+* **Scope:** Backend | **Classification:** Methodological Anti-Pattern
+* **Description:** Adding explicit `Delete Object` steps, cleanup retrievals, or separate Teardown test cases to pure Backend Unit Tests. Pure Backend Unit Tests execute with `RollbackTcseAfterExecution = "Yes"`, which wraps execution in an isolated database transaction that automatically rolls back all database changes upon completion. Adding redundant deletion steps clutters test suites, adds unnecessary database roundtrips, and introduces false failure points if teardown dependencies are misconfigured.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-17` (Backend Unit Test Execution Settings Law).
+  * **Related Anti-Patterns:** `ANTI-07` (Applying Always / _Continue to Backend Unit Tests).
+
+---
+
+### `ANTI-48`: Complex Object Graph in Flat Variation Matrix
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Attempting to force multi-entity relational hierarchies, deep parent-child graphs, or dynamic list configurations into a single flat Data Variation matrix. Data Variations in MTA are optimized for scalar attribute and single-entity parameter variations. Forcing deep relational trees into a flat variation matrix results in unreadable matrices, complex retrieve dependencies, and fragile cloned cell indexing. Complex relational topologies should be separated into dedicated test cases or modular setup steps.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-19` (Data Variation Consolidation), `PAT-98` (Negative Validation Variation Law).
+  * **Related Anti-Patterns:** `ANTI-08` (Duplicate Test Case Proliferation).
+
+---
+
+### `ANTI-49`: Broad Non-Synthetic Teardown Retrieves
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Writing broad, unconstrained, or weakly filtered XPath queries (e.g. `//Sales.Order` or `//Billing.Invoice[Status = 'Draft']`) in teardown retrieve steps. Broad retrieve steps risk deleting pre-existing environment seed data, shared master records, or test data belonging to concurrent test runs. All deletion retrieve queries in Case 2 or Case 3 teardown MUST filter strictly by unique synthetic identifiers (e.g. `[contains(Code, 'TEST_')]` or dynamic timestamp prefixes).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-91` (Self-Contained Frontend Seeding Invariant), `PAT-92` (Symmetric Seeding Teardown Cleanup Law).
+  * **Related Anti-Patterns:** `ANTI-43` (Asymmetric Teardown Seeding Leak).
+
+---
+
+### `ANTI-50`: Unmocked External API Execution
+* **Scope:** Backend | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing test cases directly against microflows that invoke unmocked external REST services, SOAP web services, or third-party cloud APIs. Live external dependencies cause slow test execution, nondeterministic test failures due to network latency or third-party outages, rate limiting, and unintended external state mutations in external systems. External integrations must be tested via mock wrapper microflows, simulated responses, or MTF decoupling patterns.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-01` (Test Scoping & Pyramid Layer Alignment).
+  * **Related Anti-Patterns:** `ANTI-09` (Native Mendix Platform Testing).
+
+---
+
+### `ANTI-51`: Compound XPath Filter Hallucination
+* **Scope:** Backend | **Classification:** Platform Anti-Pattern
+* **Description:** Attempting to pass compound XPath expressions (e.g. `[Status = 'Active' and Amount > 100]`) as a single raw string into MTA `Retrieve Object` steps. MTA's primitive API does not accept arbitrary XPath query strings on retrieve steps; instead, individual attribute filters must be configured discretely via `EditAttributeValueFilter` with explicit attribute names, comparator operators, and target values.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-31` (Retrieve-for-Asserting Set & Count Law).
+  * **Related Anti-Patterns:** `ANTI-34` (Unbound Object Action Step Anti-Pattern).
+
+---
+
+### `ANTI-52`: Inverted Association Ownership Binding
+* **Scope:** Backend | **Classification:** Platform Anti-Pattern
+* **Description:** Attempting to configure an association step (`CreateSelectObjectForAssociation`, `EditTestStepAssociation`) on the non-owner entity end of a Mendix 1-to-many or 1-to-1 association. In Mendix, associations are owned by a specific entity in the domain model. Configuring association bindings on the non-owner entity causes schema validation errors or runtime persistence failures. The agent must always verify association ownership via `DESCRIBE ENTITY` before configuring association steps.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-06` (Direct Initialization on Create Object Law).
+  * **Related Anti-Patterns:** `ANTI-01` (Separate Change Object Step After Create Object).
+
+---
+
+### `ANTI-53`: Unparsed Dynamic Date Macro in Exploratory Payloads
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Passing unparsed Mendix runtime date macros (such as `'[%CurrentDateTime%]'`, `'[%BeginOfCurrentDay%]'`, or `'[%CurrentDateTime%] + 7 * 86400000'`) as literal strings into `MTA_plugin.execute-testcase` JSON payloads. The exploratory plugin executes raw JSON payloads and does not evaluate Mendix runtime token expressions; literal macro strings result in date parsing format exceptions. The agent must pre-compute concrete ISO 8601 date strings before constructing exploratory JSON payloads.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-42` (Date-Time Offset & Format Pattern Inspection).
+  * **Related Anti-Patterns:** `ANTI-45` (Date Format Assumption / Defaulting Anti-Pattern).
+
+---
+
+### `ANTI-54`: Void Mutation Assertion Hallucination
+* **Scope:** Backend | **Classification:** Platform Anti-Pattern
+* **Description:** Configuring `CreateAssertMicroflowReturnValue` on a microflow whose return type is `Void`. Because void microflows return no value to the caller, MTA cannot evaluate a return value comparison on them, causing API tool failures or execution warnings. For void microflows, the test step must assert on validation feedback messages (`CreateAssertValidationFeedbackMessageCompare`), verify downstream database entity mutation (`PAT-104`), or assert exception triggers (`CreateAssertException`).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-96` (Business Microflow Execution & Direct Return Assertion Pattern), `PAT-104` (State Mutation Verification Law).
+  * **Related Anti-Patterns:** `ANTI-13` (Blind Void Microflow Crash-Only Testing).
+
+---
+
+### `ANTI-55`: Unasserted Modal Transitions
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Triggering a modal popup, confirmation dialog, or page close action (e.g. clicking a button that opens a dialog or closes a page) and immediately attempting to interact with subsequent widgets without asserting that the modal transition completed. In Mendix frontend applications, modal animations and DOM mounting take time; failing to assert the dialog presence (`ASR_Has_Text_Dialog_Body`, `ASR_Is_Visible`) or modal disappearance before subsequent steps causes intermittent locator timeout failures and test flakiness.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-13` (Structural Locator Laws), `PAT-35` (Native Auto-Waiting vs. Sleep Prohibition).
+  * **Related Anti-Patterns:** `ANTI-19` (Trial-and-Error Frontend Execution & Selector Bypass).
+
 ---
 
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
@@ -1369,3 +1528,19 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-43`** / **`PAT-70`** / **`PAT-89`** (Universal Execution Plan Mandate) | **`ANTI-46`** (Unplanned Test Construction & Execution Plan Bypass) | Persisting approved Execution Plan prior to construction or seeding vs bypassing planning |
 | **`PAT-95`** (Backend Direct Handle Piping Delete) | **`ANTI-03`** (Unasserted Consumer Piping) / Redundant DB Retrieve | Piping created entity handles directly to Delete Object vs redundant database roundtrips |
 | **`PAT-96`** (Business Microflow Execution & Return Assertion) | **`ANTI-13`** (Blind Void Microflow Testing) | Executing microflow and validating return values or feedback messages vs unverified execution |
+| **`PAT-97`** (Recursive Side-Effect Discovery Law) | **`ANTI-13`** (Blind Void Microflow Testing) | Recursively tracing sub-microflow side-effects vs crash-only void testing |
+| **`PAT-98`** (Negative Validation Variation Law) | **`ANTI-48`** (Complex Object Graph in Flat Variation Matrix) | Explicit validation feedback assertions in negative variations vs unasserted runs |
+| **`PAT-99`** (Provider-Consumer Execution Condition Parity) | **`ANTI-07`** (Applying Always / _Continue to Backend Unit Tests) | Ensuring upstream providers match consumer Always conditions vs runtime null handle crashes |
+| **`PAT-100`** (Wire Enum Token Strictness Law) | **`ANTI-35`** (Mismatched Integer Wire Format & Quoted Key Anti-Pattern) | Exact schema enum wire tokens with leading underscore vs normalized strings |
+| **`PAT-101`** (Pre-Construction Idempotency & Suite Audit) | **`ANTI-18`** (Ignored Construction Errors) / Duplicate Creation | Verifying testcase uniqueness in suite prior to construction vs duplicate pollution |
+| **`PAT-102`** (Empty Variation Cell Default Protocol) | **`ANTI-11`** (Delta-Only Override Assumptions) | Omitting setter tool calls for null/empty variation cells vs passing "NULL" literals or legacy flags |
+| **`PAT-103`** (Exploratory Single-Session Unique Constraint Law) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Dynamic synthetic keys and teardown in single shared session vs unique constraint conflicts |
+| **`PAT-104`** (State Mutation Verification Law) | **`ANTI-54`** (Void Mutation Assertion Hallucination) | Downstream entity retrieve and state assertion vs hallucinating return value assertion on void microflows |
+| **`PAT-105`** (Microflow List Parameter Binding) | **`ANTI-34`** (Unbound Object Action Step Anti-Pattern) | Binding list parameters via retrieve output or multiple select steps vs single invalid handle |
+| **`PAT-17`** (Backend Unit Test Stop Setting) | **`ANTI-47`** (Redundant Unit Test Teardown) | Zero teardown and transaction rollback in unit tests vs redundant explicit delete steps |
+| **`PAT-91`** (Self-Contained Frontend Seeding Invariant) | **`ANTI-49`** (Broad Non-Synthetic Teardown Retrieves) | Strict synthetic key filtering in teardown retrieves vs broad unconstrained database wipes |
+| **`PAT-01`** (Test Scoping & Pyramid Layer Alignment) | **`ANTI-50`** (Unmocked External API Execution) | Mocking external REST/SOAP microflow dependencies vs live external API calls |
+| **`PAT-31`** (Retrieve-for-Asserting Set & Count Law) | **`ANTI-51`** (Compound XPath Filter Hallucination) | Discrete attribute value filters on retrieve steps vs hallucinating raw compound XPath strings |
+| **`PAT-06`** (Direct Initialization on Create Object Law) | **`ANTI-52`** (Inverted Association Ownership Binding) | Verifying association ownership direction before binding vs inverting owner/target entity ends |
+| **`PAT-42`** (Date-Time Offset & Format Pattern Inspection) | **`ANTI-53`** (Unparsed Dynamic Date Macro in Exploratory Payloads) | Pre-computing concrete ISO 8601 date strings vs passing unparsed runtime date macros |
+| **`PAT-13`** (Structural Locator Laws) | **`ANTI-55`** (Unasserted Modal Transitions) | Asserting modal visibility and dialog transitions vs unasserted widget clicks causing timeouts |

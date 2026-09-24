@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.24.0"
-changes: "Updated token and configuration resolution precedence to prioritize mta_config.json as SSOT over project-level AGENTS.md."
+version: "4.25.0"
+changes: "Fixed pattern loopholes, updated agentic-test-workspace reference, and aligned with latest MCP tools versions."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -49,7 +49,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 - **MTA Plugin URL Dynamic Resolution:** Resolve the `MTA_plugin` MCP endpoint in strict order: (1) active session/client MCP server configuration (e.g. in MAIA or IDE settings), (2) `mta_config.json` (`plugin_mcp_url` / `app_instances[].pluginUrl`), (3) `.env` (`PLUGIN_MCP_URL` or `${MENDIX_RUNTIME_URL}/plugin/mcp`), (4) active runtime port detection (derived as `[ApplicationRootUrl]/plugin/mcp` or `http://localhost:[Port]/plugin/mcp`). Never hardcode static ports.
 - **App Instance Token Resolution (`STATE_EXECUTION`):** Before calling `ExecuteTest`, resolve `ApplicationInstanceToken` directly from `mta_config.json.default_app_instance_token` (or matching `app_instances[]`).
 - **Playwright Trace Viewer Resolution (PAT-90):** For frontend test runs where `GetTestRunResults` provides a `FileUUID`, assemble the viewer URL using: `playwright_viewer_url` (default `https://trace.playwright.dev/?trace=`) + `tracefile_base_url` (from `mta_config.json`, `.env`, or derived from `${mta_base_url}/rest/private/tracefile?fileUUID=`) + `FileUUID`. Always include the clickable trace viewer link in failure diagnostics.
-- **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-tools` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
+- **Contract Version Isolation**: The `mta_config` schema version (in `references/mta_config.schema.json`) is the independent contract specification between MTA skills and tooling. The `agentic-test-workspace` template release version is maintained independently. NEVER conflate the contract version with the tools release version.
 
 ---
 

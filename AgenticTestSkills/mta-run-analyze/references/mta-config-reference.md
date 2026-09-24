@@ -6,7 +6,7 @@ This reference document defines the complete structure, properties, resolution r
 
 ## 1. Overview & Single Source of Truth (SSOT)
 
-`mta_config.json` is generated automatically when cloning or configuring a workspace via the [`agentic-test-tools`](https://github.com/Menditect/agentic-test-tools) repository (`npm run setup` / `node scripts/setup.js`). It acts as the primary **Single Source of Truth (SSOT)** for:
+`mta_config.json` is generated automatically when cloning or configuring a workspace via the [`agentic-test-workspace`](https://github.com/Menditect/agentic-test-workspace) repository (`npm run setup` / `node scripts/setup.js`). It acts as the primary **Single Source of Truth (SSOT)** for:
 * MTA Web Portal & MCP Primitive Tools endpoints and authentication headers.
 * MTA Runtime Plugin MCP server endpoints and access tokens (for sub-second in-memory exploratory testing).
 * Discovered Application Instances and default instance tokens (for `ExecuteTest`).
@@ -116,7 +116,7 @@ AI agents must evaluate configuration sources in this strict order:
 
 ## 5. Defensive Key Aliasing (Backward Compatibility Protocol)
 
-To maintain forward and backward compatibility across versions of `agentic-test-tools` and custom setups, agents MUST accept legacy aliases:
+To maintain forward and backward compatibility across versions of `agentic-test-workspace` and custom setups, agents MUST accept legacy aliases:
 
 ```
 Canonical Key                <-- Accepted Fallback Aliases
@@ -133,23 +133,23 @@ execution_plans_archive_dir  <-- ${execution_plans_dir}/archive
 
 ## 6. Template Repository Acquisition, Workspace Setup & Lifecycle Commands
 
-The [`agentic-test-tools`](https://github.com/Menditect/agentic-test-tools) repository is a **GitHub Template Repository** designed to bootstrap developer and agent workspaces with stdio-to-HTTP MCP proxies (`mta-proxy.js`), Mendix model wrappers, IDE configurations, and automated setup scripts.
+The [`agentic-test-workspace`](https://github.com/Menditect/agentic-test-workspace) repository is a **GitHub Template Repository** designed to bootstrap developer and agent workspaces with stdio-to-HTTP MCP proxies (`mta-proxy.js`), Mendix model wrappers, IDE configurations, and automated setup scripts.
 
 ### A. Template Repository Acquisition & Upstream Updates
-Because `agentic-test-tools` is a template repository, customer workspaces instantiated from it maintain independent git histories. Therefore:
+Because `agentic-test-workspace` is a template repository, customer workspaces instantiated from it maintain independent git histories. Therefore:
 * **Initial Setup / Updating Tooling Version**: Updating to a newer version of the tooling is accomplished by **cloning the template repository**:
   ```bash
-  git clone https://github.com/Menditect/agentic-test-tools.git
+  git clone https://github.com/Menditect/agentic-test-workspace.git
   ```
-* **Discovery Protocol for AI Agents**: Before running any setup or update command, the agent must check if `agentic-test-tools` is already cloned locally:
+* **Discovery Protocol for AI Agents**: Before running any setup or update command, the agent must check if `agentic-test-workspace` is already cloned locally:
   1. `mta_config.json` -> `workspace_dir` (if running from clone root)
   2. Current working directory (`.`)
-  3. Sibling directory (`../agentic-test-tools`)
-  4. Known project directories (e.g. `C:\Projecten\agentic-test-tools`)
-  5. If absent across all locations, or if the user requests updating to the latest template release, clone `https://github.com/Menditect/agentic-test-tools.git`.
+  3. Sibling directory (`../agentic-test-workspace`)
+  4. Known project directories (e.g. `C:\Projecten\agentic-test-workspace`)
+  5. If absent across all locations, or if the user requests updating to the latest template release, clone `https://github.com/Menditect/agentic-test-workspace.git`.
 
 ### B. Workspace Setup & Healing (`npm run setup`)
-Inside the cloned `agentic-test-tools` directory, execute:
+Inside the cloned `agentic-test-workspace` directory, execute:
 ```bash
 npm run setup
 ```
@@ -171,7 +171,7 @@ This interactive wizard:
 * When upgrading Mendix Studio Pro versions.
 
 ### C. Upstream Skills & Binary Updates (`npm run update`)
-Inside the `agentic-test-tools` directory, execute:
+Inside the `agentic-test-workspace` directory, execute:
 ```bash
 npm run update           # Updates BOTH upstream skills and mxcli binary
 npm run update:skills    # Updates ONLY testing skills from Menditect/agentic-test-skills
@@ -181,7 +181,7 @@ npm run update:mxcli     # Downloads the latest mxcli binary from Mendix Labs
 * **`npm run update:mxcli`**: Queries GitHub API (`api.github.com/repos/mendixlabs/mxcli/releases/latest`), downloads the appropriate platform binary (`mxcli-windows-amd64.exe`, `mxcli-darwin-arm64`, `mxcli-linux-amd64`), and deploys it to `bin/`.
 
 ### D. Verification & Health Check (`npm run verify`)
-Inside the `agentic-test-tools` directory, execute:
+Inside the `agentic-test-workspace` directory, execute:
 ```bash
 npm run verify
 ```

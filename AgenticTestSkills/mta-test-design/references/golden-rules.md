@@ -93,6 +93,18 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
     3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
     4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
+*   **🛡️ PRE-CONSTRUCTION IDEMPOTENCY & SUITE AUDIT (PAT-101):**
+    Before calling `CreateTestCase` on the MTA server in `STATE_CONSTRUCTION`, you **MUST** call `GetTestSuiteDetails(TestSuiteKey)` to verify whether a test case with the planned name already exists. If an existing test case with the same name is found, halt and confirm with the user whether to supersede or rename it, preventing unintended duplicates or container pollution.
+*   **🔍 STATE MUTATION VERIFICATION LAW (PAT-104, ANTI-54):**
+    Whenever a microflow under test mutates database entities (Create, Change, or Delete Object actions), the test case **MUST** include a downstream verification step. Retrieve the modified entity using its unique synthetic identifier and assert that attributes/associations were changed to expected post-condition values. For void microflows, NEVER configure `CreateAssertMicroflowReturnValue` (`ANTI-54`); assert validation messages or verify entity state downstream via `PAT-104`.
+*   **📋 MICROFLOW LIST PARAMETER BINDING (PAT-105):**
+    When a microflow takes a parameter of type `List of [Entity]`, bind it via: (1) an upstream `Retrieve Object` step producing a list output (`TestStepOutputKey`), or (2) multiple `Select Object for Parameter` steps linked to the same parameter key to assemble the list from individual objects. Never pass a single object handle directly to a list parameter.
+*   **🚫 REDUNDANT UNIT TEST TEARDOWN PROHIBITION (ANTI-47):**
+    In pure Backend Unit Tests where `RollbackTcseAfterExecution = "Yes"`, the Mendix runtime automatically rolls back all database modifications in an isolated transaction upon completion. Adding explicit `Delete Object` steps, cleanup retrievals, or separate Teardown test cases is strictly **PROHIBITED** (`ANTI-47`).
+*   **🚫 COMPOUND XPATH FILTER HALLUCINATION PROHIBITION (ANTI-51):**
+    MTA's primitive API retrieve steps do not accept arbitrary compound XPath query strings (e.g. `[Status = 'Active' and Amount > 100]`). You **MUST** configure discrete attribute filters individually via `EditAttributeValueFilter` with explicit attribute names, comparator operators, and target values.
+*   **🚫 INVERTED ASSOCIATION OWNERSHIP BINDING PROHIBITION (ANTI-52):**
+    Associations in Mendix domain models are owned by a specific entity. Binding an association via `CreateSelectObjectForAssociation` or `EditTestStepAssociation` on the non-owner entity end is strictly **PROHIBITED** (`ANTI-52`). Always verify association ownership via `DESCRIBE ENTITY` before configuring association steps.
 
 ---
 

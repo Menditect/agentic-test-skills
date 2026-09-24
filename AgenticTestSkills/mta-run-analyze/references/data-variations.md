@@ -65,6 +65,8 @@ With the 51-tool primitive API, calling `CreateTestCaseVariation` duplicates the
    * Return value assertions: `Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem"`, `ObjectKey=AssertMicroflowReturnValueCompareKey`.
    * Exception assertions: `Action="AddAssertExceptionTestCaseVariationItem"`, `ObjectKey=AssertExceptionKey`.
    * Object count assertions: `Action="AddAssertObjectCountTestCaseVariationItem"`, `ObjectKey=AssertObjectCountKey`.
+   * Validation message compare assertions: `Action="AddAssertValidationFeedbackMessageCompareTestCaseVariationItem"`, `ObjectKey=AssertValidationFeedbackMessageCompareKey`.
+   * Validation message count assertions: `Action="AddAssertValidationFeedbackMessageCountTestCaseVariationItem"`, `ObjectKey=AssertValidationFeedbackMessageCountKey`.
 4. Maintain an in-memory index dictionary mapping `ItemIndex -> {StepKey, Entity, AttributeOrAssertName, ItemType}` to prepare for deterministic key resolution.
 
 ### Step 2: Upfront Bulk Column Provisioning & Sequential Direct-Mapping Pattern (`PAT-86`, `ANTI-40`)
@@ -93,11 +95,12 @@ With the 51-tool primitive API, calling `CreateTestCaseVariation` duplicates the
    * Item index $k$ on Scenario #1 directly corresponds to item index $k$ on Scenario #2, Scenario #3, etc.
    * Prohibit calling `GetTeststepDetails` or intermediate discovery endpoints to look up cloned cell keys (`PAT-87`, `ANTI-40`).
 
-### Step 5: Safe Chunked Matrix Cell Population (`PAT-85`, `PAT-86`, `ANTI-32`)
+### Step 5: Safe Chunked Matrix Cell Population (`PAT-85`, `PAT-86`, `PAT-102`, `ANTI-32`)
 1. Group all cell overrides across all variations ($2..N$) into safe batches of **15 to 20 tool calls per turn** (`ANTI-32`):
    * **Input Overrides:** Call `EditAttributeValue` (or `EditMicroflowParameterValue`).
-   * **Assertion Overrides:** Call `EditAssert*` (`EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, `EditAssertObjectCount`, etc.).
-   * **Empty / Null Values:** When a variation requires setting a cell to empty or NULL, pass `SetValueToEmpty = "_True"`.
+   * **Assertion Overrides:** Call `EditAssert*` (`EditAssertMicroflowReturnValueCompare`, `EditAssertAttributeValueCompare`, `EditAssertObjectCount`, etc.). Negative variations MUST include explicit validation feedback assertions (`PAT-98`).
+   * **Empty / Null Values Protocol (`PAT-102`):** In MTA Data Variations, all cloned variation items in newly created variation columns default to empty (NULL) values. To set a cell to empty or NULL in a specific variation scenario, simply **omit the setter tool call** for that cell. Never pass string literals like `"NULL"` or `"EMPTY"`, and never pass deprecated wire flags like `SetValueToEmpty = "_True"`.
+   * **Matrix Structure Constraint (`ANTI-48`):** Keep variation matrices focused on scalar attributes and single-entity parameter variations. Do not force complex multi-entity object graphs or parent-child hierarchies into a flat variation matrix; split them into dedicated test cases or modular setup steps.
    * **Cloned Object Count Invariant:** All cloned `AssertObjectCount` containers default to `ExpectedObjectCount: 0`. For any variation expecting $\ge 1$ objects, `EditAssertObjectCount(SetExpectedObjectCount)` MUST be explicitly called.
 2. In case of any individual call error, isolate the failed setter and retry surgically without aborting the batch.
 
@@ -110,9 +113,22 @@ With the 51-tool primitive API, calling `CreateTestCaseVariation` duplicates the
 
 ## 📅 DYNAMIC DATETIME OFFSET BINDING
 
-For dates, use relative offsets to prevent test decay via `EditAttributeValue` or `EditMicroflowParameterValue`:
-*   `EditAction = "SetDateTimeValueWithCurrentDateTimeWithOffset"`
-*   Required parameters: `CurrentDateTimeOffsetDays`, `CurrentDateTimeOffsetHours`, `CurrentDateTimeOffsetMinutes`, etc.
+For dates, use relative offsets to prevent test decay:
+*   **Step Attribute & Parameter Values (`EditAttributeValue`, `EditMicroflowParameterValue`) & Return Assertions (`EditAssertMicroflowReturnValueCompare`):**
+    - `EditAction = "SetDateTimeValueWithCurrentDateTimeWithOffset"`
+    - Parameter prefix: `CurrentDateTimeOffset*` (`CurrentDateTimeOffsetDays`, `CurrentDateTimeOffsetHours`, `CurrentDateTimeOffsetMinutes`, `CurrentDateTimeOffsetSeconds`, `CurrentDateTimeOffsetMonths`, `CurrentDateTimeOffsetYears`).
+*   **Retrieve Filters (`EditAttributeValueFilter`) & Attribute Assertions (`EditAssertAttributeValueCompare`):**
+    - `EditAction = "SetDateTimeValueWithCurrentDateTimeWithOffset"`
+    - Parameter prefix: `DateTimeValueOffset*` (`DateTimeValueOffsetDays`, `DateTimeValueOffsetHours`, `DateTimeValueOffsetMinutes`, `DateTimeValueOffsetSeconds`, `DateTimeValueOffsetMonths`, `DateTimeValueOffsetYears`).
+
+---
+
+## 📦 TEST SUITE VARIATIONS LIFECYCLE
+
+MTA supports data variations at the **Test Suite** level in addition to the Test Case level:
+1. **Enable & Register Suite Items:** Call `AddTestSuiteVariationItem(TestSuiteKey, Action="EnableTestSuiteDatavariation")`, then register items using `AddTestSuiteVariationItem` actions (`AddAttributeValueTestSuiteVariationItem`, `AddMicroflowParameterValueTestSuiteVariationItem`, etc.).
+2. **Create Suite Columns:** Call `CreateTestSuiteVariation(TestSuiteKey)` to instantiate new variation columns.
+3. **Name & Describe Suite Variations:** Call `EditTestSuiteVariation(TestSuiteVariationKey, EditAction="SetName", Name="...")` and `EditTestSuiteVariation(TestSuiteVariationKey, EditAction="SetDescription", Description="...")`.
 
 ---
 

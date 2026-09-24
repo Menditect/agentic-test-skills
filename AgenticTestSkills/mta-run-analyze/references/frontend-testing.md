@@ -54,6 +54,7 @@ N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` 
     3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
     4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
 *   **The Frontend Persistent MTA Construction Law (CRITICAL):** Frontend UI automation requires browser lifecycle management, session contexts, and DOM locator maps provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the MTA Platform across the standard 3-Case Suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser configurations. [^PAT-62]
+*   **The Modal Transition Assertion Law (CRITICAL) (`ANTI-55`):** Whenever an action triggers a modal dialog, confirmation popup, or page closure (e.g. `ACT_Click_Button` on a delete or submit button that spawns a confirmation dialog), the agent **MUST** explicitly assert the resulting UI transition (e.g., verifying dialog visibility or text via `ASR_Has_Text_Dialog_Body` or `ASR_Is_Visible`) before attempting to locate or interact with subsequent widgets. Interacting with widgets across unasserted modal boundaries causes race conditions, element detachment errors, and locator timeouts. [^ANTI-55]
 
 ---
 

@@ -22,7 +22,7 @@ To automate testing in Mendix with AI, two complementary repositories work toget
                                 v v
 +------------------------------+ +---------------------------------------+
 |     Agentic Test Skills      | |       Menditect Agent Workspace       |
-|  (This Repository - skills)  | |         (agentic-test-tools)          |
+|  (This Repository - skills)  | |       (agentic-test-workspace)        |
 +------------------------------+ +---------------------------------------+
 | - MTA Test Design Guidelines | | - MTA MCP Bridge (mta-proxy.js)       |
 | - Step Sequencing Logic      | | - MTA Plugin MCP Bridge (localhost)   |
@@ -42,7 +42,7 @@ To automate testing in Mendix with AI, two complementary repositories work toget
 ```
 
 1. **This Repository (`agentic-test-skills`)**: The domain knowledge base. MCP tools expose raw APIs (such as `CreateTestCase`, `CreateObjectActionTestStep`). Without Menditect's skills, an AI agent does not know how to construct valid MTA test cases, locate widgets on pages, or diagnose execution failures. This repository contains the rules, heuristics, state machines, and prompts that provide that domain intelligence.
-2. **The Workspace Template ([`agentic-test-tools`](https://github.com/Menditect/agentic-test-tools))**: The runtime environment. Provides the interactive setup wizard, resilient stdio-to-HTTP/SSE proxies (with restart protection for Mendix apps), environment configuration, and auto-sync scripts.
+2. **The Workspace Template ([`agentic-test-workspace`](https://github.com/Menditect/agentic-test-workspace))**: The runtime environment. Provides the interactive setup wizard, resilient stdio-to-HTTP/SSE proxies (with restart protection for Mendix apps), environment configuration, and auto-sync scripts.
 
 ---
 
@@ -68,7 +68,7 @@ agentic-test-skills/
 
 ### Option 1: Turnkey Workspace Template (Recommended for Standalone AI Agents)
 
-If you are using standalone AI coding tools (such as Cursor, Claude Code, GitHub Copilot, Cline, or Antigravity / Gemini), use the **[Menditect Agent Workspace Template (`agentic-test-tools`)](https://github.com/Menditect/agentic-test-tools)**.
+If you are using standalone AI coding tools (such as Cursor, Claude Code, GitHub Copilot, Cline, or Antigravity / Gemini), use the **[Menditect Agent Workspace Template (`agentic-test-workspace`)](https://github.com/Menditect/agentic-test-workspace)**.
 
 The workspace template provides:
 - **Interactive Setup Wizard (`npm run setup` / `setup.ps1`)**: Automatically inspects your Mendix `.mpr` project file via `mxcli`, detects the Mendix version, discovers application instance tokens (`ApplicationInstanceToken`), MTA connection URLs (`MTAConnectionUrl`), runtime ports (`ApplicationRootUrl`), and access tokens (`McpServerAccessToken`), and generates your local `mta_config.json` and `.env`.

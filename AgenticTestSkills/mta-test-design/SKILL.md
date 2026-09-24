@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.21.0"
-changes: "Added execution_plan_collapsible resolution hierarchy and on-demand Chat Mode execution plan rendering standards."
+version: "6.22.0"
+changes: "Fixed several loopholes in patterns and updated with latest MCP tools versions."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -214,7 +214,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 142 testing patterns/anti-patterns (`PAT-01..96`, `ANTI-01..46`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 160 testing patterns/anti-patterns (`PAT-01..105`, `ANTI-01..55`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

@@ -59,21 +59,21 @@ Fetches runtime session state during execution:
 ### 4. Assertions Capabilities & Comparison Operator Wire Format Reference
 
 > [!IMPORTANT]
-> **The Assertion Operator Law: Singular vs. Plural vs. Mixed Casing**
+> **The Assertion & Filter Operator Law: Singular vs. Plural vs. Mixed Casing**
 > You must strictly match the operator format required by each specific assertion and filter tool:
 > 
-> * **Rule of Thumb 1 (Plural Standard):** Microflow return values, validation feedback message comparisons, AND retrieve attribute filters (`EditAttributeValueFilter`) use **Plural PascalCase** (`Equals`, `NotEquals`, `GreaterThan`, etc.).
-> * **Rule of Thumb 2 (Singular Standard):** Entity attribute value comparisons (`EditAssertAttributeValueCompare`) exclusively use **Singular PascalCase** (`Equal`, `NotEqual`, `GreaterThan`, etc.).
-> * **Rule of Thumb 3 (Mixed Casing Count Operators):** Object count assertions and validation message count assertions use a **mixed PascalCase / snake_case format** (`Greater_than` and `Less_than` have underscores and lowercase `than`).
+> * **Rule of Thumb 1 (Singular Standard):** Entity attribute value comparisons (`EditAssertAttributeValueCompare`), microflow return value assertion edits (`EditAssertMicroflowReturnValueCompare`), and retrieve attribute filters (`EditAttributeValueFilter`) strictly use **Singular PascalCase** (`Equal`, `NotEqual`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan`, `LessThanOrEqual`, `Contains`, `NotContains`, `StartsWith`, `EndsWith`).
+> * **Rule of Thumb 2 (Plural Standard):** Creation of microflow return value assertions (`CreateAssertMicroflowReturnValue`) and validation feedback message assertions (`CreateAssertValidationFeedbackMessageCompare`, `EditAssertValidationFeedbackMessageCompare`) use **Plural PascalCase** (`Equals`, `NotEquals`, etc.).
+> * **Rule of Thumb 3 (Mixed Casing Count Operators):** Object count assertions and validation message count assertions use a **mixed PascalCase / snake_case format** (`Equals`, `Greater_than`, `GreaterThanEqualTo`, `Less_than`, `LessThanEqualTo` — notice `Greater_than` and `Less_than` have underscores and lowercase `than`).
 
 | Tool Name | Target Property | Allowed Operator Values |
 | :--- | :--- | :--- |
 | `CreateAssertMicroflowReturnValue` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAssertMicroflowReturnValueCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAssertMicroflowReturnValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
 | `CreateAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertValidationFeedbackMessageCompare` | `ComparisonOperator` | `"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"` |
 | `EditAssertAttributeValueCompare` | `ComparisonOperator` | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
-| `EditAttributeValueFilter` | `FilterComparisonOperator` *(note name!)* | `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
+| `EditAttributeValueFilter` | `FilterComparisonOperator` *(note name!)* | `"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"` |
 | `EditAssertObjectCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `CreateAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
 | `EditAssertValidationFeedbackMessageCount` | `ComparisonOperator` | `"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"` |
@@ -381,15 +381,45 @@ To assert expected exceptions or error handling on a microflow call:
 ## 🔄 DATA VARIATION INTEGRATION & BATCH REGISTRATION (PAT-86, PAT-87, ANTI-40)
 
 To register items and configure Data Variation matrices efficiently:
-1. **Enable Variations:** Call `AddTestCaseVariationItem(TestCaseKey, Action="EnableTestCaseDatavariation")`.
-2. **Bulk Item Registration (Phase 3):** Concurrently dispatch item registration calls in safe batches (15-20 per turn):
-   - Attribute Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddAttributeValueTestCaseVariationItem", ObjectKey=AttributeValueKey)`.
-   - Parameter Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddMicroflowParameterValueTestCaseVariationItem", ObjectKey=MicroflowParameterValueKey)`.
-   - Assert Attribute Compare: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertAttributeValueCompareTestCaseVariationItem", ObjectKey=AssertAttributeValueCompareKey)`.
-   - Assert Return Value: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
-   - Assert Object Count: `AddTestCaseVariationItem(TestCaseKey, Action="AddAssertObjectCountTestCaseVariationItem", ObjectKey=AssertObjectCountKey)`.
-3. **Upfront Bulk Column Creation (Step 4.1 - PAT-86):** Call `CreateTestCaseVariation(TestCaseKey)` for ALL remaining scenarios ($2..N$) concurrently in 1 single turn.
+1. **Enable Variations:** Call `AddTestCaseVariationItem(TestCaseKey, Action="EnableTestCaseDatavariation")` (or `AddTestSuiteVariationItem` with `Action="EnableTestSuiteDatavariation"`).
+2. **Bulk Item Registration (Phase 3):** Concurrently dispatch item registration calls in safe batches (15-20 per turn) using `AddTestCaseVariationItem` / `AddTestSuiteVariationItem`:
+   - Attribute Value: `Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`.
+   - Microflow Parameter Value: `Action="AddMicroflowParameterValueTestCaseVariationItem"`, `ObjectKey=MicroflowParameterValueKey`.
+   - Assert Attribute Compare: `Action="AddAssertAttributeValueCompareTestCaseVariationItem"`, `ObjectKey=AssertAttributeValueCompareKey`.
+   - Assert Return Value: `Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem"`, `ObjectKey=AssertMicroflowReturnValueCompareKey`.
+   - Assert Exception: `Action="AddAssertExceptionTestCaseVariationItem"`, `ObjectKey=AssertExceptionKey`.
+   - Assert Object Count: `Action="AddAssertObjectCountTestCaseVariationItem"`, `ObjectKey=AssertObjectCountKey`.
+   - Assert Feedback Message Compare: `Action="AddAssertValidationFeedbackMessageCompareTestCaseVariationItem"`, `ObjectKey=AssertValidationFeedbackMessageCompareKey`.
+   - Assert Feedback Message Count: `Action="AddAssertValidationFeedbackMessageCountTestCaseVariationItem"`, `ObjectKey=AssertValidationFeedbackMessageCountKey`.
+3. **Upfront Bulk Column Creation (Step 4.1 - PAT-86):** Call `CreateTestCaseVariation(TestCaseKey)` (or `CreateTestSuiteVariation(TestSuiteKey)`) for ALL remaining scenarios ($2..N$) concurrently in 1 single turn.
 4. **Set Variation Names & Descriptions (PAT-77):** Batch `EditTestCaseVariation(SetName)` and `EditTestCaseVariation(SetDescription)` calls across all variations.
 5. **Single Snapshot & Deterministic Indexing (Steps 4.2 & 4.3 - PAT-86, PAT-87):** Call `GetTestCaseDetails(TestCaseKey)` once to retrieve all cloned variation container and item keys, mapping them directly against registration sequence without extra queries.
 6. **Safe Chunked Cell Population (Step 4.4 - PAT-85, PAT-86):** Concurrently dispatch cell overrides in safe batches (max 15-20 calls per turn) using `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*` (with `SetValueToEmpty="_True"` for empty cells and explicit `SetExpectedObjectCount` for cloned count assertions).
+
+---
+
+## 📜 STANDARDIZED TOOL RETURN CONTRACTS & CONFIRMATIONS
+
+MTA MCP tools return standardized confirmation strings or formatted identifiers upon successful execution:
+
+| Tool Category | Tool Name | Success Confirmation / Return String Format |
+| :--- | :--- | :--- |
+| **Containers** | `CreateTestSuite` | `"TestSuiteKey: <Key>"` |
+| | `CreateTestCase` | `"TestCaseKey: <Key>"` |
+| | `CreateExecutionUser` | `"ExecutionUserKey: <Key>"` |
+| | `EditExecutionUser` | `"Username has been successfully set"` |
+| | `SetSequenceOfTestSuite` | `"The sequence is set for test suit"` |
+| | `SetSequenceOfTestCase` | `"The sequence is set for test case"` |
+| **Step Lifecycle** | `CreateObjectActionTestStep` | `"Teststep key: <Key>"` |
+| | `CreateMicroflowCallTestStep` | `"Teststep key: <Key>"` |
+| | `SetSequenceOfTestStep` | `"The sequence is set for teststep"` |
+| | `MoveTestStepToOtherTestCase` | `"The teststep is moved to the target test case"` |
+| **Bindings & Outputs** | `SetTestStepOutputForSelectObjectForChange` | `"TeststepOutput has been set for SelectObjectForChange"` |
+| | `SetTestStepOutputForSelectObjectForDelete` | `"TeststepOutput has been set for SelectObjectForDelete"` |
+| **Assertions** | `CreateAssertAttributeValueCompare` | `"AssertAttributeValueCompareKey: <Key>"` (or object key payload) |
+| | `CreateAssertMicroflowReturnValue` | `"AssertMicroflowReturnValueKey: <Key>"` |
+| | `CreateAssertException` | `"AssertExceptionKey: <Key>"` |
+| | `CreateAssertObjectCount` | `"AssertObjectCountKey: <Key>"` |
+| **Execution** | `ExecuteTest` | String containing `TestRunKey` and `TestRunExecutionId` |
+
 

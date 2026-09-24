@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.19.0"
-changes: "Added Chat Mode Smoke Audit reporting standards and sealed plan on-demand rendering."
+version: "6.20.0"
+changes: "Fixed several loopholes in patterns and updated with latest MCP tools versions."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -112,7 +112,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 142 testing patterns/anti-patterns (`PAT-01..96`, `ANTI-01..46`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 160 testing patterns/anti-patterns (`PAT-01..105`, `ANTI-01..55`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

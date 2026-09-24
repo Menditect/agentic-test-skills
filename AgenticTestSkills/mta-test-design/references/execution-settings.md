@@ -69,8 +69,8 @@ Use this decision tree to determine the correct settings for any Test Case or Te
    You **MUST** set the execution condition of **all boilerplate steps** as well as **all backend data actions** inside a Frontend testcase to `"Always"` using `EditTestStep`. This guarantees setup/cleanup boundaries execute reliably, even if intermediate UI or validation steps in Case 2 fail.
 2. **Options Object "Always" Requirement:**
    Any Playwright or Frontend testkit create options object teststeps (such as `LocalStartOptions`, `NewBrowserContextOptions`, `StartMxFrontendTestOptions`) **MUST** have their execution setting set to `"Always"` via `EditTestStep`.
-3. **The Cascading Provider Law (Backward Execution Cascade):**
-   If a teststep's execution condition is set to `"Always"`, **all providing teststeps** (those supplying inputs/parameters to it) in the same test suite **MUST** be set to `"Always"` as well. This cascades backward through the entire dependency chain in the test suite to prevent compilation and unbound parameter execution errors.
+3. **The Cascading Provider Law / Provider-Consumer Execution Condition Parity (`PAT-99`):**
+   If a teststep's execution condition is set to `"Always"` (such as assertion or teardown cleanup steps), **all providing teststeps** (those supplying inputs, objects, or parameter handles to it) in the same test suite **MUST** be set to `"Always"` as well. If an upstream provider is configured with `ExecutionCondition = "None"` and is skipped due to an earlier step failure, downstream steps configured with `"Always"` will execute against null handles, causing fatal runtime crashes. This parity cascades backward through the entire dependency chain in the test suite.
 4. **The Cascading Consumer Law (Forward Skip Cascade):**
    If a teststep's execution condition is set to `"Skip"`, it cannot provide any output to receiving teststeps in the same test suite. Therefore, **all receiving teststeps** (consumers of its outputs/parameters) **MUST** be set to `"Skip"` as well. This cascades forward through the entire dependency chain in the test suite.
 5. **The Cascading Test Case Skip Rule:**
@@ -87,7 +87,7 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 8. **⚡ Multi-Tool Batch Execution Settings Dispatch (1 Turn):**
    When configuring execution settings, metadata, or highlights across multiple steps or test cases, dispatch ALL `EditTestStep` and `EditTestCase` calls concurrently in a **single turn**.
 
-### 🔌 Execution Settings Wire Format vs. Plan Display Mapping
+### 🔌 Execution Settings Wire Format vs. Plan Display Mapping (`PAT-100`)
 | Execution Setting | User-Facing Plan Display | Wire / MCP Tool Value (`EditTestStep`) | Wire / MCP Tool Value (`EditTestCase`) |
 | :--- | :--- | :--- | :--- |
 | **Execution Condition** | `None` / `Always` / `Skip` | `"None"` / `"Always"` / `"Skip"` | `"None"` / `"Always"` / `"Skip"` |
@@ -95,6 +95,8 @@ Use this decision tree to determine the correct settings for any Test Case or Te
 | **Highlight** | `True` / `False` | `"_True"` / `"_False"` | N/A |
 | **Apply Security** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`ApplySecurity`) |
 | **Rollback After Run** | `No` / `Yes` | N/A | `"No"` / `"Yes"` (`RollbackTcseAfterExecution`) |
+
+> 🚨 **Wire Enum Token Strictness (`PAT-100`):** Always emit exact schema wire enum tokens with leading underscores (`_Continue`, `_True`, `_False`). Prohibits normalizing to natural language strings (`"Continue"`, `"True"`).
 
 ---
 

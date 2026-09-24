@@ -85,8 +85,8 @@ Asserts that the number of objects retrieved or present in a list matches an exp
 ### 4. Microflow Return Value Assertion (`CreateAssertMicroflowReturnValue`)
 Asserts that a microflow returns a value matching expected conditions.
 *   **Resolution:** Call `GetTeststepDetails(TestStepKey)` to obtain `AssertMicroflowReturnValueCompareKey`.
-*   **Creation & Edit Operators:** Both `CreateAssertMicroflowReturnValue` and `EditAssertMicroflowReturnValueCompare` require plural PascalCase (`"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`).
-*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (plural `"Equals"`, `"NotEquals"`, etc.), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
+*   **Creation & Edit Operators:** Creation (`CreateAssertMicroflowReturnValue`) requires plural PascalCase (`"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`), whereas editing (`EditAssertMicroflowReturnValueCompare`) strictly requires singular PascalCase (`"Equal"`, `"NotEqual"`, `"GreaterThan"`, `"GreaterThanOrEqual"`, `"LessThan"`, `"LessThanOrEqual"`, `"Contains"`, `"NotContains"`, `"StartsWith"`, `"EndsWith"`).
+*   **Properties:** Call `EditAssertMicroflowReturnValueCompare` with `AssertMicroflowReturnValueCompareKey`, `ComparisonOperator` (singular `"Equal"`, `"NotEqual"`, etc.), `EditAction` (`"SetStringValue"`, `"SetIntegerLongValue"`, `"SetBooleanValue"`, `"SetDecimalValue"`, etc.), and target value.
 *   **Data Variation:** Register via `AddTestCaseVariationItem(Action="AddAssertMicroflowReturnValueCompareTestCaseVariationItem", ObjectKey=AssertMicroflowReturnValueCompareKey)`.
 
 ### 5. Validation Feedback Message Assertions (Backend Only)

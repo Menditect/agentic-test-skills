@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.7.0"
-changes: "Updated schema version and execution plan delivery alignment."
+version: "1.7.1"
+changes: "Updated agentic-test-workspace template repository references and lifecycle commands."
 ---
 
 # MTA Installation & Configuration Skill
@@ -119,17 +119,17 @@ Guide the user through these four sequential setup micro-states, halting to veri
     *   Instruct the developer to create a Personal Access Token (PAT) under Mendix developer settings (`user-settings.mendix.com/link/developersettings`) with appropriate API scopes.
     *   Configure application settings, create application instances in MTA, and establish webhook tokens for CI/CD.
     *   **Canonical Workspace Configuration (`mta_config.json`):**
-        *   Generated automatically by `agentic-test-tools` (or maintained manually) in the workspace root.
+        *   Generated automatically by `agentic-test-workspace` (or maintained manually) in the workspace root.
         *   Establishes the Single Source of Truth (SSOT) across 19 canonical properties: workspace paths, MTA portal and plugin MCP endpoints, authentication tokens, `mendix_mpr_path`, `execution_plans_dir`, and `app_instances[]`.
         *   Validated against `references/mta_config.schema.json` via `python scripts/lint-config-schema.py`. Complete field reference documented in `references/mta-config-reference.md`.
         *   Provides automatic token resolution for `ExecuteTest` (`default_app_instance_token` or instance name lookup in `app_instances[]`), eliminating manual credential prompts.
-    *   **Template Repository Acquisition & Lifecycle Protocol (`agentic-test-tools`):**
-        *   [`agentic-test-tools`](https://github.com/Menditect/agentic-test-tools) is a **GitHub Template Repository** that provides MCP proxies, Mendix model wrappers, IDE configs, and automated setup scripts.
+    *   **Template Repository Acquisition & Lifecycle Protocol (`agentic-test-workspace`):**
+        *   [`agentic-test-workspace`](https://github.com/Menditect/agentic-test-workspace) is a **GitHub Template Repository** that provides MCP proxies, Mendix model wrappers, IDE configs, and automated setup scripts.
         *   **Cloning for Acquisition & Upgrades:** Because it is a template repository, updating to a new version or setting up a fresh workspace is done by **cloning the template repository**:
             ```bash
-            git clone https://github.com/Menditect/agentic-test-tools.git
+            git clone https://github.com/Menditect/agentic-test-workspace.git
             ```
-        *   **Discovery Protocol:** Before running setup or updates, check if `agentic-test-tools` is already cloned: (1) `mta_config.json` -> `workspace_dir`, (2) current directory `./`, (3) sibling directory `../agentic-test-tools`, (4) known tools directory (e.g. `C:\Projecten\agentic-test-tools`). If missing or when updating version, clone it.
+        *   **Discovery Protocol:** Before running setup or updates, check if `agentic-test-workspace` is already cloned: (1) `mta_config.json` -> `workspace_dir`, (2) current directory `./`, (3) sibling directory `../agentic-test-workspace`, (4) known tools directory (e.g. `C:\Projecten\agentic-test-workspace`). If missing or when updating version, clone it.
         *   **Workspace Configuration & Self-Healing (`npm run setup`):**
             Inside the cloned tools directory, execute `npm run setup` (or `.\setup.ps1`). This interactive wizard scans the Mendix `.mpr`, detects application instances, extracts connection settings, and generates/updates `mta_config.json`, `.env`, and IDE configs. Run this whenever paths change, tokens expire, or `mta_config.json` needs healing.
         *   **Upstream Synchronization (`npm run update`):**
