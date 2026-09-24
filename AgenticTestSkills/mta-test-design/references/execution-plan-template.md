@@ -282,7 +282,10 @@ test_case_keys: []
 <summary><b>7. Data Variation Matrix & Metadata</b></summary>
 
 > [!IMPORTANT]
-> **Zero Disconnect SSOT Invariant:** Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
+> **Zero Disconnect SSOT Invariant & Scalar-Only Matrix Law (`PAT-07`, `ANTI-48`):** 
+> * Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
+> * **NO Association Rows Allowed (`ANTI-48`):** Association bindings (e.g. `Car.Car_CarSize`) and Object Handles cannot be registered as variation items in MTA. Matrix rows must STRICTLY be scalar attributes (`String`, `Integer`, `Decimal`, `Boolean`, `DateTime`, `Enum`), microflow parameter values, or assertion comparisons.
+> * **Empty Objects via PAT-07:** If a variation scenario requires testing an empty/null object or unassigned association, implement `PAT-07` in Section 5 (Create with sentinel $\rightarrow$ Retrieve from Teststep with filter $\rightarrow$ Bind Retrieve handle to Association/Microflow Parameter) and vary the **Create step's scalar sentinel attribute** in this matrix.
 
 ### Data Variation Matrix
 #### Table 1: Scenarios #1 to #7 (Primary Scenarios)

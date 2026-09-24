@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.22.0"
-changes: "Fixed several loopholes in patterns and updated with latest MCP tools versions."
+version: "6.23.0"
+changes: "Enforced PAT-07 Empty Object pattern and prohibited association variation rows in Data Variation Matrices."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -83,6 +83,14 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Self-Contained AST Extraction:* Extract input parameters, return types, variables, called sub-microflows, member expressions, and enum literals directly from the self-contained AST. Prohibit running broad exploratory listing queries (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) when all required elements are present in the target AST (`ANTI-26`).
     *   *Verified Entity Fixture Attribute & Constraint Binding Law (`PAT-75`, `PAT-53`, `ANTI-29`):* Before proposing test fixture attributes, parameters, or variation values, inspect the entity definition via `mxcli SHOW ENTITY <Module.Entity>` or `DESCRIBE ENTITY <Module.Entity>` (or `GetAppModelData`) to capture data types, String length limits (`String(N)`), and non-empty constraints. Prohibit hallucinating synthetic placeholder attributes without domain verification.
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
+*   **🚨 Mandatory Empty Object & Association Variation Protocol (`PAT-07`, `ANTI-48`)**:
+    *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
+    *   *Mandatory Empty Object Pattern Implementation (`PAT-07`):* Whenever a boundary or negative scenario requires passing an `empty`/NULL object or unassigned association across variations, you **MUST** structure the test steps using the Dual Retrieve/Filter pattern:
+        1. **Create Step:** Create the entity with a short sentinel attribute (e.g. `Size = Small` or `Code = "VAL"`).
+        2. **Retrieve Step (`RetrieveOption = "Teststep"`):** Retrieve from the Create step with an explicit attribute filter (`Size = Small` or `Code = "VAL"`).
+        3. **Consumer Binding:** Bind the association or microflow object parameter to the **Retrieve step output**, never directly to the Create step.
+        4. **Variation Matrix Row:** In Section 7, vary the **Create step's scalar attribute** (`"VAL"` for valid scenario $\rightarrow$ retrieve succeeds, vs `"NON"` for empty scenario $\rightarrow$ retrieve returns `empty` in memory).
+        5. Alternatively, if variations alter the core entity structure without `PAT-07`, split into dedicated, separate test cases in the suite.
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.
     *   *Single-Pass Page AST Seed Derivation (`PAT-72`):* If inspecting the local Mendix model via `mxcli`:

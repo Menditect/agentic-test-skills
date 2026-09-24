@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.25.0"
-changes: "Fixed pattern loopholes, updated agentic-test-workspace reference, and aligned with latest MCP tools versions."
+version: "4.26.0"
+changes: "Added PAT-07 invariant and prohibited association rows in Data Variation Matrices."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -80,5 +80,6 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 - **Frontend Isolation (ANTI-20, PAT-64):** UI actions must strictly drive the browser via `MenditectMxFrontendTestKit`. Never substitute UI actions with backend microflows.
 - **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
 - **Sequence Reordering Serialization (ANTI-44):** Parallel batching of `SetSequenceOfTestStep` or `SetSequenceOfTestCase` is strictly prohibited; sequence calls must be sequential or eliminated by ordered creation (`PAT-11`).
+- **Empty Object & Association Variation Invariant (`PAT-07`, `ANTI-48`):** Association bindings and object handles can NEVER appear as rows in a Data Variation Matrix (`ANTI-48`). When a test variation requires passing an empty/null object or unassigned association, you MUST implement `PAT-07` (Dual Retrieve/Filter Pattern with `Retrieve from Teststep` and short sentinel attribute) or split into dedicated test cases.
 - **Zero Disconnect:** The approved Execution Plan is the absolute SSOT during construction and audit. Improvised steps or variations are strictly prohibited.
 - **Domain Delegation:** Detailed execution plan schemas (8 design sections + Section 9 post-construction receipt), 8-field step definitions, and 14-point audits are strictly governed by `mta-test-design`; horizontal layered construction SOP and tool batching are strictly governed by `mta-build`.
