@@ -104,12 +104,13 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 ### 💬 Decision Required:
 > **Do you approve this Execution Plan for immediate local execution?**
 > - **[Yes, Execute Option A]** ➔ Dispatches local in-memory exploratory test (`< 1s` execution via `MTA_plugin`).
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
 > - **[Adjust Plan]** ➔ Make changes to test steps, assertions, or data variations first.
 > - **[Enable Option B]** ➔ `[Register the MTA MCP server in your settings | Set up Branch Subscription or trigger a manual model upload]` to unlock Option B.
 
 > [!WARNING]
 > **Local Runtime Unreachable Fallback:**
-> If the local application is not running or the `MTA_plugin` endpoint (`http://localhost:8081/plugin/mcp` or `[RuntimeUrl]/plugin/mcp`) is unreachable:
+> If the local application is not running or the `MTA_plugin` endpoint (`${plugin_mcp_url}` or `[ApplicationRootUrl]/plugin/mcp`) is unreachable:
 > 1. Start the local Mendix application from Studio Pro (or run `mendix-cli` / start local server).
 > 2. Alternatively, commit your local changes and sync MTA ([Branch Subscription](https://documentation.menditect.com/mta/branch-subscription) or manual upload) to unblock Option B.
 > 3. You can still review, refine, and store the Execution Plan locally (`EP_<TestCaseName>.md`) in `STATE_BUILD_PLANNING` without requiring an active application runtime.
@@ -141,6 +142,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 > **Do you approve this Execution Plan? If so, which execution route would you like to take?**
 > - **Reply "A"** ➔ Run immediate local exploratory execution via `MTA_plugin`.
 > - **Reply "B"** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to build persistent test cases in MTA.
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
 > - **Reply "Adjust"** ➔ Modify test steps, assertions, or data variations first.
 
 ---
@@ -170,6 +172,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 > **Do you approve this Data Seeding Plan? If so, which execution route would you like to take?**
 > - **Reply "A"** ➔ Execute local direct seeding immediately via `MTA_plugin` (zero server scanning, 1-turn execution).
 > - **Reply "B"** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to construct persistent test case in MTA.
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
 > - **Reply "Adjust"** ➔ Modify entity attributes, associations, or variation counts first.
 
 ---
@@ -202,12 +205,13 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 
 | Strategy Option | Target Environment | Status | Resolution Step |
 | :--- | :--- | :---: | :--- |
-| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`BLOCKED`** | Start your Mendix App Under Test in Studio Pro (port `8080`) |
+| **Option A: Local Exploratory Test** | Local App (`MTA_plugin`) | **`BLOCKED`** | Start your Mendix App Under Test in Studio Pro |
 | **Option B: Persistent MTA Test** | MTA Server Platform | **`BLOCKED`** | Configure `MTA` MCP server in `mta_config.json` / settings |
 
 ### 💬 Decision Required:
 > **How would you like to proceed?**
 > - **[Save & Exit]** ➔ Retain the draft plan on disk. When a server becomes available later, simply ask to build/execute it.
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
 > - **[Start Local App]** ➔ Launch your app in Studio Pro, then reply **"Retry Option A"** to run immediate in-memory testing.
 > - **[Enable MTA Server]** ➔ Register your MTA server endpoint/token, then reply **"Retry Option B"** to resolve placement (Gate 2) and build persistent tests.
 > - **[Adjust Plan]** ➔ Modify test steps, entity attributes, or assertions while offline.
@@ -240,7 +244,8 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 ### 💬 Decision Required:
 > **Do you approve this Execution Plan? How would you like to proceed?**
 > - **[Yes, Proceed with Option B]** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to construct persistent test cases in MTA.
-> - **[Start Local App for Option A]** ➔ Launch your app in Studio Pro on port 8080, then reply **"Retry Option A"**.
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Start Local App for Option A]** ➔ Launch your app in Studio Pro, then reply **"Retry Option A"**.
 > - **[Adjust Plan]** ➔ Modify test steps, assertions, or data variations first.
 
 ---

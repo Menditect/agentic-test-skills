@@ -15,7 +15,7 @@ This reference document defines the complete structure, properties, resolution r
 
 ---
 
-## 2. Canonical JSON Structure (v1.5.0)
+## 2. Canonical JSON Structure (v1.7.0)
 
 ```json
 {
@@ -26,20 +26,21 @@ This reference document defines the complete structure, properties, resolution r
   "skills_style": "standard",
   "mta_output_path": "C:\\Projecten\\mta-trial\\menditect-output",
   "execution_plans_dir": "C:\\Projecten\\mta-trial\\menditect-output\\execution-plans",
+  "execution_plan_collapsible": true,
   "mendix_version": "11.12.011",
   "application_name": "Menditect_CarRental_Insurance",
   "mta_base_url": "https://mta-trial.mendixcloud.com",
   "mcp_endpoint": "https://mta-trial.mendixcloud.com/primitivetools/mcp",
-  "plugin_mcp_url": "http://localhost:8081/plugin/mcp",
+  "plugin_mcp_url": "http://localhost:[Port]/plugin/mcp",
   "app_instances": [
     {
       "name": "mta-trial-1",
       "token": "f5d3f2a8-eb39-4cf5-9dfc-7fdeaf79c80d",
       "mtaUrl": "https://mta-trial.mendixcloud.com",
-      "runtimeUrl": "http://localhost:8081/",
-      "pluginUrl": "http://localhost:8081/plugin/mcp",
+      "runtimeUrl": "http://localhost:[Port]/",
+      "pluginUrl": "http://localhost:[Port]/plugin/mcp",
       "pluginToken": "Bearer 12",
-      "pluginPort": "8081"
+      "pluginPort": "[Port]"
     }
   ],
   "default_app_instance": "mta-trial-1",
@@ -63,6 +64,7 @@ This reference document defines the complete structure, properties, resolution r
 | `skills_style` | string | No | Installation style: `"standard"` (project-level `skills/`) or `"mendix_module"` (`skillssource/_modules/menditect_agentictestskills` for Mendix 11.12+). |
 | `mta_output_path` | string | No | Root path for test output artifacts, reports, and logs. |
 | `execution_plans_dir` | string | **Yes** | Dedicated directory where active Execution Plans (`EP_*.md`) are stored and updated in-place (`PAT-44`, `PAT-89`). |
+| `execution_plan_collapsible` | boolean | No | Whether to format execution plans with collapsible `<details>` HTML tags (default: `true` for VS Code/GitHub) or flat Markdown headers (`false` for Claude Desktop/pure markdown). |
 | `execution_plans_archive_dir` | string | No | *(Deprecated)* Formerly used for archiving superseded plans. Replaced by in-place plan revisions tracked in Git. |
 | `mendix_version` | string | No | Mendix Studio Pro version detected from `.mpr` header (e.g. `"11.12.011"`). |
 | `application_name` | string | **Yes** | Name of the target Mendix application in MTA. Eliminates manual application disambiguation prompts. |

@@ -130,20 +130,21 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
   "skills_style": "standard",
   "mta_output_path": "C:\Projecten\mta-trial\menditect-output",
   "execution_plans_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans",
+  "execution_plan_collapsible": true,
   "mendix_version": "11.12.011",
   "application_name": "MyMendixApp",
   "mta_base_url": "https://mta-instance.mendixcloud.com",
   "mcp_endpoint": "https://mta-instance.mendixcloud.com/primitivetools/mcp",
-  "plugin_mcp_url": "http://localhost:8081/plugin/mcp",
+  "plugin_mcp_url": "http://localhost:[Port]/plugin/mcp",
   "app_instances": [
     {
       "name": "Local Development",
       "token": "00000000-0000-0000-0000-000000000000",
       "mtaUrl": "https://mta-instance.mendixcloud.com",
-      "runtimeUrl": "http://localhost:8081/",
-      "pluginUrl": "http://localhost:8081/plugin/mcp",
+      "runtimeUrl": "http://localhost:[Port]/",
+      "pluginUrl": "http://localhost:[Port]/plugin/mcp",
       "pluginToken": "Bearer 1",
-      "pluginPort": "8081"
+      "pluginPort": "[Port]"
     }
   ],
   "default_app_instance": "Local Development",
@@ -162,6 +163,7 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
 | `mcp_endpoint` | string (URI) | **(Required)** MCP endpoint URL for the MTA primitive tools server (`[mta_base_url]/primitivetools/mcp`). |
 | `application_name` | string | **(Required)** Name of the target Mendix application in MTA. Eliminates manual application disambiguation prompts. |
 | `execution_plans_dir` | string | **(Required)** Directory where active Execution Plans (`EP_*.md`) are stored and updated in-place. |
+| `execution_plan_collapsible` | boolean | Whether to format execution plans with collapsible `<details>` HTML tags (default: `true` for VS Code/GitHub) or flat Markdown headers (`false` for Claude Desktop/pure markdown). |
 | `mendix_project_dir` | string | **(Required)** Absolute path to the target Mendix project folder containing the app model. |
 | `mendix_mpr_path` | string | Absolute path to the Mendix `.mpr` project file used by `mxcli`. |
 | `mta_auth_header` | string | *(Deprecated)* HTTP Authorization header (`Bearer <session_token>`) for authenticating with MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |

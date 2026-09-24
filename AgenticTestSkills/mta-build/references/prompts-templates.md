@@ -749,7 +749,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **2. Browser Type** | `Chromium` | `Firefox`, `WebKit` |
 | **3. Execution Mode** | `Headless` | `Headed` (Visual browser window) |
 | **4. Viewport Dimensions** | `1280 x 720` | `1920 x 1080`, `1366 x 768`, `375 x 812` (Mobile), Custom |
-| **5. Target Base URL / Path** | `http://localhost:8080/index.html` | Custom URL string or relative launch path |
+| **5. Target Base URL / Path** | `http://localhost:[Port]/index.html` | Custom URL string or relative launch path |
 | **6. Action Delay (SlowMo)** | `0 ms` (Server) / `100 ms` (Local) | Custom delay in milliseconds |
 | **7. Default Timeout** | `30,000 ms` | `15,000 ms`, `60,000 ms`, Custom timeout in ms |
 | **8. Tracing (Trace)** | `true` (Enabled) | `false` (Disabled) |

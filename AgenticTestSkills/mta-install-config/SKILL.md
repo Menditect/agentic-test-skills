@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.6.4"
-changes: "Synchronized reference documentation and pre-approval audit templates for MTA MCP server availability gating."
+version: "1.7.0"
+changes: "Updated schema version and execution plan delivery alignment."
 ---
 
 # MTA Installation & Configuration Skill
@@ -92,7 +92,7 @@ Guide the user through these four sequential setup micro-states, halting to veri
             *   *Localhost (Studio Pro):* Optional, but recommended.
             *   *Non-Localhost (Cloud / Staging / Remote Docker):* **MANDATORY**. Instruct the user to generate a strong 256-bit token (min 32+ characters, e.g. via `openssl rand -base64 32` or PowerShell random generation) and configure it as an Encrypted Constant in Mendix Portal / Studio Pro.
             *   Passed as `Authorization: Bearer [Token]` in MCP client request headers.
-        *   Endpoint is reachable at `[RuntimeUrl]/plugin/mcp` (e.g. `http://localhost:8081/plugin/mcp` or `https://[app-domain]/plugin/mcp`).
+        *   Endpoint is reachable at `[ApplicationRootUrl]/plugin/mcp` (e.g. `http://localhost:[Port]/plugin/mcp` or `https://[app-domain]/plugin/mcp`).
 *   **🔍 Success Verification Check:**
     *   The Mendix App compiles successfully in Studio Pro with zero Java action compilation errors.
     *   Running `git status` verifies that all proxies, actions, and system files under `modules/javasource` are untracked and successfully ignored.

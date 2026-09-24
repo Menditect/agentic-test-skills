@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.16.1"
-changes: "Synchronized reference documentation and pre-approval audit templates for MTA MCP server availability gating."
+version: "6.17.0"
+changes: "Updated schema version and execution plan delivery alignment."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -81,7 +81,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         - Intercept the error using `PAT-95` Sanitized Layered Return Message.
         - Silently probe whether the remote `MTA` MCP server is registered and responsive.
         - If the remote `MTA` MCP server is available: Offer immediate promotion/fallback to **Option B (Direct Persistent MTA Test)** via `mta-test-design` `PLAN_STEP_2`.
-        - If the remote `MTA` MCP server is also unavailable (Dual Outage): Guide the user to start the local application in Studio Pro on port 8080 (or runtime URL) and verify `MTA_plugin` in `mta_config.json`, while confirming that the Execution Plan remains safely stored on disk (`status: "DRAFT"`).
+        - If the remote `MTA` MCP server is also unavailable (Dual Outage): Guide the user to start the local application in Studio Pro and verify `MTA_plugin` in `mta_config.json`, while confirming that the Execution Plan remains safely stored on disk (`status: "DRAFT"`).
     *   **Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`):**
         *   *Zero-CLI Re-Query Law:* Pre-compile all variation blocks directly from Section 7 of the approved Execution Plan. Do **NOT** re-run any CLI or model inspection commands during execution.
         *   *Single-Payload Execution Law (`PAT-73`, `ANTI-27`):* When Section 7 defines multiple variations (`VAR_01` through `VAR_0N`), compile all variations into **1 single `TCEX_RQ_TestStepRun` array** dispatched in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"`, `"ApplySecurityExecutor": "NONE"`, `"RollbackTcseAfterExecution": "Yes"` (or `"true"`), NO trailing `Persist` step, and verified entity attribute members (`PAT-75`). Invoking `execute-testcase` across multiple sequential agent turns is strictly **PROHIBITED** (`ANTI-27`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
@@ -241,7 +241,7 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
             If a `FileUUID` is present (whether the run failed or succeeded):
             1. **Resolve Playwright Viewer URL:** Evaluate `mta_config.json` (`playwright_viewer_url`), fallback to `.env` (`PLAYWRIGHT_VIEWER_URL`), fallback to default: `https://trace.playwright.dev/?trace=`.
             2. **Resolve Tracefile Base URL:** Evaluate `mta_config.json` (`tracefile_base_url`), fallback to `.env` (`MTA_TRACEFILE_BASE_URL`), fallback to dynamic default derived from `mta_base_url`: `${mta_base_url.replace(/\/$/, '')}/rest/private/tracefile?fileUUID=`.
-            3. **Assemble Clickable Viewer URL:** Combine into `${playwright_viewer_url}${tracefile_base_url}${FileUUID}` (e.g. `https://trace.playwright.dev/?trace=http://localhost:8081/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`).
+            3. **Assemble Clickable Viewer URL:** Combine into `${playwright_viewer_url}${tracefile_base_url}${FileUUID}` (e.g. `https://trace.playwright.dev/?trace=https://[mta-or-runtime-domain]/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`).
             4. **Present Clickable Link:** Always render the clickable viewer link in the diagnostic report or execution receipt for instant visual inspection of browser actions, network logs, and DOM snapshots.
     *   **🚨 THE AUTOMATED SELF-REPAIR PROTOCOL (CRITICAL):**
         If a test execution fails during runtime verification, you **MUST NOT** simply report the failure and wait. You **MUST** immediately initiate this automated self-repair loop in the same turn:

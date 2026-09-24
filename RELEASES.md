@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.20.0](releases/v1.20.0.md) | 2026-09-24 | improved behaviour for chat based agents (MAIA) |
 | [🚀 v1.19.3](releases/v1.19.3.md) | 2026-09-24 | fix(ci): handle null return from git tag check in sync workflow |
 | [🚀 v1.19.2](releases/v1.19.2.md) | 2026-09-16 | improved skills for frontend testing and smoke audit |
 | [🚀 v1.19.1](releases/v1.19.1.md) | 2026-09-16 | streamlined skills for optimized loading and workflow |

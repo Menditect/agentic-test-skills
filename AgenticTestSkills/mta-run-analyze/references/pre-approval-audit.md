@@ -105,16 +105,16 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Verification Criteria:** All Frontend steps strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` catalogs with exact parameter signatures. Zero synthetic microflows invented.
 - **Compliance Status:** `PASS` or `NA`.
 
-### [CHECK 14] MTA Server Model Parity & Dual MCP Server Availability (`PAT-82`, `PAT-53`, `ANTI-36`)
+### [CHECK 14] MTA Server Model Parity & Active MCP Server Discovery (`PAT-82`, `PAT-53`, `ANTI-36`)
 - **Scope:** All Tests.
 - **Verification Criteria:** 
-  1. **Dual MCP Server Availability Probing:** Check the active tool catalog and reachability for both the remote `MTA` platform server (`GetAppModelData`, `CreateTestCase`, etc.) and the local `MTA_plugin` MCP server (`execute-testcase`).
-     - *If `MTA` is unregistered or unreachable:* Status is `BLOCKED (MTA Server Unavailable)`. Option B is strictly prohibited (`ANTI-36`).
+  1. **Active Tool Catalog & MCP Server Discovery:** In all AI environments (MAIA, Gemini, Claude, Cursor, Antigravity) and execution modes, inspect the active tool catalog in the current session:
+     - *If `MTA` platform tools are not registered in the tool catalog (e.g. in MAIA with only `MTA_plugin` configured) or unreachable:* Check 14 is `BLOCKED (MTA Server Not Registered / Unavailable | Plugin Active)`. Option B is strictly blocked (`ANTI-36`). Option A remains active for Backend tests. Present Checkpoint 1 Case 1.
      - *If `MTA_plugin` is unregistered or unreachable (connection refused `ECONNREFUSED` / offline):* Option A (Local Exploratory Testing) is blocked.
-     - *If BOTH are unreachable (Dual Outage):* Status is `BLOCKED (Both MCP Servers Offline)`. Both execution routes are blocked. The plan is stored locally as `status: "DRAFT"` with metadata in `mta_state.json`.
-  2. **Model Parity Audit:** When the `MTA` MCP server is available, audit the plan drafted at local model level (`mxcli`) against the MTA server via `GetAppModelData`. All planned microflows, entities, and attributes must exist in the active MTA server revision, and domain model constraint parity is verified (e.g., verifying `StringLimitedMaxLength` from `GetAppModelData` matches planned test values). If any delta or missing element is detected, status is `BLOCKED (Model Delta / Out of Sync)` and Option B is strictly blocked.
+     - *If BOTH are unreachable (Dual Outage):* Status is `BLOCKED (Both MCP Servers Offline)`. Both execution routes are blocked. The plan is stored locally as `status: "DRAFT"` with metadata in `mta_state.json`. Present Checkpoint 1 Case 4.
+  2. **Model Parity Audit:** When the `MTA` MCP server is registered and live, audit the plan drafted at local model level (`mxcli`) against the MTA server via read-only `GetAppModelData`. All planned microflows, entities, and attributes must exist in the active MTA server revision, and domain model constraint parity is verified (e.g., verifying `StringLimitedMaxLength` from `GetAppModelData` matches planned test values). If any delta or missing element is detected, status is `BLOCKED (Model Delta / Out of Sync)` and Option B is strictly blocked.
   3. **Resumption & Retry Parity Law:** When resuming an offline draft plan created during an outage or retrying Option B, Check 14 (`GetAppModelData`) MUST be re-executed before proceeding to placement discovery (`PLAN_STEP_2`) or test construction.
-- **Compliance Status:** `PASS (Both Active & In-Sync)`, `PASS (MTA Verified) | BLOCKED (Plugin Offline)`, `BLOCKED (MTA Unavailable | Plugin Active)`, or `BLOCKED (Both MCP Servers Offline)`.
+- **Compliance Status:** `PASS (Both Active & In-Sync)`, `PASS (MTA Verified) | BLOCKED (Plugin Offline)`, `BLOCKED (MTA Not Registered / Unavailable | Plugin Active)`, or `BLOCKED (Both MCP Servers Offline)`.
 
 ---
 

@@ -19,7 +19,7 @@ To enable communication between your Mendix App and the MTA test runner, you **M
 The MTA Plugin module includes an embedded MCP server running directly inside the Mendix JVM runtime. This enables direct, local exploratory testing (`execute-testcase`) with in-memory execution and automatic rollback.
 
 ### Endpoint URL Format
-* **Local Studio Pro Runtime:** `http://localhost:8081/plugin/mcp` (or matching application runtime port, e.g. `http://localhost:8080/plugin/mcp`).
+* **Local Studio Pro Runtime:** `http://localhost:[Port]/plugin/mcp` (or configured in active MCP settings / `mta_config.json`).
 * **Cloud / Custom Domain:** `https://[app-domain]/plugin/mcp`.
 
 ### Configuration Constants

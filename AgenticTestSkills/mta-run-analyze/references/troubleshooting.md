@@ -171,7 +171,7 @@ If state leakage is caused by unmanaged external side-effects:
 | Issue / Symptom | Root Cause | Corrective Action |
 | :--- | :--- | :--- |
 | `FileUUID` is missing from `GetTestRunResults` for frontend test run | Tracing was not enabled in `StartMxFrontendTestOptions`. | Ensure `Trace = true` is set on the `StartMxFrontendTestOptions` object in Case 2. |
-| Trace viewer displays 404 / Connection Refused when opening trace link | Tracefile base URL pointing to incorrect host or port where Mendix runtime is not serving `/rest/private/tracefile`. | Verify `tracefile_base_url` in `mta_config.json` points to the reachable Mendix application URL (e.g. `http://localhost:8081/rest/private/tracefile?fileUUID=`). |
+| Trace viewer displays 404 / Connection Refused when opening trace link | Tracefile base URL pointing to incorrect host or port where Mendix runtime is not serving `/rest/private/tracefile`. | Verify `tracefile_base_url` in `mta_config.json` points to the reachable Mendix application URL (e.g. `https://[mta-or-runtime-domain]/rest/private/tracefile?fileUUID=`). |
 | Playwright Trace Viewer (`trace.playwright.dev`) reports CORS error downloading trace | Remote tracefile endpoint does not expose CORS headers for `trace.playwright.dev`. | Ensure the Mendix application runtime allows CORS on `/rest/private/tracefile`, or download the trace file directly via browser and drag-and-drop into `https://trace.playwright.dev`. |
 | Custom internal network cannot access public `trace.playwright.dev` | Enterprise network block on public internet sites. | Configure an internal trace viewer or local playwright trace server via `playwright_viewer_url` in `mta_config.json`. |
 

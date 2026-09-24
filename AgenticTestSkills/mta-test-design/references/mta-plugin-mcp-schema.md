@@ -7,7 +7,7 @@ This reference document defines the complete technical schema of the `MTA_plugin
 ## 1. Overview & Protocol
 
 The `MTA_plugin` MCP server runs inside the Mendix runtime JVM via the MTA Plugin module:
-* **Endpoint URL:** `[RuntimeUrl]/plugin/mcp` (e.g., `http://localhost:8081/plugin/mcp`)
+* **Endpoint URL:** `${plugin_mcp_url}` or `[ApplicationRootUrl]/plugin/mcp` (e.g. `http://localhost:[Port]/plugin/mcp` or configured in active MCP settings)
 * **Transport:** Streamable HTTP / Server-Sent Events (SSE) with JSON-RPC 2.0
 * **Module Constants:**
   * `MtaPluginModule.EnableMcpServer` (`Boolean`): Activates or disables the endpoint.

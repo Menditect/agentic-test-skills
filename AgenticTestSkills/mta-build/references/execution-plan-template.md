@@ -6,10 +6,19 @@
 This document defines the canonical layout and schema for an approved MTA Execution Plan (`EP_<TestCaseName>.md`). Both `mta-test-design` (during plan generation) and `mta-build` (during pre-construction ingestion and post-construction smoke auditing) MUST adhere to this exact specification.
 
 The document structure consists of:
-- **Execution Plan Metadata** (collapsible metadata block, `PAT-44`)
-- **Pre-Approval Quality Audit Banner & Checklist** (top-level audit banner, direct navigation links table post-build, and collapsible 14-point checklist, `PAT-82`)
-- **Sections 1 through 8** (the core specification and test configuration sections, enclosed in outer collapsible containers)
+- **Execution Plan Metadata** (collapsible metadata block in Collapsible mode, or top YAML block in Flat mode, `PAT-44`)
+- **Pre-Approval Quality Audit Banner & Checklist** (top-level audit banner, direct navigation links table post-build, and 14-point checklist, `PAT-82`)
+- **Sections 1 through 8** (the core specification and test configuration sections)
 - **Section 9: MTA Build & Smoke Verification Receipt** (post-construction receipt block appended upon verification, `PAT-88`)
+
+### Formatting Styles (`execution_plan_collapsible` Parameter):
+1. **Collapsible Style (`execution_plan_collapsible = true` - Default):**
+   - Sections and checklists are wrapped in `<details><summary><b>Section Name</b></summary>\n\n...\n\n</details>`.
+   - **CommonMark Strictness:** A blank line MUST precede and follow `<summary>...</summary>` and `</details>` to guarantee nested markdown tables and formatting render properly.
+   - Recommended for file storage (`.md`) viewed in VS Code, Cursor, and GitHub.
+2. **Flat Markdown Style (`execution_plan_collapsible = false` / Conversational Override):**
+   - Replaces all `<details><summary><b>N. Section Name</b></summary>` tags with standard `## N. Section Name` markdown headers (and `###` for sub-blocks), omitting `</details>` tags entirely.
+   - Eliminates raw HTML tags for seamless viewing in Claude Desktop, terminal viewers, or environments that strip HTML.
 
 ---
 
@@ -258,7 +267,7 @@ test_case_keys: []
 | **2. Browser Type** | `Chromium` | `Firefox`, `WebKit` |
 | **3. Execution Mode** | `Headless` | `Headed` (Visual browser window) |
 | **4. Viewport Dimensions** | `1280 x 720` | `1920 x 1080`, `1366 x 768`, `375 x 812` (Mobile), Custom |
-| **5. Target Base URL / Path** | `http://localhost:8080/index.html` | Custom URL string or relative launch path |
+| **5. Target Base URL / Path** | `http://localhost:[Port]/index.html` | Custom URL string or relative launch path |
 | **6. Action Delay (SlowMo)** | `0 ms` (Server) / `100 ms` (Local) | Custom delay in milliseconds |
 | **7. Default Timeout** | `30,000 ms` | `15,000 ms`, `60,000 ms`, Custom timeout in ms |
 | **8. Tracing (Trace)** | `true` (Enabled) | `false` (Disabled) |

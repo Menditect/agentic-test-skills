@@ -21,7 +21,7 @@ Every Frontend UI Test Suite MUST strictly implement the following 3-case pipeli
 2. **Microflow Call:** `MenditectMxFrontendTestKit.Start_MxFrontend_Test_Without_Login` (or `With_Login`):
    - `Browser`: Binds `Browser` output from **Case 1 Step 2**.
    - `Options`: Binds `StartMxFrontendTestOptions` from **Case 2 Step 1**.
-   - `Mendix_URL`: Target app URL (e.g. `"http://localhost:8081"`).
+   - `Mendix_URL`: Target app URL (e.g. `"http://localhost:[Port]"` or resolved from `mta_config.json`).
    ➔ **Produces `Page` object**.
 3..N-1. **Widget Interactions & Assertions:** Follow Rule 1 (2-step non-repeating chain) and Rule 2 (4-step repeating container chain).
 N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` from Case 2 Step 2) ➔ **Produces `TraceFile` object**.

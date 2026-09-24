@@ -168,7 +168,7 @@ Please configure or confirm the following browser options:
    - `3. Azure Workspaces`
 3. **Browser Type:** (Chromium, Firefox, or Webkit; Default: Chromium)
 4. **Headless Mode:** (Headed vs. Headless; Default: Headed locally)
-5. **Target URL:** (Default: `http://localhost:8080` or matching selected MTA Environment)
+5. **Target URL:** (Default: `http://localhost:[Port]` or matching selected MTA Environment)
 6. **Login Preference:** (With Login [requires username/password] vs. Without Login; Default: Without Login)
 
 **Advanced Options:**
@@ -193,7 +193,7 @@ Please review and confirm the resolved browser setup configuration:
 2. **Browser Environment (Location):** Locally (requires driver JAR in userlib)
 3. **Browser Type:** Chromium
 4. **Headless Mode:** Headed (headless = false)
-5. **Target URL:** http://localhost:8080
+5. **Target URL:** http://localhost:[Port]
 6. **Login Preference:** Without Login
 7. **Tracing (Trace):** Enabled (true)
 8. **SlowMo:** 100 ms
@@ -255,7 +255,7 @@ To view the recorded trace in the interactive Playwright Trace Viewer:
    ${playwright_viewer_url}${tracefile_base_url}${FileUUID}
    ```
    *Example:*
-   `https://trace.playwright.dev/?trace=http://localhost:8081/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`
+   `https://trace.playwright.dev/?trace=https://[mta-or-runtime-domain]/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`
 4. Both AI agents and developers can open this URL to inspect timeline actions, DOM snapshots, network payloads, console messages, and screenshots for every step in the frontend test run.
 
 

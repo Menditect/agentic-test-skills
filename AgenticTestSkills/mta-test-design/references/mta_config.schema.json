@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MTAConfiguration",
   "description": "Canonical configuration schema for Menditect Test Automation (MTA) workspace, MCP servers, runtime plugin, and tooling.",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "type": "object",
   "properties": {
     "$schema": {
@@ -34,6 +34,11 @@
     "execution_plans_dir": {
       "type": "string",
       "description": "Directory where active Execution Plans (.md) are stored."
+    },
+    "execution_plan_collapsible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to format execution plans with collapsible <details> HTML tags (default: true for VS Code/GitHub) or flat Markdown headers (false for Claude Desktop/pure markdown)."
     },
     "execution_plans_archive_dir": {
       "type": "string",
@@ -81,7 +86,7 @@
     },
     "tracefile_base_url": {
       "type": "string",
-      "description": "Base URL used to retrieve Playwright trace files by FileUUID (e.g. 'http://localhost:8081/rest/private/tracefile?fileUUID=' or derived from mta_base_url)."
+      "description": "Base URL used to retrieve Playwright trace files by FileUUID (e.g. 'https://[mta-or-runtime-domain]/rest/private/tracefile?fileUUID=' or derived from mta_base_url)."
     },
     "app_instances": {
       "type": "array",

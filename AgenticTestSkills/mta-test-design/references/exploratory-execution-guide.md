@@ -10,7 +10,7 @@ To run an exploratory test directly on the active Mendix runtime without MTA pla
 
 1. **Pre-Flight Probing:**
    * Confirm the local Mendix application is running.
-   * Verify the endpoint `[RuntimeUrl]/plugin/mcp` (e.g. `http://localhost:8081/plugin/mcp`) is active and `MtaPluginModule.EnableMcpServer = true`.
+   * Verify the endpoint `${plugin_mcp_url}` or `[ApplicationRootUrl]/plugin/mcp` (resolved from active `MTA_plugin` MCP server settings, `mta_config.json`, or `.env`) is active and `MtaPluginModule.EnableMcpServer = true`.
    * *Fallback Rule:* If the endpoint is unreachable or `MTA_plugin` MCP server is offline, immediately notify the user and offer:
      * *Option 1:* Start the local Mendix app and enable `EnableMcpServer`.
      * *Option 2:* Fall back immediately to Option B (Direct Persistent MTA Test).
