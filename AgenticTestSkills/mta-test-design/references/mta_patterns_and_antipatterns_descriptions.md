@@ -456,6 +456,24 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-107`: Mandatory Data Variation Matrix Reconciliation Audit Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates rendering a dedicated Data Variation Matrix Reconciliation Table in the Post-Construction Smoke Audit Report whenever Section 7 of the Execution Plan declares Data Variations. The audit verifies item-by-item and scenario column-by-column that all planned variation items, scenario names, descriptions, and matrix cell values are 100% built and verified on the server. If any variation items or scenario columns are missing, the audit fails with `MISSING_DATA_VARIATION_DISCREPANCY` and blocks transition to `STATE_RUN_ANALYZE`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-57` (Omitted Data Variation Smoke Audit Anti-Pattern).
+  * **Related Patterns:** `PAT-54` (Exhaustive Matrix Cell Reconciliation Law), `PAT-77` (Mandatory Data Variation Container Metadata), `PAT-88` (Post-Build Verification).
+
+---
+
+### `ANTI-57`: Omitted Data Variation Smoke Audit Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Passing a smoke audit as `BUILT_AND_VERIFIED` or transitioning to `STATE_RUN_ANALYZE` when planned data variation items, scenario containers, descriptions, or cell overrides from Section 7 of the Execution Plan were never created or populated on the MTA server.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-107` (Mandatory Data Variation Matrix Reconciliation Audit Law).
+  * **Related Patterns:** `ANTI-11` (Delta-Only Data Variation Override Assumptions), `ANTI-31` (Unpersisted Variation Metadata).
+
+---
+
 ## 🌐 Domain E: Frontend UI & Locator Laws
 
 ### `PAT-05`: Menditect Frontend Testkit Strict Default Law
@@ -1472,6 +1490,24 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-106`: Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Mandates that whenever an exploratory test (Option A) is promoted to persistent MTA storage (Option B), the agent MUST immediately execute read-only placement discovery (`GetApplicationDetails`, `GetTestConfigurationDetails`, `GetExecutionUsers`) in that exact turn and render the Checkpoint 2 (Gate 2: Placement & Target Summary) box for explicit user confirmation. Transitioning directly from an exploratory test promotion into `STATE_CONSTRUCTION` or invoking mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`) without an approved Checkpoint 2 box in transcript context is strictly prohibited.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-56` (Unplaced Exploratory Promotion Bypass Anti-Pattern).
+  * **Related Patterns:** `PAT-43` (Mandatory Dual-Gate Plan & Placement Approval), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-79` (Pre-Creation Execution User Resolution Law).
+
+---
+
+### `ANTI-56`: Unplaced Exploratory Promotion Bypass Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** The anti-pattern of promoting an exploratory test directly into `STATE_CONSTRUCTION` or calling persistent mutating MTA tools without performing `PLAN_STEP_2` placement discovery and obtaining explicit Gate 2 user sign-off on the target Test Configuration, Test Suite, and Test Case placement.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-15` (Premature Container Provisioning), `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1537,6 +1573,8 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-103`** (Exploratory Single-Session Unique Constraint Law) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Dynamic synthetic keys and teardown in single shared session vs unique constraint conflicts |
 | **`PAT-104`** (State Mutation Verification Law) | **`ANTI-54`** (Void Mutation Assertion Hallucination) | Downstream entity retrieve and state assertion vs hallucinating return value assertion on void microflows |
 | **`PAT-105`** (Microflow List Parameter Binding) | **`ANTI-34`** (Unbound Object Action Step Anti-Pattern) | Binding list parameters via retrieve output or multiple select steps vs single invalid handle |
+| **`PAT-106`** (Exploratory Promotion Placement Bridge Law) | **`ANTI-56`** (Unplaced Exploratory Promotion Bypass) | Interactive placement discovery and Gate 2 sign-off upon promotion vs unplaced construction bypass |
+| **`PAT-107`** (Data Variation Smoke Audit Reconciliation Law) | **`ANTI-57`** (Omitted Data Variation Smoke Audit) | 1-to-1 reconciliation table for variation items, scenarios, and matrix values vs omitting variations in audit |
 | **`PAT-17`** (Backend Unit Test Stop Setting) | **`ANTI-47`** (Redundant Unit Test Teardown) | Zero teardown and transaction rollback in unit tests vs redundant explicit delete steps |
 | **`PAT-91`** (Self-Contained Frontend Seeding Invariant) | **`ANTI-49`** (Broad Non-Synthetic Teardown Retrieves) | Strict synthetic key filtering in teardown retrieves vs broad unconstrained database wipes |
 | **`PAT-01`** (Test Scoping & Pyramid Layer Alignment) | **`ANTI-50`** (Unmocked External API Execution) | Mocking external REST/SOAP microflow dependencies vs live external API calls |

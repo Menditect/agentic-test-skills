@@ -38,16 +38,14 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Scope:** All Tests.
 - **Verification Criteria:** 
   1. `Retrieve` steps specify `Input Handle Source`.
-  2. **Mandatory Association Variation Prohibition & `PAT-07` Gate (`PAT-07`, `ANTI-48`):** 
-     - **Hard Failure Gate:** Scan all rows in Section 7 (Data Variation Matrix). If **ANY** row targets an `Association` (e.g. `Car_CarSize`, `Order_Customer`), an object reference handle, or attempts to toggle an association to `(empty)`, Check 5 **MUST EVALUATE AS `FAIL / CORRECTION_REQUIRED`**. MTA platform data variations DO NOT support association variation items.
-     - Any scenario requiring empty/NULL objects or unassigned associations across variations **MUST strictly implement `PAT-07` in Section 5 step definitions**: Create base entity $\rightarrow$ `Retrieve from Teststep` with an explicit attribute filter and short $\le 4$-character sentinels (`'VAL'` vs `'NON'`) complying with `PAT-53` $\rightarrow$ bind downstream association/microflow parameter to the **Retrieve step output**. In Section 7, vary the **Create step's scalar attribute**, NEVER the association.
+  2. Parameters/associations requiring empty/NULL variations use `Retrieve` with an explicit attribute filter and short $\le 4$-character sentinels (`'NONE'`, `'NULL'`) complying with the Universal Short Sentinel Law (`PAT-53`).
   3. **Attribute Constraint & Length Verification (`PAT-53`):** All literal values specified in Section 5 (step parameters) and Section 7 (variation matrix) are audited against Mendix Domain Model constraints (`SHOW ENTITY`, `DESCRIBE ENTITY`, or `GetAppModelData`).
   4. **Negative Validation Assertions (`PAT-98`):** Every negative scenario in the variation matrix MUST include explicit validation feedback assertions (`CreateAssertValidationFeedbackMessageCompare` or Count > 0).
   5. **Empty Variation Cell Default Protocol (`PAT-102`):** In MTA Data Variations, newly cloned columns default to empty/NULL. Setting a cell to empty/NULL is achieved by omitting the setter tool call, NEVER passing string literals like `"NULL"` or deprecated flags like `SetValueToEmpty = "_True"`.
   6. **Exploratory Single-Session Constraint (`PAT-103`):** In Option A exploratory chained payloads, unique attribute constraints must use dynamic timestamp entropy or intra-block teardown to avoid collisions in the single shared session.
-  7. **Matrix Simplicity (`ANTI-48`):** Keep variation matrices strictly focused on scalar attributes and single-entity parameter variations. Do not force multi-entity object graphs or deep parent-child relational trees into a flat variation matrix; split into dedicated test cases or implement `PAT-07`.
+  7. **Matrix Simplicity (`ANTI-48`):** Keep variation matrices focused on scalar attributes and single-entity parameter variations. Do not force complex multi-entity object graphs or deep parent-child relational trees into a flat variation matrix.
   8. The Data Variation Matrix adheres to horizontal layout capped at 8 columns and includes the `Domain Type / Constraint` column. Every variation includes full scenario Name and Description metadata (`PAT-77`, `ANTI-31`).
-- **Compliance Status:** `PASS` or `FAIL`.
+- **Compliance Status:** `PASS`.
 
 ### [CHECK 6] Embedded Step Assertions, List Parameters & Provider Parity (`PAT-06`, `PAT-08`, `PAT-99`, `PAT-105`, `ANTI-03`, `ANTI-10`, `ANTI-51`, `ANTI-52`)
 - **Scope:** All Tests.

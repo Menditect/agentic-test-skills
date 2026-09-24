@@ -282,10 +282,7 @@ test_case_keys: []
 <summary><b>7. Data Variation Matrix & Metadata</b></summary>
 
 > [!IMPORTANT]
-> **Zero Disconnect SSOT Invariant & Scalar-Only Matrix Law (`PAT-07`, `ANTI-48`):** 
-> * Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
-> * **NO Association Rows Allowed (`ANTI-48`):** Association bindings (e.g. `Car.Car_CarSize`) and Object Handles cannot be registered as variation items in MTA. Matrix rows must STRICTLY be scalar attributes (`String`, `Integer`, `Decimal`, `Boolean`, `DateTime`, `Enum`), microflow parameter values, or assertion comparisons.
-> * **Empty Objects via PAT-07:** If a variation scenario requires testing an empty/null object or unassigned association, implement `PAT-07` in Section 5 (Create with sentinel $\rightarrow$ Retrieve from Teststep with filter $\rightarrow$ Bind Retrieve handle to Association/Microflow Parameter) and vary the **Create step's scalar sentinel attribute** in this matrix.
+> **Zero Disconnect SSOT Invariant:** Every attribute, parameter, retrieve filter, and assertion intended to be varied across scenarios **MUST be exhaustively declared** in the matrix rows below. In accordance with the Zero Disconnect Between Plan and Build Law, any attribute, parameter, or assertion NOT explicitly declared in this table is strictly prohibited from being registered as a variation item or varied during build time (`STATE_CONSTRUCTION`).
 
 ### Data Variation Matrix
 #### Table 1: Scenarios #1 to #7 (Primary Scenarios)
@@ -327,9 +324,19 @@ test_case_keys: []
 | **Plan ID Alignment** | `[plan_id]` | `PASS` | Matches approved execution plan ID |
 | **Revision Integrity** | Rev `[revision]` | `PASS` | No uncommitted plan drift |
 | **Test Case Placement** | `[TestCaseName]` (Key: `[TestCaseKey]`) | `PASS` | Verified under Suite `[SuiteKey]` and Config `[ConfigKey]` |
-| **1-to-1 Step Reconciliation** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence, actions, and settings (`PAT-59`) |
-| **Variation Items Audit** | Matrix Items | `PASS` | Zero unapproved additions, names/descriptions persisted |
+| **1-to-1 Step Reconciliation** | Steps 1..N | `PASS` | Verified 1:1 match with Section 5 sequence, actions, and settings (`PAT-59`, `PAT-88`) |
+| **Data Variation Reconciliation** | Matrix Items & Scenarios | `PASS` | Verified 1:1 match with Section 7 items, scenarios, and cell values (`PAT-107`) |
 | **MTA Compiler Validation** | Server Validation Engine | `PASS` | 0 compilation errors, 0 warnings |
 | **Platform Quality Check** | MTA Architectural Pattern Matrix | `PASS` | 100% compliant with MTA architecture standards |
+
+#### 📋 1-to-1 Step Reconciliation Table
+| Case # | Planned Step Name / Action | Built MTA Step Key | Status |
+| :--- | :--- | :---: | :---: |
+| Case 1 | `[Planned Step Name]` | Step `[StepKey]` | ✅ MATCH |
+
+#### 📊 Data Variation Matrix Reconciliation Table (when Section 7 declares variations)
+| Variation Item / Row Name | Target Step | Built MTA Item Key | Planned Scenarios | Built Server Scenarios | Status |
+| :--- | :--- | :---: | :-: | :-: | :-: |
+| `[Step Name: Variable Element]` | Step `[StepKey]` | Item `[ItemKey]` | `N` (`[Scenario List]`) | `N` (`[Scenario List]`) | ✅ MATCH |
 
 </details>

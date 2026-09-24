@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.18.0"
-changes: "Fixed pattern citations and updated analysis workflows with latest MCP tools versions."
+version: "6.19.0"
+changes: "Enforced active read-only placement discovery dispatch and Gate 2 placement box rendering upon exploratory test promotion (PAT-106, ANTI-56)."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -181,9 +181,26 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                 > - **Adjust Execution Plan** ➔ Return to `mta-test-design` to update inputs, expected outputs, or data variations.
                 > - **Fix Microflow in Studio Pro** ➔ Update your logic in Mendix Studio Pro and reply **"Re-run exploratory test"** to re-test in memory.
                 > - **Inspect Diagnostics** ➔ Ask for deeper root-cause analysis or stack trace inspection.
-        *   **If User Confirms Promotion (When MTA Server is Active):**
+        *   **If User Confirms Promotion (When MTA Server is Active) (`PAT-106`, `ANTI-56`):**
             1. Update State Header: `[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_2 | Active Skill: mta-test-design]`
-            2. Output the **Reverse State Compaction Block (Promotion Bridge Restore)**:
+            2. **Immediate Placement Discovery Execution (`PAT-106`):** In the SAME turn promotion is requested, the agent MUST autonomously execute read-only placement discovery tools:
+               - `GetApplicationDetails(RetrieveAction="GetRootElements")`
+               - `GetTestConfigurationDetails(RetrieveAction="GetTestConfigurations")`
+               - `GetExecutionUsers()`
+            3. **Render Checkpoint 2 (Gate 2: Placement & Target Summary) Box (`PAT-43`, `PLAN_STEP_3`):**
+               Present the discovered configurations, suites, execution users, and suggested test case name to the user for explicit confirmation:
+               ```markdown
+               > ### 🎯 Checkpoint 2: Confirm Test Suite Placement & Settings
+               > * **Test Configuration:** `[Discovered or Selected Test Configuration]` (Key: `[Key]`)
+               > * **Target Test Suite:** `[Discovered or Selected Test Suite]` (Key: `[Key]`)
+               > * **Test Case Name:** `[TestCaseName]`
+               > * **Execution User:** `[Discovered Execution User]` (Key: `[Key]`)
+               > * **Playwright Browser Settings:** Default (Chromium, 1280x720, Headless) *(Frontend only)*
+               >
+               > Reply **"Approved"** or **"Proceed"** to build persistent MTA containers and steps.
+               ```
+            4. **Gate 2 Enforcement (`ANTI-56`):** Calling mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.) or transitioning to `STATE_CONSTRUCTION` is **STRICTLY PROHIBITED** until the user explicitly approves Checkpoint 2.
+            5. Optionally output the **Reverse State Compaction Block (Promotion Bridge Restore)** for cross-session resumption:
                ```markdown
                ### 💾 MTA STATE COMPACTION BLOCK (PROMOTION BRIDGE RESTORE)
                <!-- Copy and paste this block into a new chat session if switching environments. -->
@@ -207,8 +224,6 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
                }
                ```
                ```
-            3. Instruct the user/agent:
-               > 🚀 **Promotion Handoff Trigger**: Switched to `mta-test-design` (`PLAN_STEP_2`). Ready to interactively resolve Test Configuration, Test Suite, and Test Case placement (Gate 2), store and seal the execution plan locally as a `.md` file with a collapsible provenance header (Plan ID, schema version 1.2.0, integer revision sequence, approved timestamp, approved by identity) (or retain in active chat context if write tools are unavailable), and proceed to `STATE_CONSTRUCTION`. Note that in `STATE_CONSTRUCTION`, Step 0 is the Pre-Construction Plan Integrity & Drift Check (`PAT-44`) and Step 1 is the Pre-Construction Model Parity Verification & Bypass Rule (`PAT-82`, `ANTI-36`) via `GetAppModelData` (bypassed if already verified in `mta-test-design` Check 14), followed by the Horizontal Layered Construction Protocol with upfront column provisioning, deterministic cell key indexing, chunked variation population (`PAT-77`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `ANTI-32`, `ANTI-39`, `ANTI-40`), and Post-Build Verification & Link Sealing (`PAT-88`).
 
 2.  `STATE_LIVE_DATA_PROVISIONING`: Executing live test data provisioning and teardown for manual testing via `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "No"`).
     *   **Targeted Cluster Discovery Protocol:** For data provisioning, inspect all target entities and mandatory associations in a single batched `mxcli` call. Omit optional attributes unless explicitly requested.
