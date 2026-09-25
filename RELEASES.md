@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.20.4](releases/v1.20.4.md) | 2026-09-25 | improved smoke audit |
 | [🚀 v1.20.3](releases/v1.20.3.md) | 2026-09-25 | improved smoke audit |
 | [🚀 v1.20.2](releases/v1.20.2.md) | 2026-09-24 | improved handling of associations in datavariations |
 | [🚀 v1.20.1](releases/v1.20.1.md) | 2026-09-24 | fixed several loopholes in patterns and updated with latest mcp tools versions |
