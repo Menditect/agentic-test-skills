@@ -178,6 +178,34 @@ To configure memory or database retrieves and apply attribute filters:
    * On memory retrieves: Call `EditAttributeValue` (`SetStringValue`, `SetEnumerationValue`, etc.).
    * On database retrieves with complex ranges/operators: Call `EditAttributeValueFilter` with `FilterComparisonOperator` and target value.
 
+
+#### 🔧 SOP: Constructing In-Memory Retrieve Steps (`PAT-07`)
+When creating a step to retrieve an in-memory object from a predecessor step:
+1. **Create Step:**
+   Call `CreateObjectActionTestStep(ObjectAction="RetrieveObjects", EntityQualifiedName="...", TestStepName="...")`.
+2. **Configure Retrieve Option to Memory / Teststep:**
+   Call `EditTestStepRetrieve`:
+   ```json
+   {
+     "TestStepKey": <RetrieveStepKey>,
+     "EditAction": "SetRetrieveOption",
+     "RetrieveOption": "From_memory_database"
+   }
+   ```
+   And bind predecessor output:
+   ```json
+   {
+     "TestStepKey": <RetrieveStepKey>,
+     "EditAction": "SetTestStepForRetrieveByTeststep",
+     "TestStepOutputKey": <ProducerStepKey>
+   }
+   ```
+3. **Include & Configure Attribute Filters (`PAT-07`):**
+   - **Include Attribute:** `EditAttributeValue(EditAction="IncludeAttribute", AttributeQualifiedName="...")`
+   - **Set Filter:** `EditAttributeValueFilter(FilterComparisonOperator="Equal", StringValue="...", EnumerationValue="...")`
+
+---
+
 ### 2. Supported Filter Types in `EditAttributeValueFilter`:
 The `EditAttributeValueFilter` tool is used to configure filter values and comparison ranges on database retrieves (after inclusion via `EditAttributeValue`):
 *   `"SetStringValue"` (supports singular `Equal`, `NotEqual`, `Contains`, `NotContains`, `StartsWith`, `EndsWith`; for empty, pass `SetValueToEmpty="_True"`)

@@ -51,6 +51,34 @@ Once all step keys are resolved, batch-dispatch the following tools concurrently
 
 ---
 
+
+#### 🔧 SOP: Constructing In-Memory Retrieve Steps (`PAT-07`)
+When creating a step to retrieve an in-memory object from a predecessor step:
+1. **Create Step:**
+   Call `CreateObjectActionTestStep(ObjectAction="RetrieveObjects", EntityQualifiedName="...", TestStepName="...")`.
+2. **Configure Retrieve Option to Memory / Teststep:**
+   Call `EditTestStepRetrieve`:
+   ```json
+   {
+     "TestStepKey": <RetrieveStepKey>,
+     "EditAction": "SetRetrieveOption",
+     "RetrieveOption": "From_memory_database"
+   }
+   ```
+   And bind predecessor output:
+   ```json
+   {
+     "TestStepKey": <RetrieveStepKey>,
+     "EditAction": "SetTestStepForRetrieveByTeststep",
+     "TestStepOutputKey": <ProducerStepKey>
+   }
+   ```
+3. **Include & Configure Attribute Filters (`PAT-07`):**
+   - **Include Attribute:** `EditAttributeValue(EditAction="IncludeAttribute", AttributeQualifiedName="...")`
+   - **Set Filter:** `EditAttributeValueFilter(FilterComparisonOperator="Equal", StringValue="...", EnumerationValue="...")`
+
+---
+
 ### Mid-Phase Bulk Sync
 Execute `GetTestCaseDetails(TestCaseKey)` (or `GetTestSuiteDetails`) to capture all newly generated `AttributeValueKey`s, retrieve filter keys, and assertion keys across all steps.
 > [!TIP]
@@ -99,3 +127,25 @@ Enforce `PAT-86`, `PAT-87`, and `ANTI-40`:
    - For null/empty values, use `SetValueToEmpty="_True"`.
    - Cloned `AssertObjectCount` containers default to `0`; call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N` for scenarios expecting $\ge 1$ objects.
    - Limit calls to safe batches of 15 to 20 calls per turn (`ANTI-32`).
+---
+
+## 🔍 Phase 4: Post-Construction Smoke Verification & Audit SOP
+
+> [!CRITICAL]
+> **Semantic Compliance Invariant:**
+> In MTA, `0 Construction Errors` (`TCER_TestConstructionErrors`) only proves Mendix syntactic validity; it does NOT prove plan compliance. The agent must never declare a smoke pass without performing the **Mandatory 5-Point Semantic Audit**.
+
+#### Mandatory 5-Point Semantic Audit Checklist:
+1. **Retrieve Option & Predecessor Handle Binding (`PAT-07`, `PAT-80`):**
+   - For all in-memory `RetrieveObjects` steps, assert `OactRetrieveOption == "From_memory_database"` (or `"By_teststep"`).
+   - Assert `SOFR_SelectObjectForRetrieve.TestStepOutputKey` is explicitly bound to the producer step key.
+2. **Retrieve Attribute Filters (`PAT-07`):**
+   - If the plan specifies scalar filters on Retrieve steps (e.g., `Size == 'Small'`, `LicensePlate == 'TST-001'`), verify that `ATVL_AttributeValues` contains the filter attribute with `FilterComparisonOperator: "Equal"`.
+3. **Association Ownership (`PAT-06`, `ANTI-52`):**
+   - Verify that `SOFA_SelectObjectForAssociations` is bound on the owner entity and references the retrieved object handle.
+4. **Data Variation Item Count & Target Parity (`PAT-19`, `PAT-78`):**
+   - Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 7 of the Execution Plan.
+   - Assert each item maps to the correct target (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute).
+5. **Cell-by-Cell Variation Matrix Parity (`PAT-107`, `ANTI-57`):**
+   - Verify that all scenario names, descriptions, overridden values, and empty/null flags (`SetValueToEmpty: "_True"`, `'NONE'`) match Section 7 cell-by-cell.
+

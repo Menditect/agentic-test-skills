@@ -108,7 +108,12 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
 
 ---
 
-### 2. Zero Data in Step Names
+#*   **🚫 AD-HOC SCRIPT MCP INVOCATION PROHIBITION (ANTI-58):**
+    You are **strictly prohibited** from creating, writing, or executing custom temporary scripts (`.js`, `.ps1`, `.py`, e.g. `build-test.js`, `update-amrc.js`) to dispatch MCP tools via terminal/shell processes. Ad-hoc scripts bypass turn-by-turn verification, introduce hardcoded assumptions, skip error handling, and lead to silent construction mismatches. ALL MCP operations must be executed directly through the agent platform's native MCP tool interface (`call_mcp_tool` or `execute-testcase`). If native MCP fails, you must immediately report the environment/configuration error to the user rather than writing workaround scripts.
+
+---
+
+## 2. Zero Data in Step Names
 You **MUST NOT** mention the actual data values used (such as a specific username, password, order ID, status value, or country name) anywhere in the name of a teststep. Step names must describe *what* the step does functionally, not *which data value* it utilizes. Keeping data values out of step names is critical for test maintainability, clarity, and enabling data variations.
 
 All step names must follow this structured template:

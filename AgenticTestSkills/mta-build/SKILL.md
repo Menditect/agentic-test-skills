@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.21.0"
-changes: "Enforced Step 0 promotion placement gate (ANTI-56) and Phase 3 Data Variation Matrix Reconciliation Table and audit checks (PAT-107, ANTI-57)."
+version: "6.22.0"
+changes: "Added ANTI-58 ad-hoc script prohibition, Mandatory 5-Point Semantic Smoke Audit protocol, and in-memory retrieve SOP (PAT-07)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -112,7 +112,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 164 testing patterns/anti-patterns (`PAT-01..107`, `ANTI-01..57`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 165 testing patterns/anti-patterns (`PAT-01..107`, `ANTI-01..58`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 
@@ -132,6 +132,15 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 1. **Phase 2: `STATE_CONSTRUCTION`**
    - *State Header:* `[State: STATE_CONSTRUCTION | Temp State: [SKELETON_PROVISIONING | BATCH_INCLUSION | BATCH_BINDING | VARIATION_REGISTRATION | VARIATION_POPULATION] | Active Skill: mta-build]`
    - *Milestone:* Actively construct test steps, option bindings, parameters, and assertions on the server (unlocked only if an approved Execution Plan is saved locally or verified in chat context).
+    - **Mandatory 5-Point Semantic Audit Protocol (`PAT-07`, `PAT-80`, `PAT-06`, `ANTI-52`, `PAT-19`, `PAT-78`, `PAT-107`, `ANTI-57`):**
+      > [!CRITICAL]
+      > **Semantic Compliance Invariant:**
+      > In MTA, `0 Construction Errors` (`TCER_TestConstructionErrors`) only proves Mendix syntactic validity; it does NOT prove plan compliance. The agent must never declare a smoke pass without performing the **Mandatory 5-Point Semantic Audit**:
+      > 1. **Retrieve Option & Predecessor Handle Binding (`PAT-07`, `PAT-80`):** For all in-memory `RetrieveObjects` steps, assert `OactRetrieveOption == "From_memory_database"` (or `"By_teststep"`) and assert `SOFR_SelectObjectForRetrieve.TestStepOutputKey` is explicitly bound to the producer step key.
+      > 2. **Retrieve Attribute Filters (`PAT-07`):** If the plan specifies scalar filters on Retrieve steps (e.g., `Size == 'Small'`, `LicensePlate == 'TST-001'`), verify that `ATVL_AttributeValues` contains the filter attribute with `FilterComparisonOperator: "Equal"`.
+      > 3. **Association Ownership (`PAT-06`, `ANTI-52`):** Verify that `SOFA_SelectObjectForAssociations` is bound on the owner entity and references the retrieved object handle.
+      > 4. **Data Variation Item Count & Target Parity (`PAT-19`, `PAT-78`):** Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 7 of the Execution Plan, and each item maps to the correct target (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute).
+      > 5. **Cell-by-Cell Variation Matrix Parity (`PAT-107`, `ANTI-57`):** Verify that all scenario names, descriptions, overridden values, and empty/null flags (`SetValueToEmpty: "_True"`, `'NONE'`) match Section 7 cell-by-cell.
       - **Step 0: Pre-Construction Plan Integrity, Ingestion, Placement Gating & Drift Check (PAT-43, PAT-44, PAT-89, PAT-106, ANTI-56):**
         *   **Agentic Mode:** Read the local Execution Plan `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/` or path in `mta_state.json`). Inspect metadata block (supporting `<details><summary><b>Execution Plan Metadata</b></summary>`, legacy `<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>`, and legacy top-level YAML frontmatter) to extract `plan_id`, `schema_version`, `revision`, `status`, `approved_at`, `approved_by`, `approver_system_user`, `target_configuration`, `target_configuration_key`, `target_suite`, `target_suite_key`, and `supersedes_plan_id`. Compare against `execution_plan_id`, `execution_plan_revision`, and `execution_plan_approved_at` recorded in `mta_state.json`.
         *   **🛑 Missing Placement Gate Invariant (PAT-43, PAT-106, ANTI-56):** If `target_configuration_key` or `target_suite_key` is null/unresolved (e.g. promoting an Option A exploratory test or drafting offline during an MTA server outage without Gate 2 placement), you are **strictly prohibited** from calling mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.). Immediately hand off to `mta-test-design` (`PLAN_STEP_2: Placement Discovery`) to query `GetApplicationDetails` / `GetTestConfigurationDetails` / `GetExecutionUsers` on the MTA server, present Checkpoint 2 (Placement & Target Summary Box), and obtain Gate 2 approval before proceeding with construction.

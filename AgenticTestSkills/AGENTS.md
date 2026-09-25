@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.27.0"
-changes: "Added PAT-106 exploratory promotion placement bridge and PAT-107 data variation smoke audit reconciliation invariants."
+version: "4.28.0"
+changes: "Added ANTI-58 ad-hoc script ban and mandatory 5-point semantic smoke audit (PAT-07, PAT-80, PAT-107)."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -60,7 +60,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
   1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary.
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.
 - **Agentic vs. Chat Mode Heuristic:** If your environment provides the `call_mcp_tool` and `write_to_file` tools, you are in **Agentic Mode** and must autonomously execute tools and save files. If these tools are unavailable, you are in **Chat Mode** (output raw JSON payloads for the user to execute manually).
-- **Formalized MCP Tool Bridging:** All MTA mutations and reads must be executed using the generic `call_mcp_tool` tool, passing `MTA` or `MTA_plugin` as the `ServerName` and the requested action (e.g., `ExecuteTest`, `GetAppModelData`) as the `ToolName`. Never hallucinate direct script or API calls.
+- **Formalized MCP Tool Bridging & Ad-Hoc Script Ban (ANTI-58):** All MTA operations must be executed directly via native MCP tool calls (`call_mcp_tool` / `execute-testcase`). Creating or running temporary ad-hoc scripts (`.js`, `.ps1`, `.py`) to dispatch MCP tools is strictly prohibited (`ANTI-58`).
 - **Mandatory Chain of Thought:** Before calling any MTA MCP tool, output:
   > 🧠 **Tool Execution Reasoning:**
   > * **Tool Call:** `[ToolName]` | **Active State:** `[STATE_NAME]` | **Reasoning:** [Why called]
@@ -82,6 +82,6 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 - **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
 - **Sequence Reordering Serialization (ANTI-44):** Parallel batching of `SetSequenceOfTestStep` or `SetSequenceOfTestCase` is strictly prohibited; sequence calls must be sequential or eliminated by ordered creation (`PAT-11`).
 - **Empty Object & Association Variation Invariant (`PAT-07`, `ANTI-48`):** Association bindings and object handles can NEVER appear as rows in a Data Variation Matrix (`ANTI-48`). When a test variation requires passing an empty/null object or unassigned association, you MUST implement `PAT-07` (Dual Retrieve/Filter Pattern with `Retrieve from Teststep` and short sentinel attribute) or split into dedicated test cases.
-- **Data Variation Smoke Audit Reconciliation Law (PAT-107, ANTI-57):** Whenever Section 7 of the Execution Plan declares data variations, the Post-Construction Smoke Audit Report MUST include the **Data Variation Matrix Reconciliation Table**, verifying 1-to-1 that all variation items, scenario names, descriptions (`PAT-77`), and matrix values (`PAT-54`) exist on the server. If any planned variation item or scenario column is missing or unpopulated, the Smoke Audit MUST FAIL with status `MISSING_DATA_VARIATION_DISCREPANCY` and strictly block transition to `STATE_RUN_ANALYZE` (`ANTI-57`).
+- **Mandatory 5-Point Semantic Audit & Variation Reconciliation (PAT-07, PAT-80, PAT-107, ANTI-57):** `0 Construction Errors` only proves syntactic model validity. Before passing `STATE_SMOKE_AUDIT`, the agent must execute the **5-Point Semantic Audit** (In-Memory Retrieve handles, attribute filters, association ownership, item count parity, and cell-by-cell matrix value parity). Discrepancies fail with `MISSING_DATA_VARIATION_DISCREPANCY` or `INCOMPLETE_BUILD_DISCREPANCY` and block transition to `STATE_RUN_ANALYZE`.
 - **Zero Disconnect:** The approved Execution Plan is the absolute SSOT during construction and audit. Improvised steps or variations are strictly prohibited.
 - **Domain Delegation:** Detailed execution plan schemas (8 design sections + Section 9 post-construction receipt), 8-field step definitions, and 14-point audits are strictly governed by `mta-test-design`; horizontal layered construction SOP and tool batching are strictly governed by `mta-build`.

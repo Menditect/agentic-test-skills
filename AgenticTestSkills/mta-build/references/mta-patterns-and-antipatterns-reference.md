@@ -241,6 +241,7 @@ Whenever a new testing pattern, rule, or anti-pattern is introduced, modified, o
 | **ANTI-46** | **Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern** | **General** | **Methodological Anti-Pattern** | [core-playbook.md](core-playbook.md) | Executing mutating MTA tools or data seeding tool calls directly without drafting, saving to disk, and obtaining explicit user approval on an Execution Plan. |
 | **ANTI-53** | **Unparsed Dynamic Date Macro in Exploratory Payloads** | **General** | **Platform Anti-Pattern** | [exploratory-execution-guide.md](exploratory-execution-guide.md) | Prohibits passing unparsed runtime date macros (`[%CurrentDateTime%]`) into `MTA_plugin` JSON payloads. Concrete ISO 8601 timestamps must be pre-computed. |
 | **ANTI-56** | **Unplaced Exploratory Promotion Bypass Anti-Pattern** | **General** | **Platform Anti-Pattern** | [core-playbook.md](core-playbook.md) | Promoting an exploratory test directly into STATE_CONSTRUCTION or calling persistent mutating tools without performing PLAN_STEP_2 discovery and obtaining explicit Gate 2 user sign-off. |
+| **ANTI-58** | **Ad-Hoc Script MCP Invocation Anti-Pattern** | **General** | **Methodological Anti-Pattern** | [golden-rules.md](golden-rules.md) | Prohibits writing or executing custom temporary scripts (.js, .ps1, .py) to dispatch MCP tools via terminal/shell processes; all MCP operations must run directly via native tool interfaces (call_mcp_tool or execute-testcase). |
 
 ---
 

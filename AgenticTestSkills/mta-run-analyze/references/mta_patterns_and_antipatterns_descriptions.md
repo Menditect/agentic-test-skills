@@ -1508,6 +1508,15 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-58`: Ad-Hoc Script MCP Invocation Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Creating, writing, or executing custom temporary scripts (`.js`, `.ps1`, `.py`, e.g. `build-test.js`, `update-amrc.js`) to dispatch MCP tools via terminal/shell processes. Ad-hoc scripts bypass turn-by-turn verification, introduce hardcoded assumptions, skip error handling, and lead to silent construction mismatches. ALL MCP operations must be executed directly through the agent platform's native MCP tool interface (`call_mcp_tool` or `execute-testcase`). If native MCP fails, the agent must immediately report the environment/configuration error to the user rather than writing workaround scripts.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-45` (Mandatory Tool Execution Reasoning Chain of Thought), `PAT-78` (Two-Phase Skeleton & Batch Binding Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1582,3 +1591,4 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-06`** (Direct Initialization on Create Object Law) | **`ANTI-52`** (Inverted Association Ownership Binding) | Verifying association ownership direction before binding vs inverting owner/target entity ends |
 | **`PAT-42`** (Date-Time Offset & Format Pattern Inspection) | **`ANTI-53`** (Unparsed Dynamic Date Macro in Exploratory Payloads) | Pre-computing concrete ISO 8601 date strings vs passing unparsed runtime date macros |
 | **`PAT-13`** (Structural Locator Laws) | **`ANTI-55`** (Unasserted Modal Transitions) | Asserting modal visibility and dialog transitions vs unasserted widget clicks causing timeouts |
+| **Native MCP Tool Execution** | **`ANTI-58`** (Ad-Hoc Script MCP Invocation) | Direct native MCP tool calls (call_mcp_tool / execute-testcase) vs ad-hoc script authoring (.js, .ps1, .py) |
