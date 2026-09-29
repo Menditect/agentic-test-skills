@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.26.0"
-changes: "Added catalog-first native mxcli CLI discovery with fallback AST and catalog sync hinting (PAT-71, ANTI-58)."
+version: "6.26.1"
+changes: "Synchronized mta_config.schema.json with studiopro_mcp_url."
 ---
 
 # MTA Test Scoping & Design Skill

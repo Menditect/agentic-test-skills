@@ -11,7 +11,11 @@
     },
     "workspace_type": {
       "type": "string",
-      "enum": ["clone_root", "mendix_project", "custom"],
+      "enum": [
+        "clone_root",
+        "mendix_project",
+        "custom"
+      ],
       "description": "Type of workspace where the agent is running."
     },
     "workspace_dir": {
@@ -24,7 +28,10 @@
     },
     "skills_style": {
       "type": "string",
-      "enum": ["standard", "mendix_module"],
+      "enum": [
+        "standard",
+        "mendix_module"
+      ],
       "description": "Style of skill installation (standard project-level skills/ or Mendix 11.12+ Marketplace module)."
     },
     "mta_output_path": {
@@ -130,7 +137,10 @@
             "description": "Tracefile retrieval base URL specific to this application instance."
           }
         },
-        "required": ["name", "token"]
+        "required": [
+          "name",
+          "token"
+        ]
       }
     },
     "default_app_instance": {
@@ -143,8 +153,16 @@
     },
     "model_source": {
       "type": "string",
-      "enum": ["mxcli", "studiopro"],
+      "enum": [
+        "mxcli",
+        "studiopro"
+      ],
       "description": "Model discovery mechanism used by the agent ('mxcli' or 'studiopro')."
+    },
+    "studiopro_mcp_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "MCP endpoint URL for the Mendix Studio Pro MCP server (e.g. 'http://localhost:7782/mcp')."
     },
     "mendix_project_dir": {
       "type": "string",
