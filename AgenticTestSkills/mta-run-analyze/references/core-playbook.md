@@ -142,3 +142,57 @@ Before outputting your response or executing any tool call, mentally verify thes
 6. **Did I strictly format my MTA direct links?** Check that links strictly conform to the singular, lowercase, `/p/`-inclusive structure (e.g. `[BaseUrl]/p/testcase/[Key]`) with zero pluralization or trailing paths.
 7. **Did I verify the Execution Plan Approval, Provenance & Storage?** If entering `STATE_CONSTRUCTION` or `STATE_SMOKE_AUDIT`, I MUST verify that Gate 1 and Gate 2 are approved, the Execution Plan is saved locally as a `.md` file sealed with YAML frontmatter (semantic `plan_id` `<TestCaseName>-v<revision>` or UUID v4, revision, supersedes ID, approval timestamp) with automatic archiving and deduplication, or preserved in chat context with a warning, and that no unmanaged plan drift occurred.
 8. **Did I run the Pre-Execution Smoke Audit with 1-to-1 Step Reconciliation?** Before completing `STATE_SMOKE_AUDIT`, I MUST read the saved Execution Plan from the local `.md` file (or from chat context in memory-only mode), verify plan ID and revision integrity, perform a 100% full-content audit across all 8 plan sections (Metadata, Specifications, Risk Alignment, Verified Elements, Step Sequence, Playwright Settings, Data Variations cell-by-cell, and Pattern Description Annotations), execute `GetTestCaseDetails` on the server using staggered reading (one case per turn) to programmatically verify that zero validation or compiler errors exist, execute **1-to-1 Plan-to-Server Step Reconciliation** (`PAT-59`, `PAT-88`) comparing planned steps against actual built steps, and output the Post-Construction Smoke Audit Report containing the Step Reconciliation Table, direct clickable MTA links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for Test Configuration, Test Suite, and Test Cases, plus a clickable link to the local Execution Plan markdown file. If any planned steps are omitted or counts mismatch, I MUST fail with status `INCOMPLETE_BUILD_DISCREPANCY` and rollback to `STATE_CONSTRUCTION`.
+
+---
+
+## 🗄️ NATIVE MXCLI CATALOG DISCOVERY PROTOCOL (`PAT-71`)
+
+To achieve sub-second model discovery and prevent multi-query latency cascades (`ANTI-26`), test design relies on a 2-step discovery protocol:
+
+### 1. Step 1: Catalog-First Querying via Native CLI
+The agent queries the local SQLite catalog (`.mxcli/catalog.db`) directly using the built-in SQL interface of `mxcli`:
+```bash
+./mxcli.bat -p "<mpr_path>" -c "SELECT ... FROM CATALOG.<TABLE>"
+```
+* **Option 1 Assumption:** Standard test design assumes Option 1 (`REFRESH CATALOG FULL`), which indexes entities, attributes, microflows, parameters, activities, and references in 2–30 seconds.
+* **Prohibition of Ad-Hoc Scripts (`ANTI-58`):** All queries MUST execute via native `mxcli -c "SELECT ..."` commands. Generating ad-hoc Python, PowerShell, or Node.js SQLite scripts is strictly prohibited.
+
+#### 📋 Native Catalog SQL Cheat Sheet:
+* **Microflow Signature & Return Type:**
+  ```sql
+  SELECT Name, ReturnType, ParameterCount, ActivityCount FROM CATALOG.MICROFLOWS WHERE Name = 'Module.MicroflowName';
+  ```
+* **Microflow Input Parameters:**
+  ```sql
+  SELECT Name, DataType, IsReturn FROM CATALOG.MICROFLOW_PARAMETERS WHERE MicroflowName = 'Module.MicroflowName';
+  ```
+* **Activities in Microflow (Sequence & Flow):**
+  ```sql
+  SELECT SortOrder, ActivityType, Caption FROM CATALOG.ACTIVITIES WHERE DocumentName = 'Module.MicroflowName' ORDER BY SortOrder;
+  ```
+* **Downstream Calls & Entity References:**
+  ```sql
+  SELECT SourceName, TargetName, TargetKind, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.MicroflowName';
+  ```
+* **Entity Verification:**
+  ```sql
+  SELECT Name, Persistent, AttributeCount FROM CATALOG.ENTITIES WHERE Name = 'Module.EntityName';
+  ```
+* **Entity Attributes:**
+  ```sql
+  SELECT Name, AttributeType FROM CATALOG.ATTRIBUTES WHERE EntityName = 'Module.EntityName';
+  ```
+
+### 2. Step 2: Fallback to Single-Pass AST Discovery
+The agent falls back to live single-pass `DESCRIBE MICROFLOW <Module.MicroflowName>` or `DESCRIBE PAGE <Module.PageName>` ONLY when:
+1. **Component Absent (0 rows returned):** The targeted component is missing from `catalog.db` (e.g., newly created in Studio Pro without a catalog refresh).
+2. **Deep Branch Logic Required (`PAT-98`):** Option 1 catalog indexing indexes activity types but does not store raw decision formulas, boolean expressions, or XPath constraints needed for negative boundary path testing.
+
+### 3. Non-Blocking User Sync Hint
+Whenever fallback to `DESCRIBE` is triggered due to missing catalog rows (0 rows returned), the agent MUST include an actionable, non-blocking notification in chat:
+> 💡 **Notice:** Target component `'Module.Name'` was not found in the local `mxcli` catalog. Fell back to live AST inspection. To enable sub-second catalog discovery for newly created components, run:
+> ```bash
+> ./mxcli.bat -p "<mpr_path>" -c "REFRESH CATALOG FULL FORCE;"
+> ```
+> *(Option 1 Fast Sync: indexes structures in ~15s)*
+

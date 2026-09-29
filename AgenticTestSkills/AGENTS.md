@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.28.0"
-changes: "Added ANTI-58 ad-hoc script ban and mandatory 5-point semantic smoke audit (PAT-07, PAT-80, PAT-107)."
+version: "4.30.0"
+changes: "Updated PAT-71 to catalog-first native mxcli CLI discovery with fallback AST."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -37,10 +37,10 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 2. Skill Routing Index
 - **Setup, Install, Config** -> `STATE_DISCOVERY` (`mta-install-config`)
-- **Scoping, Planning, Test Design, Execution Plans, Data Seeding/Generation** -> `STATE_BUILD_PLANNING` (`mta-test-design`)
+- **Scoping, Planning, Test Design, Exploratory Testing, Exploratory Test, Execution Plans, Data Seeding/Generation** -> `STATE_BUILD_PLANNING` (`mta-test-design`)
 - **Building Steps, Data Variations, Test Containers** -> `STATE_CONSTRUCTION` (`mta-build`)
 - **Smoke Audits, Post-Build Verification** -> `STATE_SMOKE_AUDIT` (`mta-build`)
-- **Running Tests, Analyzing Results, Benchmarks** -> `STATE_RUN_ANALYZE` (`mta-run-analyze`)
+- **Running Tests, Exploratory Test Execution, Analyzing Results, Benchmarks** -> `STATE_RUN_ANALYZE` (`mta-run-analyze`)
 
 ---
 
@@ -55,7 +55,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 4. Global Safety & Approval Gates
 - **Read-Only Tools Always Authorized:** All read-only `Get*` MTA tools (`GetAppModelData`, `GetTestCaseDetails`, `GetTestRunResults`, etc.) are authorized in any state to discover context.
-- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation and data seeding requests—including ad-hoc or vague entity creation prompts—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
+- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation, exploratory test, and data seeding requests—including ad-hoc prompts or in-memory plugin execution—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
 - **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) is strictly prohibited until:
   1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary.
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.
@@ -76,7 +76,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 ---
 
 ## 5. Architectural Invariants
-- **Model Queries (PAT-71/72):** Use single-pass `DESCRIBE MICROFLOW` or `DESCRIBE PAGE` via `mxcli`. Never run un-scoped global search cascades.
+- **Model Queries (PAT-71/72):** Query catalog first via native mxcli CLI (`SELECT ... FROM CATALOG.<TABLE>`). Fall back to single-pass `DESCRIBE MICROFLOW/PAGE` if absent or deep logic needed (with sync hint). Ad-hoc scripts prohibited (`ANTI-58`).
 - **Create Object Init (PAT-06):** Set initial attributes and associations directly on `CreateObjectActionTestStep(ObjectAction="CreateObject")`. Consecutive Change Object steps are prohibited.
 - **Frontend Isolation (ANTI-20, PAT-64):** UI actions must strictly drive the browser via `MenditectMxFrontendTestKit`. Never substitute UI actions with backend microflows.
 - **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.

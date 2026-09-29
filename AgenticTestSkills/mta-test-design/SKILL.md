@@ -1,16 +1,21 @@
 ---
 name: mta-test-design
-description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, test data provisioning strategies, and performance benchmarking plans"
-version: "6.24.0"
-changes: "Updated pattern total reference to 165 canonical rules (PAT-01..107, ANTI-01..58)."
+description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
+version: "6.26.0"
+changes: "Added catalog-first native mxcli CLI discovery with fallback AST and catalog sync hinting (PAT-71, ANTI-58)."
 ---
 
 # MTA Test Scoping & Design Skill
 
-## 🚦 Entry Rule: Vague Testing Requests & Ad-Hoc Data Creation Triggers
+## 🚦 Entry Rule: Vague Testing Requests, Exploratory Tests & Ad-Hoc Data Creation Triggers
 
-### 1. General Vague Testing Ingestion:
-If the user's request is vague, exploratory, or indicates they are starting fresh — such as:
+### 1. General Vague Testing & Exploratory Test Ingestion:
+If the user's request is vague, exploratory, asks for an exploratory test (e.g. *"run an exploratory test using the MTA_plugin"*), or contains phrases such as:
+- "exploratory test"
+- "run an exploratory test"
+- "exploratory testing"
+- "test using MTA_plugin" / "in-memory test"
+- "test this microflow" / "test this entity"
 - "I want to test this app"
 - "How should I start testing?"
 - "What is the best way to test?"
@@ -78,10 +83,24 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
     *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
-*   **⚡ Targeted Single-Pass Model Discovery & Deep Semantic Path Tracing (`PAT-71`, `ANTI-26`)**:
-    *   *Single-Pass CLI Execution:* When a target microflow or component is specified, immediately execute `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) in a single pass on turn 1.
-    *   *Self-Contained AST Extraction:* Extract input parameters, return types, variables, called sub-microflows, member expressions, and enum literals directly from the self-contained AST. Prohibit running broad exploratory listing queries (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) when all required elements are present in the target AST (`ANTI-26`).
-    *   *Verified Entity Fixture Attribute & Constraint Binding Law (`PAT-75`, `PAT-53`, `ANTI-29`):* Before proposing test fixture attributes, parameters, or variation values, inspect the entity definition via `mxcli SHOW ENTITY <Module.Entity>` or `DESCRIBE ENTITY <Module.Entity>` (or `GetAppModelData`) to capture data types, String length limits (`String(N)`), and non-empty constraints. Prohibit hallucinating synthetic placeholder attributes without domain verification.
+*   **⚡ Catalog-First Discovery & Fallback Single-Pass AST Discovery (`PAT-71`, `ANTI-26`, `ANTI-58`)**:
+    *   *Primary: Catalog-First Native mxcli Querying:* When a target microflow or component is specified, query the local SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) first using native `mxcli` SQL commands (`./mxcli.bat -p "<mpr>" -c "SELECT ... FROM CATALOG.<TABLE>"`), assuming standard Option 1 (`REFRESH CATALOG FULL`) indexing:
+        - Microflow metadata: `SELECT Name, ReturnType, ParameterCount, ActivityCount FROM CATALOG.MICROFLOWS WHERE Name = 'Module.Microflow';`
+        - Input parameters: `SELECT Name, DataType, IsReturn FROM CATALOG.MICROFLOW_PARAMETERS WHERE MicroflowName = 'Module.Microflow';`
+        - Activities & call graph: `SELECT SortOrder, ActivityType, Caption FROM CATALOG.ACTIVITIES WHERE DocumentName = 'Module.Microflow' ORDER BY SortOrder;`
+        - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetKind, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
+    *   *Prohibition of Ad-Hoc Scripts (`ANTI-58`):* All SQLite catalog queries MUST be executed via the standard `mxcli` CLI interface. Generating or running ad-hoc Python, PowerShell, or Node.js SQLite inspection scripts is strictly prohibited.
+    *   *Secondary: Fallback to Single-Pass AST Discovery:* Fall back to live single-pass `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) ONLY when:
+        1. Target component is absent from `catalog.db` (0 rows returned, e.g. newly created component).
+        2. Deep branch formulas, decision conditions, or XPath expressions are needed for negative boundary variation design (`PAT-98`), which are omitted from Option 1 indexing.
+    *   *Catalog Sync Hinting Protocol:* Whenever fallback to `DESCRIBE` is triggered due to absent catalog rows (0 rows returned), the agent MUST output a non-blocking actionable user notification:
+        > 💡 **Notice:** Target component `'Module.Name'` was not found in the local `mxcli` catalog. Fell back to live AST inspection. To enable sub-second catalog discovery for newly created components, run:
+        > ```bash
+        > ./mxcli.bat -p "<mpr_path>" -c "REFRESH CATALOG FULL FORCE;"
+        > ```
+        > *(Option 1 Fast Sync: indexes structures in ~15s)*
+    *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
+    *   *Verified Entity Fixture Attribute & Constraint Binding Law (`PAT-75`, `PAT-53`, `ANTI-29`):* Before proposing test fixture attributes, parameters, or variation values, query `CATALOG.ATTRIBUTES` (`SELECT Name, AttributeType FROM CATALOG.ATTRIBUTES WHERE EntityName = 'Module.Entity';`) or inspect the entity definition via `mxcli SHOW ENTITY <Module.Entity>` or `DESCRIBE ENTITY <Module.Entity>` (or `GetAppModelData`) to capture data types, String length limits (`String(N)`), and non-empty constraints. Prohibit hallucinating synthetic placeholder attributes without domain verification.
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
 *   **🚨 Mandatory Empty Object & Association Variation Protocol (`PAT-07`, `ANTI-48`)**:
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.

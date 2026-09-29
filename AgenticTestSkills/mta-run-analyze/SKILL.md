@@ -1,19 +1,19 @@
 ---
 name: mta-run-analyze
-description: "Focuses on executing tests, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.19.0"
-changes: "Enforced active read-only placement discovery dispatch and Gate 2 placement box rendering upon exploratory test promotion (PAT-106, ANTI-56)."
+description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
+version: "6.20.0"
+changes: "Added 'exploratory test', 'run exploratory test', and 'execute exploratory test' to trigger keywords."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
 
-🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
+🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS OR UNPLANNED TESTS** 🚨
 
 > [!IMPORTANT]
-> **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
+> **If the user's request is vague, exploratory, indicates they are starting fresh, asks for prompts/onboarding, OR requests an exploratory test / test execution that does NOT yet have an approved Execution Plan (`EP_*.md`):**
 > *   You **MUST** immediately stop using this `mta-run-analyze` skill.
 > *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
-> *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
+> *   In `mta-test-design`, inspect the component AST/catalog, generate the formal Execution Plan (`EP_<TestCaseName>.md`), save it to disk, and present Checkpoint 1 (Option A vs Option B) before executing `MTA_plugin.execute-testcase`.
 
 🚨 **CRITICAL MTA GUARDRAIL: READ-ONLY CONTEXT DISCOVERY & EXECUTION TOOL GATING** 🚨
 

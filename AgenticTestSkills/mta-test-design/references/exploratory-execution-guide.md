@@ -864,7 +864,7 @@ You are **strictly prohibited** from converting or constructing persistent MTA t
     * *Generates:* A **Backend Execution Plan** (3-Case Integration Lifecycle).
     * *Step Sequence:*
       * `Case 1 (Setup)`: Data script steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
-      * `Case 2 (Backend Logic)`: Microflow execution and return value / state assertions mapped from `DESCRIBE MICROFLOW` (`PAT-71`).
+      * `Case 2 (Backend Logic)`: Microflow execution and return value / state assertions mapped from catalog-first discovery or `DESCRIBE MICROFLOW` (`PAT-71`).
       * `Case 3 (Teardown)`: Automatic cascading delete steps with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`.
     * *Section 6 (Playwright):* Marked as `Not Applicable (Backend Test)`.
   * **Type 3: Automated Frontend Test Suite (3-Case UI Pattern)**
