@@ -40,4 +40,22 @@ When finishing the test scoping and design phase (`STATE_BUILD_PLANNING`), the a
 8. **Section 8: Applied Testing Patterns & Rationale:** Collapsible `<details>` block with Applied Testing Patterns & Architecture Laws table (`Applied Pattern`, `Target Step(s)`, `Law Citation`, `Applied Rationale`).
 *(Post-construction, sealed with **Section 9: MTA Build & Smoke Verification Receipt** during `STATE_SMOKE_AUDIT`).*
 
+---
+
+## Canonical Specialized Scoping Guides & Knowledge Base Links
+
+For advanced or specialized test design patterns, refer directly to the canonical Menditect documentation:
+
+| Domain / Scenario | Documentation Topic | Canonical Reference Link |
+| :--- | :--- | :--- |
+| **REST API Microflows** | Testing microflows consuming or exposing REST services | [Testing REST Microflows](https://documentation.menditect.com/how-tos/test-rest-microflow) |
+| **JsonPath Assertions** | Asserting on structured JSON return strings | [JsonPath Assertions](https://documentation.menditect.com/how-tos/jsonpath) |
+| **Nanoflow Testing** | Scoping & verifying client-side Nanoflows | [Nanoflow Testing Guide](https://documentation.menditect.com/how-tos/test-nanoflows) |
+| **File Handling** | Testing file upload, download, and FileDocuments | [Testing File Handling](https://documentation.menditect.com/how-tos/test-file-handling) |
+| **Anonymous Users** | Testing pages and flows accessible anonymously | [Anonymous User Testing](https://documentation.menditect.com/how-tos/test-anonymous-user) |
+| **Date Variations** | Handling dynamic dates and date offsets in variations | [Date Variations Guide](https://documentation.menditect.com/best-practice/data-variation) |
+| **Test Data Management** | Zero database pollution & cleanup strategies | [Test Data Management](https://documentation.menditect.com/best-practice/datamanagement) |
+
+---
+
 *   Read: [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Master Pattern Index](mta-patterns-and-antipatterns-reference.md)

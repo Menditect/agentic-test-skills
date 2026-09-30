@@ -1517,6 +1517,15 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-108`: Canonical Documentation & llms.txt Retrieval Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When resolving specialized or advanced architectural questions (e.g. SAML SSO configuration, REST API microflow testing, JsonPath string assertions, Nanoflow testing, FileDocument handling, or unknown runtime errors), agents MUST consult the Menditect documentation index (via `llms_txt_url` in `mta_config.json`, fallback `https://documentation.menditect.com/llms.txt`, or local cache `.agent/docs/mta_docs_index.json`). Use `read_url_content` to fetch verified documentation articles dynamically rather than guessing or hallucinating custom implementations. Always provide clickable canonical documentation URLs using the resolved `documentation_url` in user responses.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-01` (Test Scoping & Pyramid Layer Alignment), `PAT-45` (Mandatory Tool Execution Reasoning Chain of Thought), `PAT-95` (Sanitized Token & Auth Failure Interception).
+  * **Related Anti-Patterns:** `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |

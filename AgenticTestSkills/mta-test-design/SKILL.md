@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.26.1"
-changes: "Synchronized mta_config.schema.json with studiopro_mcp_url."
+version: "6.27.0"
+changes: "Registered PAT-108 and integrated canonical documentation and llms.txt reference guides."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -156,7 +156,22 @@ You must progress sequentially through these three interactive planning micro-st
             - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Not Registered):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
     4. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
     5. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
-*   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (Execution Plan Review)**: Present the Executive Summary Box (and clickable link in Agentic Mode), render the appropriate Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41), and **HALT** for explicit user approval:
+*   **🚨 Mode-Aware Gate 1 Halt & Auto-Approval Law (`PAT-43`, `exploratory_execution_mode`)**:
+    Evaluate `mta_config.json.exploratory_execution_mode` (default: `"auto_execute"`).
+    
+    1. **Option A Fast-Path Auto-Execution (`"auto_execute"`):**
+       - **Applicability:** Applies strictly when `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`.
+       - **Action:** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"` (enforcing the 5-anchor contract). Persist plan metadata into `mta_state.json`.
+       - **Zero-Wait Invariant:** Do **NOT** halt at Checkpoint 1.
+       - **Immediate Execution:** In the **very same turn**, invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase`.
+       - **Turn Output:** Output the rich exploratory execution telemetry report along with a direct clickable link to the persisted plan (`[EP_<TestCaseName>.md](file:///...)`).
+    
+    2. **Option A Governed Mode (`"prompt_approval"`):**
+       - Write the Execution Plan with `status: "DRAFT"`, present the Executive Summary Box and Checkpoint 1 Decision Card, and **HALT** for explicit user approval before execution.
+    
+    3. **Option B (MTA Platform) & Live Database Seeding (`Rollback == "No"`):**
+       - Strictly prohibited from auto-executing. The agent **MUST ALWAYS HALT** for explicit user approval (Checkpoint 1 for plan review, followed by Checkpoint 2 for placement).
+*   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (When Halting for Approval)**: Present the Executive Summary Box (and clickable link in Agentic Mode), render the appropriate Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41), and **HALT** for explicit user approval:
     - **Case 1 (Model Delta / Mismatch or MTA MCP Server Unavailable, MTA_plugin Active):** Render Case 1 card (Option B Blocked, Option A Active for Backend).
     - **Case 2 (In-Sync Parity & Both MCP Servers Active):** Render Case 2 card (Dual Track Option A vs Option B).
     - **Case 3 (Standalone Data Seeding):** Render Case 3 card (Option A Direct Local Seeding vs Option B Persistent Seeding).
@@ -241,7 +256,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 165 testing patterns/anti-patterns (`PAT-01..107`, `ANTI-01..58`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 166 testing patterns/anti-patterns (`PAT-01..108`, `ANTI-01..58`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

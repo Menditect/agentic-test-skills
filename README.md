@@ -119,23 +119,26 @@ If adding skills directly into an existing repository without using the workspac
 
 All Menditect Agentic Test Skills strictly consume `mta_config.json` as the primary **Single Source of Truth (SSOT)** for workspace paths, MTA server endpoints, model discovery sources, and application instances. Sensitive authentication tokens (`MTA_MCP_AUTH_HEADER`, `PLUGIN_MCP_TOKEN`) are securely maintained in `.env`.
 
-### Canonical JSON Structure (v1.5.0)
+### Canonical JSON Structure (v1.8.0)
 
 ```json
 {
   "$schema": "./mta_config.schema.json",
   "workspace_type": "clone_root",
-  "workspace_dir": "C:\Projecten\mta-trial",
-  "skills_dir": "C:\Projecten\mta-trial\skills",
+  "workspace_dir": "C:\\Projecten\\mta-trial",
+  "skills_dir": "C:\\Projecten\\mta-trial\\skills",
   "skills_style": "standard",
-  "mta_output_path": "C:\Projecten\mta-trial\menditect-output",
-  "execution_plans_dir": "C:\Projecten\mta-trial\menditect-output\execution-plans",
+  "mta_output_path": "C:\\Projecten\\mta-trial\\menditect-output",
+  "execution_plans_dir": "C:\\Projecten\\mta-trial\\menditect-output\\execution-plans",
   "execution_plan_collapsible": true,
+  "exploratory_execution_mode": "auto_execute",
   "mendix_version": "11.12.011",
   "application_name": "MyMendixApp",
   "mta_base_url": "https://mta-instance.mendixcloud.com",
   "mcp_endpoint": "https://mta-instance.mendixcloud.com/primitivetools/mcp",
   "plugin_mcp_url": "http://localhost:[Port]/plugin/mcp",
+  "documentation_url": "https://documentation.menditect.com",
+  "llms_txt_url": "https://documentation.menditect.com/llms.txt",
   "app_instances": [
     {
       "name": "Local Development",
@@ -150,8 +153,8 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
   "default_app_instance": "Local Development",
   "default_app_instance_token": "00000000-0000-0000-0000-000000000000",
   "model_source": "mxcli",
-  "mendix_project_dir": "C:\Projects\MyMendixApp",
-  "mendix_mpr_path": "C:\Projects\MyMendixApp\MyMendixApp.mpr"
+  "mendix_project_dir": "C:\\Projects\\MyMendixApp",
+  "mendix_mpr_path": "C:\\Projects\\MyMendixApp\\MyMendixApp.mpr"
 }
 ```
 
@@ -164,10 +167,13 @@ All Menditect Agentic Test Skills strictly consume `mta_config.json` as the prim
 | `application_name` | string | **(Required)** Name of the target Mendix application in MTA. Eliminates manual application disambiguation prompts. |
 | `execution_plans_dir` | string | **(Required)** Directory where active Execution Plans (`EP_*.md`) are stored and updated in-place. |
 | `execution_plan_collapsible` | boolean | Whether to format execution plans with collapsible `<details>` HTML tags (default: `true` for VS Code/GitHub) or flat Markdown headers (`false` for Claude Desktop/pure markdown). |
+| `exploratory_execution_mode` | string (`"auto_execute"` \| `"prompt_approval"`) | **(Default: `"auto_execute"`)** Execution strategy for Option A in-memory unit tests on the MTA Plugin (`Rollback = Yes`). `"auto_execute"` generates the Execution Plan (`EP_*.md`) on disk and executes in 1 turn without halting at Checkpoint 1. `"prompt_approval"` halts at Checkpoint 1 for manual sign-off before dispatching. |
 | `mendix_project_dir` | string | **(Required)** Absolute path to the target Mendix project folder containing the app model. |
 | `mendix_mpr_path` | string | Absolute path to the Mendix `.mpr` project file used by `mxcli`. |
 | `mta_auth_header` | string | *(Deprecated)* HTTP Authorization header (`Bearer <session_token>`) for authenticating with MTA server. Stored in `.env` as `MTA_MCP_AUTH_HEADER`. |
 | `plugin_mcp_url` | string (URI) | Local runtime plugin MCP endpoint (`[ApplicationRootUrl]/plugin/mcp`) for sub-second in-memory exploratory test execution. |
+| `documentation_url` | string (URI) | Base URL of the Menditect MTA documentation site (default: `https://documentation.menditect.com`). Used for dynamic retrieval of official guides and `llms.txt`. |
+| `llms_txt_url` | string (URI) | Explicit override URL for the `llms.txt` documentation index (defaults to `${documentation_url}/llms.txt`). |
 | `plugin_mcp_token` | string | *(Deprecated)* Authorization header (e.g. `Bearer 1`) for the runtime plugin MCP endpoint. Stored in `.env` as `PLUGIN_MCP_TOKEN`. |
 | `app_instances` | array | Discovered application runtime instances with `name`, `token`, `mtaUrl`, `runtimeUrl`, `pluginUrl`, `pluginToken`, and `pluginPort`. |
 | `default_app_instance` | string | Name of the primary default application runtime instance. |

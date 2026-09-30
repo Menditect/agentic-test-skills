@@ -42,3 +42,19 @@ This guide outlines the precise operational checklists, safety gates, and valida
 ### 5. `STATE_RUN_ANALYZE` (State 5)
 *   **Execution & Diagnostics:** Trigger test runs (`ExecuteTest`), retrieve results (`GetTestRunResults`), parse logs, and initiate the automated self-repair protocol if failures occur.
 *   👉 **Read:** [MTA Run & Analyze Skill](../../mta-run-analyze/SKILL.md) | [MTA Troubleshooting Guide](troubleshooting.md)
+
+---
+
+## 🌐 Official Menditect Installation & Connection Guides
+
+When assisting users with installation, plugin deployment, or network configuration, refer to official documentation:
+
+| Component / Task | Canonical Documentation Link |
+| :--- | :--- |
+| **MTA Architecture & Getting Started** | [Getting Started with MTA](https://documentation.menditect.com/installation/getting-started) |
+| **MTA Plugin Installation** | [Install MTA Plugin in Mendix Studio Pro](https://documentation.menditect.com/installation/install-mta-plugin) |
+| **Connect MTA to Application Instance** | [Connect MTA to Application](https://documentation.menditect.com/installation/connect-mta) |
+| **MTA Cloud Infrastructure & Firewalls** | [Cloud Architecture & IP Whitelisting](https://documentation.menditect.com/installation/cloud) |
+| **On-Premise MTA Agent Setup** | [On-Premise Deployment Guide](https://documentation.menditect.com/installation/on-premise) |
+| **Service Accounts & API Keys** | [Managing Service Accounts](https://documentation.menditect.com/how-tos/service-accounts) |
+

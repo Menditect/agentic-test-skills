@@ -299,5 +299,26 @@ When tool invocations fail due to missing, expired, invalid, or unauthorized tok
 > </details>
 ```
 
+---
+
+## 📖 OFFICIAL MENDITECT KNOWN ISSUES & WORKAROUNDS MATRIX
+
+When diagnosing test execution or configuration failures, consult the official Menditect documentation solutions below. Agents may also dynamically inspect the local documentation index (`.agent/docs/mta_docs_index.json`) or query `llms.txt` directly.
+
+| Issue Category | Symptom / Error Signature | Root Cause | Canonical Documentation & Workaround |
+| :--- | :--- | :--- | :--- |
+| **Database & Retrieve** | `Error on Execute Retrieve Action` | Attempting a database `Retrieve` step for records that only exist in-memory (not committed to DB). | [Retrieve Action Failure](https://documentation.menditect.com/known-issues/run-tests/error-on-execute-retrieve-action) |
+| **Persist & Commit** | `Persist step fails` | Object deletion violates association delete behavior (e.g. `DeleteBehavior: Block`), or required attribute is missing. | [Persist Step Failure](https://documentation.menditect.com/known-issues/run-tests/persist-step-fails) |
+| **Validation Feedback** | `Validation message compare failed` | Validation feedback was asserted on an object that was deleted or altered before assertion evaluated. | [Validation Message Error](https://documentation.menditect.com/known-issues/run-tests/test-case-run-error-validation-message) |
+| **Execution Timeout** | `Test run timed out` (>300s) | Infinite loop in microflow, unindexed database query table scan, or browser locator hanging on non-existent element. | [Test Run Timeout](https://documentation.menditect.com/known-issues/run-tests/test-run-timeout) |
+| **Model Adaptation** | `Adapt configuration failed` | Configuration cannot map changes between Mendix model revisions. | [Adapt Configuration Failure](https://documentation.menditect.com/known-issues/design-tests/adapt-failed) |
+| **Model Synchronization** | `Microflow missing from list` | Microflow is not exposed, lacks module security role access, or model was not refreshed in MTA. | [Microflow Missing](https://documentation.menditect.com/known-issues/design-tests/microflow-missing) |
+| **Test Case Authoring** | `Construction errors after moving entity` | Domain model entity was moved between modules, causing orphaned GUID references in MTA test steps. | [Entity Movement Errors](https://documentation.menditect.com/known-issues/design-tests/construction-errors-after-moving-entity) |
+| **Suite Management** | `Duplicate empty test suite error` | Duplicating a test suite containing zero test cases fails sequence validation. | [Duplicate Empty Test Suite](https://documentation.menditect.com/known-issues/design-tests/duplicate-empty-test-suite) |
+| **MTA Plugin Connectivity** | `Plugin falsely connected` | MTA portal indicates plugin is connected via WebSocket, but runtime endpoint is unresponsive or restarted. | [Plugin Falsely Connected](https://documentation.menditect.com/known-issues/connect-mta/plugin-falsely-connected) |
+| **MTA Plugin Startup** | `After startup error in Mendix` | Duplicate or conflicting Java libraries introduced when importing MTA Plugin module. | [Startup Error Fix](https://documentation.menditect.com/known-issues/connect-mta/after-startup-error) |
+| **WebSocket Connectivity** | `WebSocket keeps reconnecting` | Network proxy, firewall, or container timeout terminating persistent WebSocket connection to MTA cloud. | [WebSocket Reconnection Loop](https://documentation.menditect.com/known-issues/connect-mta/websocket-keeps-reconnecting) |
+
+
 
 

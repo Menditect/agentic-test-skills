@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.30.0"
-changes: "Updated PAT-71 to catalog-first native mxcli CLI discovery with fallback AST."
+version: "4.31.0"
+changes: "Added PAT-108 for canonical documentation and llms.txt retrieval."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -55,9 +55,12 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 4. Global Safety & Approval Gates
 - **Read-Only Tools Always Authorized:** All read-only `Get*` MTA tools (`GetAppModelData`, `GetTestCaseDetails`, `GetTestRunResults`, etc.) are authorized in any state to discover context.
-- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation, exploratory test, and data seeding requests—including ad-hoc prompts or in-memory plugin execution—must produce an approved Execution Plan (`EP_*.md`) prior to execution or construction.
-- **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) is strictly prohibited until:
-  1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary.
+- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation, exploratory test, and data seeding requests—including ad-hoc prompts or in-memory plugin execution—must produce an Execution Plan (`EP_*.md`) persisted to disk prior to execution or construction (`ANTI-46`).
+  - *Option A Fast-Path Auto-Execution (`exploratory_execution_mode: "auto_execute"`):* When `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`, the agent is authorized to auto-approve Gate 1 (`status: "AUTO_APPROVED"`), write the plan to disk, and dispatch `MTA_plugin.execute-testcase` in the **very same turn** without halting at Checkpoint 1.
+  - *Option A Governed Mode (`exploratory_execution_mode: "prompt_approval"`):* The agent writes the draft plan to disk and halts at Checkpoint 1 for explicit approval before dispatching.
+  - *Option B & Live Database Writes (`Rollback == "No"`):* Strictly prohibited from auto-executing. The agent **MUST HALT** for explicit user approval before execution or persistent construction.
+- **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) on the persistent MTA server is strictly prohibited until:
+  1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary (or auto-approved under Option A fast-path).
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.
 - **Agentic vs. Chat Mode Heuristic:** If your environment provides the `call_mcp_tool` and `write_to_file` tools, you are in **Agentic Mode** and must autonomously execute tools and save files. If these tools are unavailable, you are in **Chat Mode** (output raw JSON payloads for the user to execute manually).
 - **Formalized MCP Tool Bridging & Ad-Hoc Script Ban (ANTI-58):** All MTA operations must be executed directly via native MCP tool calls (`call_mcp_tool` / `execute-testcase`). Creating or running temporary ad-hoc scripts (`.js`, `.ps1`, `.py`) to dispatch MCP tools is strictly prohibited (`ANTI-58`).
@@ -72,6 +75,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
   - *If only `MTA` is active (`MTA_plugin` absent/offline):* Option A is blocked, Option B is **ACTIVE**. Present **Checkpoint 1 Case 5**.
   - *If neither is active (Dual Outage):* Both execution options are blocked; save draft locally. Present **Checkpoint 1 Case 4**.
   Frontend UI tests require the MTA Platform and never execute via `MTA_plugin`. Stored offline plans lacking MTA placement keys cannot enter `STATE_CONSTRUCTION` without first verifying model parity (`GetAppModelData`) and completing Gate 2 placement discovery (`PLAN_STEP_2`).
+- **Canonical Documentation & llms.txt Retrieval Protocol (PAT-108):** When resolving specialized or out-of-core architectural questions (e.g. SAML SSO configuration, REST API microflow testing, JsonPath string assertions, Nanoflow testing, FileDocument handling, or unknown runtime errors), agents MUST query the official Menditect documentation index (via `llms_txt_url` in `mta_config.json`, fallback `https://documentation.menditect.com/llms.txt`, or local index `.agent/docs/mta_docs_index.json`). Use `read_url_content` to fetch verified documentation articles dynamically rather than guessing or hallucinating custom implementations. Always provide clickable canonical documentation URLs using the resolved `documentation_url` in user responses.
 
 ---
 
