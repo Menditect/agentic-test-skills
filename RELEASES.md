@@ -1,76 +1,77 @@
-# 📋 Menditect Agentic Test Skills - Release Index
+# Menditect Agentic Test Skills - Release Index
 
 This page lists all the releases of the Menditect Agentic Test Skills, with links to their detailed release notes and skill version matrices.
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [🚀 v1.22.1](releases/v1.22.1.md) | 2026-09-30 | improved handling of mxcli catalog.db |
-| [🚀 v1.22.0](releases/v1.22.0.md) | 2026-09-30 | updated workflow for exploratory testing and improved usage of documentation |
-| [🚀 v1.21.2](releases/v1.21.2.md) | 2026-09-29 | updated mta_config schema |
-| [🚀 v1.21.1](releases/v1.21.1.md) | 2026-09-29 | improved usage of mxcli catalog |
-| [🚀 v1.20.4](releases/v1.20.4.md) | 2026-09-25 | improved smoke audit |
-| [🚀 v1.20.3](releases/v1.20.3.md) | 2026-09-25 | improved smoke audit |
-| [🚀 v1.20.2](releases/v1.20.2.md) | 2026-09-24 | improved handling of associations in datavariations |
-| [🚀 v1.20.1](releases/v1.20.1.md) | 2026-09-24 | fixed several loopholes in patterns and updated with latest mcp tools versions |
-| [🚀 v1.20.0](releases/v1.20.0.md) | 2026-09-24 | improved behaviour for chat based agents (MAIA) |
-| [🚀 v1.19.3](releases/v1.19.3.md) | 2026-09-24 | fix(ci): handle null return from git tag check in sync workflow |
-| [🚀 v1.19.2](releases/v1.19.2.md) | 2026-09-16 | improved skills for frontend testing and smoke audit |
-| [🚀 v1.19.1](releases/v1.19.1.md) | 2026-09-16 | streamlined skills for optimized loading and workflow |
-| [🚀 v1.19.0](releases/v1.19.0.md) | 2026-09-16 | improved skills for frontend testing and datavariations |
-| [🚀 v1.18.4](releases/v1.18.4.md) | 2026-09-15 | improved handling of datavariations and playwright trace viewer |
-| [🚀 v1.18.2](releases/v1.18.2.md) | 2026-09-14 | added more required fiels to mta_config |
-| [🚀 v1.18.1](releases/v1.18.1.md) | 2026-09-14 | feat(ci): add marketplace version pruner and harden public repo sync |
-| [🚀 v1.18.0](releases/v1.18.0.md) | 2026-09-14 | feat(release): v1.18.0 - improved skills and updated agents.md |
-| [🚀 v1.17.3](releases/v1.17.3.md) | 2026-09-10 | feat(release): v1.17.3 - improved consistency with tools and mta_config file |
-| [🚀 v1.17.2](releases/v1.17.2.md) | 2026-09-10 | updated skills for consistency and improved execution plan |
-| [🚀 v1.17.1](releases/v1.17.1.md) | 2026-09-09 | improved execution plan readability |
-| [🚀 v1.17.0](releases/v1.17.0.md) | 2026-09-09 | improved batched tool handling and execution plan handling |
-| [🚀 v1.16.1](releases/v1.16.1.md) | 2026-09-08 | Merge branch development - release v1.16.1 |
-| [🚀 v1.16.0](releases/v1.16.0.md) | 2026-09-08 | Merge branch development |
-| [🚀 v1.15.0](releases/v1.15.0.md) | 2026-08-28 | Merge branch development |
-| [🚀 v1.14.0](releases/v1.14.0.md) | 2026-08-27 | Merge branch development into main (fix public repo root cleanup) |
-| [🚀 v1.13.1](releases/v1.13.1.md) | 2026-08-24 | pat fixes |
-| [🚀 v1.13.0](releases/v1.13.0.md) | 2026-08-24 | Patterns & workflow optimalization |
-| [🚀 v1.12.0](releases/v1.12.0.md) | 2026-08-21 | Refactor of pattern, custom linter for patterns. |
-| [🚀 v1.11.3](releases/v1.11.3.md) | 2026-08-20 | Merge branch development |
-| [🚀 v1.11.2](releases/v1.11.2.md) | 2026-08-20 | Merge branch development |
-| [🚀 v1.11.1](releases/v1.11.1.md) | 2026-08-20 | publish line fix |
-| [🚀 v1.11.0](releases/v1.11.0.md) | 2026-08-20 | Merge branch development |
-| [🚀 v1.10.6](releases/v1.10.6.md) | 2026-08-14 | Merge branch development into main for release v1.10.6 |
-| [🚀 v1.10.5](releases/v1.10.5.md) | 2026-08-13 | high level fixes for deeper analysis, link generation and workflow |
-| [🚀 v1.10.4](releases/v1.10.4.md) | 2026-08-13 | Redesign of workflow and extra frontend testing logic for browser settings |
-| [🚀 v1.10.3](releases/v1.10.3.md) | 2026-08-12 | Merge branch development |
-| [🚀 v1.10.2](releases/v1.10.2.md) | 2026-08-11 | release: v1.10.2 - Improved skillset |
-| [🚀 v1.10.1](releases/v1.10.1.md) | 2026-08-11 | release: v1.10.1 - updated skills to improve workflow |
-| [🚀 v1.10.0](releases/v1.10.0.md) | 2026-08-11 | Merge branch development |
-| [🚀 v1.9.4](releases/v1.9.4.md) | 2026-08-11 | added Open Agent Skill Standard compatibility notice |
-| [🚀 v1.9.3](releases/v1.9.3.md) | 2026-08-10 | improved default settings for tests |
-| [🚀 v1.9.2](releases/v1.9.2.md) | 2026-08-10 | optimized scan of mta for existing tests |
-| [🚀 v1.9.1](releases/v1.9.1.md) | 2026-08-10 | updated skills for new execution plan tools |
-| [🚀 v1.9.0](releases/v1.9.0.md) | 2026-08-07 | Release version 1.9.0 Dual-Track Persistence, 5-State Orchestration, Backend/Frontend Terminology Alignment, and Void... |
-| [🚀 v1.8.3](releases/v1.8.3.md) | 2026-08-06 | fixed bug that caused errors in project |
-| [🚀 v1.8.2](releases/v1.8.2.md) | 2026-08-06 | fixed bug that created errors in project |
-| [🚀 v1.8.1](releases/v1.8.1.md) | 2026-08-06 | updated module with agents.md and new publication mechanism |
-| [🚀 v1.8.0](releases/v1.8.0.md) | 2026-08-06 | Introduce agents.md with orchestration of states |
-| [🚀 v1.7.1](releases/v1.7.1.md) | 2026-08-05 | updated skills for datavariation strategy |
-| [🚀 v1.7.0](releases/v1.7.0.md) | 2026-08-05 | new version of skills, optimized for last MTA update |
-| [🚀 v1.6.7](releases/v1.6.7.md) | 2026-07-10 | improved skills for new users and frontend testing |
-| [🚀 v1.6.6](releases/v1.6.6.md) | 2026-07-10 | improved skills for first time mta and AI users |
-| [🚀 v1.6.5](releases/v1.6.5.md) | 2026-07-10 | updated skills for datavariation descriptions |
-| [🚀 v1.6.4](releases/v1.6.4.md) | 2026-07-10 | better separation of frontend and backend test creation |
-| [🚀 v1.6.3](releases/v1.6.3.md) | 2026-07-10 | updated skills with improved handling of new execution users |
-| [🚀 v1.6.2](releases/v1.6.2.md) | 2026-07-10 | release: v1.6.2 - updated skills with input from MTA 3.1 reference guide |
-| [🚀 v1.6.1](releases/v1.6.1.md) | 2026-08-20 | fixed publish script |
-| [🚀 v1.6.0](releases/v1.6.0.md) | 2026-07-09 | added new installation skill and improved existing skills |
-| [🚀 v1.5.5](releases/v1.5.5.md) | 2026-07-09 | Added void microflow side-effect warning and analysis rules with testability refactoring guidelines |
-| [🚀 v1.5.4](releases/v1.5.4.md) | 2026-07-09 | Updated state machine to ask for user validation when leaving the QA _Assistance state |
-| [🚀 v1.5.3](releases/v1.5.3.md) | 2026-07-09 | Updated skill for backend test assert behaviour on object count |
-| [🚀 v1.5.2](releases/v1.5.2.md) | 2026-07-09 | clarified execution settings rule for backend tests |
-| [🚀 v1.5.1](releases/v1.5.1.md) | 2026-07-09 | improved behaviour on data varitations for backend tests |
-| [🚀 v1.5.0](releases/v1.5.0.md) | 2026-07-09 | updated skills for improved design of tests |
-| [🚀 v1.4.9](releases/v1.4.9.md) | 2026-07-09 | Merge branch development |
-| [🚀 v1.4.8](releases/v1.4.8.md) | 2026-07-09 | Merge branch development |
-| [🚀 v1.4.7](releases/v1.4.7.md) | 2026-07-09 | Merge branch development |
+| [v1.22.2](releases/v1.22.2.md) | 2026-09-30 | improved formatting of release notes and documentation |
+| [v1.22.1](releases/v1.22.1.md) | 2026-09-30 | improved handling of mxcli catalog.db |
+| [v1.22.0](releases/v1.22.0.md) | 2026-09-30 | updated workflow for exploratory testing and improved usage of documentation |
+| [v1.21.2](releases/v1.21.2.md) | 2026-09-29 | updated mta_config schema |
+| [v1.21.1](releases/v1.21.1.md) | 2026-09-29 | improved usage of mxcli catalog |
+| [v1.20.4](releases/v1.20.4.md) | 2026-09-25 | improved smoke audit |
+| [v1.20.3](releases/v1.20.3.md) | 2026-09-25 | improved smoke audit |
+| [v1.20.2](releases/v1.20.2.md) | 2026-09-24 | improved handling of associations in datavariations |
+| [v1.20.1](releases/v1.20.1.md) | 2026-09-24 | fixed several loopholes in patterns and updated with latest mcp tools versions |
+| [v1.20.0](releases/v1.20.0.md) | 2026-09-24 | improved behaviour for chat based agents (MAIA) |
+| [v1.19.3](releases/v1.19.3.md) | 2026-09-24 | fix(ci): handle null return from git tag check in sync workflow |
+| [v1.19.2](releases/v1.19.2.md) | 2026-09-16 | improved skills for frontend testing and smoke audit |
+| [v1.19.1](releases/v1.19.1.md) | 2026-09-16 | streamlined skills for optimized loading and workflow |
+| [v1.19.0](releases/v1.19.0.md) | 2026-09-16 | improved skills for frontend testing and datavariations |
+| [v1.18.4](releases/v1.18.4.md) | 2026-09-15 | improved handling of datavariations and playwright trace viewer |
+| [v1.18.2](releases/v1.18.2.md) | 2026-09-14 | added more required fiels to mta_config |
+| [v1.18.1](releases/v1.18.1.md) | 2026-09-14 | feat(ci): add marketplace version pruner and harden public repo sync |
+| [v1.18.0](releases/v1.18.0.md) | 2026-09-14 | feat(release): v1.18.0 - improved skills and updated agents.md |
+| [v1.17.3](releases/v1.17.3.md) | 2026-09-10 | feat(release): v1.17.3 - improved consistency with tools and mta_config file |
+| [v1.17.2](releases/v1.17.2.md) | 2026-09-10 | updated skills for consistency and improved execution plan |
+| [v1.17.1](releases/v1.17.1.md) | 2026-09-09 | improved execution plan readability |
+| [v1.17.0](releases/v1.17.0.md) | 2026-09-09 | improved batched tool handling and execution plan handling |
+| [v1.16.1](releases/v1.16.1.md) | 2026-09-08 | Merge branch development - release v1.16.1 |
+| [v1.16.0](releases/v1.16.0.md) | 2026-09-08 | Merge branch development |
+| [v1.15.0](releases/v1.15.0.md) | 2026-08-28 | Merge branch development |
+| [v1.14.0](releases/v1.14.0.md) | 2026-08-27 | Merge branch development into main (fix public repo root cleanup) |
+| [v1.13.1](releases/v1.13.1.md) | 2026-08-24 | pat fixes |
+| [v1.13.0](releases/v1.13.0.md) | 2026-08-24 | Patterns & workflow optimalization |
+| [v1.12.0](releases/v1.12.0.md) | 2026-08-21 | Refactor of pattern, custom linter for patterns. |
+| [v1.11.3](releases/v1.11.3.md) | 2026-08-20 | Merge branch development |
+| [v1.11.2](releases/v1.11.2.md) | 2026-08-20 | Merge branch development |
+| [v1.11.1](releases/v1.11.1.md) | 2026-08-20 | publish line fix |
+| [v1.11.0](releases/v1.11.0.md) | 2026-08-20 | Merge branch development |
+| [v1.10.6](releases/v1.10.6.md) | 2026-08-14 | Merge branch development into main for release v1.10.6 |
+| [v1.10.5](releases/v1.10.5.md) | 2026-08-13 | high level fixes for deeper analysis, link generation and workflow |
+| [v1.10.4](releases/v1.10.4.md) | 2026-08-13 | Redesign of workflow and extra frontend testing logic for browser settings |
+| [v1.10.3](releases/v1.10.3.md) | 2026-08-12 | Merge branch development |
+| [v1.10.2](releases/v1.10.2.md) | 2026-08-11 | release: v1.10.2 - Improved skillset |
+| [v1.10.1](releases/v1.10.1.md) | 2026-08-11 | release: v1.10.1 - updated skills to improve workflow |
+| [v1.10.0](releases/v1.10.0.md) | 2026-08-11 | Merge branch development |
+| [v1.9.4](releases/v1.9.4.md) | 2026-08-11 | added Open Agent Skill Standard compatibility notice |
+| [v1.9.3](releases/v1.9.3.md) | 2026-08-10 | improved default settings for tests |
+| [v1.9.2](releases/v1.9.2.md) | 2026-08-10 | optimized scan of mta for existing tests |
+| [v1.9.1](releases/v1.9.1.md) | 2026-08-10 | updated skills for new execution plan tools |
+| [v1.9.0](releases/v1.9.0.md) | 2026-08-07 | Release version 1.9.0 Dual-Track Persistence, 5-State Orchestration, Backend/Frontend Terminology Alignment, and Void... |
+| [v1.8.3](releases/v1.8.3.md) | 2026-08-06 | fixed bug that caused errors in project |
+| [v1.8.2](releases/v1.8.2.md) | 2026-08-06 | fixed bug that created errors in project |
+| [v1.8.1](releases/v1.8.1.md) | 2026-08-06 | updated module with agents.md and new publication mechanism |
+| [v1.8.0](releases/v1.8.0.md) | 2026-08-06 | Introduce agents.md with orchestration of states |
+| [v1.7.1](releases/v1.7.1.md) | 2026-08-05 | updated skills for datavariation strategy |
+| [v1.7.0](releases/v1.7.0.md) | 2026-08-05 | new version of skills, optimized for last MTA update |
+| [v1.6.7](releases/v1.6.7.md) | 2026-07-10 | improved skills for new users and frontend testing |
+| [v1.6.6](releases/v1.6.6.md) | 2026-07-10 | improved skills for first time mta and AI users |
+| [v1.6.5](releases/v1.6.5.md) | 2026-07-10 | updated skills for datavariation descriptions |
+| [v1.6.4](releases/v1.6.4.md) | 2026-07-10 | better separation of frontend and backend test creation |
+| [v1.6.3](releases/v1.6.3.md) | 2026-07-10 | updated skills with improved handling of new execution users |
+| [v1.6.2](releases/v1.6.2.md) | 2026-07-10 | release: v1.6.2 - updated skills with input from MTA 3.1 reference guide |
+| [v1.6.1](releases/v1.6.1.md) | 2026-08-20 | fixed publish script |
+| [v1.6.0](releases/v1.6.0.md) | 2026-07-09 | added new installation skill and improved existing skills |
+| [v1.5.5](releases/v1.5.5.md) | 2026-07-09 | Added void microflow side-effect warning and analysis rules with testability refactoring guidelines |
+| [v1.5.4](releases/v1.5.4.md) | 2026-07-09 | Updated state machine to ask for user validation when leaving the QA _Assistance state |
+| [v1.5.3](releases/v1.5.3.md) | 2026-07-09 | Updated skill for backend test assert behaviour on object count |
+| [v1.5.2](releases/v1.5.2.md) | 2026-07-09 | clarified execution settings rule for backend tests |
+| [v1.5.1](releases/v1.5.1.md) | 2026-07-09 | improved behaviour on data varitations for backend tests |
+| [v1.5.0](releases/v1.5.0.md) | 2026-07-09 | updated skills for improved design of tests |
+| [v1.4.9](releases/v1.4.9.md) | 2026-07-09 | Merge branch development |
+| [v1.4.8](releases/v1.4.8.md) | 2026-07-09 | Merge branch development |
+| [v1.4.7](releases/v1.4.7.md) | 2026-07-09 | Merge branch development |
 
 ---
 _Updated automatically during Menditect Agentic Test Skills sync._
