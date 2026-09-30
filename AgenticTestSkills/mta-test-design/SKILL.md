@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.27.0"
-changes: "Registered PAT-108 and integrated canonical documentation and llms.txt reference guides."
+version: "6.28.0"
+changes: "Updated PAT-71 to Bifurcated Model Discovery Protocol with verified catalog schema and direct single-pass AST inspection."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -83,24 +83,18 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
     *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
-*   **⚡ Catalog-First Discovery & Fallback Single-Pass AST Discovery (`PAT-71`, `ANTI-26`, `ANTI-58`)**:
-    *   *Primary: Catalog-First Native mxcli Querying:* When a target microflow or component is specified, query the local SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) first using native `mxcli` SQL commands (`./mxcli.bat -p "<mpr>" -c "SELECT ... FROM CATALOG.<TABLE>"`), assuming standard Option 1 (`REFRESH CATALOG FULL`) indexing:
-        - Microflow metadata: `SELECT Name, ReturnType, ParameterCount, ActivityCount FROM CATALOG.MICROFLOWS WHERE Name = 'Module.Microflow';`
-        - Input parameters: `SELECT Name, DataType, IsReturn FROM CATALOG.MICROFLOW_PARAMETERS WHERE MicroflowName = 'Module.Microflow';`
-        - Activities & call graph: `SELECT SortOrder, ActivityType, Caption FROM CATALOG.ACTIVITIES WHERE DocumentName = 'Module.Microflow' ORDER BY SortOrder;`
-        - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetKind, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
-    *   *Prohibition of Ad-Hoc Scripts (`ANTI-58`):* All SQLite catalog queries MUST be executed via the standard `mxcli` CLI interface. Generating or running ad-hoc Python, PowerShell, or Node.js SQLite inspection scripts is strictly prohibited.
-    *   *Secondary: Fallback to Single-Pass AST Discovery:* Fall back to live single-pass `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>`) ONLY when:
-        1. Target component is absent from `catalog.db` (0 rows returned, e.g. newly created component).
-        2. Deep branch formulas, decision conditions, or XPath expressions are needed for negative boundary variation design (`PAT-98`), which are omitted from Option 1 indexing.
-    *   *Catalog Sync Hinting Protocol:* Whenever fallback to `DESCRIBE` is triggered due to absent catalog rows (0 rows returned), the agent MUST output a non-blocking actionable user notification:
-        > 💡 **Notice:** Target component `'Module.Name'` was not found in the local `mxcli` catalog. Fell back to live AST inspection. To enable sub-second catalog discovery for newly created components, run:
-        > ```bash
-        > ./mxcli.bat -p "<mpr_path>" -c "REFRESH CATALOG FULL FORCE;"
-        > ```
-        > *(Option 1 Fast Sync: indexes structures in ~15s)*
+*   **⚡ Bifurcated Model Discovery Protocol (`PAT-71`, `ANTI-26`, `ANTI-58`)**:
+    *   *Path A: Targeted Logic & Parameter Extraction (Direct Single-Pass AST Inspection):* When designing tests for a specified Microflow or Nanoflow, the agent MUST bypass catalog queries and immediately execute `DESCRIBE MICROFLOW <Module.Microflow>` in a single pass. This directly extracts input parameter signatures, return types, arithmetic formulas, decision expressions, and annotation text (which are not indexed in SQLite catalog tables) in 1 single turn, avoiding redundant intermediate catalog calls.
+    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL):* When discovering domain attributes for Case 1 test data seeding, verifying entity existence, or mapping callers/callees, the agent MUST query the local SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
+        - Microflow metadata & complexity: `SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.Microflow';`
+        - Activities & call graph: `SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.Microflow' ORDER BY Sequence;`
+        - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
+        - Entity verification: `SELECT Name, QualifiedName, EntityType, AttributeCount FROM CATALOG.ENTITIES WHERE QualifiedName = 'Module.Entity';`
+        - Domain attributes & types (`PAT-75`, `PAT-53`, `ANTI-29`): `SELECT Name, DataType, Length, IsRequired FROM CATALOG.ATTRIBUTES WHERE EntityQualifiedName = 'Module.Entity';`
+        - Java Action input parameters (when testing Java Actions): `SELECT Name, ParameterType, Ordinal FROM CATALOG.JAVA_ACTION_PARAMETERS WHERE QualifiedName = 'Module.JavaAction' ORDER BY Ordinal;`
+    *   *Prohibition of Ad-Hoc Scripts (`ANTI-58`):* All SQLite catalog queries MUST be executed via the standard `mxcli` CLI interface (`.\mxcli.bat -c "..."`). Generating or running ad-hoc Python, PowerShell, or Node.js SQLite inspection scripts is strictly prohibited.
+    *   *Schema Resilience & Parameter Invariant:* Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard operation and MUST NOT trigger false catalog missing warnings. If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` before aborting.
     *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
-    *   *Verified Entity Fixture Attribute & Constraint Binding Law (`PAT-75`, `PAT-53`, `ANTI-29`):* Before proposing test fixture attributes, parameters, or variation values, query `CATALOG.ATTRIBUTES` (`SELECT Name, AttributeType FROM CATALOG.ATTRIBUTES WHERE EntityName = 'Module.Entity';`) or inspect the entity definition via `mxcli SHOW ENTITY <Module.Entity>` or `DESCRIBE ENTITY <Module.Entity>` (or `GetAppModelData`) to capture data types, String length limits (`String(N)`), and non-empty constraints. Prohibit hallucinating synthetic placeholder attributes without domain verification.
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
 *   **🚨 Mandatory Empty Object & Association Variation Protocol (`PAT-07`, `ANTI-48`)**:
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.

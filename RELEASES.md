@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [🚀 v1.22.1](releases/v1.22.1.md) | 2026-09-30 | improved handling of mxcli catalog.db |
 | [🚀 v1.22.0](releases/v1.22.0.md) | 2026-09-30 | updated workflow for exploratory testing and improved usage of documentation |
 | [🚀 v1.21.2](releases/v1.21.2.md) | 2026-09-29 | updated mta_config schema |
 | [🚀 v1.21.1](releases/v1.21.1.md) | 2026-09-29 | improved usage of mxcli catalog |

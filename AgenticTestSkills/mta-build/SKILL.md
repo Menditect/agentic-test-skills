@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.24.0"
-changes: "Registered PAT-108 and updated reference documents with canonical Menditect documentation links."
+version: "6.25.0"
+changes: "Synchronized reference playbooks with PAT-71 Bifurcated Model Discovery Protocol and verified catalog schema."
 ---
 
 # MTA Build, Design, & Optimization Skill

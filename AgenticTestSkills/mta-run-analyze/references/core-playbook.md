@@ -145,54 +145,53 @@ Before outputting your response or executing any tool call, mentally verify thes
 
 ---
 
-## 🗄️ NATIVE MXCLI CATALOG DISCOVERY PROTOCOL (`PAT-71`)
+## 🗄️ BIFURCATED MODEL DISCOVERY PROTOCOL (`PAT-71`)
 
-To achieve sub-second model discovery and prevent multi-query latency cascades (`ANTI-26`), test design relies on a 2-step discovery protocol:
+To achieve maximum model discovery performance and eliminate multi-turn latency cascades (`ANTI-26`), test design enforces the bifurcated model inspection protocol:
 
-### 1. Step 1: Catalog-First Querying via Native CLI
-The agent queries the local SQLite catalog (`.mxcli/catalog.db`) directly using the built-in SQL interface of `mxcli`:
+### 1. Path A: Direct Single-Pass AST Inspection (Logic & Parameters)
+When the user specifies a target Microflow, Nanoflow, or Page, the agent MUST bypass catalog queries and immediately execute `DESCRIBE MICROFLOW <Module.Microflow>` (or `DESCRIBE PAGE <Module.Page>` per `PAT-72`) in a single pass:
+```bash
+./mxcli.bat -p "<mpr_path>" -c "DESCRIBE MICROFLOW Module.Microflow"
+```
+* **Why Direct AST?** Input parameter signatures, return types, arithmetic formulas, decision expressions, and annotation text are not indexed in SQLite catalog tables. Single-pass `DESCRIBE` extracts them in 1 turn without intermediate queries.
+* **Self-Contained Extraction:** Single-pass AST output self-contains parameters, return signatures, subflow invocations, and enum branch cases, eliminating broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
+
+### 2. Path B: Relational Catalog Querying via Native CLI (Domain & Call Graphs)
+When discovering domain attributes for Case 1 test data seeding, verifying entity existence, or mapping callers/callees, the agent queries the local SQLite catalog (`.mxcli/catalog.db`) directly using the built-in SQL interface of `mxcli`:
 ```bash
 ./mxcli.bat -p "<mpr_path>" -c "SELECT ... FROM CATALOG.<TABLE>"
 ```
-* **Option 1 Assumption:** Standard test design assumes Option 1 (`REFRESH CATALOG FULL`), which indexes entities, attributes, microflows, parameters, activities, and references in 2–30 seconds.
-* **Prohibition of Ad-Hoc Scripts (`ANTI-58`):** All queries MUST execute via native `mxcli -c "SELECT ..."` commands. Generating ad-hoc Python, PowerShell, or Node.js SQLite scripts is strictly prohibited.
+* **Option 1 Assumption:** Standard test design assumes Option 1 (`REFRESH CATALOG FULL`), which indexes entities, attributes, microflows, activities, and references in 2–30 seconds.
+* **Prohibition of Ad-Hoc Scripts (`ANTI-58`):** All queries MUST execute via native `mxcli -c "SELECT ..."` commands (`.\mxcli.bat -c "..."`). Generating ad-hoc Python, PowerShell, or Node.js SQLite scripts is strictly prohibited.
 
-#### 📋 Native Catalog SQL Cheat Sheet:
-* **Microflow Signature & Return Type:**
+#### 📋 Verified Native Catalog SQL Cheat Sheet:
+* **Microflow Signature, Return Type & Complexity:**
   ```sql
-  SELECT Name, ReturnType, ParameterCount, ActivityCount FROM CATALOG.MICROFLOWS WHERE Name = 'Module.MicroflowName';
-  ```
-* **Microflow Input Parameters:**
-  ```sql
-  SELECT Name, DataType, IsReturn FROM CATALOG.MICROFLOW_PARAMETERS WHERE MicroflowName = 'Module.MicroflowName';
+  SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.MicroflowName';
   ```
 * **Activities in Microflow (Sequence & Flow):**
   ```sql
-  SELECT SortOrder, ActivityType, Caption FROM CATALOG.ACTIVITIES WHERE DocumentName = 'Module.MicroflowName' ORDER BY SortOrder;
+  SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.MicroflowName' ORDER BY Sequence;
   ```
 * **Downstream Calls & Entity References:**
   ```sql
-  SELECT SourceName, TargetName, TargetKind, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.MicroflowName';
+  SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.MicroflowName';
   ```
 * **Entity Verification:**
   ```sql
-  SELECT Name, Persistent, AttributeCount FROM CATALOG.ENTITIES WHERE Name = 'Module.EntityName';
+  SELECT Name, QualifiedName, EntityType, AttributeCount FROM CATALOG.ENTITIES WHERE QualifiedName = 'Module.EntityName';
   ```
-* **Entity Attributes:**
+* **Entity Attributes & Data Types (`PAT-75`, `PAT-53`, `ANTI-29`):**
   ```sql
-  SELECT Name, AttributeType FROM CATALOG.ATTRIBUTES WHERE EntityName = 'Module.EntityName';
+  SELECT Name, DataType, Length, IsRequired FROM CATALOG.ATTRIBUTES WHERE EntityQualifiedName = 'Module.EntityName';
+  ```
+* **Java Action Input Parameters (when testing Java Actions):**
+  ```sql
+  SELECT Name, ParameterType, Ordinal FROM CATALOG.JAVA_ACTION_PARAMETERS WHERE QualifiedName = 'Module.JavaAction' ORDER BY Ordinal;
   ```
 
-### 2. Step 2: Fallback to Single-Pass AST Discovery
-The agent falls back to live single-pass `DESCRIBE MICROFLOW <Module.MicroflowName>` or `DESCRIBE PAGE <Module.PageName>` ONLY when:
-1. **Component Absent (0 rows returned):** The targeted component is missing from `catalog.db` (e.g., newly created in Studio Pro without a catalog refresh).
-2. **Deep Branch Logic Required (`PAT-98`):** Option 1 catalog indexing indexes activity types but does not store raw decision formulas, boolean expressions, or XPath constraints needed for negative boundary path testing.
-
-### 3. Non-Blocking User Sync Hint
-Whenever fallback to `DESCRIBE` is triggered due to missing catalog rows (0 rows returned), the agent MUST include an actionable, non-blocking notification in chat:
-> 💡 **Notice:** Target component `'Module.Name'` was not found in the local `mxcli` catalog. Fell back to live AST inspection. To enable sub-second catalog discovery for newly created components, run:
-> ```bash
-> ./mxcli.bat -p "<mpr_path>" -c "REFRESH CATALOG FULL FORCE;"
-> ```
-> *(Option 1 Fast Sync: indexes structures in ~15s)*
+### 3. Schema Resilience & Parameter Invariant
+* **Parameter Discovery:** Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard expected operation and MUST NOT trigger catalog missing warnings.
+* **Schema Resilience:** If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` (or `SELECT * FROM CATALOG.<TABLE> LIMIT 1;`) to inspect live column names before aborting.
 

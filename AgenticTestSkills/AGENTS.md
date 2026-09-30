@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.31.0"
-changes: "Added PAT-108 for canonical documentation and llms.txt retrieval."
+version: "4.32.0"
+changes: "Updated PAT-71 to Bifurcated Model Discovery Protocol in architectural invariants."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -80,7 +80,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 ---
 
 ## 5. Architectural Invariants
-- **Model Queries (PAT-71/72):** Query catalog first via native mxcli CLI (`SELECT ... FROM CATALOG.<TABLE>`). Fall back to single-pass `DESCRIBE MICROFLOW/PAGE` if absent or deep logic needed (with sync hint). Ad-hoc scripts prohibited (`ANTI-58`).
+- **Model Queries (PAT-71/72):** Apply bifurcated model discovery: direct single-pass `DESCRIBE MICROFLOW/PAGE` for target logic, parameters, and expressions; native SQL catalog queries (`SELECT ... FROM CATALOG.<TABLE>`) for entity schemas (`ATTRIBUTES`), call graphs (`REFS`), and activity flows (`ACTIVITIES`). Ad-hoc scripts prohibited (`ANTI-58`).
 - **Create Object Init (PAT-06):** Set initial attributes and associations directly on `CreateObjectActionTestStep(ObjectAction="CreateObject")`. Consecutive Change Object steps are prohibited.
 - **Frontend Isolation (ANTI-20, PAT-64):** UI actions must strictly drive the browser via `MenditectMxFrontendTestKit`. Never substitute UI actions with backend microflows.
 - **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
