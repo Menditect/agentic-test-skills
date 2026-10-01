@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.9.0"
-changes: "Added mta_license_tier to mta_config schema and setup verification."
+version: "1.10.0"
+changes: "Added mta-lint self-test and config verification to workspace health checks."
 ---
 
 # MTA Installation & Configuration Skill
@@ -139,7 +139,7 @@ Guide the user through these four sequential setup micro-states, halting to veri
             npm run update:mxcli     # Downloads the latest mxcli binary from Mendix Labs
             ```
         *   **Health Verification (`npm run verify`):**
-            Execute `npm run verify` to test connectivity to MTA Primitive Tools MCP, local MTA Plugin MCP, and ensure `mxcli.exe` is present and functional.
+            Execute `npm run verify` to test connectivity to MTA Primitive Tools MCP, local MTA Plugin MCP, ensure `mxcli.exe` is functional, and verify the MTA linter suite (`node tools/mta-lint.mjs self-test` and `node tools/mta-lint.mjs config`).
     *   **Service Account & Automated Tools Access Configuration:**
         *   Guide user to configure an automated Service Account in the MTA Portal under **Account Settings** > **Service Accounts**.
         *   Ensure automated tools access ("Call Primitive Tools") is enabled on the service account to prevent `403 Forbidden` errors.

@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.32.0"
-changes: "Added Option A Payload Trap Warning under PAT-111 and refined pre-approval audit Check 5 & 11."
+version: "6.34.0"
+changes: "Added mandatory Step 4 Automated Quality & Compliance Pre-Flight Lint (mta-lint plan) before Gate 1 approval."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -74,11 +74,18 @@ You must progress sequentially through these three interactive planning micro-st
     - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
     - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol), `ANTI-24`..`ANTI-30`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-61` (Deceptive Offline Masking & Commercial Spamming Anti-Pattern)
     - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
-*   **🧠 Mandatory Pattern Applicability Checklist (Silent Chain of Thought - CoT)**:
-    Before drafting the Execution Plan, you **MUST** execute a pattern applicability evaluation internally within your thinking tokens (do **NOT** output this checklist into the chat, to keep chat noise minimal):
-    1. *Component Typology:* Evaluate detected targets (e.g., Authenticated Page, Void Microflow, Selection Dropdowns, Repeating DataGrid2, etc.).
-    2. *Selected Patterns:* Cross-reference the Taxonomy Index above and identify the active `PAT-xx` and `ANTI-xx` rules governing this test.
-    3. *Enforcement Rationale:* Verify internally how the plan will conform to each selected pattern.
+*   **⚡ Step 0: Mandatory Domain Rule Activation Gate (Before Step Design)**:
+    Before drafting any test steps or execution plan, you MUST classify the test target into its active domain and enforce the corresponding architectural rules:
+    - **Domain 1: Backend Logic (Unit / Integration Tests):**
+      *Activate Rules:* `PAT-06` (Direct Init on Create), `PAT-07` (Dual Filter Sentinels for nulls), `PAT-08` (Embedded Count Assertions), `PAT-11` (Ordered Sequential Creation), `PAT-17` (Settings `None`/`Stop`), `PAT-95` (Direct Piping Delete), `PAT-109` (One-Shot AST Extraction), `PAT-110` (Target-Bound Matrix), `PAT-111` (Unified Promotable Blueprint), `ANTI-01`, `ANTI-03`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`.
+    - **Domain 2: Frontend UI Flows (Playwright Tests):**
+      *Activate Rules:* `PAT-03` (3-Case Split), `PAT-18` (Settings `Always`/`_Continue`), `PAT-41` (Navigation & Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog TestKit), `PAT-67` (Widget Inventory), `PAT-72` (Page AST), `PAT-91` (Self-Contained Seeding), `PAT-92` (Symmetric Teardown with Trailing Persist), `PAT-93` (Reverse Dependency Deletion), `PAT-94` (DatePicker Format via BSON dump), `ANTI-20` (No Microflow Substitutions), `ANTI-21`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45`.
+    - **Domain 3: Standalone Test Data Seeding:**
+      *Activate Rules:* `PAT-70` (1-Case Generator), `PAT-06` (Direct Init on Create), `PAT-110` (Target-Bound Matrix), `ANTI-01`, `ANTI-46`.
+    - **Master Step Specification Ledger Schema Mandate (`PAT-12`, `PAT-34`, `ANTI-60`):**
+      All planned test steps MUST be documented in a single, definitive Master Step Specification Ledger table in Section 3 (`## 3. Test Steps & Action Sequence`) of `EP_<TestCaseName>.md` per [execution-plan-template.md](references/execution-plan-template.md). Documenting unrolled steps or repeating steps across redundant collapsible blocks is strictly prohibited (`ANTI-60`).
+    - **Evidence-Based Pre-Approval Checklist & Negative Anti-Pattern Scan (`PAT-82`):**
+      The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 4-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, and `ANTI-20`.
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
@@ -164,8 +171,8 @@ You must progress sequentially through these three interactive planning micro-st
             - **Agentic Mode (saving `.md` to disk):** Default to `true` (Collapsible `<details>`), guaranteeing compact navigation in IDEs (VS Code/Cursor/GitHub). Ensure blank lines surround `<summary>...</summary>` and `</details>` per CommonMark.
             - **Chat Mode (rendering directly in chat):** If client is Claude Desktop or user requests flat markdown, default to `false` (flat `##` Markdown headers) to prevent raw HTML rendering corruption.
     2. *Mode-Aware Execution Plan Delivery (`PAT-89`, `ANTI-41`):*
-        - **Agentic Mode (Filesystem Tools Available):** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical blueprint in [execution-plan-template.md](references/execution-plan-template.md). Persist draft metadata (`execution_plan_file`, `execution_plan_id`, `execution_plan_status: "DRAFT"`) into `mta_state.json`. In the chat stream, render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the appropriate Checkpoint 1 Decision Card.
-        - **Chat Mode (No Filesystem Access / Pure Web Chat):** In the chat stream, render ONLY the concise Executive Summary Box (~35 lines) and the Checkpoint 1 Decision Card (which includes the `[Show Full Plan]` action option). If the user explicitly asks to view the full plan (or clicks `[Show Full Plan]`), render the complete 8-section plan inside a single copyable ````markdown ```` code block.
+        - **Agentic Mode (Filesystem Tools Available):** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical blueprint in [execution-plan-template.md](references/execution-plan-template.md). Persist draft metadata (`execution_plan_file`, `execution_plan_id`, `execution_plan_status: "DRAFT"`) into `mta_state.json`. Run automated plan linting via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"`; if violations are flagged, auto-correct them prior to rendering. In the chat stream, render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the appropriate Checkpoint 1 Decision Card.
+        - **Chat Mode (No Filesystem Access / Pure Web Chat):** In the chat stream, render ONLY the concise Executive Summary Box (~35 lines) and the Checkpoint 1 Decision Card (which includes the `[Show Full Plan]` action option). If the user explicitly asks to view the full plan (or clicks `[Show Full Plan]`), render the complete plan inside a single copyable ````markdown ```` code block.
     3. *Mandatory Active MCP Server Discovery & Parity Verification (`PAT-82`, `ANTI-36`):* In all AI environments (MAIA, Gemini, Claude, Cursor, Antigravity) and modes (Agentic/Chat), inspect the active tool catalog in the current session:
         - *Tool Catalog & Server Status Probing:*
             - Check if `MTA` platform tools (`GetAppModelData`, `GetApplicationDetails`, `CreateTestSuite`, `ExecuteTest`, etc.) are registered in the current session. If registered, call read-only `GetAppModelData` to audit planned elements against the active MTA model revision.
@@ -178,6 +185,14 @@ You must progress sequentially through these three interactive planning micro-st
             - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Not Registered):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
     4. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
     5. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
+*   **⚡ Step 4: Mandatory Automated Quality & Compliance Pre-Flight Lint (`mta-lint plan`)**:
+    In Agentic Mode, immediately after drafting or editing `${execution_plans_dir}/EP_<TestCaseName>.md`, the AI assistant MUST run the plan linter:
+    ```bash
+    node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"
+    ```
+    - **Quality Gate:** Validates 21 structural and anti-pattern rules (`PAT-06`, `PAT-07`, `PAT-08`, `PAT-77`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`).
+    - **Self-Healing Loop:** If any check fails, do NOT present Checkpoint 1. Inspect the error output, modify the plan file to resolve the issue (e.g. converting conceptual columns to target step rows, removing associations from matrix rows), and re-run `node tools/mta-lint.mjs plan` until status is `PASS`.
+    - **Checkpoint 1 Sign-Off:** Only once all 21 checks pass, render the Executive Summary Box and present Checkpoint 1 to the user.
 *   **🚨 Mode-Aware Gate 1 Halt & Auto-Approval Law (`PAT-43`, `exploratory_execution_mode`)**:
     Evaluate `mta_config.json.exploratory_execution_mode` (default: `"auto_execute"`).
     

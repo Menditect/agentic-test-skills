@@ -1,13 +1,13 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.28.0"
-changes: "Updated Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) in exploratory execution guide."
+version: "6.30.0"
+changes: "Added automated 4-phase smoke audit execution via mta-lint audit."
 ---
 
 # MTA Build, Design, & Optimization Skill
 
-🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
+### Cross-Skill Redirection for Fresh / Vague Requests
 
 > [!IMPORTANT]
 > **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
@@ -15,7 +15,7 @@ changes: "Updated Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridg
 > *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
 > *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
 
-🚨 **GLOBAL MTA GUARDRAILS & PLANNING REDIRECTION** 🚨
+### Global MTA Guardrails & Discovery
 
 > [!IMPORTANT]
 > - **Read-Only MTA `Get*` Tools Always Authorized:** Refer to `AGENTS.md` for global guardrails. Read-only MTA `Get*` MCP tools are authorized in any state to inspect model data, discover targets, build context, or verify application state. To build clickable MTA navigation links and resolve configuration parameters, evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user.
@@ -23,7 +23,7 @@ changes: "Updated Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridg
 
 ---
 
-## 🚫 MTA TEST CONSTRUCTION & EXECUTION PATTERN REGISTRY
+## Test Construction & Execution Pattern Registry
 
 You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` and `references/golden-rules.md` at all times. Here is the checklist of active construction boundaries:
 1. **No conversational refusals [^PAT-51]**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
@@ -165,72 +165,103 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
             - **Mid-Phase Sync:** Single `GetTestCaseDetails` call to capture all generated keys.
             - **Phase 2B (`BATCH_BINDING`):** Concurrently dispatch value bindings, parameters, associations, and pattern annotations in safe batches (15-20 calls/turn, `ANTI-32`).
             - **Phase 3 (`VARIATION_REGISTRATION`):** Concurrently register planned variation items from Section 7 of the Execution Plan in safe batches (`ANTI-32`).
-            - **Phase 4 (`VARIATION_POPULATION`):**
-               1. Concurrently allocate scenario containers ($2..N$) in 1 single turn (`CreateTestCaseVariation`, `PAT-86`).
-               2. Capture matrix snapshot via a single `GetTestCaseDetails(TestCaseKey)` call.
-               3. **Mandatory CoT Variation Key Mapping Table:** Output a markdown table mapping each newly created `TestCaseVariationKey` to its corresponding Scenario Name and Item Keys from Section 7 of the Execution Plan. You are **strictly prohibited** from calling cell setter tools before outputting this mapping table.
-               4. **Batch by Scenario (Column):** Dispatch cell updates scenario-by-scenario (column-by-column). Group cell updates by scenario in sequential order. You may batch multiple scenarios per turn up to the safe batch limit of 15 to 20 tool calls per turn (`ANTI-32`), provided scenario column order is maintained and all mapped keys match the upfront CoT mapping table. For null/empty values, pass `SetValueToEmpty="_True"`. Maintain safe chunking (15-20 calls/turn, `ANTI-32`).
+             - **Phase 4 (`VARIATION_POPULATION`):**
+                1. **Upfront Topology Inspection & Recovery:** Query `GetTestCaseDetails(TestCaseKey)` before allocating containers. Inspect existing `TestCaseVariation` entries to detect any partial state from an interrupted previous turn.
+                2. **Idempotent Delta Column Allocation:** If scenarios $1..k$ already exist on the server, allocate ONLY the missing scenarios $k+1..N$ via `CreateTestCaseVariation`. Never issue duplicate `CreateTestCaseVariation` calls for already existing scenario names.
+                3. **Capture Matrix Snapshot:** Single `GetTestCaseDetails(TestCaseKey)` call to capture newly created `TestCaseVariationKey` identifiers.
+                4. **Mandatory CoT Variation Key Mapping Table:** Output a markdown table mapping each `TestCaseVariationKey` to its corresponding Scenario Name and Item Keys from Section 7 of the Execution Plan. Calling cell setter tools before outputting this mapping table is strictly prohibited.
+                5. **Safe Scenario Chunking & Progress Receipts:** Dispatch cell updates grouped by scenario column. Batch cell updates in safe chunks of 15 to 20 tool calls per turn (`ANTI-32`). Output turn-by-turn progress receipts (`"Updated rows 1-2 across scenarios 1-6; proceeding to rows 3-4"`). For empty/null values, pass `SetValueToEmpty="_True"`. Maintain safe chunking until all $M \times N$ cells are populated.
         *   **Chat Mode:** You have no write/execute tools. For each step of the approved Execution Plan, generate the exact, complete JSON payloads and parameters to execute. Instruct the user clearly where to paste or run these inputs, and wait for the user to confirm completion before outputting the next payload.
 
 3. **Phase 3: `STATE_SMOKE_AUDIT`**
    - *State Header:* `[State: STATE_SMOKE_AUDIT | Temp State: None | Active Skill: mta-build]`
-   - *Milestone:* Audit saved Execution Plan against local `.md` file (or chat context), verify Plan ID, revision sequence, and approval timestamp integrity, audit created test cases, steps, and data variations (`GetTestCaseDetails`), execute **Mandatory 1-to-1 Plan-to-Server Step Reconciliation** (`PAT-59`, `PAT-88`) and **Mandatory Data Variation Matrix Reconciliation** (`PAT-107`, `ANTI-57`), verify 0 construction discrepancies and 0 compiler errors, and output the Post-Construction Smoke Audit Report.
-   - **Mandatory 1-to-1 Plan-to-Server Step Reconciliation Protocol (`PAT-59`, `PAT-88`):**
-     * The agent MUST read the local `.md` Execution Plan (Section 5 Detailed Step Configurations) and compare every planned step against the actual test steps returned by `GetTestCaseDetails`.
-     * The Smoke Audit Report MUST include the **Step Reconciliation Table**:
-       ```markdown
-       | Case # | Planned Step Name / Action | Built MTA Step Key | Status |
-       | :--- | :--- | :--- | :--- |
-       | Case 1 | LocalStartOptions | Step 6501 | ✅ MATCH |
-       | Case 1 | Start_Frontend_Test_Locally | Step 6502 | ✅ MATCH |
-       | Case 1 | Create Seed Object (<Entity>) | Step 6503 | ✅ MATCH |
-       | Case 1 | Persist Seed Data | Step 6504 | ✅ MATCH |
-       | Case 2 | StartMxFrontendTestOptions | Step 6510 | ✅ MATCH |
-       | Case 2 | Navigate to Page | Step 6511 | ✅ MATCH |
-       | Case 2 | Stop_MxFrontendTest | Step 6520 | ✅ MATCH |
-       | Case 3 | Teardown Playwright | Step 6522 | ✅ MATCH |
-       | Case 3 | Retrieve runtime <Entity> | Step 6523 | ✅ MATCH |
-       | Case 3 | Delete runtime <Entity> | Step 6524 | ✅ MATCH |
-       | Case 3 | Delete Seeded <Entity> | Step 6525 | ✅ MATCH |
-       | Case 3 | Persist Deletions | Step 6526 | ✅ MATCH |
-       ```
-     * **Step Discrepancy Hard Gate:** If $\text{Planned Step Count} \neq \text{Built Step Count}$ or any planned step is missing (`❌ MISSING`), or unexpected extra steps exist (`⚠️ EXTRA`), the Smoke Audit **MUST FAIL** with status `INCOMPLETE_BUILD_DISCREPANCY`, remain in `STATE_CONSTRUCTION` to build missing steps, and strictly block transition to `STATE_RUN_ANALYZE`.
-   - **Mandatory Data Variation Matrix Reconciliation Protocol (`PAT-107`, `ANTI-57`):**
-     * Whenever Section 7 of the Execution Plan declares Data Variations (more than 1 scenario column or explicit variation items), the agent MUST inspect `GetTestCaseDetails` (specifically `TestCaseVariation` array and `TCVI_TestCaseVariationItems`) and compare every planned variation item, scenario column, name, description, and cell value against the server state.
-     * The Smoke Audit Report MUST include the **Data Variation Matrix Reconciliation Table**:
-       ```markdown
-       ### 📊 Data Variation Matrix Reconciliation Table
-       | Variation Item / Row Name | Target Step | Built MTA Item Key | Planned Scenarios | Built Server Scenarios | Status |
-       | :--- | :--- | :---: | :-: | :-: | :-: |
-       | `Step 1: Entity.FilterAttribute` | Step 6501 | Item 1201 | 3 (`VAR_01`, `VAR_02`, `VAR_03`) | 3 (`VAR_01`, `VAR_02`, `VAR_03`) | ✅ MATCH |
-       ```
-     * **Data Variation Discrepancy Hard Gate (`ANTI-57`):** If Section 7 contains variation items or multiple scenario columns, but:
-       - No variation items were registered (`Item Count == 0`), OR
-       - Built scenario column count is less than planned ($\text{Built Columns} < \text{Planned Columns}$), OR
-       - Any planned scenario name, description (`PAT-77`), or matrix cell value (`PAT-54`) is missing or unpopulated on the server,
-       the Smoke Audit **MUST FAIL** with status `MISSING_DATA_VARIATION_DISCREPANCY`, remain in `STATE_CONSTRUCTION` to complete Phase 3 (`VARIATION_REGISTRATION`) and Phase 4 (`VARIATION_POPULATION`), and strictly block transition to `STATE_RUN_ANALYZE`. Passing a smoke audit without building declared data variations is strictly **PROHIBITED** (`ANTI-57`).
-   - **Mandatory 8-Section Plan Conformity Audit:**
-     1. **Section 1 (Metadata, Provenance & Placement):** App, Config, Suite, Case Name, Category, Execution User (`GetExecutionUsers`), Plan ID (`execution_plan_id`), Revision (`execution_plan_revision`), Supersedes Plan ID (`execution_plan_supersedes_id`), Approved Timestamp (`execution_plan_approved_at`), Approved By (`execution_plan_approved_by`), and Revision Sealing status (`execution_plan_revision`, `execution_plan_approved_at`).
-     2. **Section 2 (Prompt & Input Log vs. MTA Skill Conflicts):** Verify prompt conflicts and automatic skill corrections.
-     3. **Section 3 (Documentation & Risk Alignment):** Objective, Preconditions, Expected Results, Technical Risk, Business Risk.
-     4. **Section 4 (Verified Elements):** Target microflows, pages, entities, and attributes referenced across steps (`GetAppModelData`).
-     5. **Section 5 (Chronological Step Sequence Plan):** Line-by-line check of created steps (`GetTestCaseDetails`) vs Section 5 (step types, sequence, predecessors, execution settings `"Always"`/`"_Continue"` vs `"None"`/`"Stop"`, pattern annotations).
-     6. **Section 6 (Playwright / Browser Settings):** Verify all Playwright options steps and 10 browser settings configured on suite/setup case.
-     7. **Section 7 (Data Variation Matrix & Metadata):** **Cell-by-cell & item-by-item audit with Zero Disconnect Verification (`PAT-107`, `ANTI-57`)**: Call `GetTestCaseDetails` (or `GetTestSuiteDetails`) and verify:
-        * System names and non-empty descriptions match Section 7 (`PAT-77`, `ANTI-31`).
-        * Input attribute/parameter overrides, return value assertions, object counts, exception strings, and validation feedback strings match the Section 7 matrix (`PAT-54`).
-        * **Zero Disconnect Check:** Verify that **zero unapproved additions** exist (no extra assertions, variation items, attributes, or retrieve filters exist on the server that were not declared in Section 7 or Section 5).
-     8. **Section 8 (Applied Testing Patterns & Rationale):** Verify pattern explanations match pattern annotations written into step descriptions via `EditTestStep(EditAction="SetDescription")`.
-   - **Mode-Specific Execution Style:**
-     - **Post-Build Execution Plan Verification & Link Sealing Law (`PAT-88`):**
-      Upon confirming 0 compiler errors, 0 step discrepancies, AND 0 data variation discrepancies (`PAT-107`):
-       * **Machine-Readable Metadata Sealing:** Update the collapsible metadata YAML block (`<details><summary><b>Execution Plan Metadata</b></summary>`, `schema_version: "1.2.0"`) in `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) to record `status: "BUILT_AND_VERIFIED"`, `build_started_at` timestamp, `built_at` timestamp, `builder_system_user` (`$env:USERNAME`), `verified_at` timestamp, `verifier_system_user` (`$env:USERNAME`), `target_configuration_key`, `target_suite_key`, and `test_case_keys`.
-       * **Unified Top Audit Note & Direct Navigation Links Table:** Update the top `> [!NOTE]` callout of the execution plan by appending the smoke verification lines directly beneath the pre-approval lines without an empty line (`**Post-Construction Build & Smoke Audit:** BUILT_AND_VERIFIED (0 Discrepancies)` and `**Build Started:** <build_started_at> | **Built & Verified:** <verified_at> by <builder_system_user> (Elapsed: <duration>)`). Insert the `### Direct MTA Web Navigation Links` markdown table immediately beneath the top note providing 1-click access to the Test Configuration, Test Suite, and all created Test Cases (`[MtaBaseUrl]/p/[ObjectType]/[Key]`).
-       * **Section 9 Collapsible Verification Receipt:** Append Section 9 at the bottom of the execution plan enclosed in a collapsible container (`<details><summary><b>9. MTA Build & Smoke Verification Receipt</b></summary>`), containing non-collapsible `### Smoke Audit Results & Verification Details (0 Discrepancies)` (always open) with the 7-row verification table and dual reconciliation tables.
-       * **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`, `execution_plan_build_started_at`, `execution_plan_built_at`, and `execution_plan_verified_at`.
+   - *Milestone:* Execute the **Native 4-Phase Deterministic Smoke Audit** against the approved Execution Plan and the live server state (`GetTestCaseDetails`), verify 0 construction discrepancies, 0 missing data variations, and 0 compiler errors, seal the Execution Plan receipt, and output the Post-Construction Smoke Audit Report.
+   
+   - **Native 4-Phase Deterministic Smoke Audit Protocol (`PAT-59`, `PAT-88`, `PAT-107`, `ANTI-57`):**
+     To eliminate attention fatigue and prevent hallucinated matches on large JSON payloads, the audit must proceed through four discrete, sequential verification phases:
 
-     * **Agentic Mode:** Read the local Execution Plan markdown file (at `${execution_plans_dir}/EP_<TestCaseName>.md` resolved from `mta_config.json`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md` or path in `mta_state.json`) to retrieve the approved specifications. **Staggered Smoke Audit Reading:** When auditing multi-case test suites (e.g. 3-case frontend suites), dispatch `GetTestCaseDetails(TestCaseKey)` for **ONE test case per turn** rather than querying all test cases simultaneously. Because `GetTestCaseDetails` returns extensive JSON trees of all steps, parameters, and variation items, querying multiple cases concurrently risks token saturation and context truncation. Staggering the inspection across test cases guarantees clean, exhaustive verification of each case. Audit steps and variations line-by-line. Generate and output the Post-Construction Smoke Audit Report featuring both the Step Reconciliation Table and Data Variation Matrix Reconciliation Table, including direct clickable MTA Web navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`) for target Config, Suite, and Case(s), along with a link to the local Execution Plan file.
-     * **Chat Mode:** If read-only MTA MCP tools are available, inspect `GetTestCaseDetails` directly from the server; otherwise verify generated payloads against the approved plan in chat context. Compile and output the Post-Construction Smoke Audit Report directly in the chat stream, featuring the 1-to-1 Step Reconciliation Table, Data Variation Matrix Reconciliation Table, and direct clickable MTA Web navigation links (`[MtaBaseUrl]/p/[ObjectType]/[Key]`). If the user requests to see or copy the finalized plan (or clicks `[Show Sealed Execution Plan]`), render the complete updated Execution Plan (including Section 9 Verification Receipt) in a single copyable ````markdown ```` code block.
+     *   **Phase 1: Step Ledger Reconciliation (Count & Keys)**
+         1. Query `GetTestCaseDetails(TestCaseKey)`.
+         2. Extract the server `steps` array.
+         3. Evaluate: $\text{Count}(\text{Server Steps}) == \text{Count}(\text{Planned Steps in Master Step Ledger})$.
+         4. Output the **Step Reconciliation Table** mapping every planned step to its built server key:
+            ```markdown
+            | Case # | Planned Step # | Planned Step Name / Action | Built MTA Step Key | Action Type | Status |
+            | :--- | :---: | :--- | :--- | :--- | :---: |
+            | Case 1 | Step 1 | Create Seed Object (<Entity>) | Step 6503 | CreateObject | ✅ MATCH |
+            | Case 1 | Step 2 | Persist Seed Data | Step 6504 | Persist | ✅ MATCH |
+            | Case 2 | Step 3 | Microflow Call (<Microflow>) | Step 6510 | MicroflowCall | ✅ MATCH |
+            ```
+         *Step Discrepancy Hard Gate:* If $\text{Planned Step Count} \neq \text{Built Step Count}$ or any planned step is missing (`❌ MISSING`), the audit **MUST FAIL** immediately with status `INCOMPLETE_BUILD_DISCREPANCY (Planned: X, Built: Y)`. Construction must resume to build the missing steps. Transition to `STATE_RUN_ANALYZE` is strictly blocked.
+
+     *   **Phase 2: Variation Item Registration Ledger**
+         1. Inspect `TCVI_TestCaseVariationItems` from `GetTestCaseDetails`.
+         2. For every row declared in Section 7 of the Execution Plan:
+            - Verify that an item exists pointing to the target step and target attribute/parameter/assertion key.
+            - Record the live `TestCaseVariationItemKey`.
+         3. Output the **Variation Item Registration Table**:
+            ```markdown
+            | Section 7 Row Name | Target Step | Target Attribute / Parameter | Built MTA Item Key | Status |
+            | :--- | :--- | :--- | :---: | :---: |
+            | `Step 1: Entity.Attribute` | Step 6503 | `AttributeValueKey: 1201` | Item 4501 | ✅ REGISTERED |
+            | `Step 3: Assert Return` | Step 6510 | `AssertReturnCompareKey: 1202` | Item 4502 | ✅ REGISTERED |
+            ```
+         *Variation Item Hard Gate:* If any row from Section 7 has no registered variation item (`❌ UNREGISTERED`), the audit **MUST FAIL** immediately with status `MISSING_DATA_VARIATION_DISCREPANCY (Unregistered Item: [Row Name])`. Construction must resume to register missing items (`AddTestCaseVariationItem`).
+
+     *   **Phase 3: Scenario Metadata & Description Ledger**
+         1. Inspect the `TestCaseVariation` array from `GetTestCaseDetails`.
+         2. Verify that the server column count matches Section 7 ($\text{Built Columns} == \text{Planned Columns}$).
+         3. For every scenario column, verify:
+            - `Name` matches Section 7 exactly.
+            - `Description` is non-empty and provides scenario context (`PAT-77`, `ANTI-31`).
+         4. Output the **Scenario Metadata Table**:
+            ```markdown
+            | Scenario # | Column Name | Built Variation Key | Description Present? | Status |
+            | :---: | :--- | :---: | :--- | :---: |
+            | #1 | HappyPath_ValidData | Key 8801 | ✅ Yes ("Valid input values...") | ✅ PASS |
+            | #2 | Boundary_ZeroValue | Key 8802 | ✅ Yes ("Boundary edge test...") | ✅ PASS |
+            ```
+         *Metadata Hard Gate:* If column count is deficient or any description is empty/blank (`ANTI-31`), the audit **MUST FAIL** immediately with status `MISSING_DATA_VARIATION_METADATA (Empty description on Scenario [N])`.
+
+     *   **Phase 4: Exhaustive $M \times N$ Cell Parity Ledger**
+         1. Inspect `TCVA_TestCaseVariationValues` from `GetTestCaseDetails`.
+         2. Verify every cell coordinate $(i, j)$ against Section 7 of the Execution Plan:
+            - Value matches the planned scenario value.
+            - For empty/null fields, verify `SetValueToEmpty == "_True"`.
+         3. Output the **Cell Parity Verification Summary**:
+            $$\text{Verified Cells: } M \text{ rows} \times N \text{ scenarios} = \text{Total Cells Checked (0 Discrepancies)}$$
+         *Cell Parity Hard Gate:* If any cell differs between server and plan, the audit **MUST FAIL** with status `CELL_VALUE_PARITY_DISCREPANCY (Row i, Col j: Plan=[Val], Server=[Val])`.
+
+     *   **Compiler Errors Check:**
+         Verify that `TCER_TestConstructionErrors == 0` on all created test cases.
+
+   - **Post-Build Plan Receipt & Link Sealing Protocol (`PAT-88`):**
+     Upon confirming 0 compiler errors, 0 step discrepancies, 0 variation item discrepancies, and 0 cell discrepancies:
+     1. **Update Plan File:** Update the metadata header in `${execution_plans_dir}/EP_<TestCaseName>.md` to record:
+        - `status: "BUILT_AND_VERIFIED"`
+        - `build_started_at`, `built_at`, `verified_at` timestamps
+        - `target_configuration_key`, `target_suite_key`, and `test_case_keys`.
+     2. **Populate Section 6 Verification Receipt:** Populate Section 6 at the bottom of the execution plan (`<details><summary><b>View post-build audit details (Click to expand)</b></summary>`), containing:
+        - Overall Audit Status (`BUILT_AND_VERIFIED - 0 Discrepancies`)
+        - The Step Reconciliation Table (Phase 1)
+        - The Variation Item Table (Phase 2)
+        - The Scenario Metadata Table (Phase 3)
+        - Cell Parity Confirmation (Phase 4).
+     3. **Automated Audit Verification via `mta-lint audit` (Agentic Mode):** In Agentic Mode, do NOT perform manual arithmetic calculation. Instead:
+        - Dispatch `GetTestCaseDetails(TestCaseKey)` to fetch server test case structure.
+        - Save the returned JSON to a temporary file (e.g. `scratch/server_case_<Key>.json`).
+        - Execute `node tools/mta-lint.mjs audit "${execution_plans_dir}/EP_<TestCaseName>.md" "scratch/server_case_<Key>.json"` to perform deterministic 4-phase verification in <50ms.
+        - Populate Section 6 with the linter's formatted verification table. If discrepancies are found, resolve them via mutating tools before declaring verification complete.
+     4. **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`.
+     5. **User Summary & Direct Links:** Render the Smoke Audit Summary in chat with direct clickable navigation links:
+        - Configuration: `[MtaBaseUrl]/p/testconfiguration/[ConfigKey]`
+        - Suite: `[MtaBaseUrl]/p/testsuite/[SuiteKey]`
+        - Case(s): `[MtaBaseUrl]/p/testcase/[CaseKey]`
+        - Local Plan: Clickable markdown file link.
+
+   - **Mode-Specific Handling:**
+     *   **Agentic Mode:** For multi-case suites (e.g. 3-case Frontend suites), dispatch `GetTestCaseDetails(TestCaseKey)` for **ONE test case per turn** to avoid context truncation and token exhaustion. Update local plan files and `mta_state.json` autonomously.
+     *   **Chat Mode:** Inspect `GetTestCaseDetails` from server response or user paste. Render the 4-Phase audit ledgers directly in the chat stream. If requested, provide the complete sealed Execution Plan with Section 6 in a single copyable ````markdown ```` code block.
 
 When the smoke audit is successfully validated, prompt the user: *"The test cases and steps have successfully passed validation and are fully built. Would you like to transition to execution (`STATE_RUN_ANALYZE`) and run the tests?"*
 

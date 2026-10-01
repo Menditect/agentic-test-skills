@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.35.0"
-changes: "Added mandatory Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) to Exploratory Execution Reports."
+version: "4.37.0"
+changes: "Added automated pre-flight plan and smoke audit linter enforcement (mta-lint)."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -37,7 +37,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 2. Skill Routing Index
 - **Setup, Install, Config** -> `STATE_DISCOVERY` (`mta-install-config`)
-- **Scoping, Planning, Test Design, Exploratory Testing, Exploratory Test, Execution Plans, Data Seeding/Generation** -> `STATE_BUILD_PLANNING` (`mta-test-design`)
+- **Scoping, Planning, Test Design, Exploratory Testing, Exploratory Test, Execution Plans, Data Seeding/Generation (for Mendix tests)** -> `STATE_BUILD_PLANNING` (`mta-test-design`). *(Note: "Implementation Plans" for improving, refactoring, or building skills, scripts, or customizations are engineering plans, NOT MTA Execution Plans, and do NOT route to MTA skills).*
 - **Building Steps, Data Variations, Test Containers** -> `STATE_CONSTRUCTION` (`mta-build`)
 - **Smoke Audits, Post-Build Verification** -> `STATE_SMOKE_AUDIT` (`mta-build`)
 - **Running Tests, Exploratory Test Execution, Analyzing Results, Benchmarks** -> `STATE_RUN_ANALYZE` (`mta-run-analyze`)
@@ -55,10 +55,11 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 
 ## 4. Global Safety & Approval Gates
 - **Read-Only Tools Always Authorized:** All read-only `Get*` MTA tools (`GetAppModelData`, `GetTestCaseDetails`, `GetTestRunResults`, etc.) are authorized in any state to discover context.
-- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation, exploratory test, and data seeding requests—including ad-hoc prompts or in-memory plugin execution—must produce an Execution Plan (`EP_*.md`) persisted to disk prior to execution or construction (`ANTI-46`).
+- **Universal Execution Plan Mandate (PAT-43, PAT-70, ANTI-46):** All test creation, exploratory test, and data seeding requests—including ad-hoc prompts or in-memory plugin execution—must produce an Execution Plan (`EP_*.md`) persisted to disk prior to execution or construction (`ANTI-46`). In Agentic Mode, agents MUST pre-lint plans via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"`.
   - *Option A Fast-Path Auto-Execution (`exploratory_execution_mode: "auto_execute"`):* When `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`, the agent is authorized to auto-approve Gate 1 (`status: "AUTO_APPROVED"`), write the plan to disk, and dispatch `MTA_plugin.execute-testcase` in the **very same turn** without halting at Checkpoint 1.
   - *Option A Governed Mode (`exploratory_execution_mode: "prompt_approval"`):* The agent writes the draft plan to disk and halts at Checkpoint 1 for explicit approval before dispatching.
   - *Option B & Live Database Writes (`Rollback == "No"`):* Strictly prohibited from auto-executing. The agent **MUST HALT** for explicit user approval before execution or persistent construction.
+- **Implementation Plans vs. MTA Execution Plans Boundary:** Requests for an "Implementation Plan" (e.g. to develop, refactor, or improve skills, scripts, rules, or Antigravity customizations) are general software engineering implementation plans. They must NEVER be confused with MTA Execution Plans (`EP_*.md`). They are strictly exempt from MTA skills (`mta-test-design`, `mta-build`, `mta-run-analyze`), do not follow the MTA state machine or Checkpoints 1/2, do not generate `EP_*.md` files, and do not use the MTA 8-section test blueprint schema. Proceed with standard engineering plan structures (task breakdowns, affected files, proposed changes, verification).
 - **Mutating Tools Gated:** Calling write/mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`) on the persistent MTA server is strictly prohibited until:
   1. **Gate 1 Approval:** Execution Plan drafted by `mta-test-design` is approved by the user via the Executive Chat Summary (or auto-approved under Option A fast-path).
   2. **Gate 2 Approval:** Target placement and test settings are confirmed by the user.
@@ -90,6 +91,6 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
 - **Frontend Seeding & Teardown Invariant (PAT-17/18, PAT-91/92/93, ANTI-42/43):** Case 1 seeding and Case 3 teardown must have `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"`. Case 1 must default to creating transactional page entities + batch persist with synthetic keys (`'TEST_'`). Case 2 pipes Case 1 scalar data (`SelectValueForValue`) for inputs, filters, and assertions. Case 3 deletes Case 1 seeded records via direct handle piping (`TestStepOutputKey`) without redundant retrieves, deletes Case 2 runtime records via filtered retrieve, and commits in reverse dependency order (`PAT-93`) ending with a trailing batch `Persist` step (`PAT-92`, `Always` / `_Continue`). Backend unit tests use `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"`.
 - **Sequence Reordering Serialization (ANTI-44):** Parallel batching of `SetSequenceOfTestStep` or `SetSequenceOfTestCase` is strictly prohibited; sequence calls must be sequential or eliminated by ordered creation (`PAT-11`).
 - **Empty Object & Association Variation Invariant (`PAT-07`, `ANTI-48`):** Association bindings and object handles can NEVER appear as rows in a Data Variation Matrix (`ANTI-48`). When the AST Null-Check Scanner detects `$Param != empty` or `$Assoc != empty` logic and null boundary variations are scoped, automatically provision `PAT-07` in-memory `Retrieve Object` (Filter) steps with sentinel attributes (`'VALID'` vs `'NONE'`) to vary null parameters or unassigned associations in the fixed MTA step skeleton.
-- **Mandatory 5-Point Semantic Audit & Variation Reconciliation (PAT-07, PAT-80, PAT-107, ANTI-57):** `0 Construction Errors` only proves syntactic model validity. Before passing `STATE_SMOKE_AUDIT`, the agent must execute the **5-Point Semantic Audit** (In-Memory Retrieve handles, attribute filters, association ownership, item count parity, and cell-by-cell matrix value parity). Discrepancies fail with `MISSING_DATA_VARIATION_DISCREPANCY` or `INCOMPLETE_BUILD_DISCREPANCY` and block transition to `STATE_RUN_ANALYZE`.
+- **Mandatory 5-Point Semantic Audit & Variation Reconciliation (PAT-07, PAT-80, PAT-107, ANTI-57):** `0 Construction Errors` only proves syntactic model validity. Before passing `STATE_SMOKE_AUDIT`, the agent must execute the **5-Point Semantic Audit** (In-Memory Retrieve handles, attribute filters, association ownership, item count parity, and cell-by-cell matrix value parity; in Agentic Mode, run `node tools/mta-lint.mjs audit <plan.md> <server.json>`). Discrepancies fail with `MISSING_DATA_VARIATION_DISCREPANCY` or `INCOMPLETE_BUILD_DISCREPANCY` and block transition to `STATE_RUN_ANALYZE`.
 - **Zero Disconnect:** The approved Execution Plan is the absolute SSOT during construction and audit. Improvised steps or variations are strictly prohibited.
 - **Domain Delegation:** Detailed execution plan schemas (8 design sections + Section 9 post-construction receipt), 8-field step definitions, and 14-point audits are strictly governed by `mta-test-design`; horizontal layered construction SOP and tool batching are strictly governed by `mta-build`.

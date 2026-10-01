@@ -1,0 +1,10 @@
+{
+  "testCaseKey": "TC_12345",
+  "name": "TC_SampleValid",
+  "testSteps": [
+    { "key": "101", "name": "CreateObject", "actionType": "CreateObject" }
+  ],
+  "dataVariationItems": [],
+  "dataVariations": [],
+  "TCER_TestConstructionErrors": 2
+}
