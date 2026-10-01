@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.31.0"
-changes: "Updated Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) in exploratory execution guide."
+version: "6.32.0"
+changes: "Added Option A Payload Trap Warning under PAT-111 and refined pre-approval audit Check 5 & 11."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -130,6 +130,7 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Prohibition of Unrolled Step Sequences (`ANTI-60`):* Documenting unrolled, concatenated, or multiplied step sequences (e.g. repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` is strictly prohibited.
     *   *Zero Plan Divergence:* The structure of `EP_*.md` on disk must be 100% identical whether drafted for Option A exploratory execution or Option B persistent MTA construction.
     *   *Option A Dynamic Plugin Execution Adapter Protocol:* The on-disk Execution Plan (`EP_*.md`) is the immutable Master Promotable Blueprint. When executing under Option A, the agent (`mta-run-analyze`) acts purely as a runtime compiler that programmatically expands the canonical skeleton across the $N$ variation matrix rows into the JVM `execute-testcase` payload in memory (or executes the parametric matrix) without altering the master blueprint on disk.
+    *   *🚨 OPTION A PAYLOAD TRAP WARNING (`PAT-111`, `ANTI-48`):* Even when drafting an Execution Plan for Option A local exploratory auto-execution, you are **STRICTLY PROHIBITED** from using raw plugin shortcuts in the documented `EP_*.md` file (such as placing association bindings in Section 7 matrix rows or relying on `UseEmptyObjectList: true`). The file written to disk MUST ALWAYS be the **Master Promotable Blueprint** using `PAT-07` Dual-Retrieve filter steps (`Size == 'Small'` vs `'NONE'`) for nullable objects and associations. When executing Option A, the agent acts purely as a runtime compiler that translates `PAT-07` empty object handles into the local JVM payload in memory.
     *   *Seamless Promotion Guarantee (`PAT-106`):* Because the plan on disk is already a canonical MTA skeleton with `PAT-07` and Section 7 matrix, promoting an Option A exploratory test to Option B requires zero step restructuring or matrix translation. Construction proceeds directly from the exact same skeleton.
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.

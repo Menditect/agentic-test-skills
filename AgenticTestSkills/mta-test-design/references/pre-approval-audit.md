@@ -34,7 +34,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Verification Criteria:** All browser setup paths utilize relative logical paths (e.g., `/index.html`, `/login.html`) rather than hardcoded absolute host URLs.
 - **Compliance Status:** `PASS` or `NA`.
 
-### [CHECK 5] Explicit Filter Attributes, Input Handles & Variation Matrix (`PAT-07`, `PAT-19`, `PAT-27`, `PAT-53`, `PAT-54`, `PAT-77`, `PAT-86`, `PAT-87`, `PAT-98`, `PAT-102`, `PAT-103`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-48`)
+### [CHECK 5] Explicit Filter Attributes, Input Handles & Variation Matrix (`PAT-07`, `PAT-19`, `PAT-27`, `PAT-53`, `PAT-54`, `PAT-77`, `PAT-86`, `PAT-87`, `PAT-98`, `PAT-102`, `PAT-103`, `PAT-111`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-48`)
 - **Scope:** All Tests.
 - **Verification Criteria:** 
   1. `Retrieve` steps specify `Input Handle Source`.
@@ -43,7 +43,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
   4. **Negative Validation Assertions (`PAT-98`):** Every negative scenario in the variation matrix MUST include explicit validation feedback assertions (`CreateAssertValidationFeedbackMessageCompare` or Count > 0).
   5. **Empty Variation Cell Default Protocol (`PAT-102`):** In MTA Data Variations, newly cloned columns default to empty/NULL. Setting a cell to empty/NULL is achieved by omitting the setter tool call, NEVER passing string literals like `"NULL"` or deprecated flags like `SetValueToEmpty = "_True"`.
   6. **Exploratory Single-Session Constraint (`PAT-103`):** In Option A exploratory chained payloads, unique attribute constraints must use dynamic timestamp entropy or intra-block teardown to avoid collisions in the single shared session.
-  7. **Matrix Simplicity (`ANTI-48`):** Keep variation matrices focused on scalar attributes and single-entity parameter variations. Do not force complex multi-entity object graphs or deep parent-child relational trees into a flat variation matrix.
+  7. **Matrix Simplicity & Association Binding Guard (`PAT-111`, `ANTI-48`):** Verify that 0 association rows exist in Section 7 matrix (`ANTI-48`). All nullable objects or unassigned associations MUST be modeled via `PAT-07` Dual-Retrieve filter sentinels in Section 5 and Section 7 (`PAT-111`). Keep variation matrices focused on scalar attributes and single-entity parameter variations. Do not force complex multi-entity object graphs or deep parent-child relational trees into a flat variation matrix.
   8. The Data Variation Matrix adheres to horizontal layout capped at 8 columns and includes the `Domain Type / Constraint` column. Every variation includes full scenario Name and Description metadata (`PAT-77`, `ANTI-31`).
 - **Compliance Status:** `PASS`.
 
@@ -98,9 +98,9 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Verification Criteria:** Section 1 explicitly declares the Execution Strategy (Option A vs Option B for Backend; Option B Persistent MTA for Frontend). The Checkpoint 1 prompt presents the appropriate path for user choice. Prior to constructing persistent testcases, a pre-construction suite audit (`GetTestSuiteDetails`) is executed to ensure testcase name uniqueness and prevent unintended duplicates (`PAT-101`).
 - **Compliance Status:** `PASS`.
 
-### [CHECK 11] Backend Exploratory Plan & External API Integration (`PAT-63`, `PAT-73`..`PAT-76`, `PAT-103`, `ANTI-28`..`ANTI-30`, `ANTI-50`, `ANTI-53`)
+### [CHECK 11] Backend Exploratory Plan & External API Integration (`PAT-63`, `PAT-73`..`PAT-76`, `PAT-103`, `PAT-111`, `ANTI-28`..`ANTI-30`, `ANTI-48`, `ANTI-50`, `ANTI-53`)
 - **Scope:** Backend Tests with Option A (NA for Frontend or Option B).
-- **Verification Criteria:** Adheres to the single-case flow with complete `TCEX_RQ_TestStepRun` JSON message blueprint. All entity fixture attributes are verified against domain model AST (`DESCRIBE ENTITY`) prior to compilation (`PAT-75`). Runtime date macros are pre-computed into concrete ISO 8601 timestamps, never passed as unparsed tokens (`ANTI-53`). Microflows invoking external REST/SOAP APIs are mocked or decoupled before testing (`ANTI-50`). Single-session unique constraints use timestamp entropy or intra-block teardown (`PAT-103`).
+- **Verification Criteria:** Adheres to the single-case flow with complete `TCEX_RQ_TestStepRun` JSON message blueprint. All entity fixture attributes are verified against domain model AST (`DESCRIBE ENTITY`) prior to compilation (`PAT-75`). Runtime date macros are pre-computed into concrete ISO 8601 timestamps, never passed as unparsed tokens (`ANTI-53`). Microflows invoking external REST/SOAP APIs are mocked or decoupled before testing (`ANTI-50`). Single-session unique constraints use timestamp entropy or intra-block teardown (`PAT-103`). The documented `EP_*.md` plan MUST strictly conform to the Master Promotable Blueprint (`PAT-111`) using `PAT-07` Dual-Retrieve sentinels for nullable objects/associations; raw plugin shortcuts (such as association rows in variation matrices or `UseEmptyObjectList: true`) in `EP_*.md` are strictly prohibited (`ANTI-48`).
 - **Compliance Status:** `PASS` or `NA`.
 
 ### [CHECK 12] Frontend UI to Backend Microflow Substitution Prohibition (`ANTI-20`)

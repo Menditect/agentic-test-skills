@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [v1.23.2](releases/v1.23.2.md) | 2026-10-01 | enforced use of blueprint in execution plan |
 | [v1.23.1](releases/v1.23.1.md) | 2026-10-01 | updated promotion bridge to MTA |
 | [v1.23.0](releases/v1.23.0.md) | 2026-10-01 | docs: add Autonomous Skill Release & Mainline Publication Law |
 | [v1.22.3](releases/v1.22.3.md) | 2026-10-01 | updated skills for latest mta mcp tool schema definitions |
