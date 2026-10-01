@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.33.0"
-changes: "Added PAT-109 One-Shot AST Protocol, PAT-110/ANTI-59 Target-Bound Variation Matrix Schema, and AST Null-Check Scanner for PAT-07."
+version: "4.34.0"
+changes: "Added PAT-111 Unified Promotable Blueprint Invariant, ANTI-60 Unrolled Step Sequence Anti-Pattern, and Option A Dynamic Plugin Execution Adapter Protocol."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -75,11 +75,13 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
   - *If only `MTA` is active (`MTA_plugin` absent/offline):* Option A is blocked, Option B is **ACTIVE**. Present **Checkpoint 1 Case 5**.
   - *If neither is active (Dual Outage):* Both execution options are blocked; save draft locally. Present **Checkpoint 1 Case 4**.
   Frontend UI tests require the MTA Platform and never execute via `MTA_plugin`. Stored offline plans lacking MTA placement keys cannot enter `STATE_CONSTRUCTION` without first verifying model parity (`GetAppModelData`) and completing Gate 2 placement discovery (`PLAN_STEP_2`).
+- **Free MTA Exploratory License Detection & Consultative Value Protocol (PAT-112, ANTI-61):** When the `MTA` MCP server is not configured/unreachable and `MtaPluginModule.MTAConnectionUrl` is `wss://services.menditect.com` (or `mta_license_tier: "free_exploratory"`), the user operates under the Free MTA Exploratory License. Unlimited local in-memory testing (`execute-testcase`) and Execution Plan generation (`EP_*.md`) are supported. Promotion to the persistent MTA Platform (`MTA` MCP tools) is not available without a paid MTA Platform License. The assistant presents Checkpoint 1 Case 1 during planning and Checkpoint 4 Case B upon execution, providing consultative upgrade information linking to [Menditect](https://menditect.com) without deceptive masking or commercial nagging (`ANTI-61`).
 - **Canonical Documentation & llms.txt Retrieval Protocol (PAT-108):** When resolving specialized or out-of-core architectural questions (e.g. SAML SSO configuration, REST API microflow testing, JsonPath string assertions, Nanoflow testing, FileDocument handling, or unknown runtime errors), agents MUST query the official Menditect documentation index (via `llms_txt_url` in `mta_config.json`, fallback `https://documentation.menditect.com/llms.txt`, or local index `.agent/docs/mta_docs_index.json`). Use `read_url_content` to fetch verified documentation articles dynamically rather than guessing or hallucinating custom implementations. Always provide clickable canonical documentation URLs using the resolved `documentation_url` in user responses.
 
 ---
 
 ## 5. Architectural Invariants
+- **Unified Promotable Blueprint Invariant (PAT-111, ANTI-60):** Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 7 Data Variation Matrix. Documenting unrolled, concatenated, or multiplied step sequences (e.g. repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` is strictly prohibited (`ANTI-60`). The Option A dispatcher acts purely as a runtime compiler when assembling JVM payloads. Nullable boundary tests MUST use `PAT-07` Dual-Retrieve sentinels in the master skeleton, guaranteeing seamless promotion to the MTA Platform (`PAT-106`) with zero structural rework.
 - **Model Queries (PAT-71/72/109):** Apply bifurcated model discovery: direct single-pass `describe microflow <Module.Microflow> -p <project.mpr>` as tool turn 1 for backend logic (`PAT-109`), extracting parameter signatures, return types, `@annotation` documentation, decisions, expressions, and sub-flows in 1 single turn; `DESCRIBE PAGE` for UI components; native SQL catalog queries (`SELECT ... FROM CATALOG.<TABLE>`) for entity schemas (`ATTRIBUTES`), call graphs (`REFS`), and activity flows (`ACTIVITIES`). Redundant exploratory listing cascades prohibited (`ANTI-26`). Ad-hoc scripts prohibited (`ANTI-58`).
 - **Target-Bound Variation Matrix Schema (PAT-110, ANTI-59):** Section 7 Data Variation Matrices must strictly format rows (Y-axis) as concrete test step targets (`Step X: Entity.Attribute`, `Step Y: Filter Entity.Attribute`, `Step Z: Assert Return Value`) and columns (X-axis) as Scenarios (`#1` to `#N`). High-level conceptual boolean flags (e.g. `Association Assigned (Yes/No)`) are strictly prohibited in matrix headers (`ANTI-59`).
 - **Create Object Init (PAT-06):** Set initial attributes and associations directly on `CreateObjectActionTestStep(ObjectAction="CreateObject")`. Consecutive Change Object steps are prohibited.

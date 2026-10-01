@@ -39,7 +39,7 @@ When an existing Execution Plan (`EP_*.md`) targeting the same microflow or page
 
 Render the Executive Summary Box (~35 lines) and clickable file link in chat, followed by the appropriate Checkpoint 1 card below:
 
-### Case 1: When Model Delta is Detected or MTA MCP Server is Unavailable (Option B Blocked ➔ Option A Only)
+### Case 1: When Model Delta is Detected, MTA MCP Server is Unavailable, or Free Exploratory License is Active (Option B Blocked ➔ Option A Only)
 
 ```markdown
 ---
@@ -47,16 +47,17 @@ Render the Executive Summary Box (~35 lines) and clickable file link in chat, fo
 ## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & EXECUTION STRATEGY
 
 > [!WARNING]
-> **MTA Server Availability & Model Check:** Persistent MTA Building Blocked (`ANTI-36`)  
-> **Status:** [Out of Sync — Model Delta Detected | MTA MCP Server Unavailable]  
-> [If Model Delta: One or more planned elements do not exist in the active MTA server revision.  
+> **MTA Server Availability & License Tier:** Persistent MTA Building Blocked (`PAT-112`, `ANTI-36`, `ANTI-61`)  
+> **Status:** [Free MTA Exploratory License Active | Out of Sync — Model Delta Detected | MTA MCP Server Unavailable]  
+> [If Free Exploratory License: Operating under Free MTA Exploratory License (`mta_license_tier: "free_exploratory"`). Local in-memory microflow testing (`MTA_plugin`) is fully active. Persistent test suites, Playwright Frontend UI testing, and CI/CD pipelines require a paid MTA Platform License.  
+> If Model Delta: One or more planned elements do not exist in the active MTA server revision.  
 > If MTA Server Unavailable: The remote `MTA` MCP server is not registered or reachable in your assistant environment.]
 >
 > 💡 **Automate Model Updates on Every Commit (Model Delta):**  
 > If you want MTA to automatically update its model revision whenever you commit, you can subscribe your Test Configuration to your git branch. Expand the setup guide below for step-by-step instructions.
 >
-> 🔌 **Enabling the MTA MCP Server (Server Unavailable):**  
-> Option B (Persistent MTA Tests) requires the remote `MTA` MCP server to construct test assets. Option A (Local Exploratory Testing) remains fully operational via `MTA_plugin`. To enable Option B, ensure the `MTA` MCP server is configured in your tool environment (`mta_config.json` or IDE MCP settings).
+> 🔌 **Enabling the MTA MCP Server (Server Unavailable / Enterprise Tier):**  
+> Option B (Persistent MTA Tests) requires the remote `MTA` MCP server to construct test assets. Option A (Local Exploratory Testing) remains fully operational via `MTA_plugin`. To enable Option B, ensure the `MTA` MCP server is configured in your tool environment (`mta_config.json` or IDE MCP settings) and a valid MTA Platform License is active.
 
 <details>
 <summary><b>MTA Branch Subscription Setup Guide (Automate Model Sync on Every Git Commit)</b></summary>
@@ -420,4 +421,71 @@ All steps and variations have been verified on the server with 0 errors and 0 di
 * **Option 1:** Execute Test Suite Now (`STATE_RUN_ANALYZE`)
 * **Option 2:** Inspect Test in MTA Web UI First
 ```
+
+---
+
+## 7. 🚀 Checkpoint 4: Exploratory Test Promotion Decision Cards (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-56`, `ANTI-61`)
+
+Output this card upon successful execution of an Option A exploratory test in `STATE_RUN_ANALYZE`:
+
+### Case A: Connected MTA Platform Server Active (Paid / Configured Tier)
+
+```markdown
+---
+
+## 🚀 CHECKPOINT 4: EXPLORATORY TEST PROMOTION & PERSISTENCE
+
+> [!NOTE]
+> **Exploratory Run Complete:** All scenarios executed successfully in-memory (`Rollback = Yes`).  
+> **Target Execution Plan:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/EP_<TestCaseName>.md)  
+> **Platform Status:** `MTA` MCP Server Connected (`PAT-82`, `PAT-106`)
+
+### 🧭 Next Step Options
+
+| Option | Action | Target | Description |
+| :---: | :--- | :--- | :--- |
+| **Option 1** | **Promote to MTA Platform** *(Recommended)* | MTA Server Platform | Proceed to Checkpoint 2 (Gate 2: Placement & Target Summary) to persist this test into your test suite for CI/CD automated regression. |
+| **Option 2** | **Keep as Local Exploratory Plan** | Local Workspace | Retain the approved Execution Plan on disk (`EP_*.md`) for future local in-memory testing without saving to central MTA server. |
+| **Option 3** | **Iterate & Add Variations** | Local Workspace | Add more boundary test cases, edge cases, or data variations to this plan before promoting. |
+
+> ❓ *Would you like to promote this test to your persistent MTA test suite?*
 ```
+
+### Case B: Free MTA Exploratory License Active (`mta_license_tier: "free_exploratory"`, `PAT-112`, `ANTI-61`)
+
+```markdown
+---
+
+## 🚀 CHECKPOINT 4: EXPLORATORY TEST SUMMARY & NEXT STEPS
+
+> [!NOTE]
+> **Exploratory Run Complete:** All scenarios executed successfully in-memory (`Rollback = Yes`).  
+> **Target Execution Plan:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/EP_<TestCaseName>.md)  
+> **License Tier:** Free MTA Exploratory License (`PAT-112`)
+
+### 🧭 Next Step Options
+
+| Option | Action | Target | Description |
+| :---: | :--- | :--- | :--- |
+| **Option 1** | **Retain Local Execution Plan** *(Active)* | Local Workspace | Keep [`EP_<TestCaseName>.md`](file:///absolute/path/to/EP_<TestCaseName>.md) on disk for rapid in-memory re-testing during development. |
+| **Option 2** | **Iterate & Add Scenarios** | Local Workspace | Design and execute additional test cases or data variations against your microflows. |
+| **Option 3** | **Explore MTA Platform Upgrade** | Menditect Platform | Learn how persistent test suites, Playwright Frontend UI testing, and CI/CD pipelines automate regression testing. |
+
+<details>
+<summary><b>Unlock Persistent Test Suites & CI/CD with MTA Platform</b></summary>
+
+You are currently using the **Free MTA Exploratory License**, which enables unlimited local in-memory microflow testing via the MTA Plugin.
+
+**With a Paid MTA Platform License, you also get:**
+* 🏛️ **Persistent Test Suites & Test Configurations:** Centralized, reusable test asset repository across your entire development team.
+* 🎭 **Full Playwright Frontend UI Testing:** Automated end-to-end browser testing with automated seed data injection and teardown.
+* 🔄 **Automated CI/CD & Model Synchronization:** Automatic regression test execution in Mendix Build Pipelines (GitHub Actions, GitLab CI, Azure DevOps) with Git branch subscriptions.
+* 📊 **Test Run History & Failure Telemetry:** Interactive Playwright trace viewer, step-level timing profiles, and regression trend dashboards.
+
+To learn more or request a license, visit [Menditect](https://menditect.com) or contact **info@menditect.com**.
+
+</details>
+
+> ❓ *How would you like to proceed?*
+```
+

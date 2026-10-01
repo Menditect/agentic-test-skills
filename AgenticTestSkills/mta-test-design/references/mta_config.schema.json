@@ -2,12 +2,22 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MTAConfiguration",
   "description": "Canonical configuration schema for Menditect Test Automation (MTA) workspace, MCP servers, runtime plugin, and tooling.",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string",
       "description": "URI of the JSON Schema defining this document."
+    },
+    "mta_license_tier": {
+      "type": "string",
+      "enum": [
+        "free_exploratory",
+        "paid_enterprise",
+        "auto"
+      ],
+      "default": "auto",
+      "description": "MTA License Tier. 'free_exploratory' enables unlimited local JVM exploratory testing via MTA Plugin; 'paid_enterprise' enables full persistent suites, Playwright UI testing, and CI/CD automation; 'auto' detects dynamically from environment."
     },
     "workspace_type": {
       "type": "string",

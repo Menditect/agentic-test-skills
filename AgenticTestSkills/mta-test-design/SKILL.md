@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.29.0"
-changes: "Updated for latest MTA MCP tool schemas: atomic return value assertions, unified validation feedback quantifier enums, and standardized date offsets."
+version: "6.30.0"
+changes: "Enforced PAT-111 Unified Promotable Blueprint Invariant and ANTI-60 Unrolled Step Sequence Anti-Pattern, mandated PAT-07 across all documented plans, and codified separation between Master Promotable Blueprint and Option A JVM Dispatch Adapter."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -66,13 +66,13 @@ You must progress sequentially through these three interactive planning micro-st
 *   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
 *   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
     Before designing steps, identify which pattern families apply to your target:
-    - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `ANTI-02`
+    - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `PAT-111` (Unified Promotable Blueprint Invariant), `ANTI-02`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern)
     - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-95` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
     - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `ANTI-07`, `ANTI-10`, `ANTI-13`
     - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `PAT-110` (Target-Bound Variation Matrix Schema), `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-59` (Conceptual Untargeted Matrix Columns)
     - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
-    - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `ANTI-24`..`ANTI-30`
+    - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol), `ANTI-24`..`ANTI-30`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-61` (Deceptive Offline Masking & Commercial Spamming Anti-Pattern)
     - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
 *   **🧠 Mandatory Pattern Applicability Checklist (Silent Chain of Thought - CoT)**:
     Before drafting the Execution Plan, you **MUST** execute a pattern applicability evaluation internally within your thinking tokens (do **NOT** output this checklist into the chat, to keep chat noise minimal):
@@ -116,6 +116,7 @@ You must progress sequentially through these three interactive planning micro-st
           - Step B: Retrieve Object (`RetrieveOption = "Teststep"`, filtering on `Size == 'Small'`)
           - Step C: Create Host Object (e.g. `Car`, setting association `Car_CarSize` to Step B output handle).
           - In Variation Matrix: Scenario with unassigned association sets Step B Filter to `'NONE'`, resulting in no association linked.
+    *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`PAT-07`, `PAT-111`):* Omission of `PAT-07` in favor of raw JSON shortcuts (such as `"UseEmptyObjectList": true` or omitted association keys) inside the documented Execution Plan `EP_*.md` is strictly prohibited. All nullable variations MUST be modeled via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
 *   **🚨 Strict Target-Bound Data Variation Matrix Schema (`PAT-110`, `ANTI-59`)**:
     *   *Matrix Schema Invariant:* Section 7 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
@@ -124,6 +125,12 @@ You must progress sequentially through these three interactive planning micro-st
         - `Step Z: Assert Return Value` / `Assert Validation Feedback`
     *   *Scenario Columns:* Columns (X-Axis) must strictly represent Scenarios (`#1 (ScenarioName)` through `#N (ScenarioName)`).
     *   *Prohibition of Conceptual Columns (`ANTI-59`):* High-level conceptual column headers or arbitrary boolean flags (e.g. `Association Assigned: Yes/No`, `Discount Applied`) are strictly prohibited in matrix headers. Every varied dimension must bind 1:1 to an MTA variation item (`TCVI_TestCaseVariationItems`).
+*   **🚨 Mandatory Unified Promotable Blueprint Invariant & Anti-Unrolling Law (`PAT-111`, `ANTI-60`)**:
+    *   *Unified Promotable Blueprint Invariant (`PAT-111`):* Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 7 Data Variation Matrix.
+    *   *Prohibition of Unrolled Step Sequences (`ANTI-60`):* Documenting unrolled, concatenated, or multiplied step sequences (e.g. repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` is strictly prohibited.
+    *   *Zero Plan Divergence:* The structure of `EP_*.md` on disk must be 100% identical whether drafted for Option A exploratory execution or Option B persistent MTA construction.
+    *   *Option A Dynamic Plugin Execution Adapter Protocol:* The on-disk Execution Plan (`EP_*.md`) is the immutable Master Promotable Blueprint. When executing under Option A, the agent (`mta-run-analyze`) acts purely as a runtime compiler that programmatically expands the canonical skeleton across the $N$ variation matrix rows into the JVM `execute-testcase` payload in memory (or executes the parametric matrix) without altering the master blueprint on disk.
+    *   *Seamless Promotion Guarantee (`PAT-106`):* Because the plan on disk is already a canonical MTA skeleton with `PAT-07` and Section 7 matrix, promoting an Option A exploratory test to Option B requires zero step restructuring or matrix translation. Construction proceeds directly from the exact same skeleton.
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.
     *   *Single-Pass Page AST Seed Derivation (`PAT-72`):* If inspecting the local Mendix model via `mxcli`:
@@ -163,7 +170,7 @@ You must progress sequentially through these three interactive planning micro-st
             - Check if `MTA` platform tools (`GetAppModelData`, `GetApplicationDetails`, `CreateTestSuite`, `ExecuteTest`, etc.) are registered in the current session. If registered, call read-only `GetAppModelData` to audit planned elements against the active MTA model revision.
             - Check if `MTA_plugin` tools (`execute-testcase`) are registered in the current session.
         - *Outcome Classification:*
-            - **Case 1 (`MTA` Not Registered / Down / Out-of-Sync & `MTA_plugin` Active):** If `MTA` tools are not registered in the tool catalog (e.g., in MAIA with only `MTA_plugin` configured) or unreachable, mark Check 14 as `BLOCKED (MTA Server Not Registered / Unavailable | Plugin Active)`. Strictly block Option B (`ANTI-36`). For Backend tests, Option A remains **ACTIVE**. Present **Checkpoint 1 Case 1**. NEVER present Option B as available.
+            - **Case 1 (`MTA` Not Registered / Down / Out-of-Sync / Free Exploratory License & `MTA_plugin` Active):** If `MTA` tools are not registered in the tool catalog (e.g., in MAIA with only `MTA_plugin` configured or under Free MTA Exploratory License `mta_license_tier: "free_exploratory"`, `PAT-112`) or unreachable, mark Check 14 as `BLOCKED (Free Exploratory Tier / MTA Server Not Registered | Plugin Active)`. Strictly block Option B (`ANTI-36`, `ANTI-61`). For Backend tests, Option A remains **ACTIVE**. Present **Checkpoint 1 Case 1**. NEVER present Option B as available.
             - **Case 2 (`MTA` In-Sync & Active AND `MTA_plugin` Active):** Both servers are registered and live. Mark Check 14 as `PASS (Verified)`. Present **Checkpoint 1 Case 2** (Dual Track Option A vs Option B).
             - **Case 3 (Standalone Data Seeding):** Present **Checkpoint 1 Case 3** (Option A Direct Seeding vs Option B Persistent Seeding).
             - **Case 4 (Dual Outage — `MTA` Down/Unregistered AND `MTA_plugin` Down/Unregistered):** Mark Check 14 as `BLOCKED (Both MCP Servers Offline)`. Strictly block both Option A and Option B execution. If in Agentic Mode, save the draft plan (`status: "DRAFT"`), record metadata in `mta_state.json`, present **Checkpoint 1 Case 4 (Offline / Dual-Outage Mode)**, and provide setup instructions.
@@ -270,7 +277,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 169 testing patterns/anti-patterns (`PAT-01..110`, `ANTI-01..59`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 173 testing patterns/anti-patterns (`PAT-01..112`, `ANTI-01..61`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---
@@ -288,5 +295,5 @@ Depending on the approved Execution Strategy, output the appropriate handoff tri
 
 ## 🚫 MTA TEST SCOPING & DESIGN PATTERN REGISTRY
 
-All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-96`, and `ANTI-01` through `ANTI-46`) are centrally defined and maintained in the canonical pattern catalog:  
+All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-111`, and `ANTI-01` through `ANTI-60`) are centrally defined and maintained in the canonical pattern catalog:  
 ➔ **[references/mta-patterns-and-antipatterns-reference.md](references/mta-patterns-and-antipatterns-reference.md)**

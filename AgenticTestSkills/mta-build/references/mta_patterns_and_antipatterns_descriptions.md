@@ -1555,10 +1555,52 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-111`: Unified Promotable Blueprint Invariant
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 7 Target-Bound Data Variation Matrix. Regardless of whether drafted for Option A (exploratory in-memory execution via `MTA_plugin`) or Option B (persistent MTA Platform construction), the on-disk plan structure is 100% identical and promotable with zero rework. Nullable parameters and unassigned associations MUST use the `PAT-07` Dual Retrieve/Filter Empty Object Pattern rather than raw JSON shortcuts.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-60` (Unrolled Step Sequence Anti-Pattern).
+  * **Related Patterns:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern), `PAT-63` (Backend Exploratory Single-Payload Blueprint Law), `PAT-73` (Chained Single-Payload Matrix Execution Law), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law), `PAT-110` (Target-Bound Data Variation Matrix Schema).
+  * **Related Anti-Patterns:** `ANTI-27` (Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern), `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass Anti-Pattern), `ANTI-48` (Complex Object Graph in Flat Variation Matrix).
+
+---
+
+### `ANTI-60`: Unrolled Step Sequence Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Documenting unrolled, concatenated, or multiplied step sequences (e.g., repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` instead of the canonical parameterized skeleton + Section 7 matrix. This creates severe structural drift between exploratory tests and persistent MTA platform assets, breaking promotability (`PAT-106`) and violating the Zero Disconnect Law.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-111` (Unified Promotable Blueprint Invariant).
+  * **Related Patterns:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern), `PAT-63` (Backend Exploratory Single-Payload Blueprint Law), `PAT-73` (Chained Single-Payload Matrix Execution Law), `PAT-110` (Target-Bound Data Variation Matrix Schema).
+  * **Related Anti-Patterns:** `ANTI-08` (Duplicate Test Case Proliferation), `ANTI-27` (Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern), `ANTI-48` (Complex Object Graph in Flat Variation Matrix).
+
+---
+
+### `PAT-112`: Free MTA Exploratory License Detection & Consultative Value Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When the `MTA` platform MCP server is not configured or unreachable AND the MTA connection URL is `https://services.menditect.com` (constant `MtaPluginModule.MTAConnectionUrl` = `wss://services.menditect.com`), the agent MUST accurately classify the environment as the **Free MTA Exploratory License** tier (`mta_license_tier: "free_exploratory"`). In this free tier, the user has full, unlimited access to local in-memory exploratory microflow testing via `MTA_plugin.execute-testcase` and local Execution Plan authoring (`EP_*.md`). When the user explicitly requests promotion of an exploratory test to the persistent MTA Platform or attempts persistent test building, the agent MUST clearly and politely explain that persistent test suites, Playwright Frontend UI testing, and CI/CD automated regression pipelines require a paid MTA Platform License, providing transparent guidance on how to upgrade without intrusive commercial messaging or unprompted interruptions during development.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-61` (Deceptive Offline Masking & Commercial Spamming Anti-Pattern).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-57` (Exploratory-to-Persistent Test Promotion Protocol), `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-16` (Unpromoted Exploratory Test Drift), `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern), `ANTI-56` (Unplaced Exploratory Promotion Bypass Anti-Pattern).
+
+---
+
+### `ANTI-61`: Deceptive Offline Masking & Commercial Spamming Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Falsely attributing a Free MTA Exploratory License environment to an offline MTA server outage or broken network connectivity, confusing the developer into troubleshooting non-existent infrastructure issues; or conversely, spamming unsolicited marketing messages, pricing prompts, or sales pitches during active development and exploratory test execution when the user has not asked for persistent promotion or CI/CD integration.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol).
+  * **Related Patterns:** `PAT-56` (Dual-Track Decision Gate & Exploratory-First Verification), `PAT-82` (Mandatory Pre-Construction Model-to-MTA Schema Audit & Promotion Feasibility Law).
+  * **Related Anti-Patterns:** `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-112`** (Free MTA Exploratory License Detection & Consultative Value) | **`ANTI-61`** (Deceptive Offline Masking & Commercial Spamming) | Transparent license tier classification & consultative upgrade guidance vs false outage claims or commercial spam |
+| **`PAT-111`** (Unified Promotable Blueprint Invariant) | **`ANTI-60`** (Unrolled Step Sequence Anti-Pattern) | Enforcing canonical K-step skeleton with Section 7 variation matrix vs unrolled multi-block sequences |
 | **`PAT-110`** (Target-Bound Data Variation Matrix Schema) | **`ANTI-59`** (Conceptual Untargeted Matrix Columns) | Binding matrix rows strictly to concrete test step target elements and columns to scenarios vs arbitrary conceptual flags |
 | **`PAT-109`** (One-Shot Microflow AST Extraction Protocol) | **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Single-pass mxcli describe microflow for parameters, logic, annotations, and sub-flows vs multi-turn exploratory query cascades |
 | **`PAT-91`** (Self-Contained Frontend Seeding) | **`ANTI-42`** (Ambient Precondition Reliance) | Explicit Case 1 seeding (Create + Persist) with master data distinction vs relying on ambient DB or copying unseeded server cases |

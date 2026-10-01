@@ -837,11 +837,17 @@ To protect development databases from unintended corruption:
 
 ## 9. Promotion to Persistent MTA Platform Test (`PAT-57`, `PAT-70`, `ANTI-16`)
 
-### A. Automated Exploratory Test Promotion (`PAT-57`)
-When an exploratory test executes and passes in-memory (`RollbackTcseAfterExecution = "true"`), the assistant MUST prompt the user to promote it:
-> *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
+### A. Automated Exploratory Test Promotion (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-61`)
+When an exploratory test executes and passes in-memory (`RollbackTcseAfterExecution = "true"`), the assistant evaluates the active license tier and platform connectivity:
 
-Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test Case with Data Variations (**no structure selection needed**). The agent transitions directly to `mta-test-design` (`PLAN_STEP_2`) for the **Universal Iterative Placement Protocol** (Config -> Suite -> Case -> Gate 2 Sign-off), saves the approved execution plan locally as a `.md` file (or preserves in chat context) upon Gate 2 approval, and proceeds to `STATE_CONSTRUCTION` in `mta-build`.
+1. **Connected MTA Platform Server Active (`paid_enterprise` / Configured MCP):**
+   * Prompt the user using **Checkpoint 4 Case A**:
+     > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
+   * Upon confirmation, the test promotes directly 1:1 to a persistent Backend Test Case with Data Variations (**no structure selection needed**). The agent transitions directly to `mta-test-design` (`PLAN_STEP_2`) for the **Universal Iterative Placement Protocol** (Config -> Suite -> Case -> Gate 2 Sign-off), saves the approved execution plan locally as a `.md` file upon Gate 2 approval, and proceeds to `STATE_CONSTRUCTION` in `mta-build`.
+2. **Free MTA Exploratory License Active (`free_exploratory`, `PAT-112`):**
+   * Output the exploratory test execution results and present **Checkpoint 4 Case B**.
+   * Transparently explain that persistent test suites, Playwright Frontend UI testing, and CI/CD automated regression pipelines require a paid MTA Platform License.
+   * Provide the collapsible MTA Platform upgrade information without commercial nagging (`ANTI-61`), and confirm that the local Execution Plan (`EP_*.md`) remains active and fully functional for local in-memory testing.
 
 ---
 

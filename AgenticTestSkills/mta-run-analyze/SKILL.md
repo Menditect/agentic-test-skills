@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.23.0"
-changes: "Updated for latest MTA MCP tool schemas: atomic return value assertions, unified validation feedback quantifier enums, and range operator assertions."
+version: "6.24.0"
+changes: "Added PAT-112 Free MTA Exploratory License Detection and Consultative Value Protocol, Checkpoint 4 Case B, and canonical menditect.com licensing links."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -168,13 +168,16 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 
         </details>
         ```
-    *   **Promotion Prompt & Reverse-Handoff Protocol (`PAT-57`):**
+    *   **Promotion Prompt & Reverse-Handoff Protocol (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-56`, `ANTI-61`):**
         *   **If the run passes (`PASS`):**
-            *   *Silent Pre-Flight MTA Server Probing:* Check if the remote `MTA` MCP server is registered and responsive.
-            *   *If `MTA` Server is Active:* Prompt the user:
-                > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
-            *   *If `MTA` Server is Offline / Unavailable:* Do NOT offer immediate persistent promotion. Instead, output:
-                > *"The exploratory test executed and passed in [X] ms with full rollback. 💾 **Note:** Promotion to persistent MTA storage is currently suspended because the remote MTA Platform server is offline. Your Execution Plan is safely stored on disk as a draft (`status: 'DRAFT'`). Once the MTA server is available, you can request persistent construction."*
+            *   *Evaluate Active License Tier & Server Connectivity:*
+                - **Case A: Connected MTA Platform Server Active (`paid_enterprise` / Configured MCP):**
+                  Present **Checkpoint 4 Case A** from `references/checkpoint-templates.md`:
+                  > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
+                - **Case B: Free MTA Exploratory License Active (`free_exploratory`, `PAT-112`, `ANTI-61`):**
+                  Present **Checkpoint 4 Case B** from `references/checkpoint-templates.md`. Transparently inform the user that local in-memory exploratory testing remains active and unlimited, while persistent test suites, Playwright Frontend UI testing, and CI/CD pipelines require a paid MTA Platform License. Offer the collapsible platform upgrade guide referencing [Menditect](https://menditect.com) without disruptive commercial interruptions (`ANTI-61`).
+                - **Case C: Offline / Server Down (Configured but Unreachable):**
+                  > *"The exploratory test executed and passed in [X] ms with full rollback. 💾 **Note:** Promotion to persistent MTA storage is currently suspended because the remote MTA Platform server is offline. Your Execution Plan is safely stored on disk as a draft (`status: 'DRAFT'`). Once the MTA server is available, you can request persistent construction."*
         *   **If the run encounters failures (`FAIL` or `ERROR`):**
             *   Output the diagnostic log and provide actionable next-step guidance:
                 > ❓ **Next Steps:**
