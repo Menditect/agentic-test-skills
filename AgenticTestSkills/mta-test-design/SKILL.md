@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.30.0"
-changes: "Enforced PAT-111 Unified Promotable Blueprint Invariant and ANTI-60 Unrolled Step Sequence Anti-Pattern, mandated PAT-07 across all documented plans, and codified separation between Master Promotable Blueprint and Option A JVM Dispatch Adapter."
+version: "6.31.0"
+changes: "Updated Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) in exploratory execution guide."
 ---
 
 # MTA Test Scoping & Design Skill

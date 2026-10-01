@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, and global safety guardrails."
-version: "4.34.0"
-changes: "Added PAT-111 Unified Promotable Blueprint Invariant, ANTI-60 Unrolled Step Sequence Anti-Pattern, and Option A Dynamic Plugin Execution Adapter Protocol."
+version: "4.35.0"
+changes: "Added mandatory Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) to Exploratory Execution Reports."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -68,7 +68,7 @@ If the user asks an out-of-state QA/architecture question, set `Temp State: STAT
   > 🧠 **Tool Execution Reasoning:**
   > * **Tool Call:** `[ToolName]` | **Active State:** `[STATE_NAME]` | **Reasoning:** [Why called]
 - **Sanitized Token & Auth Failure Interception (PAT-95, CWE-209 Hardening):** Whenever an MCP, API, or execution call fails due to missing, expired, invalid, or unauthorized tokens (e.g. HTTP 401, HTTP 403, missing `MTA_MCP_AUTH_HEADER`, or unmapped `ApplicationInstanceToken`), you MUST intercept the error and return the standardized **Sanitized Layered Return Message** (plain user action steps first, followed by `<details><summary>Technical Details</summary>` with standard protocol status codes). Outputting raw internal Mendix entity names, internal microflows, database queries, cryptographic hashes, or token prefixes in user-facing error messages is **STRICTLY PROHIBITED**.
-- **Exploratory-to-Persistent Placement Bridge Law (PAT-106, ANTI-56):** When promoting an Option A exploratory test to persistent MTA storage, the agent MUST immediately execute read-only placement discovery (`GetApplicationDetails`, `GetTestConfigurationDetails`, `GetExecutionUsers`) in that same turn and present Checkpoint 2 (Gate 2: Placement & Target Summary) for explicit user sign-off. Transitioning directly into `STATE_CONSTRUCTION` or invoking mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`) without an approved Checkpoint 2 box in transcript context is strictly prohibited (`ANTI-56`).
+- **Exploratory-to-Persistent Placement Bridge Law (PAT-106, ANTI-56):** Whenever an Option A exploratory test executes successfully (`Overall Result: PASS`), the agent MUST automatically append Section 5 (MTA Platform Promotion Call-to-Action / Checkpoint 2 Bridge) to the execution report prompting the user to promote the test to the MTA Platform (Option B). When promoting an Option A exploratory test to persistent MTA storage, the agent MUST immediately execute read-only placement discovery (`GetApplicationDetails`, `GetTestConfigurationDetails`, `GetExecutionUsers`) in that same turn and present Checkpoint 2 (Gate 2: Placement & Target Summary) for explicit user sign-off. Transitioning directly into `STATE_CONSTRUCTION` or invoking mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`) without an approved Checkpoint 2 box in transcript context is strictly prohibited (`ANTI-56`).
 - **Mandatory Active MCP Server Discovery Invariant (PAT-82, PAT-89, ANTI-36):** In ALL environments (MAIA, Gemini, Claude, Cursor, Antigravity) and modes, the agent MUST inspect the active tool catalog in the current session.
   - *If only `MTA_plugin` is active (`execute-testcase` present; `MTA` tools absent or offline):* Check 14 evaluates as `BLOCKED (MTA Server Not Registered / Unavailable | Plugin Active)`. Option B is strictly blocked (`ANTI-36`). Option A is **ACTIVE**. Present **Checkpoint 1 Case 1**.
   - *If both `MTA` and `MTA_plugin` are active:* Verify server model parity (`GetAppModelData`). Present **Checkpoint 1 Case 2 (Dual Track)**.

@@ -336,7 +336,31 @@ All exploratory test executions (`MTA_plugin.execute-testcase`) MUST present the
 | `VAR_01` | `[Baseline / Nominal Scenario]` | `N` | `X ms` | `PASS` |
 | `VAR_02` | `[Boundary / Edge Case]` | `N` | `X ms` | `PASS` |
 
-#### 5. Error & Diagnostic Logs (Included on FAIL or ERROR)
+#### 5. MTA Platform Promotion Call-to-Action (MANDATORY on PASS - PAT-106 Bridge)
+*   **Case A (Connected MTA Platform Server Active):**
+    > 🚀 **Promote to MTA Platform (Option B):**
+    > This exploratory test passed cleanly in-memory. Would you like to save it permanently to MTA for CI/CD regression testing?
+    > * **Application:** `[AppName]`
+    > * **Target Suite:** `[SuiteName]` (e.g. 'Unit tests')
+    > * **Execution User:** `[ExecutionUser]` (e.g. 'MxAdmin')
+    > 
+    > *Reply **"Yes"** to construct persistent test assets on the MTA Platform.*
+
+*   **Case B (Free MTA Exploratory License Active - PAT-112, ANTI-61):**
+    > 🚀 **Exploratory Run Complete (Free Exploratory License):**
+    > This exploratory test passed cleanly in-memory (`Rollback = Yes`).
+    > * **Execution Plan:** [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md)
+    > 
+    > *Note: Promotion to persistent MTA Platform storage, Playwright UI testing, and CI/CD pipelines requires a paid MTA Platform License ([Menditect](https://menditect.com)).*
+
+*   **Case C (MTA Server Offline / Unreachable):**
+    > 💾 **Exploratory Run Complete (Offline Mode):**
+    > This exploratory test passed cleanly in-memory.
+    > * **Execution Plan:** Saved locally as draft at [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md).
+    > 
+    > *Note: Promotion is suspended until the remote MTA Platform server is reachable.*
+
+#### 6. Error & Diagnostic Logs (Included on FAIL or ERROR)
 *   **Exception Class / Type:** `[e.g. com.mendix.systemwideinterfaces.MendixRuntimeException]`
 *   **Error Message:** `[Exact error message or assertion failure detail]`
 *   **Stack Trace / Feedback:**

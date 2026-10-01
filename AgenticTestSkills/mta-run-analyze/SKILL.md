@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.24.0"
-changes: "Added PAT-112 Free MTA Exploratory License Detection and Consultative Value Protocol, Checkpoint 4 Case B, and canonical menditect.com licensing links."
+version: "6.25.0"
+changes: "Added mandatory Section 5 MTA Platform Promotion Call-to-Action (PAT-106 Bridge) to the standard Exploratory Test Execution Report format."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -149,7 +149,31 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         | `VAR_01` | `[Baseline / Nominal Scenario]` | `N` | `X ms` | `PASS` |
         | `VAR_02` | `[Boundary / Edge Case]` | `N` | `X ms` | `PASS` |
 
-        #### 5. Error & Diagnostic Logs (Included on FAIL or ERROR)
+        #### 5. MTA Platform Promotion Call-to-Action (MANDATORY on PASS - PAT-106 Bridge)
+        *   **Case A (Connected MTA Platform Server Active):**
+            > 🚀 **Promote to MTA Platform (Option B):**
+            > This exploratory test passed cleanly in-memory. Would you like to save it permanently to MTA for CI/CD regression testing?
+            > * **Application:** `[AppName]`
+            > * **Target Suite:** `[SuiteName]` (e.g. 'Unit tests')
+            > * **Execution User:** `[ExecutionUser]` (e.g. 'MxAdmin')
+            > 
+            > *Reply **"Yes"** to construct persistent test assets on the MTA Platform.*
+
+        *   **Case B (Free MTA Exploratory License Active - PAT-112, ANTI-61):**
+            > 🚀 **Exploratory Run Complete (Free Exploratory License):**
+            > This exploratory test passed cleanly in-memory (`Rollback = Yes`).
+            > * **Execution Plan:** [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md)
+            > 
+            > *Note: Promotion to persistent MTA Platform storage, Playwright UI testing, and CI/CD pipelines requires a paid MTA Platform License ([Menditect](https://menditect.com)).*
+
+        *   **Case C (MTA Server Offline / Unreachable):**
+            > 💾 **Exploratory Run Complete (Offline Mode):**
+            > This exploratory test passed cleanly in-memory.
+            > * **Execution Plan:** Saved locally as draft at [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md).
+            > 
+            > *Note: Promotion is suspended until the remote MTA Platform server is reachable.*
+
+        #### 6. Error & Diagnostic Logs (Included on FAIL or ERROR)
         *   **Exception Class / Type:** `[e.g. com.mendix.systemwideinterfaces.MendixRuntimeException]`
         *   **Error Message:** `[Exact error message or assertion failure detail]`
         *   **Stack Trace / Feedback:**
