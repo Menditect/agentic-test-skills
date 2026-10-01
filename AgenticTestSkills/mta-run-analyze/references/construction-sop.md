@@ -1,7 +1,7 @@
 # Deterministic Horizontal Layered Construction SOP
 
 **📍 Location:** `references/construction-sop.md` | **🏠 Parent:** [MTA Build Skill](../SKILL.md)  
-*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`*
+*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-109`, `PAT-110`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`, `ANTI-59`*
 
 This Standard Operating Procedure (SOP) governs the active construction of test cases, steps, assertions, and data variations on the Menditect Test Automation (MTA) platform.
 
@@ -107,7 +107,7 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 ### Phase 3: Upfront Variation Registration (`Temp State: VARIATION_REGISTRATION`)
 1. Enable variations on the test case: `AddTestCaseVariationItem(Action="EnableTestCaseDatavariation")`.
 2. Concurrently dispatch **ALL** planned `AddTestCaseVariationItem` calls across all variation columns in safe batches (15-20 calls per turn).
-   - *SSOT Lock:* Every variation item registered MUST match Section 7 of the approved Execution Plan 1:1. Zero unapproved additions or improvisations allowed (`ANTI-32`).
+   - *SSOT Lock & Target-Bound Schema (`PAT-110`, `ANTI-32`, `ANTI-59`):* Every variation item registered MUST match Section 7 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). Zero unapproved additions, conceptual boolean flags, or improvisations allowed (`ANTI-32`, `ANTI-59`).
 
 ---
 

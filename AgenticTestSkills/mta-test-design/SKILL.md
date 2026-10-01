@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.28.0"
-changes: "Updated PAT-71 to Bifurcated Model Discovery Protocol with verified catalog schema and direct single-pass AST inspection."
+version: "6.29.0"
+changes: "Updated for latest MTA MCP tool schemas: atomic return value assertions, unified validation feedback quantifier enums, and standardized date offsets."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -69,8 +69,8 @@ You must progress sequentially through these three interactive planning micro-st
     - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `ANTI-02`
     - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-95` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
-    - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `ANTI-07`, `ANTI-10`, `ANTI-13`
-    - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`
+    - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `ANTI-07`, `ANTI-10`, `ANTI-13`
+    - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `PAT-110` (Target-Bound Variation Matrix Schema), `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-59` (Conceptual Untargeted Matrix Columns)
     - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
     - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `ANTI-24`..`ANTI-30`
     - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
@@ -83,9 +83,14 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
     *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
-*   **⚡ Bifurcated Model Discovery Protocol (`PAT-71`, `ANTI-26`, `ANTI-58`)**:
-    *   *Path A: Targeted Logic & Parameter Extraction (Direct Single-Pass AST Inspection):* When designing tests for a specified Microflow or Nanoflow, the agent MUST bypass catalog queries and immediately execute `DESCRIBE MICROFLOW <Module.Microflow>` in a single pass. This directly extracts input parameter signatures, return types, arithmetic formulas, decision expressions, and annotation text (which are not indexed in SQLite catalog tables) in 1 single turn, avoiding redundant intermediate catalog calls.
-    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL):* When discovering domain attributes for Case 1 test data seeding, verifying entity existence, or mapping callers/callees, the agent MUST query the local SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
+*   **⚡ One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol (`PAT-109`, `PAT-71`, `ANTI-26`, `ANTI-58`)**:
+    *   *Mandatory Initial Tool Call (`PAT-109`):* For any backend test, the very first model inspection action MUST be a single-pass:
+        ```bash
+        .\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>
+        ```
+    *   *Single Source of Truth Extraction:* The output of `describe microflow` provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
+    *   *Secondary Query Prohibition & Escape Hatch:* Agents are strictly forbidden from performing exploratory query cascades (such as querying `catalog.db`, running `SHOW ENTITIES`, or executing separate `DESCRIBE MICROFLOW` on sub-microflows) unless secondary queries are explicitly required to trace nested side-effects (`PAT-97`) or verify domain attribute length constraints (`PAT-53`).
+    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL):* When Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
         - Microflow metadata & complexity: `SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.Microflow';`
         - Activities & call graph: `SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.Microflow' ORDER BY Sequence;`
         - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
@@ -96,14 +101,29 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Schema Resilience & Parameter Invariant:* Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard operation and MUST NOT trigger false catalog missing warnings. If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` before aborting.
     *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
-*   **🚨 Mandatory Empty Object & Association Variation Protocol (`PAT-07`, `ANTI-48`)**:
+*   **🚨 AST Null-Check Decision Scanner & Mandatory `PAT-07` In-Memory Retrieve Injection**:
+    *   *Pre-Planning AST Decision Audit:* During the single-shot `mxcli describe microflow` inspection, scan the AST for:
+        1. **Parameter Null Checks:** `$Parameter != empty`
+        2. **Association / Associated Object Null Checks:** `$Object/Association != empty` or retrieved associated object null checks.
+    *   *Automatic Skeleton Injection (`PAT-07`, `ANTI-48`):* If any parameter or association null check is detected, AND the planned test scope includes null/empty boundary scenarios, the planner MUST NOT pipe `Create Object` directly to the microflow or association. It MUST automatically generate the **Dual Retrieve/Filter Empty Object Pattern (`PAT-07`)** in Phase 1:
+        - **For Empty Parameter Support:**
+          - Step A: Create Object (e.g. `Car`, initial attributes with synthetic key and sentinel attribute `LicensePlate = 'VALID'`)
+          - Step B: Retrieve Object (`RetrieveOption = "Teststep"`, filtering on `LicensePlate == 'VALID'`)
+          - Step C: Microflow Call (bound to Step B output handle).
+          - In Variation Matrix: Scenario #1..#N-1 sets Step B Filter to `'VALID'`; Scenario #N (Null boundary) sets Step B Filter to `'NONE'`, producing an empty object handle in memory.
+        - **For Empty Association Support:**
+          - Step A: Create Target Object (e.g. `CarSize`, setting sentinel `Size = 'Small'`)
+          - Step B: Retrieve Object (`RetrieveOption = "Teststep"`, filtering on `Size == 'Small'`)
+          - Step C: Create Host Object (e.g. `Car`, setting association `Car_CarSize` to Step B output handle).
+          - In Variation Matrix: Scenario with unassigned association sets Step B Filter to `'NONE'`, resulting in no association linked.
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
-    *   *Mandatory Empty Object Pattern Implementation (`PAT-07`):* Whenever a boundary or negative scenario requires passing an `empty`/NULL object or unassigned association across variations, you **MUST** structure the test steps using the Dual Retrieve/Filter pattern:
-        1. **Create Step:** Create the entity with a short sentinel attribute (e.g. `Size = Small` or `Code = "VAL"`).
-        2. **Retrieve Step (`RetrieveOption = "Teststep"`):** Retrieve from the Create step with an explicit attribute filter (`Size = Small` or `Code = "VAL"`).
-        3. **Consumer Binding:** Bind the association or microflow object parameter to the **Retrieve step output**, never directly to the Create step.
-        4. **Variation Matrix Row:** In Section 7, vary the **Create step's scalar attribute** (`"VAL"` for valid scenario $\rightarrow$ retrieve succeeds, vs `"NON"` for empty scenario $\rightarrow$ retrieve returns `empty` in memory).
-        5. Alternatively, if variations alter the core entity structure without `PAT-07`, split into dedicated, separate test cases in the suite.
+*   **🚨 Strict Target-Bound Data Variation Matrix Schema (`PAT-110`, `ANTI-59`)**:
+    *   *Matrix Schema Invariant:* Section 7 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
+        - `Step X: Entity.Attribute`
+        - `Step Y: Filter Entity.Attribute` (for `PAT-07` empty object/association variations)
+        - `Step Z: Assert Return Value` / `Assert Validation Feedback`
+    *   *Scenario Columns:* Columns (X-Axis) must strictly represent Scenarios (`#1 (ScenarioName)` through `#N (ScenarioName)`).
+    *   *Prohibition of Conceptual Columns (`ANTI-59`):* High-level conceptual column headers or arbitrary boolean flags (e.g. `Association Assigned: Yes/No`, `Discount Applied`) are strictly prohibited in matrix headers. Every varied dimension must bind 1:1 to an MTA variation item (`TCVI_TestCaseVariationItems`).
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.
     *   *Single-Pass Page AST Seed Derivation (`PAT-72`):* If inspecting the local Mendix model via `mxcli`:
@@ -250,7 +270,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 166 testing patterns/anti-patterns (`PAT-01..108`, `ANTI-01..58`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 169 testing patterns/anti-patterns (`PAT-01..110`, `ANTI-01..59`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

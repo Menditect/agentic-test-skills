@@ -1526,10 +1526,41 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-109`: One-Shot Microflow AST Extraction Protocol
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** The very first model inspection action for a backend test MUST be a single-pass `.\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>` command. The output of `describe microflow` provides a comprehensive single source of truth containing parameter signatures, return types, documentation annotations (`@annotation`), decision nodes (`if`, `case`), arithmetic expressions, sub-microflow calls, and inline entity mutations (`change $Object`). Agents are strictly forbidden from performing exploratory query cascades (such as querying `catalog.db`, running `SHOW ENTITIES`, or executing separate `DESCRIBE MICROFLOW` on sub-microflows) unless secondary queries are explicitly required to trace nested side-effects (`PAT-97`) or verify domain attribute length constraints (`PAT-53`).
+* **Related Rules:**
+  * **Related Patterns:** `PAT-71` (Bifurcated Model Discovery Protocol), `PAT-97` (Recursive Side-Effect Discovery Law), `PAT-53` (Domain Attribute Length Constraint Verification Law).
+  * **Related Anti-Patterns:** `ANTI-26` (Redundant Exploratory Model Query Cascade Anti-Pattern).
+
+---
+
+### `PAT-110`: Target-Bound Data Variation Matrix Schema
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Section 7 of the Execution Plan (`EP_<TestCaseName>.md`) MUST strictly format the Data Variation Matrix such that rows (Y-axis) represent concrete test steps and target elements (`Step X: Entity.Attribute`, `Step Y: Filter Entity.Attribute`, `Step Z: Assert Return Value`), and columns (X-axis) strictly represent Scenarios (`#1` to `#N`). This guarantees exact 1-to-1 parity with MTA server variation items (`TCVI_TestCaseVariationItems`), eliminating schema ambiguity when transitioning from `STATE_BUILD_PLANNING` into `STATE_CONSTRUCTION`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-59` (Conceptual Untargeted Matrix Columns Anti-Pattern).
+  * **Related Patterns:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern), `PAT-19` (Data Variation Consolidation), `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law), `PAT-107` (Mandatory Data Variation Matrix Reconciliation Audit Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-48` (Complex Object Graph in Flat Variation Matrix).
+
+---
+
+### `ANTI-59`: Conceptual Untargeted Matrix Columns Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Formatting Section 7 of the Execution Plan as a high-level conceptual table with arbitrary boolean flags (e.g., columns for `Fuel`, `CarSize Assigned (Yes/No)`, `Discount Applied`) instead of target-bound test step rows. Conceptual matrix formats violate the Zero Disconnect Law, as MTA requires variation items to map directly to specific test steps (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or `FilterAttribute`), causing severe friction and build failures during `STATE_CONSTRUCTION`.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-110` (Target-Bound Data Variation Matrix Schema).
+  * **Related Patterns:** `PAT-07` (Dual Retrieve/Filter Empty Object Pattern), `PAT-19` (Data Variation Consolidation), `PAT-77` (Mandatory Data Variation Container Metadata & Description Persistence Law).
+  * **Related Anti-Patterns:** `ANTI-31` (Unpersisted Variation Metadata & Description Omission Anti-Pattern), `ANTI-48` (Complex Object Graph in Flat Variation Matrix).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-110`** (Target-Bound Data Variation Matrix Schema) | **`ANTI-59`** (Conceptual Untargeted Matrix Columns) | Binding matrix rows strictly to concrete test step target elements and columns to scenarios vs arbitrary conceptual flags |
+| **`PAT-109`** (One-Shot Microflow AST Extraction Protocol) | **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Single-pass mxcli describe microflow for parameters, logic, annotations, and sub-flows vs multi-turn exploratory query cascades |
 | **`PAT-91`** (Self-Contained Frontend Seeding) | **`ANTI-42`** (Ambient Precondition Reliance) | Explicit Case 1 seeding (Create + Persist) with master data distinction vs relying on ambient DB or copying unseeded server cases |
 | **`PAT-92`** (Symmetric Seeding Teardown Cleanup) | **`ANTI-43`** (Asymmetric Teardown Seeding Leak) | Enforcing Case 3 teardown cleanup for all Case 1 seeded records vs leaking master data |
 | **`PAT-94`** (DatePicker Format Model Extraction) | **`ANTI-45`** (Date Format Assumption / Defaulting) | Extracting exact CustomDateFormat via mxcli bson dump vs guessing default date format strings |

@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.22.0"
-changes: "Synchronized reference playbooks with PAT-71 Bifurcated Model Discovery Protocol and verified catalog schema."
+version: "6.23.0"
+changes: "Updated for latest MTA MCP tool schemas: atomic return value assertions, unified validation feedback quantifier enums, and range operator assertions."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill

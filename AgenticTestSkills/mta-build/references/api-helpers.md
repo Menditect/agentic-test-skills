@@ -345,13 +345,13 @@ When executing microflows via `CreateMicroflowCallTestStep`:
 ## 🎯 MTA CORE MICROFLOW RETURN VALUE ASSERTIONS
 
 For backend testing, return values are verified using:
-1. **Create Base Assertion:** Call `CreateAssertMicroflowReturnValue(TestStepKey=..., ComparisonOperator="Equals", ActionFailedAssert="ContinueTestRun"|"StopTestRun")` ➔ Returns string confirmation. Note that `TestStepKey`, `ComparisonOperator`, and `ActionFailedAssert` are all mandatory upon creation.
-2. **Resolve Assertion Key:** Call `GetTeststepDetails(TestStepKey)` to retrieve `AssertMicroflowReturnValueCompareKey`.
-3. **Configure Expected Value:** Call `EditAssertMicroflowReturnValueCompare` with:
+1. **Create Base Assertion:** Call `CreateAssertMicroflowReturnValue(TestStepKey=..., CreateAction="SetStringValue", ComparisonOperator="Equals", ActionFailedAssert="ContinueTestRun"|"StopTestRun", StringValue=...)` ➔ Returns confirmation with initial value configured directly, or allows editing via `EditAssertMicroflowReturnValueCompare`. Allowed `ComparisonOperator` values include `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanEqualTo"`, `"LessThan"`, `"LessThanEqualTo"`, `"Contains"`, `"NotContains"`, `"Range"`, `"NotRange"`.
+2. **Resolve Assertion Key:** Call `GetTeststepDetails(TestStepKey)` to retrieve `AssertMicroflowReturnValueCompareKey` (if editing or binding variations).
+3. **Configure / Update Expected Value:** Call `EditAssertMicroflowReturnValueCompare` with:
    - `AssertMicroflowReturnValueCompareKey`: Key resolved in Step 2.
-   - `ComparisonOperator`: `"Equals"` (or `"NotEquals"`, `"GreaterThan"`, etc. - **MANDATORY**: You MUST pass `ComparisonOperator` in the same call as `EditAction`; calling value setters like `SetDecimalValue` or `SetStringValue` without passing `ComparisonOperator` throws `Cannot set ... because the given ComparisonOperator is not valid`!).
-   - `EditAction`: `"SetStringValue"`, `"SetBooleanValue"`, `"SetIntegerLongValue"`, `"SetDecimalValue"`, `"SetEnumerationValue"`, `"SetDateTimeValueWithCurrentDateTime"`, `"SetDateTimeValueWithSpecifiedDateTime"`, etc.
-   - Target expected value arguments (e.g., `StringValue="Success"` or `IntegerLongValue=100`, per `PAT-81`).
+   - `ComparisonOperator`: `"Equals"`, `"NotEquals"`, `"GreaterThan"`, `"GreaterThanEqualTo"`, `"LessThan"`, `"LessThanEqualTo"`, `"Contains"`, `"NotContains"`, `"Range"`, `"NotRange"`.
+   - `EditAction`: `"SetStringValue"`, `"SetBooleanValue"`, `"SetIntegerLongValue"`, `"SetDecimalValue"`, `"SetEnumerationValue"`, `"SetDateTimeValueWithCurrentDateTime"`, `"SetDateTimeValueWithCurrentDateTimeWithOffset"`, `"SetDateTimeValueWithSpecifiedDateTime"`, `"SetMinimumAndMaximumDateTimeValues"`, `"SetMinimumAndMaximumDecimalValues"`, `"SetMinimumAndMaximumIntegerLongValue"`, `"SetTrimStringValue"`, `"SetActionFailedAssert"`.
+   - Target expected value arguments (e.g., `StringValue="Success"` or `IntegerLongValue=100`, per `PAT-81`). For date offsets, use `DateTimeValueOffsetDays`, `DateTimeValueOffsetMonths`, `DateTimeValueOffsetYears`, etc.
 
 ---
 
@@ -399,7 +399,8 @@ To assert expected exceptions or error handling on a microflow call:
 
 1. **Validation Feedback Compare:**
    - Call `CreateAssertValidationFeedbackMessageCompare(TestCaseKey, MemberType="Attribute", AttributeName="Email", ModuleName="Sales", EntityName="Order", ComparisonOperator="Equals", Quantifier="AtLeastOne", ComparisonString="Invalid email format")`.
-   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey, EditAction="SetComparisonString", ComparisonString=...)`. To update the comparison operator, call with `EditAction="SetComparisonOperator"` and `ComparisonOperator` (`"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`).
+     *(Note: `MemberType` accepts `"Attribute"`, `"Association"`, or `"All"`; `Quantifier` accepts `"ForAll"` or `"AtLeastOne"`).*
+   - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCompare(AssertValidationFeedbackMessageCompareKey, EditAction="SetComparisonString", ComparisonString=...)`. To update the comparison operator, call with `EditAction="SetComparisonOperator"` and `ComparisonOperator` (`"Equals"`, `"NotEquals"`, `"Contains"`, `"NotContains"`). To update the quantifier, call with `EditAction="SetQuantifier"` and `Quantifier` (`"ForAll"`, `"AtLeastOne"`).
 2. **Validation Feedback Count:**
    - Call `CreateAssertValidationFeedbackMessageCount(TestCaseKey, ComparisonOperator="Equals", ComparisonNumber=1)`.
    - To edit later: Query `GetTestCaseDetails(TestCaseKey)` $\rightarrow$ call `EditAssertValidationFeedbackMessageCount(AssertValidationFeedbackMessageCountKey, EditAction="SetComparisonNumber", ComparisonNumber=...)`. To update the count comparison operator, call with `EditAction="SetComparisonOperator"` and `ComparisonOperator` (`"Equals"`, `"Greater_than"`, `"GreaterThanEqualTo"`, `"Less_than"`, `"LessThanEqualTo"`).

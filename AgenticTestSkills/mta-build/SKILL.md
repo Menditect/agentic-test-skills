@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.25.0"
-changes: "Synchronized reference playbooks with PAT-71 Bifurcated Model Discovery Protocol and verified catalog schema."
+version: "6.26.0"
+changes: "Updated for latest MTA MCP tool schemas: atomic microflow return value assertions, unified validation feedback quantifier enums, and standardized date offsets."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -49,7 +49,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 11. **🚫 STRICT DATA VARIATION PROMOTION & EXHAUSTIVE CELL RECONCILIATION LAW [^PAT-19] [^PAT-27] [^PAT-54] [^PAT-77] [^ANTI-08] [^ANTI-11] [^ANTI-31]**: 
     *   **Proactive Variation Identification:** For all Backend tests, you **MUST** actively seek to use MTA **Data Variations** rather than designing or proposing separate, duplicate test cases that only modify input data. Proposing duplicate test cases with different inputs is a severe quality violation (`ANTI-08`).
     *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix (`PAT-19`).
-    *   **Zero Disconnect Execution Plan Variation Item Lock (`ANTI-32`):** The Data Variation Items registered on the server via `AddTestCaseVariationItem` **MUST strictly match** the variation items declared in Section 7 of the approved Execution Plan. You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, or assertion to the variation matrix that is not explicitly declared as a variation item in the approved plan.
+    *   **Zero Disconnect Execution Plan Variation Item Lock (`PAT-110`, `ANTI-32`, `ANTI-59`):** The Data Variation Items registered on the server via `AddTestCaseVariationItem` **MUST strictly match** the variation items declared in Section 7 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, assertion, or conceptual boolean flag to the variation matrix that is not explicitly declared as a variation item in the approved plan (`ANTI-32`, `ANTI-59`).
     *   **Mandatory Variation Container Metadata & Description Persistence (`PAT-77`, `ANTI-31`):** When creating or promoting data variations, you **MUST** configure both the Name and Description on the MTA server for every variation container:
         1. *Template Variation (Scenario #1):* Upon calling `AddTestCaseVariationItem (Action="EnableTestCaseDatavariation")`, immediately call `EditTestCaseVariation (SetName)(TemplateVariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(TemplateVariationKey, Description)`.
         2. *Duplicated Variations (Scenarios #2..#N):* For each column created via `CreateTestCaseVariation`, immediately call `EditTestCaseVariation (SetName)(NewVariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(NewVariationKey, Description)` matching Section 7 of the Execution Plan. Leaving descriptions empty or unpersisted on the server is strictly prohibited (`ANTI-31`).
@@ -112,7 +112,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 166 testing patterns/anti-patterns (`PAT-01..108`, `ANTI-01..58`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 169 testing patterns/anti-patterns (`PAT-01..110`, `ANTI-01..59`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 
