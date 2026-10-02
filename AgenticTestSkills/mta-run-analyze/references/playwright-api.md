@@ -102,6 +102,121 @@ These entities are specialized wrappers in the frontend testkit module that have
 
 ---
 
+## 📋 STANDARD PARAMETER TEMPLATES FOR `MenditectMxFrontendTestKit` MICROFLOWS
+
+To eliminate the need to query or reverse-engineer existing test suites for parameter schemas (`ANTI-66`), use the following canonical parameter templates for all `MenditectMxFrontendTestKit` microflows during `STATE_CONSTRUCTION`.
+
+### 1. Lifecycle & Session Management
+* **`MenditectMxFrontendTestKit.Start_MxFrontend_Test_With_Login`**
+  * **Input Parameters:**
+    * `Username` (`String`): Mendix end-user login name (e.g. `"Admin"`).
+    * `Password` (`String`): Mendix end-user login password (e.g. `"1"`).
+    * `Browser` (`Enumeration: BrowserType`): `"Chromium"`, `"Firefox"`, or `"Webkit"` (default: `"Chromium"`).
+    * `Headless` (`Boolean`): `false` for headed (visible browser), `true` for headless.
+    * `Url` (`String`): Target application URL (e.g. `"http://localhost:8080"`).
+    * `options` (`Object: MenditectMxFrontendTestKit.StartMxFrontendTestOptions`): Optional / empty; or piped from a setup step with `Trace = true`.
+  * **Return Type:** `Entity: MenditectPlaywrightConnector.Page` (used as `Page` handle for downstream locators).
+
+* **`MenditectMxFrontendTestKit.Start_MxFrontend_Test_Without_Login`**
+  * **Input Parameters:**
+    * `Browser` (`Enumeration: BrowserType`): `"Chromium"`, `"Firefox"`, or `"Webkit"`.
+    * `Headless` (`Boolean`): `false` or `true`.
+    * `Url` (`String`): Target application URL.
+    * `options` (`Object: MenditectMxFrontendTestKit.StartMxFrontendTestOptions`): Optional / empty.
+  * **Return Type:** `Entity: MenditectPlaywrightConnector.Page`.
+
+* **`MenditectMxFrontendTestKit.Stop_MxFrontendTest`**
+  * **Input Parameters:**
+    * `Page` (`Object: MenditectPlaywrightConnector.Page`): The active page handle returned by the startup step.
+  * **Return Type:** `Boolean`.
+
+* **`MenditectPlaywrightConnector.Teardown_Playwright`**
+  * **Input Parameters:** *(None)*
+  * **Return Type:** `Boolean`.
+
+---
+
+### 2. Page & Context Locators
+* **`MenditectMxFrontendTestKit.Locate_MxPage`**
+  * **Input Parameters:**
+    * `Page` (`Object: MenditectPlaywrightConnector.Page`): Active page output handle.
+    * `ClassName` (`String`): CSS class name of the target page root (e.g. `"mx-name-page_CustomerOverview"` or page container class discovered via `GetAppModelData`).
+  * **Return Type:** `Entity: MenditectMxFrontendTestKit.MxPageLocator` (used as `ParentContext` for widget locators).
+
+* **`MenditectMxFrontendTestKit.Locate_MxWidget_Container`**
+  * **Input Parameters:**
+    * `ParentContext` (`Object: MenditectMxFrontendTestKit.MxLocator` or `MxPageLocator`): Parent container or page locator.
+    * `WidgetName` (`String`): Target container widget name (e.g. `"container_CustomerHeader"`).
+  * **Return Type:** `Entity: MenditectMxFrontendTestKit.MxContainerLocator`.
+
+---
+
+### 3. Widget Locators (`Locate_MxWidget_*`)
+All widget locator microflows accept `ParentContext` (`Object: MxLocator` or `MxPageLocator`) and `WidgetName` (`String`):
+
+| Microflow FQN | Input Parameters | Return Type | Target Mendix Widget |
+| :--- | :--- | :--- | :--- |
+| `Locate_MxWidget_TextBox` | `ParentContext: Object`, `WidgetName: String` | `MxTextBoxLocator` | Text Box, Text Area, Input |
+| `Locate_MxWidget_DatePicker` | `ParentContext: Object`, `WidgetName: String` | `MxDatePickerLocator` | Date Picker / Date Time widget |
+| `Locate_MxWidget_DropDown` | `ParentContext: Object`, `WidgetName: String` | `MxDropDownLocator` | Standard Drop-down / Enum |
+| `Locate_MxWidget_ReferenceSelector` | `ParentContext: Object`, `WidgetName: String` | `MxReferenceSelectorLocator` | Reference Selector [^PAT-114] |
+| `Locate_MxWidget_ComboBox` | `ParentContext: Object`, `WidgetName: String` | `MxComboBoxLocator` | ComboBox widget |
+| `Locate_MxWidget_Button` | `ParentContext: Object`, `WidgetName: String` | `MxButtonLocator` | Action Button, Microflow Button |
+| `Locate_MxWidget_CheckBox` | `ParentContext: Object`, `WidgetName: String` | `MxCheckBoxLocator` | Check Box widget |
+| `Locate_MxWidget_RadioButtons` | `ParentContext: Object`, `WidgetName: String` | `MxRadioButtonsLocator` | Radio Buttons widget |
+| `Locate_MxWidget_FileManager` | `ParentContext: Object`, `WidgetName: String` | `MxFileManagerLocator` | File Manager / Upload widget |
+| `Locate_MxWidget_Dialog` | `ParentContext: Object`, `WidgetName: String` | `MxDialogLocator` | Modal Pop-up / Dialog |
+| `Locate_MxWidget_Gallery` | `ParentContext: Object`, `WidgetName: String` | `MxGalleryLocator` | Gallery repeating container |
+| `Locate_MxWidget_ListView` | `ParentContext: Object`, `WidgetName: String` | `MxListViewLocator` | List View repeating container |
+| `Locate_MxWidget_DataGrid2` | `ParentContext: Object`, `WidgetName: String` | `MxDataGrid2Locator` | Data Grid 2 widget |
+
+---
+
+### 4. Element Locators & Filters (`ELO_*`)
+* **`MenditectMxFrontendTestKit.ELO_Filter_Gallery_Items_by_Text`**: `GalleryLocator: Object(MxGalleryLocator)`, `Text: String` -> `MxGalleryItemLocator`
+* **`MenditectMxFrontendTestKit.ELO_Nth_Gallery_Item`**: `GalleryLocator: Object(MxGalleryLocator)`, `Index: Integer` (0-based) -> `MxGalleryItemLocator`
+* **`MenditectMxFrontendTestKit.ELO_Filter_ListView_Items_by_Text`**: `ListViewLocator: Object(MxListViewLocator)`, `Text: String` -> `MxListViewItemLocator`
+* **`MenditectMxFrontendTestKit.ELO_Nth_ListView_Item`**: `ListViewLocator: Object(MxListViewLocator)`, `Index: Integer` (0-based) -> `MxListViewItemLocator`
+
+---
+
+### 5. Widget Actions (`ACT_*`)
+| Microflow FQN | Input Parameters | Return Type | Notes & Enforced Patterns |
+| :--- | :--- | :--- | :--- |
+| `ACT_Fill_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)`, `Value: String`, `options: Object(FillOptions)` *(optional)* | `Boolean` | Clears and types text into input field. |
+| `ACT_Clear_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)` | `Boolean` | Clears existing text from input. |
+| `ACT_Fill_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `Value: String`, `options: Object(FillOptions)` *(optional)* | `Boolean` | Format MUST match target widget's CustomDateFormat (e.g. `dd-MM-yyyy` vs `MM/dd/yyyy`) per `PAT-42`/`PAT-94`. Never guess or copy from old suites (`ANTI-66`). |
+| `ACT_SelectOption_DropDown_Select_By_Label` | `DropDownLocator: Object(MxDropDownLocator)`, `Label: String` | `Boolean` | Selects option matching visible text label. |
+| `ACT_SelectOption_ReferenceSelector_Select_By_Label` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `OptionLabel: String` | `Boolean` | Selects reference selector option matching label [^PAT-114]. |
+| `ACT_Click_Button` | `ButtonLocator: Object(MxButtonLocator)`, `options: Object(ClickOptions)` *(optional)* | `Boolean` | Clicks button or action trigger. |
+| `ACT_Hover_Button` | `ButtonLocator: Object(MxButtonLocator)` | `Boolean` | Hovers mouse over button. |
+| `ACT_Click_ComboBox_Trigger` | `ComboBoxLocator: Object(MxComboBoxLocator)` | `Boolean` | Opens (step 2) or closes (step 4) dropdown. |
+| `ACT_Fill_ComboBox_Input` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `Value: String` | `Boolean` | Types value into ComboBox input. |
+| `ACT_Click_Container` | `ContainerLocator: Object(MxContainerLocator)` | `Boolean` | Clicks container or card element. |
+| `ACT_Click_DataGrid2_Cell` | `DataGrid2Locator: Object(MxDataGrid2Locator)`, `RowIndex: Integer`, `ColumnIndex: Integer` | `Boolean` | Clicks specific table cell. |
+| `ACT_Click_Dialog_OK_Button` | `DialogLocator: Object(MxDialogLocator)` | `Boolean` | Confirms modal dialog OK button. |
+| `ACT_Check_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `Boolean` | Sets check box to checked state. |
+| `ACT_Uncheck_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `Boolean` | Sets check box to unchecked state. |
+| `ACT_Check_RadioButtons_Item_Input` | `RadioButtonsLocator: Object(MxRadioButtonsLocator)`, `ItemValue: String` | `Boolean` | Selects specific radio button item. |
+| `ACT_Upload_File_FileManager_Input` | `FileManagerLocator: Object(MxFileManagerLocator)`, `FilePath: String` | `Boolean` | Uploads file through file manager. |
+
+---
+
+### 6. Widget & Locator Assertions (`ASR_*`)
+| Microflow FQN | Input Parameters | Return Type | Assertion Verified |
+| :--- | :--- | :--- | :--- |
+| `ASR_Has_Value_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts text box contains expected string. |
+| `ASR_Has_Value_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `ExpectedValue: String` | `Boolean` | Asserts date picker input contains formatted date string. |
+| `ASR_Has_Value_DropDown_Select` | `DropDownLocator: Object(MxDropDownLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected dropdown option matches expected label. |
+| `ASR_Has_Value_ReferenceSelector` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected reference selector option matches label [^PAT-114]. |
+| `ASR_Has_Value_ComboBox` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts ComboBox selected value matches expected label. |
+| `ASR_Is_Visible_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts element or widget is visible on DOM [^PAT-35]. |
+| `ASR_Is_Checked_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)`, `ExpectedChecked: Boolean` | `Boolean` | Asserts checkbox checked status. |
+| `ASR_Is_Selected_Gallery_Item` | `GalleryItemLocator: Object(MxGalleryItemLocator)` | `Boolean` | Asserts gallery item has active selection state. |
+| `ASR_Has_Text_Dialog_Body` | `DialogLocator: Object(MxDialogLocator)`, `ExpectedText: String` | `Boolean` | Asserts dialog body contains expected message. |
+
+---
+
 ## ⚙️ CORE BROWSER LIFECYCLE & LOB-LEVEL MICROFLOWS
 
 The Playwright Connector exposes the following wrapper microflows which can be added as steps if advanced, low-level browser manipulations are required:
@@ -227,7 +342,7 @@ Create Case 1's Start Playwright step calling the microflow matching the executi
 ### Option-Building Protocol (All Modes)
 Before executing the setup microflow, build and configure context/start options:
 1.  Create the options object step (e.g., `MenditectPlaywrightConnector.LocalStartOptions` or `NewBrowserContextOptions`) using `CreateObjectActionTestStep(ObjectAction="CreateObject")`.
-2.  For each active attribute (e.g., `DefaultTimeout`, `Locale`), call `EditAttributeValue(TestStepKey, AttributeName, EditAction="IncludeAttribute")`, retrieve `AttributeValueKey` via `GetTeststepDetails(TestStepKey)`, and set value via `EditAttributeValue(AttributeValueKey, EditAction="SetDecimalValue" | "SetIntegerValue" | "SetStringValue", ...)`. (Note: `SlowMo` defaults to `0` / omitted in `LocalStartOptions`; do NOT include or set it unless visual debugging was explicitly requested [^PAT-116] [^ANTI-65]).
+2.  For each active attribute (e.g., `DefaultTimeout`, `Locale`), call `EditAttributeValue(TestStepKey, AttributeName, EditAction="IncludeAttribute")`, retrieve `AttributeValueKey` via the single mid-phase `GetTestCaseDetails(TestCaseKey)` bulk sync (`PAT-117`), and set value via `EditAttributeValue(AttributeValueKey, EditAction="SetDecimalValue" | "SetIntegerValue" | "SetStringValue", ...)`. (Note: `SlowMo` defaults to `0` / omitted in `LocalStartOptions`; do NOT include or set it unless visual debugging was explicitly requested [^PAT-116] [^ANTI-65]).
 3.  Bind the configured options step to the setup microflow parameter using `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)`.
 
 ### 🌐 Login Preferences

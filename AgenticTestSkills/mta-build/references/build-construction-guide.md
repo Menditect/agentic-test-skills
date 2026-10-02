@@ -147,7 +147,7 @@ Your report **MUST** contain five distinct sections:
     * **Execution topology:** All setup, teardown, and database-seeding steps are set to `"Always"` execution with `"_Continue"` exception handling.
     * **Empty Object retrieves:** Any conditional null parameter retrieves use `RetrieveOption = "Teststep"`.
     * **Data Matrix Conformity:** Every created Data Variation has its `Name` and `Description` explicitly configured (`PAT-77`), zero empty descriptions exist (`ANTI-31`), and all variation item values match the Execution Plan matrix cell-by-cell (`PAT-54`).
-    * **Zero Data in Names:** Step names are purely action-descriptive with zero raw test data in the titles, conforming to the `[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]` template.
+    * **Zero Data in Names:** Step names are purely action-descriptive with zero raw test data, attribute values, or parameter values in the titles, conforming to the standardized step naming catalog in golden-rules.md (PAT-55, ANTI-04).
     * **Single Persist Check:** No redundant per-step `Persist` steps exist; creations/deletions of multiple objects are committed via a single grouped `Persist` step at the end.
     * **No Sequential Batching Violations:** No steps were created in parallel in a single turn; sequential steps were built one-by-one waiting for their predecessor keys.
     * **No Flaky Sleeps:** Zero sleep/delay steps exist in the test sequence.

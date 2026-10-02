@@ -51,10 +51,11 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 - **Scope:** All Tests.
 - **Verification Criteria:** 
   1. All step-level assertions (`Assert Object Count`, `Assert Attribute Value Compare`, `Assert Microflow Return Value`, `Assert Exception`) are embedded directly within Field 6 of their parent producer steps (`Retrieve Object` / `Microflow Call`) and never declared as standalone test steps (`PAT-08`). Embedded assertions on Create/Change steps are strictly prohibited (`ANTI-03`, `ANTI-10`).
-  2. **Microflow List Parameter Binding (`PAT-105`):** When a microflow accepts a parameter of type `List of [Entity]`, it is bound via a `Retrieve Object` step producing a list output (`TestStepOutputKey`) or via multiple `Select Object for Parameter` steps linked to the same parameter.
-  3. **Provider-Consumer Execution Condition Parity (`PAT-99`):** If an assertion or consumer step is configured with `ExecutionCondition = "Always"`, all upstream provider steps supplying its input handles MUST also be set to `"Always"` to prevent null handle runtime crashes.
-  4. **Discrete Attribute Filters (`ANTI-51`):** Retrieve steps configure discrete attribute filters via `EditAttributeValueFilter`, never raw compound XPath strings.
-  5. **Association Ownership Verification (`ANTI-52`):** Domain model association ownership is verified via `DESCRIBE ENTITY` before configuring association binding steps.
+  2. **Retrieve Output Piping Count Assertion (`PAT-08`, `ANTI-03`):** Any `Retrieve Object` step that pipes its output handle into a downstream consumer step (e.g. parameter selector, change/delete step, or association binding) MUST embed an `Assert Object Count` assertion (e.g. `Assert Object Count == 1`). Piping an unasserted retrieve output is strictly prohibited (`ANTI-03`).
+  3. **Microflow List Parameter Binding (`PAT-105`):** When a microflow accepts a parameter of type `List of [Entity]`, it is bound via a `Retrieve Object` step producing a list output (`TestStepOutputKey`) or via multiple `Select Object for Parameter` steps linked to the same parameter.
+  4. **Provider-Consumer Execution Condition Parity (`PAT-99`):** If an assertion or consumer step is configured with `ExecutionCondition = "Always"`, all upstream provider steps supplying its input handles MUST also be set to `"Always"` to prevent null handle runtime crashes.
+  5. **Discrete Attribute Filters (`ANTI-51`):** Retrieve steps configure discrete attribute filters via `EditAttributeValueFilter`, never raw compound XPath strings.
+  6. **Association Ownership Verification (`ANTI-52`):** Domain model association ownership is verified via `DESCRIBE ENTITY` before configuring association binding steps.
 - **Compliance Status:** `PASS`.
 
 ### [CHECK 7] Mandatory Page & Widget Discovery (`PAT-35`, `PAT-67`, `ANTI-23`)
@@ -89,7 +90,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
   6. Dynamic scalar value piping used (`SelectValueForValue` referencing Case 1 seed handles) across all form inputs, search filters, dropdowns, and UI assertions consuming seeded data.
   7. **DatePicker Format & Offset Model Verification (`PAT-42`, `PAT-94`, `ANTI-45`):** When using `mxcli` for model discovery, the exact `CustomDateFormat` (or project language date format) MUST be extracted via `mxcli bson dump` command:
      `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json`
-     Guessing or defaulting format strings without model proof is strictly prohibited (`ANTI-45`).
+     Guessing or defaulting format strings without model proof is strictly prohibited (`ANTI-45`) and automatically validated by `mta-lint`.
   8. List filter strategies proposed (`ELO_Filter_*_by_Text`, `ELO_Nth_*_Item`).
 - **Compliance Status:** `PASS` or `NA`.
 

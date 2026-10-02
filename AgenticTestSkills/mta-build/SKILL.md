@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.31.0"
-changes: "Added widget metamodel pairing rules (PAT-114), Step Decommissioning Protocol (PAT-115), and zero SlowMo default on LocalStartOptions (PAT-116)."
+version: "6.32.0"
+changes: "Enforced single bulk sync per test case (PAT-117) and prohibited reverse-engineering or anchoring on existing test suites during construction (ANTI-66)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -27,9 +27,10 @@ changes: "Added widget metamodel pairing rules (PAT-114), Step Decommissioning P
 
 You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` and `references/golden-rules.md` at all times. Here is the checklist of active construction boundaries:
 1. **No conversational refusals [^PAT-51]**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
-2. **Deterministic Horizontal Layered Construction Protocol [^PAT-85] [^PAT-16] [^PAT-78] [^PAT-86] [^PAT-87] [^ANTI-05] [^ANTI-32] [^ANTI-39] [^ANTI-40]**:
-   * Construct all test steps horizontally across layers (Phase 1 Skeleton Provisioning -> Phase 2A Bulk Inclusion -> Mid-Phase Sync -> Phase 2B Bulk Binding -> Phase 3 Variation Registration -> Phase 4 Variation Population) rather than vertically step-by-step (`ANTI-39`).
+2. **Deterministic Horizontal Layered Construction Protocol [^PAT-85] [^PAT-16] [^PAT-78] [^PAT-86] [^PAT-87] [^PAT-117] [^ANTI-05] [^ANTI-32] [^ANTI-39] [^ANTI-40]**:
+   * Construct all test steps horizontally across layers (Phase 1 Skeleton Provisioning -> Phase 2A Bulk Inclusion -> Mid-Phase Sync [^PAT-117] -> Phase 2B Bulk Binding -> Phase 3 Variation Registration -> Phase 4 Variation Population) rather than vertically step-by-step (`ANTI-39`).
    * Follow the complete step-by-step pipeline, safe batch sizing, and scenario column batching detailed in **`references/construction-sop.md`**.
+   * Call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** during Mid-Phase Bulk Sync (`PAT-117`). Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited (`ANTI-32`, `ANTI-39`).
    * **Strict 4-Step Partial Failure Handling:** Because MTA MCP tools do not support server-side atomic transactions, if an individual call fails within a batch, do NOT abort the build or discard earlier steps. Follow the 4-step recovery flow:
      1. *Halt:* Stop executing subsequent batches immediately.
      2. *Isolate:* Parse the MCP error response to identify the exact failed key (`TestStepKey`, `AttributeValueKey`, or `TestCaseVariationKey`) and the failing parameter.
@@ -107,6 +108,13 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
         4. *Smoke Audit Reconciliation:* In Section 9 / Checkpoint 3, record the step with status `⚠️ SKIPPED (PAT-115 Decommissioned)` and append the Manual Cleanup Recommendation box for user deletion in Studio Pro (`ANTI-64`).
 27. **Playwright Fast Execution Default [^PAT-116] [^ANTI-65]**:
     *   When provisioning `LocalStartOptions` (Step 101) for Frontend UI testing, leave `SlowMo` omitted / `0 ms` by default. Do NOT inject artificial delay unless the user explicitly requested visual slow-motion debugging.
+28. **Prohibition of Existing Suite Reverse-Engineering & Anchoring [^ANTI-66] [^PAT-71]**:
+    *   Once Gate 1 (Execution Plan) and Gate 2 (Placement) are approved, the agent is strictly prohibited from querying existing or historical test suites (`GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`) to reverse-engineer or copy step parameters, locators, date formats, or step sequences (`ANTI-66`).
+    *   During `STATE_CONSTRUCTION`, all step types, names, attributes, parameters, locators, and formats MUST be read exclusively from the approved `EP_*.md` file (`PAT-71`). Historical test suites frequently contain legacy bugs, outdated locators, or conflicting locale/date formats (e.g. copying `MM/dd/yyyy` from an old US-formatted suite, overwriting the correct `dd-MM-yyyy` specified in the approved Execution Plan). Zero queries to other test suites are permitted.
+29. **Single Bulk Sync per Test Case Protocol [^PAT-117] [^ANTI-32] [^ANTI-39]**:
+    *   Eliminates sequential `CreateStep -> GetTeststepDetails -> EditParam` chatterbox loops by enforcing a single `GetTestCaseDetails(TestCaseKey)` bulk sync per test case during Phase 2 (`PAT-117`).
+    *   After completing Phase 1 forward step chaining (`PAT-11`) and Phase 2A concurrent attribute inclusions/retrieve options (15–20 calls/turn, `ANTI-32`), call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** to capture all server-assigned `AttributeValueKey`, `SelectObjectForMicroflowParameterKey`, and `MicroflowParameterValueKey` IDs across all steps in the testcase.
+    *   Parse keys in memory and batch all Phase 2B setters concurrently in safe chunks of 15–20 calls/turn. Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited.
 
 ---
 
@@ -120,7 +128,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 181 testing patterns/anti-patterns (`PAT-01..116`, `ANTI-01..65`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 183 testing patterns/anti-patterns (`PAT-01..117`, `ANTI-01..66`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

@@ -82,6 +82,9 @@ Fetches runtime session state during execution:
 > **`CreateAssertObjectCount` does NOT accept `ComparisonOperator`!**  
 > `CreateAssertObjectCount` only takes `TestStepKey`. The operator and expected count must be set in a subsequent call to `EditAssertObjectCount`.
 
+> [!IMPORTANT]
+> **Piped Retrieve Object Count Mandate (PAT-08, ANTI-03):** Whenever a `Retrieve Object` step provides an output handle that is piped to a downstream teststep (such as microflow parameters, change/delete actions, or association bindings), `CreateAssertObjectCount` MUST be configured to verify object existence before downstream consumption.
+
 #### Mendix Keyword Escape & Flag Formatting Law
 Mendix runtime tools strictly differentiate between keyword-escaped flags, boolean strings, and action names:
 
@@ -258,7 +261,7 @@ If you are creating an object and want to set its initial state immediately:
 
 #### Option B: The Change Object Pipeline (Required for Retrieved or Post-Creation Updates - PAT-80)
 When modifying an object's state **later** in the test case or modifying an **existing retrieved object**:
-1. **Create the Change step:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="ChangeObjects", EntityQualifiedName="Sales.Order", TestStepName="Change Order Status", TestStepOutputKey=ProducerStepKey, TestStepBeforeKey=...)`.
+1. **Create the Change step:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="ChangeObjects", EntityQualifiedName="Sales.Order", TestStepName="Change Order", TestStepOutputKey=ProducerStepKey, TestStepBeforeKey=...)`.
    *(Mandatory Binding: `TestStepOutputKey` MUST be passed directly at creation time per `PAT-80`. Calling an unbound step creation followed by `SetTestStepOutputForSelectObjectForChange` is an anti-pattern `ANTI-34`).*
 2. **Set Attribute Values:** Include attributes via `EditAttributeValue(..., EditAction="IncludeAttribute")`, query `GetTeststepDetails`, and batch-set values via `EditAttributeValue` on `AttributeValueKey` in Turn 3.
 
@@ -273,7 +276,7 @@ To mark an object for deletion from the database:
      "TestCaseKey": 4567, // Case 3: Teardown
      "ObjectAction": "DeleteObjects",
      "EntityQualifiedName": "Sales.Order",
-     "TestStepName": "Delete Seeded Order",
+     "TestStepName": "Delete seeded Order",
      "TestStepOutputKey": 1234 // Key of Case 1 Step: "Create Order" (Direct Cross-Case Piping!)
    }
    ```
@@ -284,7 +287,7 @@ To mark an object for deletion from the database:
 ### 3. The Persist Step Framework (`ObjectAction="Persist"`)
 MTA operates in transactional memory. Changes, creations, and deletions are only pushed to the database and finalized once a **Persist** step is executed.
 
-*   **Syntax:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="Persist", TestStepName="Persist Changes", TestStepBeforeKey=...)`.
+*   **Syntax:** Call `CreateObjectActionTestStep(TestCaseKey, ObjectAction="Persist", TestStepName="Persist setup data", TestStepBeforeKey=...)`.
 *   **Chronological Placement Rule:** Always insert the Persist step chronologically **after** the steps that perform write/delete actions.
 *   **Domain Model Events:** `Before Commit` / `After Commit` and `Before Delete` / `After Delete` are triggered natively during Persist execution.
 
@@ -321,7 +324,7 @@ When a teststep creates a database record and needs to associate it with another
 ## ⚙️ MICROFLOW CALL TEST STEP PARAMETER SETTERS
 
 When executing microflows via `CreateMicroflowCallTestStep`:
-1. **Create Microflow Step:** Call `CreateMicroflowCallTestStep(TestCaseKey, MicroflowQualifiedName="Sales.SUB_CalculateTotal", TestStepName="Calculate Total", TestStepBeforeKey=...)` ➔ Returns `"Teststep key: <Key>"`.
+1. **Create Microflow Step:** Call `CreateMicroflowCallTestStep(TestCaseKey, MicroflowQualifiedName="Sales.SUB_CalculateTotal", TestStepName="Call SUB_CalculateTotal", TestStepBeforeKey=...)` ➔ Returns `"Teststep key: <Key>"`.
 2. **Resolve Parameter Keys:** Call `GetTeststepDetails(TestStepKey)` to obtain each parameter's `MicroflowParameterValueKey` or `SelectObjectForMicroflowParameterKey`.
 3. **Batch Configure Parameters in 1 Turn:**
    - **Object/List Parameters:** Call `EditMicroflowObjectParameter` with:

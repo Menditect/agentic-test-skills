@@ -417,7 +417,7 @@ To automate entering a username into the textbox of a login page:
     *   *Action:* Call `GenerateMicroflowCallTestStepLocateWidget(TestCaseKey=Case2Key, IsGlobalWidget="_False", WidgetName="username-input", PageClassName="MxLoginFormPage", PageQualifiedName="MyModule.MyPage", TestStepProvidesParentWidgetKey=PageLocateStepKey, TestStepBeforeKey=PageLocateStepKey)`
     *   *Returns:* `WidgetLocateStepKey` (e.g. `102`)
 3.  **Create the Action Step (Fill Text):**
-    *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input", TestStepName="Fill TextBox 'Username' Input", TestStepBeforeKey=WidgetLocateStepKey, TestCaseKey=Case2Key)`
+    *   *Action:* Call `CreateMicroflowCallTestStep(MicroflowQualifiedName="MenditectMxFrontendTestKit.ACT_Fill_TextBox_Input", TestStepName="Fill TextBox 'Username'", TestStepBeforeKey=WidgetLocateStepKey, TestCaseKey=Case2Key)`
     *   *Returns:* `ActionStepKey` (e.g. `103`)
 4.  **Fetch Parameter Keys for the Action Step:**
     *   *Action:* Call `GetTeststepDetails(TestStepKey=ActionStepKey)`

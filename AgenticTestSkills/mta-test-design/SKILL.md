@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.35.0"
-changes: "Enforced widget metamodel verification (PAT-114) and zero SlowMo default (PAT-116) for Frontend test plans."
+version: "6.36.0"
+changes: "Standardized teststep naming catalog with strict zero attribute and parameter value enforcement (PAT-55, ANTI-04), and empty object pattern step naming (PAT-07)."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -302,7 +302,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 181 testing patterns/anti-patterns (`PAT-01..116`, `ANTI-01..65`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 183 testing patterns/anti-patterns (`PAT-01..117`, `ANTI-01..66`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

@@ -112,10 +112,11 @@ To prevent sequence corruption, maintain clean naming, and build robust dynamic 
 
 ### 🧭 High-Level Summary of Golden Rules:
 1.  **The Predecessor Chaining Law:** Elements (steps, cases, or suites) must be created in chronological forward order. For the absolute first element in an empty container, you **MUST** pass `0` for the predecessor parameter (e.g. `TestStepBeforeKey = 0`). Concurrent/parallel step creation or sequence modifications are strictly banned.
-2.  **Zero Data in Step Names:** Describe *what* the step does, not *which* data it uses. Use the template: `[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]`.
+2.  **Zero Data in Step Names (Zero Attribute/Parameter Values Law - PAT-55, ANTI-04):** Describe *what* functional operation the step performs on *which* target, never *which* data, attribute, or parameter value it uses (e.g., `Click Button 'Checkout'`, `Fill TextBox 'Username'`, `Call SUB_CalculateTotal`, `Create Order`, `Retrieve Order to assert updated state`, `Retrieve <Entity> for empty object pattern in datavariation`).
 3.  **Proactive Output Piping:** Always pipe outputs from preceding teststeps (locators, objects, primitive attributes) directly into subsequent steps to maximize dynamic test maintenance and avoid hardcoding values.
 4.  **Modular Setup & Teardown Isolation:** Isolate data seeding and teardown actions in setup/teardown cases, keeping core test flows clean.
 5.  **Test Case Session Boundaries:** Objects kept in memory can only be shared within the same test case. Passing objects across cases requires persisting them to the database.
+6.  **Piped Retrieve Object Count Mandate (PAT-08, ANTI-03):** Any `Retrieve Object` step that pipes its output handle into downstream teststeps (parameters, changes, deletes, associations) MUST embed an `Assert Object Count` assertion to verify existence before consumption.
 
 👉 **Read the complete manual here:** [MTA Golden Rules & Test Design Manual](golden-rules.md)
 

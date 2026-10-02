@@ -92,7 +92,7 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     1. **IMMEDIATELY PAUSE** before writing the Execution Plan or creating test steps.
     2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
     3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
-    4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
+    4. **FAIL-SAFE & LINTER CHECK:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`) and automatically enforced by `mta-lint`.
 *   **🛡️ PRE-CONSTRUCTION IDEMPOTENCY & SUITE AUDIT (PAT-101):**
     Before calling `CreateTestCase` on the MTA server in `STATE_CONSTRUCTION`, you **MUST** call `GetTestSuiteDetails(TestSuiteKey)` to verify whether a test case with the planned name already exists. If an existing test case with the same name is found, halt and confirm with the user whether to supersede or rename it, preventing unintended duplicates or container pollution.
 *   **🔍 STATE MUTATION VERIFICATION LAW (PAT-104, ANTI-54):**
@@ -105,6 +105,8 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     MTA's primitive API retrieve steps do not accept arbitrary compound XPath query strings (e.g. `[Status = 'Active' and Amount > 100]`). You **MUST** configure discrete attribute filters individually via `EditAttributeValueFilter` with explicit attribute names, comparator operators, and target values.
 *   **🚫 INVERTED ASSOCIATION OWNERSHIP BINDING PROHIBITION (ANTI-52):**
     Associations in Mendix domain models are owned by a specific entity. Binding an association via `CreateSelectObjectForAssociation` or `EditTestStepAssociation` on the non-owner entity end is strictly **PROHIBITED** (`ANTI-52`). Always verify association ownership via `DESCRIBE ENTITY` before configuring association steps.
+*   **🎯 RETRIEVE PIPING OBJECT COUNT MANDATE (PAT-08, ANTI-03):**
+    Any `Retrieve Object` step that pipes its output handle into a downstream consumer step (e.g., parameter selector `SelectObjectForMicroflowParameter`, change step `SelectObjectForChange`, delete step `SelectObjectForDelete`, or association binding `SelectObjectForAssociation`) **MUST** embed an `Assert Object Count` assertion (e.g. `Assert Object Count == 1`). Piping an unasserted retrieve output to downstream consumers is strictly **PROHIBITED** (`ANTI-03`). Verifying object existence at the point of retrieval prevents silent null-pointer crashes and guarantees clear fail-fast diagnostic reporting.
 
 ---
 
@@ -113,20 +115,35 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
 
 ---
 
-## 2. Zero Data in Step Names
-You **MUST NOT** mention the actual data values used (such as a specific username, password, order ID, status value, or country name) anywhere in the name of a teststep. Step names must describe *what* the step does functionally, not *which data value* it utilizes. Keeping data values out of step names is critical for test maintainability, clarity, and enabling data variations.
+## 2. Zero Data in Step Names (Zero Attribute & Parameter Values Law - PAT-55, ANTI-04)
 
-All step names must follow this structured template:
-`[Action] [WidgetType] '[FieldDescriptor]' [Input/Button]`
+You **MUST NEVER** mention runtime data values, attribute values (e.g. status strings, IDs, amounts, dates, active flags), or parameter values (e.g. input arguments, boolean flags, numbers) anywhere in the name of a teststep (`PAT-55`, `ANTI-04`). 
 
-| ❌ Bad Name (Fails Zero-Data Law) | ✅ Good Name (Passes Auto-Validator) |
-| :--- | :--- |
-| `"Fill Username with Admin"` | `"Fill TextBox 'Username' Input"` |
-| `"Click Checkout for Order #1234"` | `"Click ActionButton 'Checkout' Button"` |
-| `"Assert Status is Active"` | `"Assert Label 'Status' Text"` |
-| `"Select Country 'Netherlands'"` | `"Select DropDown 'Country' Select"` |
-| `"Create Customer John Doe"` | `"Create Customer Object"` |
-| `"Set AccountCode to ACC-001"` | `"Set Attribute 'AccountCode' Value"` |
+Step names must strictly describe **what functional operation** is being performed and on **which structural target** (entity, widget, microflow), **NEVER** which data values are assigned, filtered, asserted, or passed. Keeping data values out of step names is a non-negotiable law critical for test maintainability, variation matrix parameterization, and clean test execution logs.
+
+### 📐 Standardized Step Naming Catalog
+
+| Step Category & Intent | ❌ Prohibited Name (Leaking Data/Values) | ✅ Standardized Step Name | Notes & Pattern |
+| :--- | :--- | :--- | :--- |
+| **Empty Object Pattern (Dual Retrieve)** | `"Retrieve CarSize Sentinel"`<br>`"Retrieve Object Valid"` | **`Retrieve <Entity> for empty object pattern in datavariation`** | Documents the exact structural purpose in matrix variation. (`PAT-07`) |
+| **Empty Object Pattern (Create Seed)** | `"Create CarSize Sentinel"`<br>`"Create Object with Sentinel VALID"` | **`Create <Entity> for empty object pattern in datavariation`** | Companion creation step for empty object pattern. (`PAT-07`) |
+| **Domain Object Creation** | `"Create Customer John Doe"`<br>`"Create Order with Total 100"` | **`Create <Entity>`**<br>*(e.g., `Create Customer`, `Create Order`)* | Clean entity creation without redundant "Object" suffix or attribute values. (`PAT-06`) |
+| **Setup Seeding (Case 1)** | `"Create Customer Alice for Setup"`<br>`"Seed Order #101"` | **`Create seeded <Entity>`**<br>*(e.g., `Create seeded Customer`)* | Immediately identifies test fixture data created in Case 1. (`PAT-91`) |
+| **Verification Retrieve** | `"Retrieve Order with Status Completed"`<br>`"Retrieve Order to verify Total 500"` | **`Retrieve <Entity> to assert updated state`**<br>*(or `Retrieve <Entity> for verification`)* | Clearly indicates a post-condition verification retrieve step. (`PAT-31`, `PAT-104`) |
+| **Teardown Retrieve** | `"Retrieve Order #101 for Teardown"`<br>`"Retrieve TEST_Customer to delete"` | **`Retrieve seeded <Entity> for teardown`** | Identifies retrieve step used for cleanup. (`PAT-09`, `PAT-95`) |
+| **Input Provider Retrieve** | `"Retrieve Active Customers"`<br>`"Retrieve Category Standard"` | **`Retrieve <Entity> for input parameter`** | Identifies retrieve step used to feed downstream parameters. (`PAT-105`) |
+| **Domain Object Update** | `"Change Order Status to Shipped"`<br>`"Set Active to True"` | **`Change <Entity>`**<br>*(e.g., `Change Order`, `Change Customer`)* | Never state modified attribute values in the step name. (`PAT-80`) |
+| **Teardown Deletion** | `"Delete Order #10482"`<br>`"Delete Customer John"` | **`Delete seeded <Entity>`**<br>*(e.g., `Delete seeded Order`)* | Clear teardown intent with zero runtime keys in title. (`PAT-09`, `PAT-95`) |
+| **Persist: Setup Data (Case 1)** | `"Persist Customer John"`<br>`"Commit Active Data"` | **`Persist setup data`** | Distinct commit step for Case 1 setup records. (`PAT-20`, `PAT-92`) |
+| **Persist: Teardown Deletions (Case 3)** | `"Persist Deleted Orders"`<br>`"Commit Cleanup Changes"` | **`Persist teardown deletions`** | Distinct commit step for Case 3 cleanup deletions. (`PAT-21`, `PAT-92`) |
+| **Microflow Calls (Backend/SUT)** | `"Calculate Total for Order 100"`<br>`"Sales.SUB_CalculateTotal with True"` | **`Call <MicroflowName>`**<br>*(e.g., `Call SUB_CalculateTotal`, `Call ACT_SubmitOrder`)* | Standardized `Call <MicroflowName>` template matching Mendix Studio Pro conventions. (`PAT-14`, `PAT-96`) |
+| **UI: Click Button** | `"Click ActionButton 'Checkout' Button"`<br>`"Click Button Save Order"` | **`Click Button '<ButtonName>'`**<br>*(e.g., `Click Button 'Checkout'`)* | Streamlined: removes word-stutter repetition. (`PAT-55`, `PAT-64`) |
+| **UI: Fill Input** | `"Fill TextBox 'Username' with Admin Input"`<br>`"Fill TextBox 'Username' Input"` | **`Fill TextBox '<WidgetName>'`**<br>*(e.g., `Fill TextBox 'Username'`)* | Streamlined: removes redundant trailing "Input" and never leaks values. (`PAT-55`) |
+| **UI: Select DropDown** | `"Select DropDown 'Country' with Netherlands Select"` | **`Select DropDown '<WidgetName>'`**<br>*(e.g., `Select DropDown 'Country'`)* | Streamlined: removes redundant trailing "Select" and never leaks values. (`PAT-55`) |
+| **UI: Select Reference Selector** | `"Select ReferenceSelector 'Location' with New York"` | **`Select ReferenceSelector '<WidgetName>'`**<br>*(e.g., `Select ReferenceSelector 'Location'`)* | Pure widget descriptor without selection data. (`PAT-114`) |
+| **UI: Assert Label / Text** | `"Assert Label 'Status' Text is Active"` | **`Assert Label '<WidgetName>'`**<br>*(e.g., `Assert Label 'Status'`)* | Cleaner verification step name; expected value resides in assertion config. |
+| **UI: Check / Uncheck CheckBox** | `"Check CheckBox 'Agree' True"` | **`Check CheckBox '<WidgetName>'`** / **`Uncheck CheckBox '<WidgetName>'`** | Clear state action without literal boolean values. |
+| **UI: Browser Lifecycle** | `"ACT_StartBrowserSession"` / `"Launch Chromium"` | **`Start browser session`** / **`Configure browser options`** / **`Close browser session`** | Clean, human-readable lifecycle names. |
 
 ---
 

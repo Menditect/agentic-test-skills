@@ -99,7 +99,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-08`: Retrieve / Microflow Output Object Count Assertion
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Requires embedding an `Assert Object Count` assertion directly within Field 6 (`Embedded Step Assertions`) of any `Retrieve Object from database` step or `Microflow Call` step that produces an object or list, before that handle is consumed downstream. This guarantees that expected objects exist prior to parameter passing or attribute assertion. Prohibits declaring `Assert Object Count` as a separate standalone test step container.
+* **Description:** Requires embedding an `Assert Object Count` assertion (e.g. `Assert Object Count == 1`) directly within Field 6 (`Embedded Step Assertions`) of any `Retrieve Object` step whose output handle is piped into another teststep (microflow parameter selector, change/delete action, association binding, or downstream retrieve filter). This guarantees that expected objects exist prior to consumption, preventing silent downstream null-pointer crashes and ambiguous parameter-unbound errors. Prohibits declaring `Assert Object Count` as a separate standalone test step container.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-03` (Unasserted Retrieve / Microflow Output Consumer Piping).
   * **Related Anti-Patterns:** `ANTI-06` (Asserting Object Count after `Create Object` — which is invalid because created objects in-memory are guaranteed to exist).
@@ -210,6 +210,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-31`: Retrieve-for-Asserting Set & Count Law
 * **Scope:** Backend | **Classification:** Platform Execution Law
 * **Description:** Configures `Retrieve Object` steps that prepare data for assertion with `RetrieveSet = "All"` along with explicit attribute filters, combined with an immediate downstream `Assert Object Count` step. Using `RetrieveSet = "Head"` on assert retrieves is **strictly prohibited**, because if 0 matching records exist, `"Head"` triggers a runtime retrieval crash instead of allowing a clean `AssertObjectCount = 0` evaluation.
+* **Step Naming Law:** Steps implementing this pattern MUST be named `Retrieve <Entity> to assert updated state` (or `Retrieve <Entity> for verification`), and must NEVER contain specific attribute values or expected comparison data in the step name (`PAT-55`).
 * **Related Rules:**
   * **Related Patterns:** `PAT-08` (Retrieve Output Object Count Assertion).
   * **Direct Counterpart Anti-Pattern:** `ANTI-03` (Unasserted Retrieve Consumer Piping).
@@ -235,7 +236,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-55`: Zero Data in Step Names
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Mandates that test step names must strictly follow functional action templates (e.g., `[Action] [WidgetType] '[FieldDescriptor]'`) and must never contain hardcoded runtime test data values (such as `"Order #10482"` or `"John Doe"`).
+* **Description:** Mandates that test step names must strictly follow functional action templates (e.g., `[Action] [WidgetType] '[FieldDescriptor]'`, `Call <MicroflowName>`, `Create <Entity>`, `Retrieve <Entity> to assert updated state`) and must NEVER contain hardcoded runtime test data values, attribute values (such as `"Order #10482"`, `"Status Active"`, or `"John Doe"`), or parameter values (such as `"with Amount 100"` or `"with True"`). Test step names describe *what operation* is performed on which target, not the data values processed.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-04` (Hardcoding Test Data Values in Step Names).
   * **Related Patterns:** `PAT-32` (Dynamic Scalar Value Piping).
@@ -252,7 +253,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-03`: Unasserted Retrieve / Microflow Output Consumer Piping
 * **Scope:** Backend | **Classification:** Methodological Anti-Pattern
-* **Description:** The anti-pattern of piping the output handle of a `Retrieve Object` or `Microflow Call` directly into a downstream parameter or assertion without verifying existence via an embedded `Assert Object Count` on the producer step first.
+* **Description:** Piping the output handle of a `Retrieve Object` step directly into downstream consumer steps (microflow parameters, change/delete actions, or association bindings) without configuring an embedded `Assert Object Count` on the retrieve step first. When an unasserted retrieve finds 0 records, the test fails downstream with ambiguous null-pointer or parameter-unbound errors rather than failing fast at the retrieval point.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-08` (Retrieve Output Object Count Assertion).
 
@@ -260,7 +261,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-04`: Hardcoding Test Data Values in Step Names
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Including specific runtime data values (e.g., `"Set Name to Alice"`, `"Filter Status Approved"`) directly in step names instead of using template-based descriptive names.
+* **Description:** Including specific runtime data values, attribute values, or parameter values (e.g., `"Set Name to Alice"`, `"Filter Status Approved"`, `"Create Order with Total 500"`, `"Call SUB_ProcessOrder with True"`) directly in step names instead of using template-based descriptive names.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-55` (Zero Data in Step Names).
   * **Related Patterns:** `PAT-32` (Dynamic Scalar Value Piping).
@@ -389,6 +390,7 @@ For each rule, this document outlines its scope, category, detailed operational 
   3. **Universal Short Sentinel Law (`PAT-53` Parity):** When filtering to retrieve 0 objects for empty object testing, ALWAYS use short $\le 4$-character sentinels such as `'NONE'` or `'NULL'`. Never use descriptive phrases like `'NON_EXISTENT'`, `'DOES_NOT_EXIST'`, or `'NOT_FOUND'`, which routinely exceed restrictive `String(4..8)` attribute length limits in the Mendix Domain Model.
   4. **Parameter Binding Rule:** Downstream microflow parameter bindings MUST be mapped to the **Retrieve step's output handle**, NEVER directly to the upstream Create step.
   5. **Pattern Recipes:** Can be implemented via the Standard Pattern (fixed dummy filter attribute), Alternative Pattern A (Same-Attribute neutral baseline), or Alternative Pattern B (Different-Attribute coordination).
+  6. **Self-Documenting Step Naming Law:** Test steps implementing this pattern MUST be named `Create <Entity> for empty object pattern in datavariation` and `Retrieve <Entity> for empty object pattern in datavariation`. Internal terminology like "Sentinel" is strictly prohibited in step names (`PAT-55`).
 * **Related Rules:**
   * **Related Patterns:** `PAT-08` (Retrieve Output Object Count Assertion), `PAT-19` (Data Variation Consolidation), `PAT-31` (Retrieve-for-Asserting Set & Count Law), `PAT-53` (Domain Model Attribute Length & Constraint Verification).
 
@@ -1245,6 +1247,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-92`: Symmetric Seeding Teardown Cleanup Law
 * **Scope:** Frontend | **Classification:** Methodological Law
 * **Description:** Any transactional business entity instantiated during Case 1 setup (`PAT-91`) MUST be deleted in Case 3 (Teardown) via **direct cross-case handle piping** (`ObjectAction = "DeleteObjects"`, `TestStepOutputKey = Case1_CreateStepKey`) without redundant database `Retrieve` steps. In contrast, runtime transactional records created by the browser during Case 2 MUST be retrieved from the database with explicit synthetic attribute filters prior to deletion. The teardown deletion pipeline concludes with a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`) at the end of the deletion block to commit all deletions to the database. Enforces the strict symmetry invariant: $\text{Entities}(\text{Case 3 Purge}) == \text{Entities}(\text{Case 1 Seed}) \cup \text{Entities}(\text{Case 2 Runtime Created})$. All teardown steps (retrieves, direct piped deletes, and the trailing persist) must be configured with `ExecutionCondition = "Always"` and `ResumeExecutionAfterException = "_Continue"` to guarantee complete database hygiene even if intermediate test assertions fail in Case 2.
+* **Step Naming Law:** Setup objects created in Case 1 MUST be named `Create seeded <Entity>` with trailing `Persist setup data`. Teardown delete steps in Case 3 MUST be named `Delete seeded <Entity>` (or `Retrieve seeded <Entity> for teardown` for runtime browser records) with trailing `Persist teardown deletions`. Never include runtime attribute values or IDs in step names (`PAT-55`).
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-43` (Asymmetric Teardown Seeding Leak).
   * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-18` (Frontend Setup/Teardown Execution Condition Law), `PAT-91` (Self-Contained Frontend Seeding Invariant), `PAT-93` (Reverse Dependency Order Deletion Protocol).
@@ -1289,6 +1292,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-96`: Business Microflow Execution & Direct Return Assertion Pattern
 * **Scope:** Backend | **Classification:** Platform Execution Law
 * **Description:** When testing Mendix business logic in Backend tests, invoke the target microflow via `CreateMicroflowCallTestStep` and assert on the execution outcome directly within Field 6 of the step itself (using `CreateAssertMicroflowReturnValue` for typed return values, or `CreateAssertValidationFeedbackMessageCompare`/`Count` for validation messages). This maintains a compact, deterministic test pipeline with zero redundant downstream retrieve queries.
+* **Step Naming Law:** Steps invoking business microflows MUST be named `Call <MicroflowName>` (e.g. `Call SUB_CalculateTotal`). Never include runtime parameter values or arguments in the step name (`PAT-55`).
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-13` (Blind Void Microflow Testing Anti-Pattern).
   * **Related Patterns:** `PAT-08` (Retrieve / Microflow Output Object Count Assertion), `PAT-10` (TestCase Container Execution Settings Law), `PAT-17` (Backend Unit Test Execution Settings Law).
@@ -1672,10 +1676,32 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-117`: Single Bulk Sync per Test Case
+* **Scope:** General | **Classification:** Platform Execution Law
+* **Description:** Eliminates the sequential `CreateStep -> GetTeststepDetails -> EditParam` anti-pattern by enforcing a single `GetTestCaseDetails(TestCaseKey)` bulk sync per test case during Phase 2 of construction. After completing Phase 1 forward step chaining (`PAT-11`) and Phase 2A concurrent attribute inclusions and retrieve options (in batches of 15–20 calls/turn, `ANTI-32`), the agent calls `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** to capture all server-assigned `AttributeValueKey`, `SelectObjectForMicroflowParameterKey`, and `MicroflowParameterValueKey` IDs across all steps in the testcase. Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited. The agent parses the returned keys in memory and executes all Phase 2B setters concurrently in safe batches.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern) / `ANTI-39` (Vertical Per-Step Interleaving).
+  * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law), `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching).
+  * **Related Anti-Patterns:** `ANTI-66` (Existing Suite Reverse-Engineering & Anchoring).
+
+---
+
+### `ANTI-66`: Existing Suite Reverse-Engineering & Anchoring
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Once Gate 1 (Execution Plan) and Gate 2 (Placement) are approved, querying existing or historical test suites (`GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`) to reverse-engineer or copy step parameters, locators, date formats, or step sequences. Historical suites frequently contain legacy bugs, outdated locator schemas, or conflicting locale/date settings (e.g. copying `MM/dd/yyyy` from an old US suite and overwriting the correct `dd-MM-yyyy` specified in the approved plan). This practice wastes dozens of roundtrips, consumes thousands of tokens inspecting foreign structures, and undermines the approved Execution Plan as the authoritative Single Source of Truth (`PAT-71`). During `STATE_CONSTRUCTION`, all step types, names, attributes, parameters, locators, and formats MUST be read exclusively from the approved `EP_*.md` file. Zero queries to other test suites are permitted.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-71` (Bifurcated Model Discovery Protocol) / `PAT-89` (File-First Execution Plan Drafting & Single-Turn Plan Approval).
+  * **Related Patterns:** `PAT-94` (DatePicker Format Model Extraction Law), `PAT-114` (Widget-Type-Driven Locator & Action Resolution), `PAT-117` (Single Bulk Sync per Test Case).
+  * **Related Anti-Patterns:** `ANTI-26` (Redundant Exploratory Model Query Cascade), `ANTI-45` (Date Format Assumption / Defaulting Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-117`** (Single Bulk Sync per Test Case) | **`ANTI-32`** (Chatterbox Sequential Setter Anti-Pattern) / **`ANTI-39`** (Vertical Per-Step Interleaving) | Single GetTestCaseDetails bulk sync per testcase vs looping GetTeststepDetails across individual steps |
+| **`PAT-71`** (Single Source of Truth Invariant) / **`PAT-89`** (File-First Drafting) | **`ANTI-66`** (Existing Suite Reverse-Engineering & Anchoring) | Reading step parameters strictly from approved Execution Plan vs reverse-engineering foreign test suites |
 | **`PAT-113`** (Vendor Tool & Skill Immutability Law) | **`ANTI-62`** (Vendor Tool & Skill Tampering Anti-Pattern) | Upstream vendor tool integrity & .custom.mjs extensions vs direct modifications overwritten by updates |
 | **`PAT-114`** (Widget-Type-Driven Locator & Action Resolution) | **`ANTI-63`** (Element Name Widget Guessing Anti-Pattern) | Metamodel-driven widget locators and actions vs guessing widget types from element names |
 | **`PAT-115`** (Test Step Decommissioning & Neutralization Law) | **`ANTI-64`** (Active Zombie Step Anti-Pattern) | Neutralizing broken steps with Skip condition and [TO DELETE] prefix vs leaving active broken steps |

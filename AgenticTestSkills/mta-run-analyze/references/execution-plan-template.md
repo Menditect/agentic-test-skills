@@ -84,7 +84,7 @@ test_case_keys: []
 | **0** | **Scenario Description** | Standard active customer verification | Boundary threshold condition | Unassigned parameter fallback |
 | 1 | Step 1: `Entity1.Attr1` | `'TEST_001'` | `'TEST_002'` | `'TEST_003'` |
 | 2 | Step 2: `Entity2.Category` | `'Standard'` | `'Premium'` | `'Standard'` |
-| 3 | Step 3: Filter `Entity2.SentinelKey` | `'VALID'` | `'VALID'` | `'NON_EXISTENT'` |
+| 3 | Step 3: Filter `Entity2.SentinelKey` | `'VALID'` | `'VALID'` | `'NONE'` |
 | 4 | Step 4: Assert Return Value | `true` | `true` | `false` |
 
 ## 5. Quality & Compliance Checks

@@ -1,9 +1,20 @@
 # Deterministic Horizontal Layered Construction SOP
 
 **📍 Location:** `references/construction-sop.md` | **🏠 Parent:** [MTA Build Skill](../SKILL.md)  
-*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-109`, `PAT-110`, `PAT-115`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`, `ANTI-59`, `ANTI-64`*
+*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-109`, `PAT-110`, `PAT-115`, `PAT-117`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`, `ANTI-59`, `ANTI-64`, `ANTI-66`*
 
 This Standard Operating Procedure (SOP) governs the active construction of test cases, steps, assertions, and data variations on the Menditect Test Automation (MTA) platform.
+
+---
+
+## 🚫 Strict Prohibition of Existing Suite Reverse-Engineering & Anchoring (`ANTI-66`)
+
+Once Gate 1 (Execution Plan) and Gate 2 (Placement) are approved, the agent is **STRICTLY PROHIBITED** from querying existing or historical test suites (`GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`) to reverse-engineer or copy step parameters, locators, date formats, or step sequences (`ANTI-66`).
+
+### Why Existing Suite Anchoring Fails:
+* **Legacy Bugs & Format Conflicts:** Historical test suites frequently contain outdated locators, deprecated parameter patterns, or conflicting localization settings (e.g. copying `MM/dd/yyyy` from an old US-formatted suite, overwriting the correct `dd-MM-yyyy` specified in the approved Execution Plan).
+* **Massive Token & Roundtrip Waste:** Querying foreign test suites wastes dozens of roundtrips and tens of thousands of tokens inspecting irrelevant test structures.
+* **Violation of Single Source of Truth (`PAT-71`):** The approved `EP_*.md` file is the sole authoritative specification. During `STATE_CONSTRUCTION`, all step types, names, attributes, parameters, locators, and formats MUST be read exclusively from the approved `EP_*.md` file. Zero queries to other test suites are permitted.
 
 ---
 
@@ -16,7 +27,7 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
              │
 [Phase 2A: Batch Inclusion] (Attributes, Filters, Assertions - 15-20 calls/turn)
              │
-[Mid-Phase Bulk Sync] (Single GetTestCaseDetails call)
+[Mid-Phase Bulk Sync: PAT-117] (Single GetTestCaseDetails call)
              │
 [Phase 2B: Batch Binding] (Values, Parameters, Outputs, Descriptions - 15-20 calls/turn)
              │
@@ -45,7 +56,7 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 Once all step keys are resolved, batch-dispatch the following tools concurrently across ALL steps in the test case:
 - `EditAttributeValue(EditAction="IncludeAttribute", TestStepKey=..., AttributeName=...)` for all attributes across all Create Object and Retrieve steps (never use `EditAttributeValueFilter` for inclusion).
 - `EditTestStepRetrieve(RetrieveOption=...)` to configure retrieve mode.
-- Embedded assertions: `CreateAssertMicroflowReturnValue` (using plural `"Equals"`), `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`, and `CreateAssertException`.
+- Embedded assertions: `CreateAssertMicroflowReturnValue` (using plural `"Equals"`), `CreateAssertObjectCount` (mandatory on all retrieve steps piping output to downstream consumers per `PAT-08` / `ANTI-03`), `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`, and `CreateAssertException`.
 
 > **Safe Batch Sizing:** Group calls into safe batches of **15 to 20 tool calls per turn** (`ANTI-32`). For large test cases, chunk across sequential turns while remaining within `BATCH_INCLUSION`.
 
@@ -79,10 +90,18 @@ When creating a step to retrieve an in-memory object from a predecessor step:
 
 ---
 
-### Mid-Phase Bulk Sync
-Execute `GetTestCaseDetails(TestCaseKey)` (or `GetTestSuiteDetails`) to capture all newly generated `AttributeValueKey`s, retrieve filter keys, and assertion keys across all steps.
-> [!TIP]
-> **Targeted Step Details vs Full Dumps:** When inspecting or configuring a specific step (e.g. a Microflow Call step to obtain `SelectObjectForMicroflowParameterKey`), call **`GetTeststepDetails(TestStepKey)`**. This returns < 1 KB directly in context, completely avoiding disk-dump truncation (`output.txt`).
+### Mid-Phase Bulk Sync: Single Bulk Sync per Test Case (`PAT-117`)
+
+To eliminate the sequential `CreateStep -> GetTeststepDetails -> EditParam` anti-pattern (`ANTI-32`, `ANTI-39`), you MUST enforce a single `GetTestCaseDetails` bulk sync per test case during Phase 2 (`PAT-117`).
+
+#### 🔄 Execution Flow:
+1. **Phase 1 (Skeleton Chaining):** Chain all empty steps in the testcase sequentially (`TestStepBeforeKey = prevStepKey`, `PAT-11`, `PAT-16`).
+2. **Phase 2A (Attribute Inclusion & Retrieve Options):** Dispatch all `EditAttributeValue(IncludeAttribute)` and `EditTestStepRetrieve` calls in concurrent batches of 15–20 calls/turn (`ANTI-32`).
+3. **Mid-Phase Bulk Sync (Single Call, `PAT-117`):** Call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** to capture all server-assigned `AttributeValueKey`, `SelectObjectForMicroflowParameterKey`, and `MicroflowParameterValueKey` IDs across all steps in the testcase.
+   > [!CAUTION]
+   > **Sequential `GetTeststepDetails` Loop Ban (`PAT-117`, `ANTI-32`):**
+   > Calling `GetTeststepDetails` in a loop across individual steps to discover parameter, locator, or attribute keys is **STRICTLY PROHIBITED**. Doing so degrades throughput into an excruciating 90+ turn sequential slog. Parse the single `GetTestCaseDetails` response in memory to extract all step keys at once.
+4. **Phase 2B (Concurrent Batch Binding):** Parse the keys in memory and batch all `EditMicroflowObjectParameter`, `EditMicroflowParameterValue`, and `EditAttributeValue` setter calls concurrently in safe chunks of 15–20 calls/turn.
 
 ---
 
