@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.30.0"
-changes: "Added automated 4-phase smoke audit execution via mta-lint audit."
+version: "6.31.0"
+changes: "Added widget metamodel pairing rules (PAT-114), Step Decommissioning Protocol (PAT-115), and zero SlowMo default on LocalStartOptions (PAT-116)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -99,6 +99,14 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 25. **Sequence Modification Serialization Law [^ANTI-44]**:
     *   Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls concurrently in parallel is strictly **PROHIBITED**. Sequence reordering calls cause uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences.
     *   When sequence reordering is required, dispatch calls sequentially one-by-one across separate turns, or eliminate them entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
+26. **Step Decommissioning & Failure Recovery Protocol [^PAT-115] [^ANTI-64]**:
+    *   Because the MTA MCP server lacks a `DeleteTestStep` API tool, when a test step fails to configure or is discovered to be invalid during construction (e.g. `ErrorNr: 21` due to locator type mismatch):
+        1. *Neutralize:* Set `ExecutionCondition = "Skip"` via `EditTestStep` so the runner bypasses it.
+        2. *Rename & Annotate:* Rename the step title to prefix `[TO DELETE]` (e.g. `[TO DELETE] Step 203 - ACT_SelectOption_DropDown`) and annotate the description with `[Pattern: PAT-DEPRECATE-STEP - Decommissioned due to <reason>; replaced by Step <M>]`.
+        3. *Construct Replacement:* Build the correct replacement step forward in the chain.
+        4. *Smoke Audit Reconciliation:* In Section 9 / Checkpoint 3, record the step with status `⚠️ SKIPPED (PAT-115 Decommissioned)` and append the Manual Cleanup Recommendation box for user deletion in Studio Pro (`ANTI-64`).
+27. **Playwright Fast Execution Default [^PAT-116] [^ANTI-65]**:
+    *   When provisioning `LocalStartOptions` (Step 101) for Frontend UI testing, leave `SlowMo` omitted / `0 ms` by default. Do NOT inject artificial delay unless the user explicitly requested visual slow-motion debugging.
 
 ---
 
@@ -112,7 +120,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 173 testing patterns/anti-patterns (`PAT-01..112`, `ANTI-01..61`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 181 testing patterns/anti-patterns (`PAT-01..116`, `ANTI-01..65`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

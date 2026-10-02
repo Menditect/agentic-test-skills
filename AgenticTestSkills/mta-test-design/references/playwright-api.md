@@ -81,7 +81,7 @@ These entities are constructed statically via `CreateObjectActionTestStep` and l
     *   `Locator_ContainsClassOptions`, `Locator_ContainsTextOptions`, `Locator_HasAttributeOptions`, `Locator_HasClassOptions`, `Locator_HasCountOptions`, `Locator_HasTextOptions`, `Locator_HasValueOptions`, `Locator_IsCheckedOptions`, `Locator_IsDisabledOptions`, `Locator_IsEnabledOptions`, `Locator_IsHiddenOptions`, `Locator_IsVisibleOptions`, `Locator_MatchesAriaSnapshotOptions`, `Page_HasTitleOptions`, `Page_HasURLOptions`.
 
 ### 🚀 Session & Context Options
-*   **`MenditectPlaywrightConnector.LocalStartOptions`**: `SlowMo` (`Decimal`, default `0`).
+*   **`MenditectPlaywrightConnector.LocalStartOptions`**: `SlowMo` (`Decimal`, default `0`). (Note: Standardized to default `0` / omitted for agent-driven execution; only configure when human visual step debugging is explicitly requested [^PAT-116] [^ANTI-65]).
 *   **`MenditectPlaywrightConnector.NewBrowserContextOptions`**: `DefaultTimeout` (`Decimal`, default `30000`), `Locale` (`String`), `TimezoneId` (`String`).
 *   **`MenditectPlaywrightConnector.NewPageOptions`**: `DefaultTimeout` (`Decimal`, default `30000`).
 *   **`MenditectPlaywrightConnector.StartTracingOptions`**: `Screenshots` (`Boolean`), `Snapshots` (`Boolean`).
@@ -173,7 +173,7 @@ Please configure or confirm the following browser options:
 
 **Advanced Options:**
 7. **Tracing Configuration (Trace):** (Enable Tracing? Default: `true`)
-8. **SlowMo:** (Action delay in ms; default: `100` ms locally, `0` ms on server)
+8. **SlowMo:** (Action delay in ms; default: `0` ms / Omitted for fast agent execution [^PAT-116]; non-zero like `100` ms is opt-in for visual debugging)
 9. **DefaultTimeout:** (Max wait time in ms; default: `30000` ms)
 10. **Locale:** (Browser page locale/language; default: system language)
 11. **TimezoneId:** (Browser page timezone; default: system timezone)
@@ -196,7 +196,7 @@ Please review and confirm the resolved browser setup configuration:
 5. **Target URL:** http://localhost:[Port]
 6. **Login Preference:** Without Login
 7. **Tracing (Trace):** Enabled (true)
-8. **SlowMo:** 100 ms
+8. **SlowMo:** 0 ms (Omitted - fast agent execution)
 9. **DefaultTimeout:** 30000 ms
 10. **Locale:** [System Language]
 11. **TimezoneId:** [System Timezone]
@@ -227,7 +227,7 @@ Create Case 1's Start Playwright step calling the microflow matching the executi
 ### Option-Building Protocol (All Modes)
 Before executing the setup microflow, build and configure context/start options:
 1.  Create the options object step (e.g., `MenditectPlaywrightConnector.LocalStartOptions` or `NewBrowserContextOptions`) using `CreateObjectActionTestStep(ObjectAction="CreateObject")`.
-2.  For each active attribute (e.g., `SlowMo`, `DefaultTimeout`, `Locale`), call `EditAttributeValue(TestStepKey, AttributeName, EditAction="IncludeAttribute")`, retrieve `AttributeValueKey` via `GetTeststepDetails(TestStepKey)`, and set value via `EditAttributeValue(AttributeValueKey, EditAction="SetDecimalValue" | "SetIntegerValue" | "SetStringValue", ...)`.
+2.  For each active attribute (e.g., `DefaultTimeout`, `Locale`), call `EditAttributeValue(TestStepKey, AttributeName, EditAction="IncludeAttribute")`, retrieve `AttributeValueKey` via `GetTeststepDetails(TestStepKey)`, and set value via `EditAttributeValue(AttributeValueKey, EditAction="SetDecimalValue" | "SetIntegerValue" | "SetStringValue", ...)`. (Note: `SlowMo` defaults to `0` / omitted in `LocalStartOptions`; do NOT include or set it unless visual debugging was explicitly requested [^PAT-116] [^ANTI-65]).
 3.  Bind the configured options step to the setup microflow parameter using `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetTestStepOutput", TestStepOutputKey=...)`.
 
 ### 🌐 Login Preferences
@@ -237,7 +237,7 @@ At the start of Case 2, call the correct startup microflow:
 
 ### 🎬 Tracing & Screenshots Configuration
 Configure tracing strictly via the simple pattern:
-1.  *Case 1 (Setup):* Configure `SlowMo` only via `LocalStartOptions`. Do NOT configure tracing here.
+1.  *Case 1 (Setup):* In `LocalStartOptions`, leave `SlowMo` empty/omitted by default for fast agent execution [^PAT-116]. Do NOT configure tracing here.
 2.  *Case 2 (Execution):* In the startup options (`StartMxFrontendTestOptions`), set `Trace` attribute to `true` to enable automatic tracing, DOM snapshots, and screenshots.
 3.  *Case 3 (Teardown):* Call `Teardown_Playwright`.
 

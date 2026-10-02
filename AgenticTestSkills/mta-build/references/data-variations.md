@@ -132,24 +132,36 @@ MTA supports data variations at the **Test Suite** level in addition to the Test
 
 ---
 
-## 🎯 EMPTY OBJECT PATTERN: QUICK DECISION GUIDE (`PAT-07`)
+## 🎯 EMPTY OBJECT PATTERN: QUICK DECISION GUIDE (`PAT-07`, `PAT-08`, `PAT-109`)
 
-**Q: Do you need to conditionally pass null/empty objects to a microflow across variations?**
+### 🛑 Mandatory Empty-Guard Recognition Law (`PAT-109` → `PAT-07` Linkage)
+During single-pass microflow AST analysis (`PAT-109`), if the microflow contains any Decision or Filter checking `$Parameter == empty`, `$Parameter != empty`, or checking an associated object `$Object/Association == empty`:
+- The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton.
+- The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in the Master Step Ledger.
 
-✅ **YES** ➔ You **MUST** use the **Empty Object Retrieve Pattern** with **Retrieve from Teststep**!
-
-**Step-by-Step Recipe with the 51-Tool Primitive API:**
+### Step-by-Step Recipe with the 51-Tool Primitive API:
 1. **Create Object Step:** Call `CreateObjectActionTestStep(ObjectAction="CreateObject")` for the base entity.
-2. **Bind Initial Attributes:** Call `EditAttributeValue` to set the filtering attribute (e.g., `OrderNumber = "VALID"`).
+2. **Bind Initial Attributes:** Call `EditAttributeValue` to set the filtering attribute with a short sentinel (e.g., `Sentinel = "VALID"`).
 3. **Retrieve Object Step:** Call `CreateObjectActionTestStep(ObjectAction="RetrieveObjects")`.
 4. **Link Retrieve to Teststep:** Call `EditTestStepRetrieve(TestStepKey, EditAction="SetRetrieveOption", RetrieveOption="Teststep")` and `EditTestStepRetrieve(TestStepKey, EditAction="SetTestStepForRetrieveByTeststep", TestStepOutputKey=Step1Key)` to bind it to Step 1's memory output.
-5. **Set Retrieve Filter:** Call `EditAttributeValueFilter` to filter on the same attribute (`OrderNumber = "VALID"`).
-6. **Register Variation Item:** Call `AddTestCaseVariationItem` (`Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`) on the **Create Object step's attribute value**.
-7. **Populate Variations:**
-    *   **Valid scenario:** Set Create step attribute value to `"VALID"`. (Object matches Retrieve filter, returns object).
-    *   **Null/Empty scenario:** Set Create step attribute value to `"NONE"`. (Object fails Retrieve filter, memory returns null/empty. Comply with the Universal Short Sentinel Law [^PAT-53] using <=4-char values).
-8. **Bind Microflow Parameter:** Bind the microflow input parameter directly to the **Retrieve step output**, never the Create step.
+5. **Set Retrieve Filter:** Call `EditAttributeValueFilter` to filter on the same attribute (`Sentinel = "VALID"`).
+6. **Embed Assert Object Count (`PAT-08`):** Call `CreateAssertObjectCount(TestStepKey, ExpectedObjectCount=1)` on the Retrieve step.
+7. **Register Variation Item:** Call `AddTestCaseVariationItem` (`Action="AddAttributeValueTestCaseVariationItem"`, `ObjectKey=AttributeValueKey`) on the **Create Object step's attribute value**.
+8. **Populate Variations:**
+    *   **Valid scenario:** Set Create step attribute value to `"VALID"`. (Object matches Retrieve filter, returns object, count = 1).
+    *   **Null/Empty scenario:** Set Create step attribute value to `"NONE"`. (Object fails Retrieve filter, memory returns null/empty, count = 0. Comply with the Universal Short Sentinel Law using <=4-char values).
+9. **Bind Microflow Parameter:** Bind the microflow input parameter directly to the **Retrieve step output**, never the Create step.
+
+### Empty Association Support Recipe (`PAT-07`, `ANTI-48`):
+1. **Create Target Object Step:** Call `CreateObjectActionTestStep(ObjectAction="CreateObject")` for the associated child entity (e.g., `CarSize`), setting sentinel attribute `Sentinel = "VALID"`.
+2. **Retrieve Target Object Step:** Call `CreateObjectActionTestStep(ObjectAction="RetrieveObjects")` (`RetrieveOption="Teststep"`), filtering by `Sentinel == "VALID"` and embedding `Assert Object Count == 1` (`PAT-08`).
+3. **Create Host Object Step:** Call `CreateObjectActionTestStep(ObjectAction="CreateObject")` for the host entity (e.g., `Car`), binding association `Car_CarSize` to the **Retrieve step output handle**.
+4. **Populate Variations:**
+    *   **Associated scenario:** Set child Create step attribute to `"VALID"`. (Association links to child object).
+    *   **Unassigned scenario:** Set child Create step attribute to `"NONE"`. (Retrieve yields 0 objects, host association receives empty, leaving association unassigned).
 
 ❌ **NEVER** use `RetrieveOption = "Database"` for this pattern.
 ❌ **NEVER** bind a microflow parameter directly to a Create step when implementing the empty object pattern.
+❌ **NEVER** place association bindings or handles as rows in the Data Variation Matrix (`ANTI-48`).
+
 

@@ -1,7 +1,7 @@
 # Deterministic Horizontal Layered Construction SOP
 
 **📍 Location:** `references/construction-sop.md` | **🏠 Parent:** [MTA Build Skill](../SKILL.md)  
-*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-109`, `PAT-110`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`, `ANTI-59`*
+*Patterns Enforced: `PAT-11`, `PAT-16`, `PAT-78`, `PAT-85`, `PAT-86`, `PAT-87`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-109`, `PAT-110`, `PAT-115`, `ANTI-05`, `ANTI-32`, `ANTI-39`, `ANTI-40`, `ANTI-44`, `ANTI-59`, `ANTI-64`*
 
 This Standard Operating Procedure (SOP) governs the active construction of test cases, steps, assertions, and data variations on the Menditect Test Automation (MTA) platform.
 
@@ -101,6 +101,14 @@ With keys resolved from the sync, batch-dispatch the following tools concurrentl
 > 2. *Isolate:* Parse the MCP error response to extract the specific failed key (`TestStepKey`, `AttributeValueKey`, or `TestCaseVariationKey`) and the failing parameter.
 > 3. *Surgically Correct:* Re-run only that specific failed setter tool with corrected arguments.
 > 4. *Verify & Resume:* Confirm step integrity via `GetTeststepDetails(TestStepKey)` or `GetTestCaseDetails(TestCaseKey)` before resuming the remaining batches.
+
+#### 🔧 Step Decommissioning & Failure Recovery Protocol (`PAT-DEPRECATE-STEP` / `PAT-115`, `ANTI-64`)
+Because MTA does not expose a `DeleteTestStep` MCP tool, when a test step is misconfigured, corrupted, rendered redundant, or blocked by an irreversible parameter lock (e.g. `ErrorNr: 21` when an incompatible locator was bound to an action), attempting to delete it via arbitrary scripts or leaving an un-executable step in the active execution pipeline is strictly prohibited (`ANTI-64`). Agents MUST follow the **3-Step Decommissioning Protocol (`PAT-115`)**:
+1. **Neutralize Step Execution:** Call `EditTestStep` to set `ExecutionCondition = "Skip"` (or `"None"` if `"Skip"` is unsupported).
+2. **Rename & Annotate Step:** Call `EditTestStep` to prepend `[TO DELETE]` to `TestStepName` (e.g. `[TO DELETE] Step 3 - ACT_SelectOption_DropDown`) and set `Description` explaining the decommission rationale:
+   `[Pattern: PAT-DEPRECATE-STEP (PAT-115) - Decommissioned due to locator type mismatch. Manual deletion recommended via MTA UI]`.
+3. **Provision Replacement Step:** Create the correct replacement step forward-chained from the proper predecessor (`PAT-11`) and bind correct parameters.
+4. **Reconcile Checkpoint 3 & Audit:** When completing construction, include a **Manual Cleanup Recommendation** box in the Smoke Audit receipt informing the user of the deprecated steps for clean deletion in Studio Pro.
 
 ---
 

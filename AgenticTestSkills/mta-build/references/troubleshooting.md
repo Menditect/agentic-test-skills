@@ -79,6 +79,28 @@ Before setting test parameters or reporting formats, convert JSON-serialized dat
 *   **Root Cause:** Downstream consumer is executed while its upstream data provider is skipped.
 *   **Rule (Cascading Consumer Rule):** If a teststep is set to `"Skip"`, all receiving consumer steps must also be set to `"Skip"` via `EditTestStep(ExecutionCondition="Skip")`.
 
+### Pattern D: ErrorNr 21 — Incompatible Object Output Type on Microflow Parameter (PAT-114, PAT-115, ANTI-63, ANTI-64)
+*   **Symptom / Error:** `ErrorNr: 21` — *"The teststep does not provide the object(s) for the microflow parameter anymore"*.
+*   **Root Cause:** Attempting to bind a locator output to an incompatible action microflow (e.g. passing `MxReferenceSelectorLocator` into `ACT_SelectOption_DropDown_Select_By_Label`, or `MxDropDownLocator` into `ACT_SelectOption_ReferenceSelector_Select_By_Label`). This typically occurs when an agent guesses widget types from element names rather than querying the Mendix metamodel (`ANTI-63`).
+*   **Resolution:**
+    1.  **Decommission Failing Step (`PAT-115`):** Since MTA lacks a `DeleteTestStep` tool, neutralize the failing step immediately by setting `ExecutionCondition = "Skip"` and renaming to `[TO DELETE] Step <N> - <Name>`.
+    2.  **Verify Metamodel Widget Type (`PAT-114`):** Query `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` or run `DESCRIBE PAGE <Module.Page>` to inspect the true widget type.
+    3.  **Construct Correct Matching Step:** Create the appropriate action step matching the locator type (e.g., `ACT_SelectOption_ReferenceSelector_Select_By_Label` for `MxReferenceSelectorLocator`).
+    4.  **Annotate Smoke Audit:** Include the decommissioned step in the Manual Cleanup Recommendation box for manual deletion in Mendix Studio Pro (`ANTI-64`).
+
+### Pattern E: ErrorNr 7 — Predecessor Step Key Not Found or Invalid Sequence (PAT-11, ANTI-44)
+*   **Symptom / Error:** `ErrorNr: 7` — *"TestStepBeforeKey not found"* or sequence placement error.
+*   **Root Cause:** A step was created with a non-existent `TestStepBeforeKey`, or parallel batching of `SetSequenceOfTestStep` caused a race condition corrupting the ordinal position index (`ANTI-44`).
+*   **Resolution:**
+    1.  Call `GetTestCaseDetails(TestCaseKey)` to verify active step keys and their current order.
+    2.  Always construct steps in forward sequential order (`PAT-11`), using the returned key of step $N-1$ as `TestStepBeforeKey` for step $N$.
+    3.  If reordering existing steps, execute `SetSequenceOfTestStep` sequentially across separate turns, or use the reverse-order pattern ($N \rightarrow 1$).
+
+### Pattern F: Execution Timeout via Unnecessary SlowMo Delay (PAT-116, ANTI-65)
+*   **Symptom:** UI test runs take excessive time or fail due to client/server execution timeouts (> 300s).
+*   **Root Cause:** `LocalStartOptions.SlowMo` was set to a non-zero value (e.g. `1000 ms`), adding artificial delays between every Playwright action.
+*   **Resolution:** In `LocalStartOptions`, leave `SlowMo` omitted / `0 ms` by default (`PAT-116`). SlowMo should only be configured when human visual step debugging is explicitly requested by the user.
+
 ---
 
 ## 🛠️ RUNTIME & DESIGN-TIME DIAGNOSTICS

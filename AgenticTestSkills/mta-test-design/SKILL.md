@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.34.0"
-changes: "Added mandatory Step 4 Automated Quality & Compliance Pre-Flight Lint (mta-lint plan) before Gate 1 approval."
+version: "6.35.0"
+changes: "Enforced widget metamodel verification (PAT-114) and zero SlowMo default (PAT-116) for Frontend test plans."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -71,7 +71,7 @@ You must progress sequentially through these three interactive planning micro-st
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
     - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `ANTI-07`, `ANTI-10`, `ANTI-13`
     - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `PAT-110` (Target-Bound Variation Matrix Schema), `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-59` (Conceptual Untargeted Matrix Columns)
-    - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `ANTI-20`, `ANTI-21`, `ANTI-23`
+    - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `PAT-114` (Widget-Type-Driven Locator & Action Resolution), `PAT-116` (Playwright Zero SlowMo Default), `ANTI-20`, `ANTI-21`, `ANTI-23`, `ANTI-63` (Element Name Widget Guessing), `ANTI-65` (SlowMo Latency Overhead)
     - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol), `ANTI-24`..`ANTI-30`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-61` (Deceptive Offline Masking & Commercial Spamming Anti-Pattern)
     - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
 *   **⚡ Step 0: Mandatory Domain Rule Activation Gate (Before Step Design)**:
@@ -79,7 +79,9 @@ You must progress sequentially through these three interactive planning micro-st
     - **Domain 1: Backend Logic (Unit / Integration Tests):**
       *Activate Rules:* `PAT-06` (Direct Init on Create), `PAT-07` (Dual Filter Sentinels for nulls), `PAT-08` (Embedded Count Assertions), `PAT-11` (Ordered Sequential Creation), `PAT-17` (Settings `None`/`Stop`), `PAT-95` (Direct Piping Delete), `PAT-109` (One-Shot AST Extraction), `PAT-110` (Target-Bound Matrix), `PAT-111` (Unified Promotable Blueprint), `ANTI-01`, `ANTI-03`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`.
     - **Domain 2: Frontend UI Flows (Playwright Tests):**
-      *Activate Rules:* `PAT-03` (3-Case Split), `PAT-18` (Settings `Always`/`_Continue`), `PAT-41` (Navigation & Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog TestKit), `PAT-67` (Widget Inventory), `PAT-72` (Page AST), `PAT-91` (Self-Contained Seeding), `PAT-92` (Symmetric Teardown with Trailing Persist), `PAT-93` (Reverse Dependency Deletion), `PAT-94` (DatePicker Format via BSON dump), `ANTI-20` (No Microflow Substitutions), `ANTI-21`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45`.
+      *Activate Rules:* `PAT-03` (3-Case Split), `PAT-18` (Settings `Always`/`_Continue`), `PAT-41` (Navigation & Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog TestKit), `PAT-67` (Widget Inventory), `PAT-72` (Page AST), `PAT-91` (Self-Contained Seeding), `PAT-92` (Symmetric Teardown with Trailing Persist), `PAT-93` (Reverse Dependency Deletion), `PAT-94` (DatePicker Format via BSON dump), `PAT-114` (Widget-Type-Driven Locator & Action Resolution), `PAT-116` (Playwright Zero SlowMo Default), `ANTI-20` (No Microflow Substitutions), `ANTI-21`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45`, `ANTI-63` (Element Name Widget Guessing), `ANTI-65` (SlowMo Latency Overhead).
+      *Widget Metamodel Verification (`PAT-114`, `ANTI-63`):* Never infer widget types from element names (e.g. `Dropdown_Location` or `Select_Role` may be a Reference Selector, not a DropDown). Query the widget metamodel via `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` or `DESCRIBE PAGE <Module.Page>` and select the exact matching locator and action microflow from the Locator & Action Pairing Matrix in `frontend-testing.md`.
+      *Fast Execution SlowMo Default (`PAT-116`, `ANTI-65`):* In Section 6 (Playwright Settings) and Step 101 (`LocalStartOptions`), default `SlowMo = 0 ms` (or omitted). Fast execution is essential for autonomous agent build, smoke audit, and execution cycles. Non-zero SlowMo (e.g. `100 ms`) is strictly opt-in for human visual debugging.
     - **Domain 3: Standalone Test Data Seeding:**
       *Activate Rules:* `PAT-70` (1-Case Generator), `PAT-06` (Direct Init on Create), `PAT-110` (Target-Bound Matrix), `ANTI-01`, `ANTI-46`.
     - **Master Step Specification Ledger Schema Mandate (`PAT-12`, `PAT-34`, `ANTI-60`):**
@@ -108,22 +110,29 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Schema Resilience & Parameter Invariant:* Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard operation and MUST NOT trigger false catalog missing warnings. If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` before aborting.
     *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
-*   **🚨 AST Null-Check Decision Scanner & Mandatory `PAT-07` In-Memory Retrieve Injection**:
-    *   *Pre-Planning AST Decision Audit:* During the single-shot `mxcli describe microflow` inspection, scan the AST for:
-        1. **Parameter Null Checks:** `$Parameter != empty`
-        2. **Association / Associated Object Null Checks:** `$Object/Association != empty` or retrieved associated object null checks.
-    *   *Automatic Skeleton Injection (`PAT-07`, `ANTI-48`):* If any parameter or association null check is detected, AND the planned test scope includes null/empty boundary scenarios, the planner MUST NOT pipe `Create Object` directly to the microflow or association. It MUST automatically generate the **Dual Retrieve/Filter Empty Object Pattern (`PAT-07`)** in Phase 1:
-        - **For Empty Parameter Support:**
-          - Step A: Create Object (e.g. `Car`, initial attributes with synthetic key and sentinel attribute `LicensePlate = 'VALID'`)
-          - Step B: Retrieve Object (`RetrieveOption = "Teststep"`, filtering on `LicensePlate == 'VALID'`)
-          - Step C: Microflow Call (bound to Step B output handle).
-          - In Variation Matrix: Scenario #1..#N-1 sets Step B Filter to `'VALID'`; Scenario #N (Null boundary) sets Step B Filter to `'NONE'`, producing an empty object handle in memory.
-        - **For Empty Association Support:**
-          - Step A: Create Target Object (e.g. `CarSize`, setting sentinel `Size = 'Small'`)
-          - Step B: Retrieve Object (`RetrieveOption = "Teststep"`, filtering on `Size == 'Small'`)
-          - Step C: Create Host Object (e.g. `Car`, setting association `Car_CarSize` to Step B output handle).
-          - In Variation Matrix: Scenario with unassigned association sets Step B Filter to `'NONE'`, resulting in no association linked.
-    *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`PAT-07`, `PAT-111`):* Omission of `PAT-07` in favor of raw JSON shortcuts (such as `"UseEmptyObjectList": true` or omitted association keys) inside the documented Execution Plan `EP_*.md` is strictly prohibited. All nullable variations MUST be modeled via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
+*   **🛑 Mandatory Empty-Guard Recognition Law (PAT-109 → PAT-07 Linkage)**:
+    *   *AST Null-Check Decision Scanner:* During single-pass microflow AST analysis (`PAT-109`), scan the AST for decisions, filters, or expressions checking:
+        1. **Parameter Null Checks:** `$Parameter == empty` or `$Parameter != empty`
+        2. **Associated Object / Association Null Checks:** `$Object/Association == empty` or `$Object/Association != empty`, or checking a retrieved associated object for empty.
+    *   *Mandatory Skeleton Decision Tree:* If the microflow contains any Decision or Filter checking `$Parameter == empty`, `$Parameter != empty`, or checking an associated object `$Object/Association == empty`:
+        - The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton.
+        - The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in Section 3:
+          1. `CreateObject` (Entity) with a scalar sentinel attribute initialized (e.g. `Sentinel = 'VALID'`).
+          2. `RetrieveObject` (`RetrieveOption = "Teststep"`, filtering on `Sentinel == 'VALID'`, embedding `Assert Object Count == 1` per `PAT-08`).
+          3. Downstream step consumes the Retrieve Handle, allowing the variation matrix to yield Count = 1 (valid) when `Sentinel == 'VALID'` or Count = 0 (empty) when `Sentinel == 'NONE'`, without altering the step sequence.
+    *   *Empty Parameter Support Recipe:*
+        - Step 1: `CreateObject` (`Entity`, initial attributes + synthetic key + sentinel attribute `Sentinel = 'VALID'`)
+        - Step 2: `RetrieveObject` (`RetrieveOption = "Teststep"`, input handle = Step 1 output, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1`)
+        - Step 3: `CallMicroflow` (parameter bound to Step 2 retrieve handle)
+        - In Section 4 / Section 7 Data Variation Matrix: Scenario #1 (Valid) sets Step 1/2 Sentinel to `'VALID'`; Scenario #2 (Empty/Null) sets Step 1/2 Sentinel to `'NONE'`, producing an empty object handle in memory.
+    *   *Empty Association Support Recipe:*
+        - Step 1: `CreateObject` (Child Target Entity, setting sentinel attribute `Sentinel = 'VALID'`)
+        - Step 2: `RetrieveObject` (`RetrieveOption = "Teststep"`, input handle = Step 1 output, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1`)
+        - Step 3: `CreateObject` (Parent Host Entity, setting association `Parent_Child` to Step 2 retrieve handle)
+        - Step 4: `CallMicroflow` (parameter bound to Step 3 output handle)
+        - In Section 4 / Section 7 Data Variation Matrix: Scenario with unassigned association sets Step 1/2 Sentinel to `'NONE'`, resulting in 0 retrieved child objects and no association linked.
+    *   *Universal Short Sentinel Law (`PAT-07`):* Always use short scalar sentinels (`'VALID'`, `'NONE'`, `'NULL'`, `'TEST'`; `length <= 4` characters) on String or Integer attributes. Never use Enumerations (`Enum_`) or long verbose tokens (`'NON_EXISTENT'`, `'DOES_NOT_EXIST'`).
+    *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`ANTI-60`, `ANTI-48`):* Low-level plugin attributes such as `"UseEmptyObjectList": true` or omitting `"TCEX_RQ_Sfar"` in ad-hoc steps are execution-level conveniences. When drafting or updating an Execution Plan (`EP_*.md`), the agent **MUST NOT** rely on these shortcuts to represent empty objects in Section 4. The underlying step skeleton in Section 3 must remain 100% promotable to central MTA via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
 *   **🚨 Strict Target-Bound Data Variation Matrix Schema (`PAT-110`, `ANTI-59`)**:
     *   *Matrix Schema Invariant:* Section 7 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
@@ -293,7 +302,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 173 testing patterns/anti-patterns (`PAT-01..112`, `ANTI-01..61`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 181 testing patterns/anti-patterns (`PAT-01..116`, `ANTI-01..65`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

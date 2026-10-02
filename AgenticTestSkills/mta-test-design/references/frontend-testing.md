@@ -12,7 +12,7 @@ This reference contains the widget locator maps, nested repeating container stra
 Every Frontend UI Test Suite MUST strictly implement the following 3-case pipeline. Omitting browser lifecycle microflows in Case 1, 2, or 3 is strictly prohibited:
 
 ### Case 1: Browser Setup & Domain Seeding (`Always` / `_Continue`)
-1. **Create Object:** `MenditectPlaywrightConnector.LocalStartOptions` (Set `SlowMo = 1000`).
+1. **Create Object:** `MenditectPlaywrightConnector.LocalStartOptions` (Default `SlowMo = 0` / omitted for fast agent execution; only set non-zero if user explicitly requests visual debugging [^PAT-116] [^ANTI-65]).
 2. **Microflow Call:** `MenditectPlaywrightConnector.Start_Frontend_Test_Locally` (`BrowserType = "Chromium"`, `Headless = false`, `Options` from step 1) ➔ **Produces `Browser` object**.
 3..N. **Transactional Domain Seeding:** Create and persist domain entities (`Car`, `Location`, etc.) needed for UI test data (`PAT-91`).
 
@@ -116,6 +116,29 @@ This open-fill-close sequence is fully sufficient to select the option and updat
 > 1. **Auto-Selection on Match:** The ComboBox implementation auto-selects and populates the option immediately upon exact value matching via `ACT_Fill_ComboBox_Input`. No separate option click is required.
 > 2. **Finalization Trigger:** The second call to `ACT_Click_ComboBox_Trigger` is **NOT** a duplicate or a bug. It is a mandatory closing action required by Mendix to close the floating dropdown container and commit/finalize the selection. Without this closing trigger click, the dropdown container remains open and can float over other page elements, blocking downstream clicks.
 
+### Law 4: Widget-Type-Driven Locator & Action Resolution (PAT-114, ANTI-63)
+
+#### ⚠️ LAW: Never Infer Widget Types from Element Names (PAT-114, ANTI-63)
+In Mendix applications, UI elements frequently carry names with prefixes or substrings that do not match their underlying widget type (e.g. a Reference Selector named `Dropdown_Location` or `Select_Role`, or an Input widget named `Text_Description`).
+* **Assumption Prohibition (`ANTI-63`):** Assuming widget types or selecting action microflows based on element name substrings is strictly prohibited.
+* **Metamodel Verification (`PAT-114`):** Agents MUST query the actual widget type via `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` or `DESCRIBE PAGE <Module.Page>` and match the locator's return type to its designated action microflow.
+* **Exact Chaining Parity:** Passing a locator into an incompatible action (e.g. `MxReferenceSelectorLocator` into `ACT_SelectOption_DropDown_Select_By_Label`) causes immediate compiler rejection: `ErrorNr: 21` (*"The teststep does not provide the object(s) for the microflow parameter anymore"*).
+
+#### 📋 Locator & Action Pairing Matrix
+
+| Target Widget Type | Locator Microflow | Locator Return Type | Compatible Action Microflow(s) |
+| :--- | :--- | :--- | :--- |
+| **Reference Selector** | `Locate_MxWidget_ReferenceSelector` | `MxReferenceSelectorLocator` | `ACT_SelectOption_ReferenceSelector_Select_By_Label` |
+| **Standard Drop-Down / Enum** | `Locate_MxWidget_DropDown` | `MxDropDownLocator` | `ACT_SelectOption_DropDown_Select_By_Label` |
+| **ComboBox** | `Locate_MxWidget_ComboBox` | `MxComboBoxLocator` | `ACT_Click_ComboBox_Trigger` + `ACT_Fill_ComboBox_Input` + `ACT_Click_ComboBox_Trigger` |
+| **Text Box / Text Area** | `Locate_MxWidget_TextBox` | `MxTextBoxLocator` | `ACT_Fill_TextBox_Input`, `ACT_Clear_TextBox_Input` |
+| **Date Picker** | `Locate_MxWidget_DatePicker` | `MxDatePickerLocator` | `ACT_Fill_DatePicker_Input` |
+| **Button / Action Trigger** | `Locate_MxWidget_Button` | `MxButtonLocator` | `ACT_Click_Button`, `ACT_Hover_Button` |
+| **Check Box** | `Locate_MxWidget_CheckBox` | `MxCheckBoxLocator` | `ACT_Check_CheckBox_Input`, `ACT_Uncheck_CheckBox_Input` |
+| **Radio Buttons** | `Locate_MxWidget_RadioButtons` | `MxRadioButtonsLocator` | `ACT_Check_RadioButtons_Item_Input` |
+| **Dialog / Popup** | `Locate_MxWidget_Dialog` | `MxDialogLocator` | `ACT_Click_Dialog_OK_Button`, `ASR_Has_Text_Dialog_Body` |
+| **Container / Div** | `Locate_MxWidget_Container` | `MxContainerLocator` | `ACT_Click_Container` |
+
 ---
 
 ## 🗺️ PLAYWRIGHT `Page` VS. MENDIX `MxPageLocator` CONTEXTS
@@ -164,7 +187,8 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 | :--- | :--- | :--- | :--- |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_TextBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxTextBoxLocator` | Text Box, Text Area, Input widget |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_DatePicker` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDatePickerLocator` | Date Picker / Date Time widget |
-| `MenditectMxFrontendTestKit.Locate_MxWidget_DropDown` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDropDownLocator` | Standard Drop-down, Reference Selector |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DropDown` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDropDownLocator` | Standard Drop-down / Enum |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_ReferenceSelector` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxReferenceSelectorLocator` | Reference Selector widget [^PAT-114] |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_ComboBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxComboBoxLocator` | ComboBox widget (Law 3 open-fill-close) |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_Button` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxButtonLocator` | Action Button, Microflow Button, Save Button |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_CheckBox` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxCheckBoxLocator` | Check Box widget |
@@ -190,6 +214,7 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 | `MenditectMxFrontendTestKit.ACT_Clear_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)` | `Boolean` | Clears existing text from Text Box. |
 | `MenditectMxFrontendTestKit.ACT_Fill_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `Value: String | DateTime`, `options: Object(FillOptions)` *(optional)* | `Boolean` | Types formatted date into Date Picker input. [^PAT-42] |
 | `MenditectMxFrontendTestKit.ACT_SelectOption_DropDown_Select_By_Label` | `DropDownLocator: Object(MxDropDownLocator)`, `Label: String` | `Boolean` | Selects drop-down option matching label string. |
+| `MenditectMxFrontendTestKit.ACT_SelectOption_ReferenceSelector_Select_By_Label` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `OptionLabel: String` | `Boolean` | Selects reference selector option matching label string. [^PAT-114] |
 | `MenditectMxFrontendTestKit.ACT_Click_Button` | `ButtonLocator: Object(MxButtonLocator)`, `options: Object(ClickOptions)` *(optional)* | `Boolean` | Clicks button or action trigger element. [^PAT-13] |
 | `MenditectMxFrontendTestKit.ACT_Hover_Button` | `ButtonLocator: Object(MxButtonLocator)` | `Boolean` | Hovers mouse cursor over target button. |
 | `MenditectMxFrontendTestKit.ACT_Click_ComboBox_Trigger` | `ComboBoxLocator: Object(MxComboBoxLocator)` | `Boolean` | Opens (step 2) or Closes (step 4) ComboBox dropdown. [^PAT-13] |
@@ -208,6 +233,7 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 | `MenditectMxFrontendTestKit.ASR_Has_Value_TextBox_Input` | `TextBoxLocator: Object(MxTextBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts Text Box input matches expected string. |
 | `MenditectMxFrontendTestKit.ASR_Has_Value_DatePicker_Input` | `DatePickerLocator: Object(MxDatePickerLocator)`, `ExpectedValue: String` | `Boolean` | Asserts Date Picker input contains formatted date. |
 | `MenditectMxFrontendTestKit.ASR_Has_Value_DropDown_Select` | `DropDownLocator: Object(MxDropDownLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected dropdown option matches expected value. |
+| `MenditectMxFrontendTestKit.ASR_Has_Value_ReferenceSelector` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected reference selector option matches expected value. [^PAT-114] |
 | `MenditectMxFrontendTestKit.ASR_Has_Value_ComboBox` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected ComboBox value matches expected label. |
 | `MenditectMxFrontendTestKit.ASR_Is_Visible_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts page element, button, text, or widget is visible on DOM. [^PAT-35] |
 | `MenditectMxFrontendTestKit.ASR_Is_Checked_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)`, `ExpectedChecked: Boolean` | `Boolean` | Asserts checkbox checked state. |

@@ -1595,10 +1595,91 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-113`: Vendor Tool & Skill Immutability Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Upstream tools (`tools/mta-lint.mjs`, `mxcli`) and official skills (`.agent/skills/` / `skills/`) are managed by Menditect upstream and automatically overwritten during updates (`npm run update`). Direct modification of `tools/mta-lint.mjs` or official skills in consumer workspaces is strictly prohibited (`ANTI-62`). When a local bug fix, custom check, or false-positive bypass is required, agents MUST: (1) Copy `tools/mta-lint.mjs` to `tools/mta-lint.custom.mjs`, (2) Apply fixes exclusively to `tools/mta-lint.custom.mjs`, (3) Execute via `tools/run-linter.mjs`, and (4) Proactively initiate the Upstream Feedback & Contribution Protocol by offering to submit a Pull Request to `Menditect/agentic-test-workspace` or `Menditect/agentic-test-skills`, or outputting a structured bug report email template addressed to `support@menditect.com`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-62` (Vendor Tool & Skill Tampering Anti-Pattern).
+  * **Related Patterns:** `PAT-01` (Test Scoping & Pyramid Layer Alignment), `PAT-45` (Mandatory Tool Execution Reasoning Chain of Thought).
+  * **Related Anti-Patterns:** `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
+### `ANTI-62`: Vendor Tool & Skill Tampering Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Directly modifying upstream vendor tools (`tools/mta-lint.mjs`, `mxcli`) or official skills in consumer workspaces. Any direct edits are fragile and will be silently overwritten by upstream package updates (`npm run update`), causing lost customizations, broken linting pipelines, and unreproducible testing behavior. Custom rules or fixes must be isolated in `.custom.mjs` extension files and contributed upstream.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-113` (Vendor Tool & Skill Immutability Law).
+  * **Related Anti-Patterns:** `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
+### `PAT-114`: Widget-Type-Driven Locator & Action Resolution
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** When constructing Frontend UI test steps, the agent MUST resolve Testkit locators and action microflows strictly based on the target widget's actual Mendix metamodel type (discovered via `RetrieveWidgetsByPage`, `DESCRIBE PAGE`, or page AST inspection), rather than guessing from element names or user prompts (`ANTI-63`). In particular, Mendix Reference Selector widgets require `Locate_MxWidget_ReferenceSelector` (returning `MxReferenceSelectorLocator`) paired with `ACT_SelectOption_ReferenceSelector_Select_By_Label` and `ASR_Has_Value_ReferenceSelector`, whereas DropDown widgets require `Locate_MxWidget_DropDown` (returning `MxDropDownLocator`) paired with `ACT_SelectOption_DropDown_Select_By_Label`. Mismatching widget types and locators triggers `ErrorNr: 21` (Incompatible Object Output Type) and halts execution.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-63` (Element Name Widget Guessing Anti-Pattern).
+  * **Related Patterns:** `PAT-05` (Frontend UI Testing via MenditectMxFrontendTestKit), `PAT-13` (Structural Locator Chain Law), `PAT-72` (Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping).
+  * **Related Anti-Patterns:** `ANTI-12` (Raw Playwright Connector Bypass Anti-Pattern), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+
+---
+
+### `ANTI-63`: Element Name Widget Guessing Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Inferring Mendix widget types and selecting Testkit locator/action microflows based on element name suffixes or keywords (e.g. assuming an element named `referenceSelector1` or `statusDropDown` is a standard DropDown) without querying the Mendix page metamodel. This heuristic guessing leads to binding incompatible locator types (e.g. passing `MxDropDownLocator` to an action expecting `MxReferenceSelectorLocator`), causing runtime schema validation failure `ErrorNr: 21` on the MTA server.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-114` (Widget-Type-Driven Locator & Action Resolution).
+  * **Related Anti-Patterns:** `ANTI-19` (Trial-and-Error Frontend Execution & Raw CSS Selector Bypass), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+
+---
+
+### `PAT-115`: Test Step Decommissioning & Neutralization Law
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Because the MTA MCP server does not provide a `DeleteTestStep` API tool, when a test step fails to configure or is discovered to be invalid during construction, the agent MUST follow the standardized step decommissioning protocol: (1) Neutralize the step by setting `ExecutionCondition = "Skip"` via `EditTestStep` so the runner bypasses it; (2) Rename the step title with prefix `[TO DELETE]` and annotate the description with `[Pattern: PAT-DEPRECATE-STEP - Decommissioned due to <reason>; replaced by Step <M>]`; (3) Construct the replacement step forward in the chain; and (4) In the Smoke Audit receipt (Checkpoint 3 / Section 9), document the skipped step under `⚠️ SKIPPED (PAT-115 Decommissioned)` and append the Manual Cleanup Recommendation box for user deletion in Studio Pro.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-64` (Active Zombie Step Anti-Pattern).
+  * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law), `PAT-12` (Test Step Description Pattern Annotation), `PAT-30` (Manual Intervention Highlight Protocol).
+  * **Related Anti-Patterns:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern).
+
+---
+
+### `ANTI-64`: Active Zombie Step Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Leaving misconfigured, failed, or invalid test steps active in a persistent test case sequence instead of neutralizing them with `ExecutionCondition = "Skip"` and marking them `[TO DELETE]`. Active zombie steps cause subsequent test runs to crash or fail with unhandled errors, pollute test run logs, and corrupt predecessor handle bindings for downstream steps.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-115` (Test Step Decommissioning & Neutralization Law).
+  * **Related Patterns:** `PAT-17` (Backend Unit Test Execution Settings Law), `PAT-18` (Frontend Setup/Teardown Execution Condition Law).
+  * **Related Anti-Patterns:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure Anti-Pattern).
+
+---
+
+### `PAT-116`: Playwright Zero SlowMo Default for Agentic Execution
+* **Scope:** Frontend | **Classification:** Methodological Law
+* **Description:** When configuring `LocalStartOptions` (Step 101) for Frontend UI testing, `SlowMo` MUST be left omitted or set to `0 ms` by default. AI agents operate autonomously at machine speed and do not benefit from visual delay; adding slow-motion delay significantly increases total execution duration, token wait times, and risk of timeout failures across multi-step UI tests. SlowMo should only be populated when the human user explicitly requests slow-motion visual debugging.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-65` (Artificial SlowMo Latency Anti-Pattern).
+  * **Related Patterns:** `PAT-03` (Frontend 3-Case Split Law), `PAT-35` (Native Auto-Waiting vs. Sleep Prohibition), `PAT-50` (Playwright Configuration Microflow Law).
+  * **Related Anti-Patterns:** `ANTI-30` (Exploratory Performance & Latency Telemetry Omission Anti-Pattern).
+
+---
+
+### `ANTI-65`: Artificial SlowMo Latency Anti-Pattern
+* **Scope:** Frontend | **Classification:** Methodological Anti-Pattern
+* **Description:** Specifying or configuring non-zero `SlowMo` delays (e.g. 500ms, 1000ms) on `LocalStartOptions` during agentic test construction or execution without explicit user request. Injecting artificial per-action delays in automated agent runs inflates suite run durations by minutes, exhausts environment timeouts, wastes compute resources, and provides zero diagnostic value to headless or autonomous AI workflows.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-116` (Playwright Zero SlowMo Default for Agentic Execution).
+  * **Related Anti-Patterns:** `ANTI-30` (Exploratory Performance & Latency Telemetry Omission Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-113`** (Vendor Tool & Skill Immutability Law) | **`ANTI-62`** (Vendor Tool & Skill Tampering Anti-Pattern) | Upstream vendor tool integrity & .custom.mjs extensions vs direct modifications overwritten by updates |
+| **`PAT-114`** (Widget-Type-Driven Locator & Action Resolution) | **`ANTI-63`** (Element Name Widget Guessing Anti-Pattern) | Metamodel-driven widget locators and actions vs guessing widget types from element names |
+| **`PAT-115`** (Test Step Decommissioning & Neutralization Law) | **`ANTI-64`** (Active Zombie Step Anti-Pattern) | Neutralizing broken steps with Skip condition and [TO DELETE] prefix vs leaving active broken steps |
+| **`PAT-116`** (Playwright Zero SlowMo Default for Agentic Execution) | **`ANTI-65`** (Artificial SlowMo Latency Anti-Pattern) | Zero SlowMo delay for high-speed agent execution vs artificial SlowMo delay timeouts |
 | **`PAT-112`** (Free MTA Exploratory License Detection & Consultative Value) | **`ANTI-61`** (Deceptive Offline Masking & Commercial Spamming) | Transparent license tier classification & consultative upgrade guidance vs false outage claims or commercial spam |
 | **`PAT-111`** (Unified Promotable Blueprint Invariant) | **`ANTI-60`** (Unrolled Step Sequence Anti-Pattern) | Enforcing canonical K-step skeleton with Section 7 variation matrix vs unrolled multi-block sequences |
 | **`PAT-110`** (Target-Bound Data Variation Matrix Schema) | **`ANTI-59`** (Conceptual Untargeted Matrix Columns) | Binding matrix rows strictly to concrete test step target elements and columns to scenarios vs arbitrary conceptual flags |

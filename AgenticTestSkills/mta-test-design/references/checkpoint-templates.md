@@ -400,6 +400,12 @@ Output this structured report upon completing step construction and batch bindin
 | Case 3 | Delete Seeded <Entity> | Step 6525 | ✅ MATCH |
 | Case 3 | Persist Deletions | Step 6526 | ✅ MATCH |
 
+> [!NOTE]
+> **Decommissioned Steps / Manual Cleanup Recommendation (`PAT-115`, `ANTI-64`):**
+> *(Only include if steps were decommissioned during construction)*
+> The following steps were decommissioned via `PAT-DEPRECATE-STEP` (set to `ExecutionCondition = "Skip"` with `[TO DELETE]` prefix). They do not affect execution, but manual deletion in Mendix Studio Pro / MTA Web UI is recommended:
+> - **Step [Key]:** `[TO DELETE] Step <N> - <Name>` (Replaced by Step [ReplacementKey])
+
 #### 2. Compiler & Server Validation (`GetTestCaseDetails`)
 * **Construction Errors:** 0 errors reported by MTA compiler.
 * **Variation Matrix:** Verified cell-by-cell ($M \times N$ matrix matches Section 7).

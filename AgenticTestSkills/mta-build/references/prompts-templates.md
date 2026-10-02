@@ -605,7 +605,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 *   **2. Target / Action:** `MenditectMxFrontendTestKit.LocalStartOptions`
 *   **3. Input Source / Handles:** `Memory instantiation`
 *   **4. Output Variable Handle:** `out_options`
-*   **5. Parameters & Initial Values:** `Headless = true, SlowMo = 0`
+*   **5. Parameters & Initial Values:** `Headless = true` (SlowMo omitted / `0 ms` by default [^PAT-116])
 *   **6. Embedded Step Assertions:** `None`
 *   **7. Execution Settings:** `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`
 *   **8. Step Description & Rationale:** `[Pattern: Start-and-Stop Boilerplate [^PAT-28] - Configures browser startup]`
@@ -750,7 +750,7 @@ Use this template when testing screen layouts, button clicks, client-cache synch
 | **3. Execution Mode** | `Headless` | `Headed` (Visual browser window) |
 | **4. Viewport Dimensions** | `1280 x 720` | `1920 x 1080`, `1366 x 768`, `375 x 812` (Mobile), Custom |
 | **5. Target Base URL / Path** | `http://localhost:[Port]/index.html` | Custom URL string or relative launch path |
-| **6. Action Delay (SlowMo)** | `0 ms` (Server) / `100 ms` (Local) | Custom delay in milliseconds |
+| **6. Action Delay (SlowMo)** | `0 ms` / Omitted (Fast agent execution [^PAT-116]) | Custom delay in ms (opt-in for visual debugging) |
 | **7. Default Timeout** | `30,000 ms` | `15,000 ms`, `60,000 ms`, Custom timeout in ms |
 | **8. Tracing (Trace)** | `true` (Enabled) | `false` (Disabled) |
 | **9. Browser Locale** | System Default (`en-US`) | `nl-NL`, `de-DE`, `fr-FR`, or valid BCP-47 tag |
