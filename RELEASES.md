@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [v1.25.0](releases/v1.25.0.md) | 2026-10-05 | release: v1.25.0 - improved support for multi test configuration discovery and datadriven exploratory testing |
+| [v1.25.0](releases/v1.25.0.md) | 2026-10-05 | improved support for multi test configuration discovery and datadriven exploratory testing |
 | [v1.24.3](releases/v1.24.3.md) | 2026-10-02 | improved performance of tool calls by eleminating unnessary steps |
 | [v1.24.2](releases/v1.24.2.md) | 2026-10-02 | improved skills for frontend testing |
 | [v1.24.1](releases/v1.24.1.md) | 2026-10-02 | updated linter for smoke audit |
