@@ -19,12 +19,14 @@ You MUST progress through these workflow states. Rollback/revision paths are sup
 | State | Allowed Destination | Transition Trigger / Action | HALT Required? | Direction |
 | :--- | :--- | :--- | :--- | :--- |
 | **`STATE_DISCOVERY`** (1) | `STATE_BUILD_PLANNING` (2) | Setup and target placement resolved (Test Configuration & Test Suite) | Yes (If placements not provided) | Forward |
-| **`STATE_BUILD_PLANNING`** (2)| `STATE_CONSTRUCTION` (3) | Specifications and chronological execution plan approved & saved locally as `.md` (or retained in chat context) | **YES (All Modes)** | Forward |
-| **`STATE_BUILD_PLANNING`** (2)| `STATE_DISCOVERY` (1) | User rejects specs/placement or requests structural changes | No | **Rollback** |
+| **`STATE_BUILD_PLANNING`** (2)| `STATE_CONSTRUCTION` (3) | Option B persistent track: Gate 1 & Gate 2 approved; execution plan sealed locally as `.md` | **YES (All Modes)** | Forward (Option B Track) |
+| **`STATE_BUILD_PLANNING`** (2)| `STATE_RUN_ANALYZE` (5) | Option A exploratory dispatch: In-memory execution or live data seeding via `MTA_plugin.execute-testcase` (`PAT-63`, `PAT-70`) | No (`auto_execute`) / Yes (Governed) | Forward (Option A Track) |
+| **`STATE_BUILD_PLANNING`** (2)| `STATE_DISCOVERY` (1) | User rejects app environment or fundamental scope *(placement adjustments re-enter `PLAN_STEP_2` within State 2)* | No | **Rollback** |
 | **`STATE_CONSTRUCTION`** (3) | `STATE_SMOKE_AUDIT` (4) | Sequential step creation and binding completed on the server | No | Forward |
 | **`STATE_CONSTRUCTION`** (3) | `STATE_BUILD_PLANNING` (2) | Sequential creation tools fail or execution plan approval is invalid | Yes | **Rollback** |
 | **`STATE_SMOKE_AUDIT`** (4) | `STATE_RUN_ANALYZE` (5) | Programmatic validation checks (`GetTestCaseDetails`) and 1-to-1 Plan-to-Server Step Reconciliation validated with 0 errors & 0 discrepancies (`PAT-59`, `PAT-88`) | **YES (All Modes)** | Forward |
 | **`STATE_SMOKE_AUDIT`** (4) | `STATE_CONSTRUCTION` (3) | Audit reveals compilation errors, missing planned steps, or step count mismatch (`INCOMPLETE_BUILD_DISCREPANCY`) | Yes | **Rollback** |
+| **`STATE_RUN_ANALYZE`** (5) | `STATE_BUILD_PLANNING` (2) | User promotes passed Option A exploratory test to persistent MTA platform (`PAT-106`, `PAT-118` Gate 2 placement) | **YES (Always)** | **Promotion Bridge** |
 | **`STATE_RUN_ANALYZE`** (5) | `STATE_CONSTRUCTION` (3) | Execution fails or requires adjustment of specific steps | No | **Rollback** |
 | *Any State* | **`STATE_QA_ASSISTANCE`** | User asks tangent, conceptual question, or platform clarification | No | Out-of-Band |
 | **`STATE_QA_ASSISTANCE`** | *Resumed State* | Tangent addressed; assistant **MUST HALT and ask for explicit user approval to resume** | **YES (Always)** | Resume |

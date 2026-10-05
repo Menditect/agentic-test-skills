@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.32.0"
-changes: "Enforced single bulk sync per test case (PAT-117) and prohibited reverse-engineering or anchoring on existing test suites during construction (ANTI-66)."
+version: "6.33.0"
+changes: "Synced pattern registry to 185 rules (PAT-118, ANTI-67)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -34,7 +34,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
    * **Strict 4-Step Partial Failure Handling:** Because MTA MCP tools do not support server-side atomic transactions, if an individual call fails within a batch, do NOT abort the build or discard earlier steps. Follow the 4-step recovery flow:
      1. *Halt:* Stop executing subsequent batches immediately.
      2. *Isolate:* Parse the MCP error response to identify the exact failed key (`TestStepKey`, `AttributeValueKey`, or `TestCaseVariationKey`) and the failing parameter.
-     3. *Surgically Correct:* Re-run only that specific failed setter tool with corrected arguments.
+     3. *Surgically Correct & Schema Drift Guard:* Re-run only that specific failed setter tool with corrected arguments. **Anti-Infinite-Loop Guard:** If the correction fails a second time (e.g., due to a mid-session Mendix schema change where an attribute was deleted), do NOT loop infinitely. Halt construction, report the schema drift to the user, and prompt them to update the Mendix model or the Execution Plan.
      4. *Verify & Resume:* Confirm step integrity via `GetTeststepDetails(TestStepKey)` or `GetTestCaseDetails(TestCaseKey)` before resuming the remaining batches.
 3. **No dummy predecessor keys [^PAT-15]**: Pass predecessor keys of `0` for absolute first elements. For subsequent elements, query the last active element's key to append chronologically.
 4. **Execution Plan Gate Enforcement [^PAT-43]**: Do not construct assets on the server until both Gate 1 (Execution Plan) and Gate 2 (Placement Summary) are explicitly approved by the user and the plan is stored locally or retained in chat context.
@@ -128,7 +128,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 183 testing patterns/anti-patterns (`PAT-01..117`, `ANTI-01..66`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 187 testing patterns/anti-patterns (`PAT-01..120`, `ANTI-01..67`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

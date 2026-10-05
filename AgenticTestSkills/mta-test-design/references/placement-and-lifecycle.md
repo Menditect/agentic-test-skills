@@ -49,14 +49,21 @@ To create and initialize a new test suite from scratch, follow this canonical 4-
 *   **`GetApplicationDetails(ApplicationName, AppId)`**: Retrieves an application key, name, and registered configuration details.
 *   **`GetTestConfigurationDetails(TestConfigurationKey)`**: Lists all test suites and metadata under the specified test configuration.
 
-### 4. ⚡ Step-by-Step Interactive Placement Discovery Law (Token Conservation)
-To prevent token bloat, resolve placement interactively:
-1.  **Phase 1: Application Resolution & Test Configuration Scan**
-    *   Call `GetApplicationDetails(ApplicationName)` to retrieve the `ApplicationKey` and configurations. Present choices to user and **HALT**.
-2.  **Phase 2: Test Suite Scan & Selection**
-    *   Call `GetTestConfigurationDetails(TestConfigurationKey)` to inspect available test suites. Present choices and **HALT**.
-3.  **Phase 3: Test Case Scan & Selection**
-    *   Call `GetTestSuiteDetails(TestSuiteKey)` to inspect test cases. Present choices and **HALT**.
+### 4. ⚡ Step-by-Step Interactive Placement Discovery Law (`PAT-118`, `ANTI-67`)
+To prevent token bloat and silent index-0 defaulting errors (`ANTI-67`), resolve placement interactively using the two-phase gate (`PAT-118`):
+1.  **Phase 1: Application Resolution & Test Configuration Gate (`PAT-118`, `ANTI-67`)**
+    *   Call `GetApplicationDetails(ApplicationName)` to retrieve the `ApplicationKey` and registered `TCNF_TestConfigurations` (and call `GetExecutionUsers` concurrently).
+    *   **Configuration Count Evaluation:**
+        - **If `configurations.length == 0` (Zero Configuration Escape Branch):** Do NOT call `GetTestConfigurationDetails` or guess keys (no configurations exist and no MCP creation tool exists). Inform the user that 0 Test Configurations are registered under this Application in the MTA Platform, provide a clickable link to create one in the MTA Web UI (`[mta_base_url]/p/Application/[ApplicationKey]`), retain the Execution Plan as `status: "DRAFT"` on disk, and offer Option A (in-memory execution via plugin) in the interim.
+        - **If specified in prompt or active plan:** Fast-path directly to that configuration and proceed to Phase 2.
+        - **If `configurations.length == 1`:** Auto-select the sole configuration and proceed immediately to Phase 2.
+        - **If `configurations.length > 1` (Unspecified):** Strictly **FORBID** calling `GetTestConfigurationDetails` or guessing index 0 in the same turn (`ANTI-67`). The agent **MUST HALT** and present an explicit interactive selection to the user (via `ask_question` modal where available, or a numbered markdown list in chat) displaying all available configuration names and keys.
+2.  **Phase 2: Targeted Test Suite Scan & Selection**
+    *   Only after the user confirms their chosen configuration (or after auto-selection), call `GetTestConfigurationDetails(selectedConfigurationKey)` to inspect available test suites.
+    *   Compile and display the **Placement & Target Summary Box** (Checkpoint 2, `PAT-79`) including configuration provenance count (e.g. `Selected from N available configurations`). Present choices and **HALT** for Gate 2 sign-off.
+    *   *Intra-State Placement Loop:* If the user rejects or requests a different configuration or suite at Checkpoint 2 (Gate 2), re-enter Phase 1 or Phase 2 within `STATE_BUILD_PLANNING` (`PLAN_STEP_3` ➔ `PLAN_STEP_2`) rather than resetting the entire session to `STATE_DISCOVERY`.
+3.  **Phase 3: Test Case Scan & Pre-Construction Audit (`PAT-101`)**
+    *   Call `GetTestSuiteDetails(TestSuiteKey)` to inspect test cases and verify name uniqueness before container creation (`PAT-101`).
 
 ---
 

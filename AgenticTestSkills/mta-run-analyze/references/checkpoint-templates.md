@@ -263,14 +263,14 @@ For Frontend UI tests (`Category == Frontend`), browser test steps drive Playwri
 
 ---
 
-## 3. 🚦 Checkpoint 2: Confirm Test Suite Placement & Settings Box (`PAT-43`, `PAT-79`)
+## 3. 🚦 Checkpoint 2: Confirm Test Suite Placement & Settings Box (`PAT-43`, `PAT-79`, `PAT-118`)
 
 ```markdown
 ## 🚦 CHECKPOINT 2: CONFIRM TEST SUITE PLACEMENT & SETTINGS
 
 > 📍 **PLACEMENT & TARGET SUMMARY**
 > * **Application Name:** `[AppName]`
-> * **Target Test Configuration:** `[UserSelectedTestConfig]`
+> * **Target Test Configuration:** `[UserSelectedTestConfig]` *(Selected from N available configurations | Auto-selected)*
 > * **Target Test Suite:** `[UserSelectedTestSuite]`
 > * **Test Case Name:** `[UserSelectedTestCaseName]`
 > * **Execution User:** `[UserSelectedExecutionUser, e.g. MxAdmin]`

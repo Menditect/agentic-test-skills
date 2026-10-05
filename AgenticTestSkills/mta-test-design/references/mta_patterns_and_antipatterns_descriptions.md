@@ -1696,10 +1696,52 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-118`: Interactive Multi-Configuration Placement Gate
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** When executing placement discovery (`PLAN_STEP_2`), the agent MUST evaluate the number of available Test Configurations returned by `GetApplicationDetails(ApplicationName)`: (1) If 0 configurations exist, strictly do NOT call `GetTestConfigurationDetails` (no configurations exist and no MCP creation tool exists); inform the user to configure one in the MTA Web UI, retain the plan as `status: "DRAFT"` on disk, and offer Option A in-memory execution in the interim; (2) If exactly 1 configuration is returned, auto-select it and proceed; (3) If a target configuration was explicitly specified in the user prompt or active `EP_*.md` metadata, fast-path directly to it; (4) If multiple configurations exist (`TCNF_TestConfigurations.length > 1`) and none was specified, the agent is strictly forbidden from guessing index 0 or calling `GetTestConfigurationDetails` in the same turn (`ANTI-67`). The agent MUST HALT and prompt the user with an explicit interactive selection (using `ask_question` modal where available, or an interactive selection list in chat) displaying all available configuration names and keys. Only after the user confirms their selection does the agent proceed to Phase 2 to query test suites via `GetTestConfigurationDetails(selectedConfigurationKey)` and present Checkpoint 2. If the user adjusts or rejects placement at Checkpoint 2, re-enter Phase 1 or 2 within `STATE_BUILD_PLANNING` (`PLAN_STEP_3` ➔ `PLAN_STEP_2`) rather than resetting to `STATE_DISCOVERY`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-67` (Silent Multi-Configuration Assumption).
+  * **Related Patterns:** `PAT-43` (Universal Execution Plan Mandate), `PAT-79` (Target Placement Confirmation Gate), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-36` (Blind Construction on Stale MTA Revision Anti-Pattern), `ANTI-56` (Unplaced Exploratory Promotion Bypass Anti-Pattern).
+
+---
+
+### `ANTI-67`: Silent Multi-Configuration Assumption
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Blindly picking `TCNF_TestConfigurations[0]` and calling `GetTestConfigurationDetails` in the same turn when `GetApplicationDetails` returns multiple configurations and none was specified in the user prompt or active plan metadata. Test configurations often represent distinct environments, branches, or suites. Silently guessing index 0 places tests in the wrong container, wastes token roundtrips querying irrelevant suites, and requires backtracking when rejected at Checkpoint 2.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-118` (Interactive Multi-Configuration Placement Gate).
+  * **Related Patterns:** `PAT-79` (Target Placement Confirmation Gate), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-56` (Unplaced Exploratory Promotion Bypass Anti-Pattern).
+
+---
+
+### `PAT-119`: Frontend Validation Auto-Assertion Trap
+* **Scope:** Frontend | **Classification:** Platform Execution Law
+* **Description:** The Menditect Frontend Testkit automatically asserts that all input widgets have zero validation errors after interaction. If a test fails immediately on an `ACT_EnterText_*` or similar input step, agents must not assume the locator is broken. Recognize that this is the Testkit auto-assertion catching an invalid input value. In `STATE_SELF_REPAIR`, focus on correcting the input data (or validating if a negative test is intended) rather than tweaking the locator.
+* **Related Rules:**
+  * **Related Patterns:** `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law), `PAT-114` (Widget-Type-Driven Locator & Action Resolution).
+  * **Related Anti-Patterns:** `ANTI-19` (Trial-and-Error Frontend Execution & Raw CSS Selector Bypass), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+
+---
+
+### `PAT-120`: Validation Feedback Session Isolation & Agent-Side Assertion Protocol
+* **Scope:** Backend | **Classification:** Platform Execution Law
+* **Description:** When an Execution Plan contains validation feedback assertions (`Assert Validation Feedback Count` or `Assert Validation Feedback Compare` / `Message`): (1) In Mendix runtime, validation feedbacks are collected globally per session/request (`TCEX_RS_ValidationFeedback`), not per individual teststep. Therefore, when data variations are defined, the agent is strictly prohibited from chaining variations into a single `execute-testcase` payload (`PAT-73` bypass); the agent MUST execute each variation scenario (`VAR_01`..`VAR_0N`) in an independent, session-isolated `execute-testcase` tool call (`PAT-74` / `PAT-120`) to prevent cross-scenario feedback pooling. (2) Non-executable validation assertion steps are stripped from the `TCEX_RQ_TestStepRun` request payload. (3) Upon receiving `FunctionalResponse`, the agent parses `TCEX_RS_ValidationFeedback` and performs Agent-Side Assertion Evaluation (verifying feedback count and matching `Member`, `Message`, and `ObjectType` against the Execution Plan). (4) Any mismatch is reported as `FAIL` with actual vs expected feedback details in the exploratory test execution report. (5) When promoted to Option B (MTA Platform), the plan steps map 1:1 to `CreateAssertValidationFeedbackMessageCount` and `CreateAssertValidationFeedbackMessageCompare`.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-28` (Cross-Variation State Contamination & Blind Chaining Anti-Pattern).
+  * **Related Patterns:** `PAT-10` (Validation Feedback Assertion), `PAT-63` (Backend Exploratory Single-Payload Blueprint), `PAT-73` (Chained Single-Payload Matrix Execution Law), `PAT-74` (Exploratory Single-Session Conflict Detection & Isolation Protocol), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-14` (Using MTA TestCase Validation Feedback Assertions in Frontend UI Tests), `ANTI-27` (Sequential Multi-Turn LLM Matrix Dispatch Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-120`** (Validation Feedback Session Isolation & Agent-Side Assertion) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Session-isolated dispatch & agent-side validation feedback evaluation vs cross-scenario feedback pooling |
+| **`PAT-119`** (Frontend Validation Auto-Assertion Trap) | **`ANTI-19`** (Trial-and-Error Frontend Execution & Selector Bypass) | Recognizing Testkit auto-validation assertions on inputs vs assuming broken locators |
+| **`PAT-118`** (Interactive Multi-Configuration Placement Gate) | **`ANTI-67`** (Silent Multi-Configuration Assumption) | Interactive halt when multiple test configurations exist vs silently picking index 0 |
 | **`PAT-117`** (Single Bulk Sync per Test Case) | **`ANTI-32`** (Chatterbox Sequential Setter Anti-Pattern) / **`ANTI-39`** (Vertical Per-Step Interleaving) | Single GetTestCaseDetails bulk sync per testcase vs looping GetTeststepDetails across individual steps |
 | **`PAT-71`** (Single Source of Truth Invariant) / **`PAT-89`** (File-First Drafting) | **`ANTI-66`** (Existing Suite Reverse-Engineering & Anchoring) | Reading step parameters strictly from approved Execution Plan vs reverse-engineering foreign test suites |
 | **`PAT-113`** (Vendor Tool & Skill Immutability Law) | **`ANTI-62`** (Vendor Tool & Skill Tampering Anti-Pattern) | Upstream vendor tool integrity & .custom.mjs extensions vs direct modifications overwritten by updates |

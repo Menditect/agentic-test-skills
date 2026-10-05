@@ -217,14 +217,15 @@ When Section 7 of an approved Execution Plan defines a Data Variation Matrix wit
    * **Intra-Block Deletion for Mutating Microflows:** If the microflow creates or commits database records, add an explicit `Oact: Delete` step (`TCEX_RQ_Sfdr: { "TestStepRunKey_output": <seed_key> }`) at the end of each variation block to ensure subsequent blocks query a clean database state.
    * **Pure / Calculation Microflows:** For pure calculation microflows (like pricing or kilometer calculations), seed objects exist ephemerally in the transaction without intermediate deletes.
 
-5. **Session Isolation Fallback Protocol (`PAT-74`):**
-   * If AST analysis detects non-transactional side-effects (e.g., unmanaged Java caches, external API mutations) or if runtime execution encounters cross-scenario contamination (where `VAR_01` passes but `VAR_02` fails due to persistent session state), the agent MUST halt chaining and execute each variation in an independent `execute-testcase` dispatch session.
+5. **Session Isolation Fallback Protocol (`PAT-74`, `PAT-120`):**
+   * **Vector 5 - Validation Feedback Assertions (`PAT-120`):** In the Mendix runtime, validation feedback messages (`TCEX_RS_ValidationFeedback`) are collected globally across the entire request/session. Chaining multiple variations into a single payload causes validation messages from different scenarios to pool into one shared list, corrupting individual scenario evaluation. **Whenever an Execution Plan contains validation feedback assertions (`Assert Validation Feedback Count` / `Assert Validation Feedback Compare`), the agent MUST bypass single-payload chaining (`PAT-73`) and execute each variation scenario (`VAR_01`..`VAR_0N`) in an independent, session-isolated `execute-testcase` dispatch session (`PAT-120`).**
+   * If AST analysis detects non-transactional side-effects (e.g., unmanaged Java caches, external API mutations) or if runtime execution encounters cross-scenario contamination, the agent also falls back to independent dispatches.
 
 6. **Global Transaction Rollback:**
    * Set `RollbackTcseAfterExecution: "Yes"` (or `"true"`), `ApplySecurityExecutor: "NONE"`, and `ExecutorUsername: "MxAdmin"`.
 
 7. **Consolidated Telemetry Parsing & Matrix Reporting:**
-   * Upon receiving the single `TCEX_RS` response, the agent maps each `MicroflowCall` step outcome and return value back to its respective `VAR_xx` scenario row.
+   * Upon receiving the single or isolated `TCEX_RS` response(s), the agent maps each `MicroflowCall` step outcome, return value, and validation feedback messages back to its respective `VAR_xx` scenario row.
    * Present the unified multi-scenario report (`PAT-61`) in a single final response.
 
 > [!NOTE]
@@ -233,14 +234,12 @@ When Section 7 of an approved Execution Plan defines a Data Variation Matrix wit
 
 ---
 
-## 3. Telemetry Interpretation (`TCEX_RS`)
+## 3. Telemetry Interpretation (`FunctionalResponse` & `TCEX_RS`)
 
-When `execute-testcase` completes, the response contains deep runtime execution details:
+When `execute-testcase` completes, the Mendix runtime returns a `FunctionalResponse` containing per-step execution telemetry and session-scoped validation feedbacks:
 
 ```json
 {
-  "OverallResult": "Executed",
-  "ResultDescription": "Execution passed with 0 failures.",
   "TCEX_RS_TestStepRun": [
     {
       "TestStepType": "Oact",
@@ -259,9 +258,16 @@ When `execute-testcase` completes, the response contains deep runtime execution 
       "DurationMs": 28,
       "TCEX_RS_TestStepRunMfc": {
         "MicroflowName": "ACT_RentalOrder_CalculateTotal",
-        "ReturnValue": "250.00",
-        "TCEX_RS_ValidationFeedback": []
+        "ReturnValue": "250.00"
       }
+    }
+  ],
+  "TCEX_RS_ValidationFeedback": [
+    {
+      "ObjectType": "SalesModule.Customer",
+      "ObjectGuid": 12345678901234,
+      "Member": "Email",
+      "Message": "Email address already registered"
     }
   ]
 }
@@ -270,7 +276,10 @@ When `execute-testcase` completes, the response contains deep runtime execution 
 ### Telemetry Assertions & Verification:
 * **Microflow Return Value Assertion:** Inspect `TCEX_RS_TestStepRunMfc.ReturnValue` to assert that calculations, totals, or statuses match expected outcomes.
 * **Side-Effect Verification:** Inspect `TCEX_RS_TestStepRunOact.Attributes` to verify modified attributes on input objects.
-* **Validation Feedback Assertion:** Verify `TCEX_RS_ValidationFeedback` array length is `0` for valid runs, or contains the expected member feedback string for negative test cases (`PAT-10`).
+* **Validation Feedback Assertion (`PAT-120`):**
+  * *Count Assertion (`Assert Validation Feedback Count`):* Verify `TCEX_RS_ValidationFeedback.length` matches the expected count (e.g. `0` for positive/nominal runs, `1` or `N` for negative boundary runs).
+  * *Message & Member Assertion (`Assert Validation Feedback Compare`):* Match elements in `TCEX_RS_ValidationFeedback` where `Member == expectedMember`, `Message == expectedMessage`, and optionally `ObjectType == expectedEntityType`.
+  * *Request Stripping & Agent Evaluation:* Because `TCEX_RQ_TestStepRun` executes only `Oact` and `MicroflowCall` steps on the JVM, validation feedback assertions are stripped from the request payload and evaluated agent-side post-execution against `TCEX_RS_ValidationFeedback`. Mismatches result in status `FAIL` for that scenario.
 
 ---
 
