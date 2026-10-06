@@ -170,6 +170,19 @@ All widget locator microflows accept `ParentContext` (`Object: MxLocator` or `Mx
 | `Locate_MxWidget_ListView` | `ParentContext: Object`, `WidgetName: String` | `MxListViewLocator` | List View repeating container |
 | `Locate_MxWidget_DataGrid2` | `ParentContext: Object`, `WidgetName: String` | `MxDataGrid2Locator` | Data Grid 2 widget |
 
+### 3b. Widget Validation Message Locators (`Locate_MxWidget_*_ValidationMessage`) [^PAT-119]
+All validation message locator microflows accept the parent widget locator object and return `MxLocator`:
+
+| Microflow FQN | Input Parameters | Return Type | Target Widget Validation Message |
+| :--- | :--- | :--- | :--- |
+| `Locate_MxWidget_TextBox_ValidationMessage` | `TextBoxLocator: Object(MxTextBoxLocator)` | `MxLocator` | Validation message on Text Box / Input [^PAT-119] |
+| `Locate_MxWidget_DatePicker_ValidationMessage` | `DatePickerLocator: Object(MxDatePickerLocator)` | `MxLocator` | Validation message on Date Picker [^PAT-119] |
+| `Locate_MxWidget_DropDown_ValidationMessage` | `DropDownLocator: Object(MxDropDownLocator)` | `MxLocator` | Validation message on Drop-Down / Enum [^PAT-119] |
+| `Locate_MxWidget_ReferenceSelector_ValidationMessage` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)` | `MxLocator` | Validation message on Reference Selector [^PAT-119] |
+| `Locate_MxWidget_ComboBox_ValidationMessage` | `ComboBoxLocator: Object(MxComboBoxLocator)` | `MxLocator` | Validation message on ComboBox [^PAT-119] |
+| `Locate_MxWidget_CheckBox_ValidationMessage` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `MxLocator` | Validation message on Check Box [^PAT-119] |
+| `Locate_MxWidget_RadioButtons_ValidationMessage` | `RadioButtonsLocator: Object(MxRadioButtonsLocator)` | `MxLocator` | Validation message on Radio Buttons [^PAT-119] |
+
 ---
 
 ### 4. Element Locators & Filters (`ELO_*`)
@@ -211,6 +224,7 @@ All widget locator microflows accept `ParentContext` (`Object: MxLocator` or `Mx
 | `ASR_Has_Value_ReferenceSelector` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected reference selector option matches label [^PAT-114]. |
 | `ASR_Has_Value_ComboBox` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts ComboBox selected value matches expected label. |
 | `ASR_Is_Visible_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts element or widget is visible on DOM [^PAT-35]. |
+| `ASR_Is_Hidden_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts element, widget, or validation message is hidden on DOM [^PAT-119]. |
 | `ASR_Is_Checked_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)`, `ExpectedChecked: Boolean` | `Boolean` | Asserts checkbox checked status. |
 | `ASR_Is_Selected_Gallery_Item` | `GalleryItemLocator: Object(MxGalleryItemLocator)` | `Boolean` | Asserts gallery item has active selection state. |
 | `ASR_Has_Text_Dialog_Body` | `DialogLocator: Object(MxDialogLocator)`, `ExpectedText: String` | `Boolean` | Asserts dialog body contains expected message. |

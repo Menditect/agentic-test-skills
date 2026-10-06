@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.30.0"
-changes: "Synced pattern registry to 185 rules (PAT-118, ANTI-67)."
+version: "6.31.0"
+changes: "Enforced Event-Driven Frontend Validation Feedback Assertion Protocol (PAT-119) diagnostics."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -52,9 +52,10 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 6. **Pattern Audit & Auto-Registration Protocol**: When analyzing existing test cases or auditing step sequences in `STATE_QA_ASSISTANCE`, verify step patterns against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-xx] [^ANTI-xx]. If a new pattern or anti-pattern is identified or learned, auto-register it in `mta-patterns-and-antipatterns-reference.md` and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files.
 7. **Pre-Flight Zero Construction Error & 1-to-1 Step Reconciliation Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTest`, you **MUST** verify that `GetTestCaseDetails` returns **0 construction errors** and has passed the mandatory **1-to-1 Plan-to-Server Step Reconciliation** without discrepancies (in Agentic Mode, run `node tools/mta-lint.mjs audit "${execution_plans_dir}/EP_<TestCaseName>.md" "<server_data.json>"` to verify 0 discrepancies before calling `ExecuteTest`). If construction errors exist on the server or planned steps are missing (`INCOMPLETE_BUILD_DISCREPANCY`), you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors or missing steps to the user, and explain that execution cannot proceed until model revision synchronization or step construction issues are resolved.
 8. **Decommissioned Steps Reconciliation & Manual Cleanup Output [^PAT-115] [^ANTI-64]**: Test steps marked as decommissioned via `PAT-DEPRECATE-STEP` (`ExecutionCondition = "Skip"` and prefixed with `[TO DELETE]`) do not block test execution. When presenting post-run analysis or test explanations, if `[TO DELETE]` steps exist in the test case, append the standardized **Manual Cleanup Recommendation** box prompting the user to remove them in Mendix Studio Pro or MTA Web UI.
-9. **Frontend Auto-Assertion Traps (Visibility & Validation) (PAT-119)**: The Menditect Frontend Testkit automatically asserts (1) that widgets are visible before interaction, and (2) that input widgets have no validation errors after interaction.
-    * *Visibility*: If a locator step fails immediately (no timeout), it may be because the widget exists in the DOM but is hidden (visibility auto-assertion). If the intent is to verify it is hidden, use the explicit "assert not visible" Testkit action.
-    * *Validation*: If a test fails *immediately* on an `ACT_EnterText_*` or similar input step, do NOT assume the locator is broken. Recognize that this is likely the new auto-assertion catching an invalid value. In `STATE_SELF_REPAIR`, focus on correcting the input data. If designing a negative test, use the specific explicit action to assert that a validation message *should* occur.
+9. **Event-Driven Frontend Validation Feedback Assertion Diagnostics [^PAT-119]**:
+    * In Mendix, entering values into input widgets does not automatically trigger validation feedback unless an event (`onChange` on leave / with delay, `onEnterPress`) or action button (`onClick` on Save/Submit) executes validation logic in a Microflow or Nanoflow.
+    * Validation assertions are implemented via `Locate_MxWidget_[Widgetname]_ValidationMessage` followed by `ASR_Is_Hidden_MxLocator` (for nominal flows) or `ASR_Is_Visible_MxLocator` / `ASR_Has_Text` (for negative fault-injection flows).
+    * If an `ASR_Is_Hidden_MxLocator` step fails during execution, an unexpected validation message was displayed on that widget. In `STATE_RUN_ANALYZE` and `STATE_SELF_REPAIR`, inspect the triggering event microflow/nanoflow (or button action), event timing (`onChange` on leave vs while typing delay), and the input value to determine why validation failed, rather than modifying locator coordinates.
 
 ---
 

@@ -139,6 +139,63 @@ In Mendix applications, UI elements frequently carry names with prefixes or subs
 | **Dialog / Popup** | `Locate_MxWidget_Dialog` | `MxDialogLocator` | `ACT_Click_Dialog_OK_Button`, `ASR_Has_Text_Dialog_Body` |
 | **Container / Div** | `Locate_MxWidget_Container` | `MxContainerLocator` | `ACT_Click_Container` |
 
+### Law 5: Event-Driven Frontend Validation Feedback Assertion Protocol (PAT-119)
+
+#### ⚠️ Prohibition of Blind Form-Wide Auto-Assertions
+Entering values into input widgets (`ACT_Fill_TextBox_Input`, `ACT_Fill_DatePicker_Input`, etc.) does not inherently trigger validation feedback in Mendix unless an event handler is configured on that widget. Blindly generating validation assertions after every input step is strictly prohibited as it bloats tests and tests nothing.
+
+#### 🎯 Event-Driven Validation Trigger Rules
+Validation feedback assertions are generated **ONLY** when an event can trigger validation feedback:
+1. **Widget-Level Events (`onChange`, `onEnterPress`):** When an input widget has an event configured that executes a Microflow or Nanoflow.
+2. **Button-Level Actions (`onClick` on Save/Submit):** When an action button executes a Microflow or Nanoflow that validates entity attributes before saving.
+
+#### 🔍 Two-Tier AST Inspection Protocol
+Agents must analyze the Mendix model before designing frontend validation steps:
+1. **Tier 1 (Page AST via `DESCRIBE PAGE <Module.Page>`):**
+   - Identify input widgets and buttons on the target page.
+   - Extract attached event actions (`onChange`, `onEnterPress`, `onClick`) and their execution targets (Microflow or Nanoflow).
+   - **Verify `onChange` Trigger Mode:**
+     - **"On leave" (Focus Blur / Legacy Default):** The event is only triggered when focus leaves the widget (e.g. clicking/tabbing elsewhere). Typing text alone (`ACT_Fill_*`) does NOT trigger the validation logic immediately. The test step sequence must ensure focus leaves the field (or the next step interacts with another widget/button) before asserting validation feedback.
+     - **"While typing" (Debounced Delay, default 300 ms):** The event triggers dynamically as the user types after the delay expires.
+   - **Verify `onEnterPress` Trigger Mode:** Only triggered when an explicit Enter key press action is executed in the input widget.
+2. **Tier 2 (Flow AST via `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection):**
+   - Scan the target Microflow or Nanoflow AST for **`ValidationFeedbackAction`** nodes (Mendix activity type `Show Validation Feedback`).
+   - If `ValidationFeedbackAction` exists: Extract the target Entity and Attribute (e.g. `Customer.Email`) and map it back to the corresponding UI widget.
+   - If no `ValidationFeedbackAction` exists in the flow: **Do NOT generate validation assertion steps for that event.**
+
+#### 🧩 Validation Message Locators & Chaining
+The Menditect Frontend Testkit provides dedicated microflows to locate validation messages directly on their parent widgets:
+
+| Target Widget Type | Widget Locator Type | Validation Message Locator Microflow | Return Type | Happy-Path Assertion |
+| :--- | :--- | :--- | :--- | :--- |
+| **Text Box / Area** | `MxTextBoxLocator` | `Locate_MxWidget_TextBox_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **Drop-Down / Enum** | `MxDropDownLocator` | `Locate_MxWidget_DropDown_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **Date Picker** | `MxDatePickerLocator` | `Locate_MxWidget_DatePicker_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **Reference Selector** | `MxReferenceSelectorLocator` | `Locate_MxWidget_ReferenceSelector_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **ComboBox** | `MxComboBoxLocator` | `Locate_MxWidget_ComboBox_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **Check Box** | `MxCheckBoxLocator` | `Locate_MxWidget_CheckBox_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+| **Radio Buttons** | `MxRadioButtonsLocator` | `Locate_MxWidget_RadioButtons_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
+
+* **Step Chaining Sequence:**
+  1. `Locate_MxWidget_[Widgetname]` -> yields `WidgetLocatorKey`
+  2. `ACT_Fill_*` or `ACT_SelectOption_*` (piping `WidgetLocatorKey`)
+  3. *(If `onChange` is "On leave"):* Ensure blur/leave occurs (e.g. clicking next input/button) before assertion.
+  4. *(If `onEnterPress`):* Execute Enter key action before assertion.
+  5. `Locate_MxWidget_[Widgetname]_ValidationMessage` (piping `WidgetLocatorKey`) -> yields `ValidationMsgLocatorKey`
+  6. `ASR_Is_Hidden_MxLocator` (piping `ValidationMsgLocatorKey`) -> asserts element is hidden (nominal/happy-path).
+
+#### 🛡️ Button Click & Step Explosion Guardrail
+When an action button (Save, Submit) executes validation for multiple attributes:
+* **Targeted Scope:** In happy-path tests, only assert `ASR_Is_Hidden_MxLocator` on widgets that were **interacted with or populated during upstream steps of the active test case** and validated in the save microflow/nanoflow. Do not assert on un-interacted or optional fields.
+* **Negative Test Scenarios:** For deliberate negative tests (testing validation errors), assert `ASR_Is_Visible_MxLocator` on the invalid widget, followed by `ASR_Has_Text` / message content comparison.
+
+#### 📝 Mandatory Description Field in Execution Plans (`EP_*.md`)
+Whenever validation message test steps (`Locate_MxWidget_*_ValidationMessage` and `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) are added to an Execution Plan, the agent **MUST** populate a `Description` field on the test step explicitly documenting why it was added. For example:
+* `Description: "Locates validation message on 'Email' textbox to verify no validation errors after onChange (while typing) event (Sales.OCh_Customer_Email)."`
+* `Description: "Asserts that the validation message on 'Email' textbox is hidden, catching unexpected validation regressions immediately."`
+* `Description: "Locates validation message on 'LastName' textbox following form submission via Save button (Sales.ACT_Customer_Save)."`
+* `Description: "Asserts that 'LastName' validation message is hidden after Save button click."`
+
 ---
 
 ## 🗺️ PLAYWRIGHT `Page` VS. MENDIX `MxPageLocator` CONTEXTS
@@ -199,6 +256,17 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 | `MenditectMxFrontendTestKit.Locate_MxWidget_ListView` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxListViewLocator` | List View repeating container widget |
 | `MenditectMxFrontendTestKit.Locate_MxWidget_DataGrid2` | `ParentContext: Object(MxLocator)`, `WidgetName: String` | `MenditectMxFrontendTestKit.MxDataGrid2Locator` | Data Grid 2 widget |
 
+### 3b. Widget Validation Message Locators (PAT-119)
+| Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Usage |
+| :--- | :--- | :--- | :--- |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_TextBox_ValidationMessage` | `TextBoxLocator: Object(MxTextBoxLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Text Box widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DatePicker_ValidationMessage` | `DatePickerLocator: Object(MxDatePickerLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Date Picker widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_DropDown_ValidationMessage` | `DropDownLocator: Object(MxDropDownLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Drop-down / Enum widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_ReferenceSelector_ValidationMessage` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Reference Selector widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_ComboBox_ValidationMessage` | `ComboBoxLocator: Object(MxComboBoxLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on ComboBox widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_CheckBox_ValidationMessage` | `CheckBoxLocator: Object(MxCheckBoxLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Check Box widget [^PAT-119] |
+| `MenditectMxFrontendTestKit.Locate_MxWidget_RadioButtons_ValidationMessage` | `RadioButtonsLocator: Object(MxRadioButtonsLocator)` | `MenditectMxFrontendTestKit.MxLocator` | Locates validation message directly on Radio Buttons widget [^PAT-119] |
+
 ### 4. Element Locators & Filters (Law 2 Repeating Containers)
 | Microflow FQN | Input Parameters (Name: Type) | Return Type | Role / Usage |
 | :--- | :--- | :--- | :--- |
@@ -236,6 +304,7 @@ All Frontend UI test steps (in Execution Plans and persistent MTA test step cons
 | `MenditectMxFrontendTestKit.ASR_Has_Value_ReferenceSelector` | `ReferenceSelectorLocator: Object(MxReferenceSelectorLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected reference selector option matches expected value. [^PAT-114] |
 | `MenditectMxFrontendTestKit.ASR_Has_Value_ComboBox` | `ComboBoxLocator: Object(MxComboBoxLocator)`, `ExpectedValue: String` | `Boolean` | Asserts selected ComboBox value matches expected label. |
 | `MenditectMxFrontendTestKit.ASR_Is_Visible_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts page element, button, text, or widget is visible on DOM. [^PAT-35] |
+| `MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator` | `Locator: Object(MxLocator)` | `Boolean` | Asserts page element, button, text, or validation message is hidden on DOM. [^PAT-119] |
 | `MenditectMxFrontendTestKit.ASR_Is_Checked_CheckBox_Input` | `CheckBoxLocator: Object(MxCheckBoxLocator)`, `ExpectedChecked: Boolean` | `Boolean` | Asserts checkbox checked state. |
 | `MenditectMxFrontendTestKit.ASR_Is_Selected_Gallery_Item` | `GalleryItemLocator: Object(MxGalleryItemLocator)` | `Boolean` | Asserts gallery item has active selection state. |
 | `MenditectMxFrontendTestKit.ASR_Has_Text_Dialog_Body` | `DialogLocator: Object(MxDialogLocator)`, `ExpectedText: String` | `Boolean` | Asserts dialog message body contains expected text. |

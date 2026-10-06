@@ -64,7 +64,7 @@ test_case_keys: []
 <details>
 <summary><b>View detailed step specifications (Click to expand)</b></summary>
 
-*This single canonical ledger serves as the Single Source of Truth for both the Option A in-memory JVM compiler and Option B persistent MTA construction. All handles, bindings, and assertions are explicitly specified.*
+*This single canonical ledger serves as the Single Source of Truth for both the Option A in-memory JVM compiler and Option B persistent MTA construction. All handles, bindings, and assertions are explicitly specified. For Frontend validation feedback steps (`Locate_MxWidget_*_ValidationMessage` and `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator` per `PAT-119`), each step MUST include a description explaining why it was added (naming the triggering event microflow or save button action and the validated attribute).*
 
 | # | Case | Step Action & Target | Input Handle | Output Handle | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |
 | :-: | :--: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |

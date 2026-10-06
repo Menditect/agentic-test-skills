@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.33.0"
-changes: "Synced pattern registry to 185 rules (PAT-118, ANTI-67)."
+version: "6.34.0"
+changes: "Added Event-Driven Frontend Validation Feedback Assertion Construction Protocol (PAT-119)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -115,6 +115,16 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   Eliminates sequential `CreateStep -> GetTeststepDetails -> EditParam` chatterbox loops by enforcing a single `GetTestCaseDetails(TestCaseKey)` bulk sync per test case during Phase 2 (`PAT-117`).
     *   After completing Phase 1 forward step chaining (`PAT-11`) and Phase 2A concurrent attribute inclusions/retrieve options (15–20 calls/turn, `ANTI-32`), call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** to capture all server-assigned `AttributeValueKey`, `SelectObjectForMicroflowParameterKey`, and `MicroflowParameterValueKey` IDs across all steps in the testcase.
     *   Parse keys in memory and batch all Phase 2B setters concurrently in safe chunks of 15–20 calls/turn. Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited.
+30. **Event-Driven Frontend Validation Feedback Assertion Construction Protocol [^PAT-119]**:
+    *   **Prohibition of Blind Auto-Assertions:** Do NOT construct validation assertions after every input step. Entering text or picking dates does not trigger validation in Mendix unless explicit event handlers (`onChange`, `onEnterPress`) or submit buttons execute validation logic in a Microflow or Nanoflow.
+    *   **Event Trigger Timing & Step Placement:**
+        1. *`onChange` (On leave / Legacy Default):* Place the validation assertion steps after focus leaves the widget (e.g. after interacting with the next field or clicking elsewhere).
+        2. *`onChange` (While typing / with delay):* Place the validation assertion steps immediately after the input step.
+        3. *`onEnterPress`:* Ensure an Enter key press action is executed in the input widget before asserting validation.
+    *   **TestKit Locators & Chaining:** For each validation feedback assertion planned per `PAT-119`:
+        1. Construct the validation message locator step using `CreateMicroflowCallTestStep(MicroflowName="MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage")`, binding the parent widget locator handle to `[Widgetname]Locator`.
+        2. Construct the assertion step using `CreateMicroflowCallTestStep(MicroflowName="MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator")` (or `ASR_Is_Visible_MxLocator`), binding the returned `MxLocator` from the validation message locator step.
+    *   **Step Description Persistence:** Call `EditTestStep` on both the locator and assertion steps to persist the `TestStepDescription` specified in the approved Execution Plan, explaining the triggering event microflow/nanoflow or button action and the validated attribute.
 
 ---
 
