@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.34.0"
-changes: "Added Event-Driven Frontend Validation Feedback Assertion Construction Protocol (PAT-119)."
+version: "6.35.0"
+changes: "Synchronized pattern references with PAT-121 and ANTI-68..ANTI-72."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -118,7 +118,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 30. **Event-Driven Frontend Validation Feedback Assertion Construction Protocol [^PAT-119]**:
     *   **Prohibition of Blind Auto-Assertions:** Do NOT construct validation assertions after every input step. Entering text or picking dates does not trigger validation in Mendix unless explicit event handlers (`onChange`, `onEnterPress`) or submit buttons execute validation logic in a Microflow or Nanoflow.
     *   **Event Trigger Timing & Step Placement:**
-        1. *`onChange` (On leave / Legacy Default):* Place the validation assertion steps after focus leaves the widget (e.g. after interacting with the next field or clicking elsewhere).
+        1. *`onChange` (On leave / Legacy Default):* Place the validation assertion steps after focus leaves the widget (e.g. after interacting with the next field, executing keypress "Enter", or clicking at a neutral/random location on the page if Enter is not possible).
         2. *`onChange` (While typing / with delay):* Place the validation assertion steps immediately after the input step.
         3. *`onEnterPress`:* Ensure an Enter key press action is executed in the input widget before asserting validation.
     *   **TestKit Locators & Chaining:** For each validation feedback assertion planned per `PAT-119`:
@@ -138,7 +138,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 187 testing patterns/anti-patterns (`PAT-01..120`, `ANTI-01..67`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 193 testing patterns/anti-patterns (`PAT-01..121`, `ANTI-01..72`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

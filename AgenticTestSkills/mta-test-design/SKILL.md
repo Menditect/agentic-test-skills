@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.38.0"
-changes: "Enforced Event-Driven Frontend Validation Feedback Assertion Protocol (PAT-119) with Locate_MxWidget_*_ValidationMessage and mandatory teststep descriptions."
+version: "6.39.0"
+changes: "Added Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol (PAT-121, ANTI-68..ANTI-72)."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -51,6 +51,30 @@ You are **strictly prohibited** from:
    - **Option A (Local Direct Seeding):** Dispatches the data seeding payload directly into the running local Mendix JVM via `MTA_plugin.execute-testcase` with `Rollback = No` and trailing batch `Persist`. *Zero server placement/configuration scanning; immediate execution in 1 turn.*
    - **Option B (Persistent MTA Platform Seeding Test Case):** Constructs a reusable 1-case Data Generator test case on the MTA Server (`Rollback = No`, trailing `Persist`, no teardown) for CI/CD or team use. *Proceeds to `PLAN_STEP_2` for configuration and suite placement.*
 
+### 3. Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol (`PAT-121`):
+To prevent the **Tautological Testing Trap** (where tests merely assert what buggy or incomplete code happens to do, creating confirmation bias), the agent MUST classify test intent and ground truth sources before drafting steps:
+
+1. **The 3-Tier Intent Classification Engine:**
+   * **Tier 1: `regression` (Verified Production Baseline):**
+     * *Baseline:* The live `.mpr` AST is the accepted baseline.
+     * *Supplementary Context:* If external context is available (user stories, docs, Jira), the agent captures it in `supplementary_context` to drive realistic data, scenario naming, and to document any `specification_drift`.
+   * **Tier 2: `exploratory_robustness` (Technical Boundary & Fault Tolerance):**
+     * *Baseline:* Live `.mpr` AST conditional decision splits (`PAT-109`) combined with boundary heuristics (zero, negative, thresholds, null sentinel retrieve `PAT-07`, exception handling).
+     * *Scope:* Verifies code stability and exception resilience under extreme inputs.
+   * **Tier 3: `exploratory_feature` / `tdd` (New or Modified Business Logic):**
+     * *Baseline:* **Mandatory External Specification.** Testing against the AST alone is strictly prohibited. Ground truth must come from a connected MCP tool (`jira_*`, `maia_plan_*`), documentation in `@annotation`, or explicit acceptance criteria provided in the prompt.
+2. **Autonomous Intent Derivation & Linguistic Classifier:**
+   * **Prompt Linguistic Scan:** Prompts containing creation or modification verbs (*"I added", "I implemented", "new logic", "changed", "fixed", "updated", "build a test for this new feature", "test-driven"*) strictly forbid classification as `regression`. The agent MUST classify as `exploratory_feature` or `tdd`.
+   * **Live `.mpr` AST Stub Detection (`PAT-109`):** Before planning, inspect the target via `describe microflow <Flow> -p <project.mpr>`. If the microflow is empty, contains only start/end nodes, or lacks implementation logic, the agent MUST treat it as a stub and force `tdd` or `exploratory_feature` with mandatory external criteria.
+   * **Connected MCP Server Tool Discovery:** Scan the session's active tool catalog. If tools matching `jira_*`, `atlassian_*`, `maia_plan_*`, or `sprintr_*` are present, autonomously call the relevant tool (e.g. `jira_get_issue`) to fetch acceptance criteria without asking the user to copy-paste.
+   * **The Conservative Gate:** When intent cannot be inferred with certainty (no explicit verbs, no external spec, but the prompt says *"test this microflow"*), the agent MUST halt at Checkpoint 1 with an intent selection card rather than silently guessing `regression`.
+3. **Anti-Loophole Guardrails (`ANTI-68` through `ANTI-72`):**
+   * `ANTI-68` (Intent Downgrading): Downgrading a prompt with modification verbs to `regression` to avoid spec enforcement is strictly prohibited.
+   * `ANTI-69` (Circular Specification): Setting `spec_source.summary` to trivial tautologies (e.g. `/as\s+implemented/i`, `/derived\s+from\s+code/i`) is rejected by the linter.
+   * `ANTI-70` (Rubber-Stamp Risk Matrix): Every risk in `risks_covered` must address non-trivial boundary conditions or failure modes (`null`, `empty`, `exceed`, `unauthorized`, `negative`, `boundary`, `invalid`, `fail`) mapped to concrete scenario columns.
+   * `ANTI-71` (Trivial Prompt Echoing): Prompt criteria summaries must be $\ge 30$ characters and contain conditional outcome keywords (`if`, `when`, `must`, `should`, `equal`, `returns`).
+   * `ANTI-72` (Assertive Softening): Feature test microflow return assertions must assert exact expected scalar values (`Equal`), not merely non-empty or object existence.
+
 This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
 
 ---
@@ -66,7 +90,7 @@ You must progress sequentially through these three interactive planning micro-st
 *   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
 *   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
     Before designing steps, identify which pattern families apply to your target:
-    - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `PAT-111` (Unified Promotable Blueprint Invariant), `ANTI-02`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern)
+    - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-121` (Hierarchical Intent & Anti-Tautology Verification Protocol), `ANTI-02`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-68`..`ANTI-72` (Specification Anti-Loopholes)
     - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-95` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
     - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
     - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-10` (Validation Feedback Assertion), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `PAT-120` (Validation Feedback Session Isolation & Agent-Side Assertion), `ANTI-07`, `ANTI-10`, `ANTI-13`, `ANTI-14`
@@ -86,7 +110,7 @@ You must progress sequentially through these three interactive planning micro-st
       *Event-Driven Frontend Validation Feedback Assertion Protocol (`PAT-119`):* In Mendix, entering values into input widgets does not automatically trigger validation feedback unless an event (`onChange`, `onEnterPress`) or action button (`onClick` on Save/Submit) is explicitly configured to execute validation logic. Blindly asserting on validation feedback after every input step is strictly prohibited.
       - *Two-Tier AST Inspection:* When designing frontend tests, the agent MUST:
         1. Scan the Page AST (`DESCRIBE PAGE <Module.Page>`) for input widgets and buttons with attached event handlers and verify the trigger configuration:
-           - `onChange` (On leave / legacy default): Triggers when focus leaves the widget (e.g. clicking/tabbing away). The test sequence must ensure blur/leave occurs before asserting validation.
+           - `onChange` (On leave / legacy default): Triggers when focus leaves the widget (e.g. clicking/tabbing away). The test sequence must ensure blur/leave occurs before asserting validation by: (a) interacting with downstream widgets/buttons, (b) executing keypress "Enter" (`ACT_Press_Key` with `"Enter"`), or (c) clicking at a neutral location or layout container on the page (`Locate_MxPage` -> `ACT_Click_Container` or background) if Enter is not possible or triggers form submission.
            - `onChange` (While typing / with delay): Triggers dynamically during typing after the delay (default 300ms).
            - `onEnterPress`: Triggers only when an explicit Enter key press action is executed in the widget.
         2. Scan the event/action Microflow or Nanoflow AST (`describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection) for `ValidationFeedbackAction` activities (`Show Validation Feedback`). If found, map the validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, do NOT plan validation assertion steps for that event.
@@ -321,7 +345,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 187 testing patterns/anti-patterns (`PAT-01..120`, `ANTI-01..67`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 193 testing patterns/anti-patterns (`PAT-01..121`, `ANTI-01..72`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

@@ -1718,7 +1718,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-119`: Event-Driven Frontend Validation Feedback Assertion Protocol
 * **Scope:** Frontend | **Classification:** Platform Execution Law
-* **Description:** In Mendix applications, entering values into input widgets does not automatically trigger validation feedback unless an event (`onChange`, `onEnterPress`) or action button (`onClick` on Save/Submit) is explicitly configured to execute validation logic. Blindly asserting on validation feedback for every input widget is strictly prohibited. Instead, the agent MUST: (1) Analyze the Page AST (`DESCRIBE PAGE`) to identify widgets with attached event handlers and verify the exact event trigger configuration: (a) `onChange` configured as "On leave" (or legacy Mendix default) only executes when focus leaves the widget (e.g. clicking/tabbing elsewhere); (b) `onChange` configured as "While typing" (with delay, default 300ms) executes dynamically during typing; (c) `onEnterPress` only executes when an explicit Enter key action is performed. (2) Analyze the target event/action Microflow or Nanoflow AST (`describe microflow <Flow> -p <project.mpr>` / `PAT-109`) to detect `ValidationFeedbackAction` activities and map validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, no validation assertions are generated. (3) Generate validation message locator steps using the dedicated TestKit microflow `MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage` (e.g. `Locate_MxWidget_TextBox_ValidationMessage`, `Locate_MxWidget_DropDown_ValidationMessage`, `Locate_MxWidget_DatePicker_ValidationMessage`, `Locate_MxWidget_ReferenceSelector_ValidationMessage`, `Locate_MxWidget_ComboBox_ValidationMessage`, `Locate_MxWidget_CheckBox_ValidationMessage`, `Locate_MxWidget_RadioButtons_ValidationMessage`) piping the widget locator. (4) Assert negative presence on happy-path tests using `MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator` placed precisely when the event triggers (after leave/blur, after delay, or after Enter press; or `ASR_Is_Visible_MxLocator` / `ASR_Has_Text` for negative fault-injection scenarios). (5) For form Save/Submit buttons, apply the Step Explosion Guardrail: only assert `ASR_Is_Hidden_MxLocator` on interacted form fields validated in the Save microflow/nanoflow. (6) In Execution Plans (`EP_*.md`), every validation message test step MUST include a `Description` field explaining why the step was added (naming the triggering event microflow/nanoflow or button action and the validated attribute).
+* **Description:** In Mendix applications, entering values into input widgets does not automatically trigger validation feedback unless an event (`onChange`, `onEnterPress`) or action button (`onClick` on Save/Submit) is explicitly configured to execute validation logic. Blindly asserting on validation feedback for every input widget is strictly prohibited. Instead, the agent MUST: (1) Analyze the Page AST (`DESCRIBE PAGE`) to identify widgets with attached event handlers and verify the exact event trigger configuration: (a) `onChange` configured as "On leave" (or legacy Mendix default) only executes when focus leaves the widget (e.g. clicking/tabbing elsewhere, executing keypress "Enter", or clicking at a neutral location/container on the page if Enter is not possible); (b) `onChange` configured as "While typing" (with delay, default 300ms) executes dynamically during typing; (c) `onEnterPress` only executes when an explicit Enter key action is performed. (2) Analyze the target event/action Microflow or Nanoflow AST (`describe microflow <Flow> -p <project.mpr>` / `PAT-109`) to detect `ValidationFeedbackAction` activities and map validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, no validation assertions are generated. (3) Generate validation message locator steps using the dedicated TestKit microflow `MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage` (e.g. `Locate_MxWidget_TextBox_ValidationMessage`, `Locate_MxWidget_DropDown_ValidationMessage`, `Locate_MxWidget_DatePicker_ValidationMessage`, `Locate_MxWidget_ReferenceSelector_ValidationMessage`, `Locate_MxWidget_ComboBox_ValidationMessage`, `Locate_MxWidget_CheckBox_ValidationMessage`, `Locate_MxWidget_RadioButtons_ValidationMessage`) piping the widget locator. (4) Assert negative presence on happy-path tests using `MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator` placed precisely when the event triggers (after leave/blur, after delay, or after Enter press; or `ASR_Is_Visible_MxLocator` / `ASR_Has_Text` for negative fault-injection scenarios). (5) For form Save/Submit buttons, apply the Step Explosion Guardrail: only assert `ASR_Is_Hidden_MxLocator` on interacted form fields validated in the Save microflow/nanoflow. (6) In Execution Plans (`EP_*.md`), every validation message test step MUST include a `Description` field explaining why the step was added (naming the triggering event microflow/nanoflow or button action and the validated attribute).
 * **Related Rules:**
   * **Related Patterns:** `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law), `PAT-72` (Frontend Single-Pass Page AST Protocol), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `PAT-114` (Widget-Type-Driven Locator & Action Resolution).
   * **Related Anti-Patterns:** `ANTI-14` (Using MTA TestCase Validation Feedback Assertions in Frontend UI Tests), `ANTI-19` (Trial-and-Error Frontend Execution & Raw CSS Selector Bypass), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
@@ -1735,10 +1735,61 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-121`: Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol
+* **Scope:** General | **Classification:** Platform Architecture Invariant
+* **Description:** Requires every test request to be classified into one of 3 distinct intent archetypes: (1) Regression Testing (`regression`) where the existing Mendix implementation is assumed correct, (2) Boundary / Robustness Testing (`exploratory_robustness`) verifying edge cases, null boundaries, and error handling against live AST logic without full functional specs, and (3) Exploratory Feature / Acceptance / TDD (`exploratory_feature` or `tdd`) where the implementation logic cannot be assumed correct and expectations must be grounded in an independent specification source (`spec_source`). Prohibits circular reasoning, trivial prompt echoing, rubber-stamp risk matrices, and assertion softening.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-68` (Intent Downgrading Anti-Pattern), `ANTI-69` (Circular Specification Anti-Pattern), `ANTI-70` (Rubber-Stamp Risk Matrix Anti-Pattern), `ANTI-71` (Trivial Prompt Echoing Anti-Pattern), `ANTI-72` (Assertion Softening Anti-Pattern).
+  * **Related Patterns:** `PAT-01` (MTF Pyramid Alignment), `PAT-43` (Universal Execution Plan Mandate), `PAT-110` (Target-Bound Data Variation Matrix), `PAT-111` (Unified Promotable Blueprint Invariant).
+  * **Related Anti-Patterns:** `ANTI-46` (Unplanned Test Construction), `ANTI-54` (Void Mutation Assertion Hallucination).
+
+---
+
+### `ANTI-68`: Intent Downgrading Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Downgrading an exploratory feature or user story test to a simple boundary check (`exploratory_robustness`) or regression test simply to avoid requesting or specifying external ground truth.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-121` (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol).
+
+---
+
+### `ANTI-69`: Circular Specification Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Defining expected functional test outcomes purely by reading the implementation code or model being verified, creating a circular tautology where buggy code is validated against itself.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-121` (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol).
+
+---
+
+### `ANTI-70`: Rubber-Stamp Risk Matrix Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Documenting generic, trivial "happy path" items in `risks_covered` (e.g. "normal operation") without testing non-trivial boundaries, null values, thresholds, or failure modes.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-121` (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol).
+
+---
+
+### `ANTI-71`: Trivial Prompt Echoing Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Copying a short prompt phrase as `spec_source.summary` without documenting concrete inputs, expected return values, or business conditional logic.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-121` (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol).
+
+---
+
+### `ANTI-72`: Assertion Softening Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Weakening test assertions from exact scalar value equality (`Assert Return Value == expectedVal`) to generic non-emptiness checks (`!= empty`) to bypass verifying business logic correctness.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-121` (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-121`** (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol) | **`ANTI-68`** (Intent Downgrading) / **`ANTI-69`** (Circular Specification) / **`ANTI-70`** (Rubber-Stamp Risk Matrix) / **`ANTI-71`** (Trivial Prompt Echoing) / **`ANTI-72`** (Assertion Softening) | Classifying test intent, requiring non-circular external ground truth, and enforcing exact return assertions vs tautological verification loopholes |
 | **`PAT-120`** (Validation Feedback Session Isolation & Agent-Side Assertion) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Session-isolated dispatch & agent-side validation feedback evaluation vs cross-scenario feedback pooling |
 | **`PAT-119`** (Event-Driven Frontend Validation Feedback Assertion Protocol) | **`ANTI-14`** (Using MTA TestCase Validation Feedback Assertions in Frontend UI Tests) | Event-driven UI validation message locator and assertion chaining with mandatory step descriptions vs blind assertions or backend assertion substitution |
 | **`PAT-118`** (Interactive Multi-Configuration Placement Gate) | **`ANTI-67`** (Silent Multi-Configuration Assumption) | Interactive halt when multiple test configurations exist vs silently picking index 0 |

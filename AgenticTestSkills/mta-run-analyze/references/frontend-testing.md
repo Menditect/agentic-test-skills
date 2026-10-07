@@ -155,7 +155,10 @@ Agents must analyze the Mendix model before designing frontend validation steps:
    - Identify input widgets and buttons on the target page.
    - Extract attached event actions (`onChange`, `onEnterPress`, `onClick`) and their execution targets (Microflow or Nanoflow).
    - **Verify `onChange` Trigger Mode:**
-     - **"On leave" (Focus Blur / Legacy Default):** The event is only triggered when focus leaves the widget (e.g. clicking/tabbing elsewhere). Typing text alone (`ACT_Fill_*`) does NOT trigger the validation logic immediately. The test step sequence must ensure focus leaves the field (or the next step interacts with another widget/button) before asserting validation feedback.
+     - **"On leave" (Focus Blur / Legacy Default):** The event is only triggered when focus leaves the widget (`blur` event). Typing text alone (`ACT_Fill_*`) does NOT trigger the validation logic immediately. The test step sequence must ensure focus leaves the field before asserting validation feedback:
+       - *Option 1 (Downstream Field/Button Interaction):* If subsequent form fields or action buttons exist, interact with the next widget (e.g. `ACT_Fill_*` or `ACT_Click_Button`).
+       - *Option 2 (Keypress "Enter"):* If there is no other input field to click on (or when testing an isolated input), apply keypress "Enter" on the active field (`ACT_Press_Key` with `"Enter"`). In Mendix, pressing Enter commits the value and triggers the change/blur event.
+       - *Option 3 (Neutral Location / Page Click Fallback):* In case keypress "Enter" is not possible or would trigger an unintended default button action/form submission, click at a neutral location or layout container on the page (e.g. `Locate_MxPage` -> `ACT_Click_Container` or clicking a non-interactive layout container/background) to safely remove focus and invoke the `onChange` validation.
      - **"While typing" (Debounced Delay, default 300 ms):** The event triggers dynamically as the user types after the delay expires.
    - **Verify `onEnterPress` Trigger Mode:** Only triggered when an explicit Enter key press action is executed in the input widget.
 2. **Tier 2 (Flow AST via `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection):**
@@ -179,7 +182,7 @@ The Menditect Frontend Testkit provides dedicated microflows to locate validatio
 * **Step Chaining Sequence:**
   1. `Locate_MxWidget_[Widgetname]` -> yields `WidgetLocatorKey`
   2. `ACT_Fill_*` or `ACT_SelectOption_*` (piping `WidgetLocatorKey`)
-  3. *(If `onChange` is "On leave"):* Ensure blur/leave occurs (e.g. clicking next input/button) before assertion.
+  3. *(If `onChange` is "On leave"):* Ensure blur/leave occurs before assertion by: (a) interacting with the next field/button, (b) applying keypress "Enter" (`ACT_Press_Key`), or (c) clicking at a neutral location or layout container on the page (`ACT_Click_Container`) if Enter is not possible.
   4. *(If `onEnterPress`):* Execute Enter key action before assertion.
   5. `Locate_MxWidget_[Widgetname]_ValidationMessage` (piping `WidgetLocatorKey`) -> yields `ValidationMsgLocatorKey`
   6. `ASR_Is_Hidden_MxLocator` (piping `ValidationMsgLocatorKey`) -> asserts element is hidden (nominal/happy-path).
