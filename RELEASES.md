@@ -4,7 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [v1.26.0](releases/v1.26.0.md) | 2026-10-07 | Merge branch development into main (v1.26.0 release) |
+| [v1.26.0](releases/v1.26.0.md) | 2026-10-07 | improved handling of context for exploratory testing of new features |
 | [v1.25.1](releases/v1.25.1.md) | 2026-10-06 | Merge branch development into main (fix CI safe tag trimming) |
 | [v1.25.0](releases/v1.25.0.md) | 2026-10-05 | fix(ci): fetch remote tags and prevent non-zero exit code if release tag exists in public repo |
 | [v1.24.3](releases/v1.24.3.md) | 2026-10-02 | improved performance of tool calls by eleminating unnessary steps |
