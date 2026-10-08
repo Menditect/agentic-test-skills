@@ -60,7 +60,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 
 ### [CHECK 7] Mandatory Page & Widget Discovery (`PAT-35`, `PAT-67`, `ANTI-23`)
 - **Scope:** Frontend UI Tests (NA for Backend).
-- **Verification Criteria:** `GetAppModelData` (Pages/Widgets) or `mxcli` `DESCRIBE PAGE`, `DESCRIBE SNIPPET`, and `DESCRIBE ENTITY` were executed upfront. All form input widgets across tabs and snippets are cataloged in Section 4 Input Widget Inventory. Frontend UI Action steps cite verified Testkit microflows with the automatic `IsVisible` notice.
+- **Verification Criteria:** `GetAppModelData` (Pages/Widgets) or `mxcli` `DESCRIBE PAGE`, `DESCRIBE SNIPPET`, and `DESCRIBE ENTITY` were executed upfront. All form input widgets across tabs and snippets are cataloged in Section 2 Component Under Test (Input Widget Inventory table). Frontend UI Action steps cite verified Testkit microflows with the automatic `IsVisible` notice.
 - **Compliance Status:** `PASS` or `NA`.
 
 ### [CHECK 8] Uniform 8-Field Step Sequence Schema & Wire Enum Tokens (`PAT-12`, `PAT-34`, `PAT-100`)
@@ -79,9 +79,9 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
   3. The high-level `Step Sequence Matrix` overview table and any Executive Summary step tables display the concise 7 operational columns (`Step #`, `Case`, `Step Type`, `Target Element / Action`, `Input Source`, `Output Handle`, `Exec Settings`), omitting the verbose narrative rationale column to maintain clean, readable table layouts without text wrapping.
 - **Compliance Status:** `PASS`.
 
-### [CHECK 9] Frontend Execution Plan Quality Protocol (`PAT-41`..`PAT-53`, `PAT-67`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45`)
+### [CHECK 9] Frontend Execution Plan Quality Protocol (`PAT-41`..`PAT-53`, `PAT-67`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `PAT-119`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45`, `ANTI-74`)
 - **Scope:** Frontend UI Tests (NA for Backend).
-- **Verification Criteria:** 8-point frontend verification:
+- **Verification Criteria:** 9-point frontend verification:
   1. MTA sync probe asked / `mxcli` recursive discovery fallback used with exhaustive input widget inventory (`PAT-67`, `ANTI-23`).
   2. Required seed data analyzed.
   3. Self-contained Case 1 seeding steps (`Create Object` + batch `Persist`) planned by default for transactional entities, with permitted `Retrieve` for static master reference data and unique synthetic keys (`PAT-91`, `ANTI-42`, omitted ONLY if user explicitly commanded 'use existing data').
@@ -90,8 +90,9 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
   6. Dynamic scalar value piping used (`SelectValueForValue` referencing Case 1 seed handles) across all form inputs, search filters, dropdowns, and UI assertions consuming seeded data.
   7. **DatePicker Format & Offset Model Verification (`PAT-42`, `PAT-94`, `ANTI-45`):** When using `mxcli` for model discovery, the exact `CustomDateFormat` (or project language date format) MUST be extracted via `mxcli bson dump` command:
      `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json`
-     Guessing or defaulting format strings without model proof is strictly prohibited (`ANTI-45`) and automatically validated by `mta-lint`.
-  8. List filter strategies proposed (`ELO_Filter_*_by_Text`, `ELO_Nth_*_Item`).
+     The exact BSON model property path must be documented in the Section 2 Component Under Test (Input Widget Inventory table). Guessing or defaulting format strings without model proof is strictly prohibited (`ANTI-45`).
+  8. **Validation Trigger Sequencing Law (`PAT-119`, `ANTI-74`):** Validation feedback locators (`Locate_MxWidget_*_ValidationMessage`) and assertions (`ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) MUST occur AFTER the submit Action Button click (`ACT_Click_MxButton` with `FormValidations = "All"`). Placing validation assertions before the submit click is strictly prohibited (`ANTI-74`).
+  9. List filter strategies proposed (`ELO_Filter_*_by_Text`, `ELO_Nth_*_Item`).
 - **Compliance Status:** `PASS` or `NA`.
 
 ### [CHECK 10] Dual-Track Execution Strategy & Suite Audit (`PAT-60`, `PAT-62`, `PAT-101`)

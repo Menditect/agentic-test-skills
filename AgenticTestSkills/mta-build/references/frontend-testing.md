@@ -50,9 +50,10 @@ N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` 
     *   **Unique Synthetic Keys:** All seeded records in Case 1 MUST use unique synthetic identifiers (e.g., prefixing codes/names with `'TEST_'` or dynamic timestamps) to prevent Unique Constraint Violations or collisions with dirty database leftovers.
 *   **The Mandatory DatePicker Discovery Gate (CRITICAL) (`PAT-94`, `ANTI-45`):** Whenever `DESCRIBE PAGE` or `GetAppModelData` reveals one or more `DatePicker` widgets on a target page:
     1. **IMMEDIATELY PAUSE** before writing the Execution Plan or creating test steps.
-    2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
-    3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
-    4. **FAIL-SAFE:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`).
+    2. **EXECUTE:** `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
+    3. **EXTRACT:** `DateFormat` and `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
+    4. **DOCUMENT:** State the exact BSON property path (e.g. `Page.widgets[name='datePicker_BirthDate'].formattingInfo.customDateFormat`) in the Section 2 Component Under Test (Input Widget Inventory table).
+    5. **FAIL-SAFE:** Hardcoding or assuming ANY date format (`yyyy-MM-dd`, `MM/dd/yyyy`) without running this command is strictly prohibited (`ANTI-45`).
 *   **The Frontend Persistent MTA Construction Law (CRITICAL):** Frontend UI automation requires browser lifecycle management, session contexts, and DOM locator maps provided by the MTA Platform (Option B). All Frontend UI tests MUST be constructed directly on the MTA Platform across the standard 3-Case Suite lifecycle (Case 1 Setup, Case 2 Action, Case 3 Teardown) with Gate 2 Placement and Playwright browser configurations. [^PAT-62]
 *   **The Modal Transition Assertion Law (CRITICAL) (`ANTI-55`):** Whenever an action triggers a modal dialog, confirmation popup, or page closure (e.g. `ACT_Click_Button` on a delete or submit button that spawns a confirmation dialog), the agent **MUST** explicitly assert the resulting UI transition (e.g., verifying dialog visibility or text via `ASR_Has_Text_Dialog_Body` or `ASR_Is_Visible`) before attempting to locate or interact with subsequent widgets. Interacting with widgets across unasserted modal boundaries causes race conditions, element detachment errors, and locator timeouts. [^ANTI-55]
 
@@ -139,15 +140,50 @@ In Mendix applications, UI elements frequently carry names with prefixes or subs
 | **Dialog / Popup** | `Locate_MxWidget_Dialog` | `MxDialogLocator` | `ACT_Click_Dialog_OK_Button`, `ASR_Has_Text_Dialog_Body` |
 | **Container / Div** | `Locate_MxWidget_Container` | `MxContainerLocator` | `ACT_Click_Container` |
 
-### Law 5: Event-Driven Frontend Validation Feedback Assertion Protocol (PAT-119)
+### Law 5: Event-Driven Frontend Validation Feedback & Trigger Sequencing Law (PAT-119, ANTI-74)
 
-#### ⚠️ Prohibition of Blind Form-Wide Auto-Assertions
-Entering values into input widgets (`ACT_Fill_TextBox_Input`, `ACT_Fill_DatePicker_Input`, etc.) does not inherently trigger validation feedback in Mendix unless an event handler is configured on that widget. Blindly generating validation assertions after every input step is strictly prohibited as it bloats tests and tests nothing.
+#### 🛑 Validation Trigger Sequencing Law (PAT-119 / ANTI-74)
+In Mendix client-side architecture, form validations are evaluated and rendered on-screen via one of two distinct execution mechanisms:
 
-#### 🎯 Event-Driven Validation Trigger Rules
-Validation feedback assertions are generated **ONLY** when an event can trigger validation feedback:
-1. **Widget-Level Events (`onChange`, `onEnterPress`):** When an input widget has an event configured that executes a Microflow or Nanoflow.
-2. **Button-Level Actions (`onClick` on Save/Submit):** When an action button executes a Microflow or Nanoflow that validates entity attributes before saving.
+##### Mechanism A: Form-Level Action Button Validations (`FormValidations = "All"`, e.g., 'Next', 'Save', 'Submit', 'Confirm')
+Form validation feedback assertions MUST be ordered **AFTER** the action button click that executes form validation (`FormValidations = "All"`).
+
+**Canonical 3-Stage Sequence (Form-Level):**
+1. **Fill Input Widgets:** (`ACT_Set_TextBox_Text`, `ACT_Fill_DatePicker_Input`, `ACT_Set_DropDown_Value`, etc.)
+2. **Click Submit Action Button:** (`ACT_Click_MxButton` on button with `FormValidations = "All"` such as 'Next', 'Save', or 'Confirm')
+3. **Locate & Assert Validation Feedback State:** (`Locate_MxWidget_*_ValidationMessage` -> `ASR_Is_Hidden_MxLocator` for happy path, or `ASR_Is_Visible_MxLocator` for negative tests)
+
+**Anti-Pattern (`ANTI-74: Premature Validation Assertion`):** Placing validation feedback checks BEFORE the submit Action Button click when testing form-level validations is strictly prohibited, as validation has not yet been executed by Mendix.
+
+###### ❌ Incorrect Sequence (`ANTI-74` Violation):
+```text
+Step 11: ACT_Set_DatePicker_Date (PickupDate)
+Step 12: Locate_MxWidget_DatePicker_ValidationMessage (PickupDate) <-- WRONG: Validation not yet executed by Mendix!
+Step 13: ASR_Is_Hidden_MxLocator (PickupDate Validation)
+Step 14: ACT_Click_MxButton (ActionButton_Next_Step1) <-- Triggers FormValidations = "All"
+```
+
+###### ✅ Correct Sequence (`PAT-119` Compliant):
+```text
+Step 11: ACT_Set_DatePicker_Date (PickupDate)
+Step 12: ACT_Set_DatePicker_Date (ReturnDate)
+Step 13: ACT_Click_MxButton (ActionButton_Next_Step1) <-- Triggers FormValidations = "All"
+Step 14: Locate_MxWidget_DatePicker_ValidationMessage (PickupDate) <-- CORRECT: Evaluates rendered validation state post-submit
+Step 15: ASR_Is_Hidden_MxLocator (PickupDate Validation)
+Step 16: Locate_MxWidget_DatePicker_ValidationMessage (ReturnDate)
+Step 17: ASR_Is_Hidden_MxLocator (ReturnDate Validation)
+```
+
+##### Mechanism B: Inline Widget-Level Event Validations (`onChange`, `onLeave`, `onEnterPress` with Microflow/Nanoflow)
+When a widget has an attached microflow or nanoflow configured to validate on `onChange` ("On leave" or "While typing") or `onEnterPress`:
+1. **Fill Input Widget:** (`ACT_Set_TextBox_Text`, `ACT_Fill_DatePicker_Input`, etc.)
+2. **Trigger Event Blur / Leave:** Ensure focus leaves the field (e.g., interacting with the next field, pressing "Enter" via `ACT_Press_Key`, or clicking a neutral layout container via `ACT_Click_Container`).
+3. **Locate & Assert Validation Feedback State:** (`Locate_MxWidget_*_ValidationMessage` -> `ASR_Is_Hidden_MxLocator` or `ASR_Is_Visible_MxLocator`).
+4. **Mandatory Documentation:** The test step Description MUST explicitly document the inline event (e.g. `Description: "Locates validation message on 'Email' textbox to verify no validation errors after onChange (while typing) event"`), satisfying `PAT-119` and exempting the step from `ANTI-74`.
+
+#### 🎯 Diagnostic Validation Assertions in Happy-Path Flows
+For form fields with validation rules, custom formatting, or required constraints (e.g. DatePickers, Email inputs, Required text boxes), happy-path execution plans SHOULD include `ASR_Is_Hidden_MxLocator` assertions on validation message controls post-submit or after wizard step transitions.
+* **Diagnostic Benefit:** If test execution fails due to invalid data, formatting, or missing field inputs, the Playwright test run log will explicitly capture and report the visible validation feedback text (e.g., 'Enter a valid date format dd-MM-yyyy'), enabling instant root-cause identification rather than ambiguous timeout failures on downstream buttons.
 
 #### 🔍 Two-Tier AST Inspection Protocol
 Agents must analyze the Mendix model before designing frontend validation steps:
@@ -178,14 +214,6 @@ The Menditect Frontend Testkit provides dedicated microflows to locate validatio
 | **ComboBox** | `MxComboBoxLocator` | `Locate_MxWidget_ComboBox_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
 | **Check Box** | `MxCheckBoxLocator` | `Locate_MxWidget_CheckBox_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
 | **Radio Buttons** | `MxRadioButtonsLocator` | `Locate_MxWidget_RadioButtons_ValidationMessage` | `MxLocator` | `ASR_Is_Hidden_MxLocator` |
-
-* **Step Chaining Sequence:**
-  1. `Locate_MxWidget_[Widgetname]` -> yields `WidgetLocatorKey`
-  2. `ACT_Fill_*` or `ACT_SelectOption_*` (piping `WidgetLocatorKey`)
-  3. *(If `onChange` is "On leave"):* Ensure blur/leave occurs before assertion by: (a) interacting with the next field/button, (b) applying keypress "Enter" (`ACT_Press_Key`), or (c) clicking at a neutral location or layout container on the page (`ACT_Click_Container`) if Enter is not possible.
-  4. *(If `onEnterPress`):* Execute Enter key action before assertion.
-  5. `Locate_MxWidget_[Widgetname]_ValidationMessage` (piping `WidgetLocatorKey`) -> yields `ValidationMsgLocatorKey`
-  6. `ASR_Is_Hidden_MxLocator` (piping `ValidationMsgLocatorKey`) -> asserts element is hidden (nominal/happy-path).
 
 #### 🛡️ Button Click & Step Explosion Guardrail
 When an action button (Save, Submit) executes validation for multiple attributes:
@@ -359,7 +387,7 @@ When creating or updating an Execution Plan for Frontend testing, you **MUST** e
     *   *Step 1 (Page Inspection):* Execute `mxcli` `DESCRIBE PAGE <Module.Page>` to discover top-level widgets, data views, and all `SnippetCall` references.
     *   *Step 2 (Recursive Snippet Inspection):* For every `SnippetCall <Module.Snippet>` detected, execute `DESCRIBE SNIPPET <Module.Snippet>` recursively to uncover all nested form input controls, dropdowns, date pickers, and buttons.
     *   *Step 3 (Domain Model Reconciliation):* Inspect the underlying entity via `DESCRIBE ENTITY <Module.Entity>` or `SHOW ENTITY <Module.Entity>` to cross-reference attributes with discovered widgets, ensuring no required input fields or reference selectors were missed.
-    *   *Step 4 (Input Widget Inventory):* Construct an explicit **Input Widget Inventory** table in Section 4 of the Execution Plan cataloging all discovered form widgets, types, containers, data bindings, and Testkit locator microflows.
+    *   *Step 4 (Input Widget Inventory):* Construct an explicit **Input Widget Inventory** table in Section 2 of the Execution Plan cataloging all discovered form widgets, types, containers, data bindings, and Testkit locator microflows.
 2.  **Seed Data Requirement Analysis:** Inspect input fields, dropdowns, reference selectors, and list data sources on target pages to analyze required domain entities and attributes.
 3.  **Self-Contained Seed Data Strategy (`PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43`):** Default to self-contained database seeding in Case 1 (Setup) via explicit `Create Object` + batch `Persist` steps for transactional page entities with unique synthetic keys (`'TEST_'`), permitting `Retrieve` with explicit attribute filters for static master reference data. Enforce symmetric teardown cleanup in Case 3 (`PAT-92`, `ANTI-43`): all transactional entities instantiated during Case 1 setup MUST be deleted in Case 3 via direct cross-case handle piping (`ObjectAction = "DeleteObjects"`, `TestStepOutputKey = Case1_CreateStepKey`) without redundant database retrieves. In contrast, runtime transactional records created by the browser during Case 2 MUST be retrieved from the database with explicit synthetic attribute filters prior to deletion. The teardown deletion pipeline concludes with a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`, `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`) at the end of the deletion pipeline to commit all deletions to the database. All teardown deletion steps MUST be sequenced in reverse association dependency order (`PAT-93`: $\text{Leaf / Child} \rightarrow \text{Intermediate} \rightarrow \text{Root}$). Omit Case 1 seeding ONLY if the user prompt explicitly commanded 'use existing database records'.
 4.  **Multiple Seed Objects for Lists & Selection Widgets (`PAT-40`):** Plan multiple seed objects (at least 2+ records) for entities displayed in repeating containers (Gallery, ListView, DataGrid2) or selection widgets (DropDown, ComboBox, ReferenceSelector).
@@ -368,7 +396,7 @@ When creating or updating an Execution Plan for Frontend testing, you **MUST** e
 7.  **DatePicker Format & Offset Model Extraction (`PAT-42`, `PAT-94`, `ANTI-45`):** For date-time widgets, prefer `CurrentDateTime` with an offset. For DatePicker widgets, agents MUST NEVER guess or assume the format string (`ANTI-45`). When using `mxcli` for model discovery, the agent MUST execute ONLY:
     `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<Module>.<Page>" --format json`
     (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
-    and inspect `FormattingInfo`: extract `CustomDateFormat` if `DateFormat == "Custom"` (e.g. `"dd-MM-yyyy"`), or project language format if `DateFormat == "Date"`. Document the extracted format in the Section 4 Input Widget Inventory and bind it in `ACT_Fill_DatePicker_Input`. Also verify String attribute length constraints via `mxcli` (`SHOW ENTITY`).
+    and inspect `FormattingInfo`: extract `CustomDateFormat` if `DateFormat == "Custom"` (e.g. `"dd-MM-yyyy"`), or project language format if `DateFormat == "Date"`. Document the extracted format in the Section 2 Component Under Test (Input Widget Inventory table) and bind it in `ACT_Fill_DatePicker_Input`. Also verify String attribute length constraints via `mxcli` (`SHOW ENTITY`).
 8.  **Frontend Testkit List Selection Filter Strategy Proposal:** Propose available Frontend Testkit list filter strategies (Text Filter `ELO_Filter_*_by_Text`, Index Filter `ELO_Nth_*_Item`, and Scalar Piping).
 
 *   **Plan Output & Deferred Inspection Rule:** Immediately output the fully detailed 8-section Execution Plan (including Case 1 Setup, Case 2 Action, Case 3 Teardown, and 10-key Playwright Browser Settings) prior to any deep model inspection. Deep model inspection is strictly deferred until AFTER initial plan presentation.

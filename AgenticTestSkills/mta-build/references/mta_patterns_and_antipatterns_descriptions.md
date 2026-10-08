@@ -1273,7 +1273,7 @@ For each rule, this document outlines its scope, category, detailed operational 
   and locate the widget's `FormattingInfo` object:
   - If `DateFormat == "Custom"`, extract `CustomDateFormat` (e.g. `"dd-MM-yyyy"`).
   - If `DateFormat == "Date"`, extract the project language date format.
-  Standard `DESCRIBE PAGE` does not expose `FormattingInfo`; speculative CLI commands are strictly prohibited. The extracted format MUST be documented in Section 4 Input Widget Inventory and bound to `ACT_Fill_DatePicker_Input`.
+  Standard `DESCRIBE PAGE` does not expose `FormattingInfo`; speculative CLI commands are strictly prohibited. The extracted format MUST be documented in Section 2 Component Under Test (Input Widget Inventory table) and bound to `ACT_Fill_DatePicker_Input`.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-45` (Date Format Assumption / Defaulting Anti-Pattern).
   * **Related Patterns:** `PAT-42` (Date-Time Offset & Format Pattern Inspection), `PAT-67` (Exhaustive Page & Snippet Input Widget Discovery), `PAT-72` (Single-Pass Page AST Seed Derivation).
@@ -1805,10 +1805,21 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-74`: Premature Validation Assertion Anti-Pattern
+* **Scope:** Frontend | **Classification:** Platform Anti-Pattern
+* **Description:** Placing validation feedback locator steps or assertions (`Locate_MxWidget_*_ValidationMessage` -> `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) immediately after field input steps before clicking the submit/navigation Action Button (`FormValidations = "All"`). In Mendix client-side architecture, form validations are evaluated and rendered on-screen when an Action Button configured with `FormValidations = "All"` (e.g. 'Next', 'Save', 'Submit', 'Confirm') is clicked, or upon field blur/change events. Checking validation message state before the submit button click tests an unvalidated client-side DOM state rather than the actual validation state produced by the submit action.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-119` (Diagnostic Frontend Validation Feedback & Trigger Sequencing Law).
+  * **Related Patterns:** `PAT-64` (Closed Catalog Frontend Testkit), `PAT-94` (DatePicker Format via BSON dump).
+  * **Related Anti-Patterns:** `ANTI-14` (Validation Feedback in UI Tests), `ANTI-45` (Date Format Guessing).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-119`** (Diagnostic Frontend Validation Feedback & Trigger Sequencing Law) | **`ANTI-74`** (Premature Validation Assertion Anti-Pattern) | Enforcing post-submit validation assertion sequence (Fill -> Submit -> Assert) vs premature checking before FormValidations="All" execution |
 | **`PAT-122`** (Zero-Pollution Read-Only Model Test Boundary Invariant) | **`ANTI-73`** (Test Microflow Proscription & Mendix Model Pollution) | Strictly read-only model access and in-memory/externalized testing vs generating polluting test microflows in Studio Pro |
 | **`PAT-121`** (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol) | **`ANTI-68`** (Intent Downgrading) / **`ANTI-69`** (Circular Specification) / **`ANTI-70`** (Rubber-Stamp Risk Matrix) / **`ANTI-71`** (Trivial Prompt Echoing) / **`ANTI-72`** (Assertion Softening) | Classifying test intent, requiring non-circular external ground truth, and enforcing exact return assertions vs tautological verification loopholes |
 | **`PAT-120`** (Validation Feedback Session Isolation & Agent-Side Assertion) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Session-isolated dispatch & agent-side validation feedback evaluation vs cross-scenario feedback pooling |

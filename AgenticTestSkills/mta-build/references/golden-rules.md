@@ -44,19 +44,36 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
             *   **Configuring assertions:** Calling `EditAssert*` tools across multiple assertions in 1 single turn.
             *   **Overriding variation scenario columns:** Calling `EditAttributeValue`, `EditMicroflowParameterValue`, or `EditAssert*` for all cells in a variation scenario in 1 single turn.
             *   **Step metadata & execution settings:** Calling `EditTestStep` (to set step names, descriptions with pattern annotations `[Pattern: <Name> - <Rationale>]`, highlights `Highlight="_True"`, or execution conditions) across multiple steps in 1 single turn.
-*   **🚨 THE `SetSequenceOfTestStep` SAFEGUARDS:** When using this tool to manually update step sequences, you MUST adhere to four strict safety gates:
-    1.  *Same-Case Validation:* Both `TestStepKey` and `TestStepBeforeKey` MUST reside within the exact same parent Test Case. Linking across case boundaries is strictly prohibited.
-    2.  *No Self-Reference or Loops:* Never pass the same key for both parameters, and never point a step's predecessor to a downstream step (which creates circular references and crashes the runner).
-    3.  *First-Position (Head Insertion) Pattern:* To sequence an existing teststep to the absolute first position (Position 1) of a testcase, call `SetSequenceOfTestStep` with the target `TestStepKey` and pass `0` for the `TestStepBeforeKey` parameter. (Passing `0` ALWAYS inserts at the head, NEVER at the tail).
-    4.  *Deterministic Reverse-Order Re-indexing Pattern:* If an existing multi-step test case needs its sequence completely re-ordered, execute `SetSequenceOfTestStep(stepKey, 0)` in **reverse order** (from Step $N$ down to Step 1). This deterministically establishes the contiguous sequence $[1..N]$ without ordinal list collisions.
-*   **🚨 THE `SetSequenceOfTestCase` SAFEGUARDS:** When sequencing test cases within a test suite:
-    1.  *First-Position Pattern:* Symmetrically, to sequence a testcase to the absolute first position of a suite, call `SetSequenceOfTestCase` with the target `TestCaseKey` and pass `0` for `TestCaseBeforeKey`.
-    2.  *Chaining Subsequent Cases:* To sequence a case elsewhere, pass the immediate predecessor `TestCaseBeforeKey` representing the case that should directly precede it.
-    3.  *Validation constraints:* Both cases must reside in the exact same parent Test Suite. Self-references or circular references are strictly prohibited.
-*   **🚨 THE `SetSequenceOfTestSuite` SAFEGUARDS:** When sequencing test suites within a Test Configuration:
-    1.  *First-Position Pattern:* To sequence a test suite to the absolute first position of a Test Configuration, call `SetSequenceOfTestSuite` with the target `TestSuiteKey` and pass `0` for `TestSuiteBeforeKey`.
-    2.  *Chaining Subsequent Suites:* To sequence a suite elsewhere, pass the immediate predecessor `TestSuiteBeforeKey` representing the suite that should directly precede it.
-    3.  *Validation constraints:* Both suites must reside in the exact same parent Test Configuration. Self-references or circular references are strictly prohibited.
+*   **🚨 THE UNIVERSAL PREDECESSOR ANCHOR LAW & SEQUENCING SAFEGUARDS (RULE_SEQUENCING_SEMANTICS, PAT-11, ANTI-44):**
+    Across all 3 tiers of MTA (Suites, Cases, Steps), `*BeforeKey` represents the **predecessor anchor** (i.e. *"the element that comes BEFORE the target"*). The target element is ALWAYS placed **directly AFTER** the predecessor anchor. Passing `*BeforeKey = 0` (or empty) ALWAYS places the target element at **Position 1 (the head)**.
+    1.  *Tier 1: Test Suites (in Test Configuration):*
+        - **Creation (`CreateTestSuite`):** Takes `TestConfigurationKey` and `Name`.
+        - **Reordering (`SetSequenceOfTestSuite`):**
+          - `SetSequenceOfTestSuite(TestSuiteKey=S1, TestSuiteBeforeKey=0)` -> S1 placed at Position 1.
+          - `SetSequenceOfTestSuite(TestSuiteKey=S2, TestSuiteBeforeKey=S1)` -> S2 placed after S1 (Position 2).
+          - `SetSequenceOfTestSuite(TestSuiteKey=S3, TestSuiteBeforeKey=S2)` -> S3 placed after S2 (Position 3).
+        - **Constraints:** Both suites must reside in the exact same parent Test Configuration.
+    2.  *Tier 2: Test Cases (in Test Suite):*
+        - **Creation-Time Placement (`CreateTestCase`):** Takes `TestCaseBeforeKey` directly at creation time! Pass `0` for Case 1 (Position 1), pass `C1` for Case 2 (Position 2), pass `C2` for Case 3 (Position 3).
+        - **Reordering (`SetSequenceOfTestCase`):**
+          - `SetSequenceOfTestCase(TestCaseKey=C1, TestCaseBeforeKey=0)` -> C1 placed at Position 1.
+          - `SetSequenceOfTestCase(TestCaseKey=C2, TestCaseBeforeKey=C1)` -> C2 placed after C1 (Position 2).
+          - `SetSequenceOfTestCase(TestCaseKey=C3, TestCaseBeforeKey=C2)` -> C3 placed after C2 (Position 3).
+        - **Constraints:** Both cases must reside in the exact same parent Test Suite.
+    3.  *Tier 3: Test Steps (in Test Case):*
+        - **Creation-Time Forward Chaining (`Create*TestStep`, `Generate*LocateWidget`, `PAT-11`):** Pass `TestStepBeforeKey = 0` for Step 1 (Position 1), pass `Step1Key` for Step 2 (Position 2), pass `Step2Key` for Step 3 (Position 3). Forward-chaining at creation time eliminates subsequent reordering calls.
+        - **Reordering (`SetSequenceOfTestStep`):**
+          - `SetSequenceOfTestStep(TestStepKey=S1, TestStepBeforeKey=0)` -> S1 placed at Position 1.
+          - `SetSequenceOfTestStep(TestStepKey=S2, TestStepBeforeKey=S1)` -> S2 placed after S1 (Position 2).
+        - **Deterministic Reverse-Order Reset ($N \rightarrow 1$):** To completely re-index a scrambled step sequence, execute `SetSequenceOfTestStep(stepKey, 0)` in reverse order from Step $N$ down to Step 1.
+        - **Constraints:** Both steps must reside within the exact same parent Test Case. Self-references or circular loops are strictly prohibited.
+    4.  *Verification Protocol:* Always verify sequence order using `GetTestSuiteDetails(TestSuiteKey)` (cases: `SequenceNumber 1..N`), `GetTestCaseDetails(TestCaseKey)` (steps: `SequenceNumber 1..N`), and `GetTestConfigurationDetails(TestConfigurationKey)` (suites).
+*   **🚨 THE HARD PRE-EXECUTION GATE 2 ENFORCEMENT (RULE_GATE_2_CHECKPOINT, PAT-43, ANTI-56):**
+    Before calling ANY MTA creation or mutation tool (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, `GenerateMicroflowCallTestStepLocateWidget`, `Edit*`, `Set*`, `Add*`), the agent MUST verify that Gate 2 (Checkpoint 2: Placement & Target Summary) has been explicitly presented to the user in chat and approved. Calling mutation tools without explicit user approval at Checkpoint 2 is strictly prohibited (`ANTI-56`).
+*   **🚨 THE 1-TO-1 PLAN-TO-MTA CASE MAPPING MANDATE (RULE_3_CASE_SUITE_MAPPING, PAT-03, PAT-44):**
+    When building an Execution Plan (`EP_*.md`) that defines a multi-case or 3-case architecture (Case 1: Setup, Case 2: Playwright Execution, Case 3: Teardown), the agent MUST create exactly 3 separate Test Cases inside the target Test Suite on MTA (`EP_<Name> - Case 1: Setup`, `EP_<Name> - Case 2: Playwright Execution`, `EP_<Name> - Case 3: Teardown`). Shunting all setup, execution, and teardown steps into a single monolithic MTA Test Case is strictly prohibited.
+*   **⚡ THE HIGH-LEVEL WIDGET GENERATOR PRIORITY (RULE_USE_WIDGET_GENERATORS, PAT-64):**
+    For all Playwright widget locator steps targeting standard Mendix widgets (`TextBox`, `DropDown`, `DatePicker`, `ReferenceSelector`, `Button`, `CheckBox`, `RadioButtons`, `ComboBox`, etc.), the agent MUST use the dedicated MTA generator tool **`GenerateMicroflowCallTestStepLocateWidget`** (or **`GenerateMicroflowCallTestStepLocatePage`**). Iterative loops of low-level primitive calls (`CreateMicroflowCallTestStep` -> `GetTeststepDetails` -> `EditMicroflowParameterValue` -> `EditMicroflowObjectParameter`) are strictly prohibited for standard widget locators.
 *   **🔄 THE TEST STEP REORGANIZATION RULE (`MoveTestStepToOtherTestCase`):**
     When refactoring sequence structures (e.g., separating UI steps into modular setup or teardown test cases), you can relocate a teststep to a different testcase in the same suite:
     1.  *Syntax:* Call `MoveTestStepToOtherTestCase(TestStepKey=..., TargetTestCaseKey=...)`. The 51-tool primitive API accepts only `TestStepKey` and `TargetTestCaseKey`.
@@ -92,7 +109,10 @@ Create Step C ──► TestStepBeforeKey = KeyB                 (KeyC returned.
     1. **IMMEDIATELY PAUSE** before writing the Execution Plan or creating test steps.
     2. **EXECUTE:** `.\mxcli.bat bson dump --type page --object "<Module>.<Page>" --format json` (or `./mxcli bson dump -p project.mpr --type page --object "<Module>.<Page>" --format json`)
     3. **EXTRACT:** `CustomDateFormat` from `FormattingInfo` for every DatePicker (or project language format if `DateFormat == "Date"`).
-    4. **FAIL-SAFE & LINTER CHECK:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`) and automatically enforced by `mta-lint`.
+    4. **DOCUMENT:** State the exact BSON property path in the Section 2 Component Under Test (Input Widget Inventory table) of `EP_*.md`.
+    5. **FAIL-SAFE & LINTER CHECK:** Hardcoding or assuming ANY date format without running this command is strictly prohibited (`ANTI-45`) and automatically enforced by `mta-lint`.
+*   **🛑 VALIDATION TRIGGER SEQUENCING LAW (PAT-119, ANTI-74):**
+    For form-level validations, validation feedback locators (`Locate_MxWidget_*_ValidationMessage`) and assertions (`ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) MUST be ordered **AFTER** the submit Action Button click (`ACT_Click_MxButton` with `FormValidations = "All"`). Placing validation feedback checks before the submit click checks unvalidated client-side DOM states and is strictly **PROHIBITED** (`ANTI-74`). For widget-level `onChange` validations, focus must leave the field (blur / Enter / neutral container click) before asserting validation state, with the triggering event documented in the step Description.
 *   **🛡️ PRE-CONSTRUCTION IDEMPOTENCY & SUITE AUDIT (PAT-101):**
     Before calling `CreateTestCase` on the MTA server in `STATE_CONSTRUCTION`, you **MUST** call `GetTestSuiteDetails(TestSuiteKey)` to verify whether a test case with the planned name already exists. If an existing test case with the same name is found, halt and confirm with the user whether to supersede or rename it, preventing unintended duplicates or container pollution.
 *   **🔍 STATE MUTATION VERIFICATION LAW (PAT-104, ANTI-54):**

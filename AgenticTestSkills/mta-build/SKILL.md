@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.36.0"
-changes: "Enforced Test Microflow Proscription & Zero Mendix Model Mutation Invariant (PAT-122, ANTI-73)."
+version: "6.37.0"
+changes: "Added Pre-Construction Suite Idempotency Audit (PAT-101) and Frontend Validation Trigger Sequencing (PAT-119, ANTI-74)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -126,6 +126,41 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
         1. Construct the validation message locator step using `CreateMicroflowCallTestStep(MicroflowName="MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage")`, binding the parent widget locator handle to `[Widgetname]Locator`.
         2. Construct the assertion step using `CreateMicroflowCallTestStep(MicroflowName="MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator")` (or `ASR_Is_Visible_MxLocator`), binding the returned `MxLocator` from the validation message locator step.
     *   **Step Description Persistence:** Call `EditTestStep` on both the locator and assertion steps to persist the `TestStepDescription` specified in the approved Execution Plan, explaining the triggering event microflow/nanoflow or button action and the validated attribute.
+31. **Hard Pre-Execution Gate 2 Enforcement [RULE_GATE_2_CHECKPOINT, ^PAT-43, ^ANTI-56]**:
+    *   Before calling ANY MTA creation or mutation tool (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, `GenerateMicroflowCallTestStepLocateWidget`, `Edit*`, `Set*`, `Add*`), the agent MUST verify that Gate 2 (Checkpoint 2: Placement & Target Summary) has been explicitly presented to the user in chat and approved.
+    *   If entering `STATE_CONSTRUCTION` without an approved Checkpoint 2 in transcript context, the agent **MUST HALT** and output Checkpoint 2 (Target Test Suite Name, Target Application Instance, Browser Engine, Headless Mode, and Application Target Web URL).
+    *   Transitioning directly into construction or calling mutation tools without explicit user approval at Checkpoint 2 is strictly prohibited (`ANTI-56`).
+32. **Mandatory 1-to-1 Plan-to-MTA Case Mapping [RULE_3_CASE_SUITE_MAPPING, ^PAT-03, ^PAT-44]**:
+    *   When building an Execution Plan (`EP_*.md`) that defines a multi-case or 3-case architecture (Case 1: Setup, Case 2: Playwright Execution, Case 3: Teardown), the agent MUST create exactly 3 separate Test Cases inside the target Test Suite on MTA:
+        1. `EP_<Name> - Case 1: Setup` (Seeding, browser start options, `ExecutionCondition="Always"`, `ResumeExecutionAfterException="_Continue"`)
+        2. `EP_<Name> - Case 2: Playwright Execution` (UI navigation, interactions, assertions)
+        3. `EP_<Name> - Case 3: Teardown` (Delete seeded data, cleanup, `ExecutionCondition="Always"`, `ResumeExecutionAfterException="_Continue"`)
+    *   Shunting setup, Playwright execution, and teardown steps into a single monolithic MTA Test Case is strictly prohibited. Steps defined for Case 1 must be created inside Case 1's `TestCaseKey`, steps for Case 2 inside Case 2's `TestCaseKey`, and steps for Case 3 inside Case 3's `TestCaseKey`.
+33. **High-Level Widget Generator Priority [RULE_USE_WIDGET_GENERATORS, ^PAT-64]**:
+    *   For all Playwright widget locator steps targeting standard Mendix widgets (`TextBox`, `DropDown`, `DatePicker`, `ReferenceSelector`, `Button`, `CheckBox`, `RadioButtons`, `ComboBox`, etc.), the agent MUST use the dedicated MTA generator tool **`GenerateMicroflowCallTestStepLocateWidget`** (or **`GenerateMicroflowCallTestStepLocatePage`**).
+    *   Iterative loops of low-level primitive calls (`CreateMicroflowCallTestStep` -> `GetTeststepDetails` -> `EditMicroflowParameterValue` -> `EditMicroflowObjectParameter`) cause context clutter and are strictly prohibited for standard widget locators. Manual parameter editing is reserved exclusively for custom business microflows.
+34. **The Universal Predecessor Anchor Law & 3-Tier Sequencing Semantics [RULE_SEQUENCING_SEMANTICS, ^PAT-11, ^ANTI-44]**:
+    *   **The Predecessor Anchor Principle Across All 3 Tiers:** In all MTA APIs, `*BeforeKey` (`TestSuiteBeforeKey`, `TestCaseBeforeKey`, `TestStepBeforeKey`) represents the **predecessor anchor** (i.e. *"the element that comes BEFORE the target"*). The target element is ALWAYS placed **directly AFTER** the predecessor anchor.
+    *   **Head Insertion Rule (Position 1):** Passing `*BeforeKey = 0` (or empty) ALWAYS places the target element at **Position 1 (the head)** of its container.
+    *   **Tier 1 — Test Suites (in Test Configuration):**
+        - *Creation (`CreateTestSuite`):* Takes `TestConfigurationKey` and `Name`.
+        - *Reordering (`SetSequenceOfTestSuite`):*
+          - `SetSequenceOfTestSuite(TestSuiteKey=S1, TestSuiteBeforeKey=0)` -> S1 at Position 1.
+          - `SetSequenceOfTestSuite(TestSuiteKey=S2, TestSuiteBeforeKey=S1)` -> S2 placed after S1 (Position 2).
+          - `SetSequenceOfTestSuite(TestSuiteKey=S3, TestSuiteBeforeKey=S2)` -> S3 placed after S2 (Position 3).
+    *   **Tier 2 — Test Cases (in Test Suite):**
+        - *Creation-Time Placement (`CreateTestCase`):* Accepts `TestCaseBeforeKey` directly! Pass `0` for Case 1 (Position 1), pass `C1` for Case 2 (Position 2), pass `C2` for Case 3 (Position 3).
+        - *Reordering (`SetSequenceOfTestCase`):*
+          - `SetSequenceOfTestCase(TestCaseKey=C1, TestCaseBeforeKey=0)` -> C1 at Position 1.
+          - `SetSequenceOfTestCase(TestCaseKey=C2, TestCaseBeforeKey=C1)` -> C2 placed after C1 (Position 2).
+          - `SetSequenceOfTestCase(TestCaseKey=C3, TestCaseBeforeKey=C2)` -> C3 placed after C2 (Position 3).
+    *   **Tier 3 — Test Steps (in Test Case):**
+        - *Creation-Time Forward Chaining (`Create*TestStep`, `Generate*LocateWidget`, `PAT-11`):* Pass `TestStepBeforeKey = 0` for Step 1 (Position 1), pass `Step1Key` for Step 2, pass `Step2Key` for Step 3. Forward-chaining at creation time eliminates subsequent reordering calls.
+        - *Reordering (`SetSequenceOfTestStep`):*
+          - `SetSequenceOfTestStep(TestStepKey=S1, TestStepBeforeKey=0)` -> S1 at Position 1.
+          - `SetSequenceOfTestStep(TestStepKey=S2, TestStepBeforeKey=S1)` -> S2 placed after S1 (Position 2).
+          - *Deterministic Reverse-Order Reset ($N \rightarrow 1$):* To re-index a scrambled sequence, execute `SetSequenceOfTestStep(stepKey, 0)` in reverse order from Step $N$ down to Step 1.
+    *   **Post-Construction Verification:** Always verify sequence using `GetTestSuiteDetails(TestSuiteKey)` (cases: `SequenceNumber 1..N`), `GetTestCaseDetails(TestCaseKey)` (steps: `SequenceNumber 1..N`), and `GetTestConfigurationDetails(TestConfigurationKey)` (suites).
 
 ---
 
@@ -139,7 +174,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 195 testing patterns/anti-patterns (`PAT-01..122`, `ANTI-01..73`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 196 testing patterns/anti-patterns (`PAT-01..122`, `ANTI-01..74`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

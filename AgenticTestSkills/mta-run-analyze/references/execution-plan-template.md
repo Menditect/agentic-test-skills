@@ -57,6 +57,10 @@ test_case_keys: []
   * `$Parameter2` (`[DataType]`, optional/nullable)
 * **Output / Return:** `[DataType]` ([Description of return value or outcome])
 * **Documentation & Annotations:** `@annotation: [Extracted microflow documentation or user story context]`
+* **Input Widget Inventory (Frontend UI Plans):**
+  | Widget Name | Widget Type | Location | Bound Attribute | Format / Options | BSON Model Path (`PAT-94`) | Testkit Locator Microflow |
+  | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+  | `datePicker_BirthDate` | `DatePicker` | `Form_Main` | `Customer.BirthDate` | `Custom: dd-MM-yyyy` | `Page.widgets[name='datePicker_BirthDate'].formattingInfo.customDateFormat` | `Locate_MxWidget_DatePicker` |
 
 ## 3. Test Steps & Action Sequence
 *The step-by-step sequence of object creation, actions, and assertions.*
