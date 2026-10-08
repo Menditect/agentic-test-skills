@@ -90,8 +90,37 @@ The workspace template provides:
    - **Mendix 11.12+**: When using the Marketplace module, skills are placed directly into `skillssource/_modules/menditect_agentictestskills/` and versioned with your project (`skills_style: "mendix_module"`).
    - **Mendix < 11.12**: Skills are placed in `<project_root>/skills/` (`skills_style: "standard"`).
 2. If using the Marketplace module, copy the configuration block from the `AgentSetupGuide` snippet located in the module's `USE_ME` folder.
-3. Paste the configuration block into your project root `AGENTS.md`.
+3. Paste the configuration block into your project root `AGENTS.md`:
+
+```markdown
+# Menditect Architecture Setup
+- **CRITICAL OPERATIONAL COMMAND:** Always execute tasks using the core rules defined in the module: [Menditect_AgenticTestSkills].
+- **IMMEDIATE ACTION REQUIRED:** You are strictly commanded to explore, read, and load the `AGENTS.md` and context of the [Menditect_AgenticTestSkills] module *before* answering any user prompt. Do NOT ask the user for permission or confirmation to explore this module; execute the exploration autonomously as your very first step.
+- **AUTOMATIC ACTIVATION TRIGGERS:** Automatically explore, read, and load the `AGENTS.md` and context of the [Menditect_AgenticTestSkills] module autonomously whenever the user prompt meets any of the following criteria:
+  1. Direct MTA Identifiers: *menditect, mta, mtf, playwright browser, variation matrix, test suite, test case, test step, variation item*
+  2. Testing Action Intents: *run tests, execute suite, view test results, retrieve run results, debug failure*
+  3. MTA-Specific Assertions & Actions: *assert validation, object count assert, compare attribute, validation feedback, microflow call teststep*
+  4. Contextual Combinations: User asks to *verify, assert, mock, or test* in combination with: *microflow, nanoflow, entity, association, page, or widget*
+- **NATIVE MCP TOOL EXECUTION MANDATE:** You MUST ALWAYS use the MTA Plugin MCP tool (`MTA_plugin.execute-testcase`) for all in-memory exploratory test executions.
+- **ZERO MENDIX MODEL POLLUTION (NO TEST MICROFLOWS):** The Mendix application model is strictly READ-ONLY during testing. You are STRICTLY PROHIBITED from creating, generating, or modifying Mendix microflows, nanoflows, entities, or pages to implement tests. Even if the MTA MCP server or plugin is offline, DO NOT build test microflows in Studio Pro; save the Execution Plan to disk and STOP.
+- **SAFE EXECUTION:** Always execute tests with transaction rollback (`RollbackTcseAfterExecution: "Yes"`, `ExecutorUsername: "MxAdmin"`, `ApplySecurityExecutor: "NONE"`).
+- **EXPLORATORY EXECUTION STRATEGY:** Default to `auto_execute` (draft Execution Plan and execute immediately in a single turn without pausing). If you prefer explicit sign-off before running, set to `prompt_approval`.
+- **MTA LICENSE TIER & CAPABILITIES:**
+  * If `MTA` MCP server is not configured and `MtaPluginModule.MTAConnectionUrl` is `wss://services.menditect.com`, the user is operating under the **Free MTA Exploratory License**.
+  * **Free Capabilities:** Unlimited local in-memory microflow testing (`execute-testcase`) and local Execution Plan generation (`EP_*.md`).
+  * **Paid Platform Capabilities:** Persistent test suites, Playwright Frontend UI testing, and CI/CD automated regression pipelines require a paid MTA Platform License.
+- ** Application name is: [ApplicationName]**
+- ** MTA Url: [MtaUrl]**
+```
+
 4. The AI assistant automatically derives the MCP endpoint as `[MtaUrl]/primitivetools/mcp` and resolves instance tokens.
+
+#### 💡 Prompting MAIA (Do's and Don'ts)
+Because MAIA's built-in system prompt prioritizes building Mendix model artifacts, phrase prompts clearly to ensure it routes to the MTA testing skill rather than generating test microflows:
+- ❌ **Avoid:** `"Test microflow SUB_CalculateDiscount"` *(MAIA may attempt to generate a unit test microflow in your app)*
+- ❌ **Avoid:** `"Create a test case for SUB_CalculateDiscount"` *(MAIA may interpret "create" as a Mendix modeling task)*
+- ✅ **Recommended:** `"Using Menditect Agentic Test Skills, execute an in-memory exploratory test via MTA_plugin for microflow MyModule.SUB_CalculateDiscount."`
+- ✅ **Recommended:** `"Run exploratory test on MyModule.SUB_CalculateDiscount using MTA_plugin. Do NOT build or modify any microflows in Studio Pro; keep the model read-only."`
 
 ### Option 3: Direct Manual Integration
 

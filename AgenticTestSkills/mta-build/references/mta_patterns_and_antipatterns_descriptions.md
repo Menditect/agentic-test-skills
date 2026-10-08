@@ -1745,6 +1745,16 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `PAT-122`: Zero-Pollution Read-Only Model Test Boundary Invariant
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Mandates that whenever an MTA testing session, exploratory test, or test design task is initiated, the Mendix project model remains strictly READ-ONLY. AI agents (including Mendix Studio Pro's MAIA assistant) are strictly prohibited from mutating the Mendix model, generating test microflows, creating test entities, or adding test pages in Studio Pro. Test logic is executed in-memory via `MTA_plugin.execute-testcase` with automated JVM transaction rollback (`RollbackTcseAfterExecution = "Yes"`), or persisted to the central Menditect Test Automation platform. When offline or when MCP servers are unavailable, agents must draft the Execution Plan (`EP_*.md`) to disk and halt; falling back to creating Mendix test microflows is strictly proscribed.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-73` (Test Microflow Proscription & Mendix Model Pollution Anti-Pattern).
+  * **Related Patterns:** `PAT-43` (Universal Execution Plan Mandate), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol).
+  * **Related Anti-Patterns:** `ANTI-46` (Unplanned Test Construction), `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
 ### `ANTI-68`: Intent Downgrading Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
 * **Description:** Downgrading an exploratory feature or user story test to a simple boundary check (`exploratory_robustness`) or regression test simply to avoid requesting or specifying external ground truth.
@@ -1785,10 +1795,21 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-73`: Test Microflow Proscription & Mendix Model Pollution Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Generating, creating, or modifying Mendix microflows, nanoflows, entities, or pages to implement unit test logic, validation logic, or assertions. This commonly occurs when AI assistants with general developer system prompts (such as MAIA) misinterpret test execution plans as instructions to build Mendix artifacts, or attempt helpful fallbacks when MTA MCP servers are offline. Testing logic must strictly remain externalized in MTA or executed in-memory via `MTA_plugin.execute-testcase` with automated JVM transaction rollback. Under no circumstances may AI assistants pollute the Mendix model with test microflows.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-122` (Zero-Pollution Read-Only Model Test Boundary Invariant).
+  * **Related Patterns:** `PAT-43` (Universal Execution Plan Mandate), `PAT-109` (One-Shot Microflow AST Extraction Protocol).
+  * **Related Anti-Patterns:** `ANTI-46` (Unplanned Test Construction), `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
 | :--- | :--- | :--- |
+| **`PAT-122`** (Zero-Pollution Read-Only Model Test Boundary Invariant) | **`ANTI-73`** (Test Microflow Proscription & Mendix Model Pollution) | Strictly read-only model access and in-memory/externalized testing vs generating polluting test microflows in Studio Pro |
 | **`PAT-121`** (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol) | **`ANTI-68`** (Intent Downgrading) / **`ANTI-69`** (Circular Specification) / **`ANTI-70`** (Rubber-Stamp Risk Matrix) / **`ANTI-71`** (Trivial Prompt Echoing) / **`ANTI-72`** (Assertion Softening) | Classifying test intent, requiring non-circular external ground truth, and enforcing exact return assertions vs tautological verification loopholes |
 | **`PAT-120`** (Validation Feedback Session Isolation & Agent-Side Assertion) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Session-isolated dispatch & agent-side validation feedback evaluation vs cross-scenario feedback pooling |
 | **`PAT-119`** (Event-Driven Frontend Validation Feedback Assertion Protocol) | **`ANTI-14`** (Using MTA TestCase Validation Feedback Assertions in Frontend UI Tests) | Event-driven UI validation message locator and assertion chaining with mandatory step descriptions vs blind assertions or backend assertion substitution |

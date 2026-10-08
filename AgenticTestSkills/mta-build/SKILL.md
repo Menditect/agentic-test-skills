@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.35.0"
-changes: "Synchronized pattern references with PAT-121 and ANTI-68..ANTI-72."
+version: "6.36.0"
+changes: "Enforced Test Microflow Proscription & Zero Mendix Model Mutation Invariant (PAT-122, ANTI-73)."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -19,6 +19,7 @@ changes: "Synchronized pattern references with PAT-121 and ANTI-68..ANTI-72."
 
 > [!IMPORTANT]
 > - **Read-Only MTA `Get*` Tools Always Authorized:** Refer to `AGENTS.md` for global guardrails. Read-only MTA `Get*` MCP tools are authorized in any state to inspect model data, discover targets, build context, or verify application state. To build clickable MTA navigation links and resolve configuration parameters, evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user.
+> - **Test Microflow Proscription & Zero Model Mutation Invariant (PAT-122, ANTI-73):** All construction operations MUST use native MTA MCP tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.) targeting the MTA platform. AI assistants (including MAIA) are strictly forbidden from creating test microflows, nanoflows, entities, or pages in Studio Pro. The Mendix project model remains strictly read-only.
 > - **Planning Redirection:** If designing a new test, scoping microflows/pages, resolving placement, configuring Playwright browser settings, or if the request is exploratory/fresh, you **MUST** switch to **`mta-test-design`** (`.agent/skills/mta-test-design/SKILL.md`). Never construct steps without Gate 1 and Gate 2 sign-offs.
 
 ---
@@ -138,7 +139,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 193 testing patterns/anti-patterns (`PAT-01..121`, `ANTI-01..72`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 195 testing patterns/anti-patterns (`PAT-01..122`, `ANTI-01..73`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.32.0"
-changes: "Synchronized pattern references with PAT-121 and ANTI-68..ANTI-72."
+version: "6.33.0"
+changes: "Enforced Test Microflow Proscription & Zero Mendix Model Mutation Invariant (PAT-122, ANTI-73)."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -21,6 +21,10 @@ changes: "Synchronized pattern references with PAT-121 and ANTI-68..ANTI-72."
 > ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
 > You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationDetails`, `GetTestConfigurationDetails`, `GetAppModelData`, `GetExecutionUsers`, `GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`, `GetTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve configuration parameters (including the MCP server endpoint `[MtaUrl]/primitivetools/mcp`), evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user on turn 1.
 > Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
+
+> [!IMPORTANT]
+> ### 🛑 TEST MICROFLOW PROCRIPTION & ZERO MODEL MUTATION INVARIANT (PAT-122, ANTI-73)
+> Test execution and exploratory testing MUST NEVER create or run Mendix test microflows in Studio Pro. Execution occurs in-memory via `MTA_plugin.execute-testcase` with automated rollback or against the MTA platform via `ExecuteTest`. The Mendix application model is strictly read-only.
 
 > [!IMPORTANT]
 > ### ⚡ EXECUTION & MUTATING TOOL GATING

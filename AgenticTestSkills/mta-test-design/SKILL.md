@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.39.0"
-changes: "Added Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol (PAT-121, ANTI-68..ANTI-72)."
+version: "6.40.0"
+changes: "Enforced Test Microflow Proscription & Zero Mendix Model Mutation Invariant (PAT-122, ANTI-73)."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -74,6 +74,12 @@ To prevent the **Tautological Testing Trap** (where tests merely assert what bug
    * `ANTI-70` (Rubber-Stamp Risk Matrix): Every risk in `risks_covered` must address non-trivial boundary conditions or failure modes (`null`, `empty`, `exceed`, `unauthorized`, `negative`, `boundary`, `invalid`, `fail`) mapped to concrete scenario columns.
    * `ANTI-71` (Trivial Prompt Echoing): Prompt criteria summaries must be $\ge 30$ characters and contain conditional outcome keywords (`if`, `when`, `must`, `should`, `equal`, `returns`).
    * `ANTI-72` (Assertive Softening): Feature test microflow return assertions must assert exact expected scalar values (`Equal`), not merely non-empty or object existence.
+
+### 4. Zero Mendix Model Mutation & Test Microflow Proscription (`PAT-122`, `ANTI-73`):
+AI assistants (including Mendix Studio Pro's MAIA) are strictly forbidden from creating, generating, or modifying Mendix microflows, nanoflows, entities, or pages for testing purposes.
+1. **Testing is Strictly Externalized:** Testing logic is compiled into MTA primitives or executed in-memory via `MTA_plugin.execute-testcase` with automated JVM transaction rollback (`RollbackTcseAfterExecution = "Yes"`).
+2. **Never Build Test Microflows:** Even if an Execution Plan documents test steps, and even if MTA MCP servers or plugins are offline, unreachable, or unconfigured, the agent MUST NEVER translate an Execution Plan into Mendix microflows (e.g. `Test_CalculateDiscount`, `UT_Order`).
+3. **Offline / Outage Fallback:** If neither `MTA` nor `MTA_plugin` is available, save the draft `EP_*.md` to `${execution_plans_dir}/` and HALT with Checkpoint 1 Case 4. Do NOT attempt to build test artifacts in Studio Pro.
 
 This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
 
@@ -345,7 +351,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 193 testing patterns/anti-patterns (`PAT-01..121`, `ANTI-01..72`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 195 testing patterns/anti-patterns (`PAT-01..122`, `ANTI-01..73`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---
