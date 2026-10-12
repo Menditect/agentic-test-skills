@@ -160,6 +160,29 @@ During single-pass microflow AST analysis (`PAT-109`), if the microflow contains
     *   **Associated scenario:** Set child Create step attribute to `"VALID"`. (Association links to child object).
     *   **Unassigned scenario:** Set child Create step attribute to `"NONE"`. (Retrieve yields 0 objects, host association receives empty, leaving association unassigned).
 
+### Hierarchical Multi-Entity Sentinel Recipe: Dual Sentinel for Unassigned Association + Null Root Object (`PAT-07`, `PAT-111`, `ANTI-48`):
+When a microflow guards both an associated entity (`$Car/Car_CarSize != empty`) AND the root entity parameter itself (`$Car != empty`), provision a chained 5-step promotable skeleton:
+1. **Step 1 (Create Associated Entity):** `CreateObject (CarRental.CarSize)` -> `Sentinel = 'VALID'` (Output: `handleCarSize`).
+2. **Step 2 (Retrieve Associated Entity):** `RetrieveObject (CarRental.CarSize)` bound to Step 1 (`RetrieveOption="Teststep"`), filter `Sentinel == 'VALID'`, embed `Assert Object Count == 1` (Output: `handleFilteredCarSize`).
+3. **Step 3 (Create Host Entity):** `CreateObject (CarRental.Car)` -> `CarSentinel = 'VALID'`, association `Car_CarSize = handleFilteredCarSize` (Output: `handleCar`).
+4. **Step 4 (Retrieve Host Entity):** `RetrieveObject (CarRental.Car)` bound to Step 3 (`RetrieveOption="Teststep"`), filter `CarSentinel == 'VALID'`, embed `Assert Object Count == 1` (Output: `handleFilteredCar`).
+5. **Step 5 (Call Microflow):** `CallMicroflow (SUB_CalculateRentalFee)` -> parameter `$Car = handleFilteredCar`.
+
+#### Variation Matrix Schema:
+| # | Step Target | Scenario #1 (Valid Baseline) | Scenario #2 (Unassigned CarSize) | Scenario #3 (Null Car Root) |
+| :---: | :--- | :--- | :--- | :--- |
+| **0** | **Scenario Name** | Valid Rental | Unassigned CarSize | Null Car Root Parameter |
+| **0** | **Scenario Description** | Standard calculation | CarSize association is unassigned | Car object parameter is empty |
+| 1 | Step 1: `CarSize.Sentinel` | `VALID` | `NONE` | `NONE` |
+| 2 | Step 2: Assert Object Count | `1` | `0` | `0` |
+| 3 | Step 3: `Car.CarSentinel` | `VALID` | `VALID` | `NONE` |
+| 4 | Step 4: Assert Object Count | `1` | `1` | `0` |
+| 5 | Step 5: Assert Return Value | `120` | `100` | `empty` |
+
+* **Scenario #1:** Both sentinels match -> `$Car` has `$Car/Car_CarSize` assigned.
+* **Scenario #2:** Step 2 retrieve yields 0 objects -> Step 3 sets `Car_CarSize = null`, but Step 4 retrieve yields 1 object -> `$Car` is valid with unassigned association.
+* **Scenario #3:** Step 4 retrieve yields 0 objects -> Step 5 receives `$Car = empty` -> assertion validates `empty` return value.
+
 ❌ **NEVER** use `RetrieveOption = "Database"` for this pattern.
 ❌ **NEVER** bind a microflow parameter directly to a Create step when implementing the empty object pattern.
 ❌ **NEVER** place association bindings or handles as rows in the Data Variation Matrix (`ANTI-48`).

@@ -30,6 +30,19 @@ N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` 
 1. **Microflow Call:** `MenditectPlaywrightConnector.Teardown_Playwright` (Mandatory: releases browser processes and node driver).
 2..N. **Transactional Domain Cleanup:** Delete/clean up test data seeded in Case 1.
 
+### 📋 Executive Test Pipeline & Data Flow Contract Standard (Section 3 of Execution Plans)
+Because Frontend UI Test Suites easily reach 40–50+ steps across their 3 cases, writing a massive 50-row uncollapsed table causes extreme vertical scrolling. To solve this while making cross-case data piping crystal-clear, Section 3 of every Frontend Execution Plan MUST adopt the **Executive Test Pipeline & Data Flow Contract**:
+1. **Always-Open Executive Pipeline Table:** At the very top of Section 3, provide an uncollapsed 3-row summary table:
+   | Case | Steps | Purpose | Outputs Produced (Exported Handles) | Data Consumed (Piped Inputs) |
+   | :--- | :---: | :--- | :--- | :--- |
+   | **Case 1: Seeding** | 1–8 | Create baseline customer & order | `handleCustomer` (#1)<br>`handleOrder` (#2) | *(None - Database root)* |
+   | **Case 2: UI Flow** | 9–35 | Execute browser user journey | `orderConfirmationId` (#24) | Piped from Case 1:<br>• `Customer.Email` (#1)<br>• `Order.OrderNumber` (#2) |
+   | **Case 3: Teardown** | 36–42 | Clean up all seeded & runtime data | *(None - Teardown)* | Piped handles for direct deletion:<br>• `handleCustomer` (#1)<br>• `handleOrder` (#2)<br>• Filtered delete on Case 2 runtime data |
+
+2. **Single Folded Master Specification Ledger:** Enclose the detailed 40–50 step table inside `<details><summary><b>View Detailed N-Step Master Specification Ledger (Click to expand)</b></summary> ... </details>`.
+   - **Continuous Coordinate System:** Steps maintain continuous 1..N indices across all 3 cases.
+   - **Full Specification Columns:** `| # | Case | Step Action & Target | In | Out | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |`.
+
 ---
 
 ### Universal Rules & Invariants

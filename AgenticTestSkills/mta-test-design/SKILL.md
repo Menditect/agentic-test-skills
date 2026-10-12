@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
-description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan."
-version: "6.41.0"
-changes: "Added Pre-Construction Suite Idempotency Audit (PAT-101), Frontend Validation Trigger Sequencing (PAT-119, ANTI-74), and Section 2 Input Widget Inventory alignment."
+description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
+version: "6.42.0"
+changes: "Added Adaptive Step Ledger Strategy, Executive Data Flow Contract for frontend suites, hierarchical dual-sentinel recipe, relaxed backend unit ledger column constraints, and ad-hoc data creation keyword triggers."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -135,8 +135,9 @@ You must progress sequentially through these three interactive planning micro-st
       - *Mandatory Step Description:* Whenever validation message test steps (`Locate_MxWidget_*_ValidationMessage` and `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) are added to an Execution Plan, the agent MUST populate a `Description` field on the test step explicitly documenting why it was added (naming the triggering event microflow/nanoflow or button action and the validated attribute).
     - **Domain 3: Standalone Test Data Seeding:**
       *Activate Rules:* `PAT-70` (1-Case Generator), `PAT-06` (Direct Init on Create), `PAT-110` (Target-Bound Matrix), `ANTI-01`, `ANTI-46`.
-    - **Master Step Specification Ledger Schema Mandate (`PAT-12`, `PAT-34`, `ANTI-60`):**
+    - **Master Step Specification Ledger Schema Mandate (`PAT-12`, `PAT-34`, `PAT-111`, `ANTI-60`):**
       All planned test steps MUST be documented in a single, definitive Master Step Specification Ledger table in Section 3 (`## 3. Test Steps & Action Sequence`) of `EP_<TestCaseName>.md` per [execution-plan-template.md](references/execution-plan-template.md). Documenting unrolled steps or repeating steps across redundant collapsible blocks is strictly prohibited (`ANTI-60`).
+      - *Adaptive Collapsing Standard:* Backend unit tests (≤15 steps) MUST render Section 3 as an uncollapsed, open table (omitting the redundant Case column) for immediate review. Frontend UI suites (>15 steps across 3 cases) MUST render the uncollapsed **Executive Test Pipeline & Data Flow Table** at the top of Section 3 to make cross-case data contracts immediately visible, followed by the complete 40–50 step master ledger folded inside `<details>`.
     - **Evidence-Based Pre-Approval Checklist & Negative Anti-Pattern Scan (`PAT-82`):**
       The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 4-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, and `ANTI-20`.
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:

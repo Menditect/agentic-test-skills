@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [v1.26.3](releases/v1.26.3.md) | 2026-10-12 | release: v1.26.3 - improved skills for MAIA usage & datavariation |
 | [v1.26.2](releases/v1.26.2.md) | 2026-10-08 | release: v1.26.2 - improved frontend validation trigger sequencing, multi-parameter sentinel variations, and pre-cons... |
 | [v1.26.1](releases/v1.26.1.md) | 2026-10-08 | chore(release): v1.26.1 - improved handling with MAIA |
 | [v1.26.0](releases/v1.26.0.md) | 2026-10-07 | improved handling of context for exploratory testing of new features |
