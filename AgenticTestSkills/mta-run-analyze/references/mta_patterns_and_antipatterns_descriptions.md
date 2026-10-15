@@ -1755,6 +1755,16 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### PAT-123: Mandatory Discovered Suite Collision / Reuse Gating
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Whenever GetTestConfigurationDetails reveals an existing test suite or test case whose name, target microflow, or user flow matches or resembles the target test scope, the AI assistant MUST immediately HALT. The agent is strictly prohibited from mutating, overwriting, adding steps to, or executing the discovered suite in the same turn without explicit confirmation. The agent must present an interactive selection (via sk_question in Agentic Mode or numbered prompt in Chat Mode) with two distinct choices: (1) Update & repair existing suite [SuiteName] ([SuiteKey]), or (2) Keep existing suite untouched and create a brand-new suite [ProposedName]. Construction tools (CreateTestCase, EditTestStep, CreateObjectActionTestStep, etc.) and execution tools (ExecuteTest) are strictly gated until the user explicitly selects an option.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** ANTI-76 (Unsanctioned Suite Modification or Hijacking Anti-Pattern).
+  * **Related Patterns:** PAT-76 (Checkpoint 2 Placement Summary Gate), PAT-79 (Target-Bound Placement Verification), PAT-118 (Interactive Multi-Configuration Placement Gate).
+  * **Related Anti-Patterns:** ANTI-46 (Unplanned Test Construction), ANTI-56 (Exploratory-to-Persistent Shortcut Anti-Pattern), ANTI-67 (Silent Multi-Configuration Assumption).
+
+---
+
 ### `ANTI-68`: Intent Downgrading Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
 * **Description:** Downgrading an exploratory feature or user story test to a simple boundary check (`exploratory_robustness`) or regression test simply to avoid requesting or specifying external ground truth.
@@ -1815,6 +1825,26 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-75`: Redundant CLI Fallback Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing `mxcli` or shell commands (`.\mxcli.bat`, powershell, cmd) for model inspection, AST extraction, or domain catalog queries (`CATALOG.ATTRIBUTES`, `CATALOG.ASSOCIATIONS`) when `StudioPro` MCP server tools (`ped_read_document`, `pg_read_page`, `ped_find_document`, `ped_get_schema`) or MAIA are active in the session. Studio Pro MCP provides live, unsaved Single Source of Truth inspection directly from the active runtime/editor state without subprocess latency, Windows path/quote escaping issues, or stale SQLite catalog cache hazards. Mode B (`mxcli`) is strictly designated as an offline/headless fallback when Studio Pro MCP tools are absent or offline.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-109` (One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol).
+  * **Related Patterns:** `PAT-71` (Single Source of Truth Invariant), `PAT-72` (Bifurcated Model Discovery Protocol).
+  * **Related Anti-Patterns:** `ANTI-26` (Redundant Exploratory Model Query Cascade), `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
+
+---
+
+### ANTI-76: Unsanctioned Suite Modification or Hijacking Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Scanning a test configuration during placement discovery (PLAN_STEP_2), detecting an existing test suite or test case that matches or resembles the target test flow (or contains broken/outdated steps), and immediately altering, adding steps to, or executing it without explicit interactive user authorization. This violates user intent, risks destroying existing regression baselines or partially completed suites, and circumvents the Checkpoint 2 placement governance gate.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** PAT-123 (Mandatory Discovered Suite Collision / Reuse Gating).
+  * **Related Patterns:** PAT-76 (Checkpoint 2 Placement Summary Gate), PAT-79 (Target-Bound Placement Verification), PAT-118 (Interactive Multi-Configuration Placement Gate).
+  * **Related Anti-Patterns:** ANTI-46 (Unplanned Test Construction), ANTI-56 (Exploratory-to-Persistent Shortcut Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1834,7 +1864,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-112`** (Free MTA Exploratory License Detection & Consultative Value) | **`ANTI-61`** (Deceptive Offline Masking & Commercial Spamming) | Transparent license tier classification & consultative upgrade guidance vs false outage claims or commercial spam |
 | **`PAT-111`** (Unified Promotable Blueprint Invariant) | **`ANTI-60`** (Unrolled Step Sequence Anti-Pattern) | Enforcing canonical K-step skeleton with Section 7 variation matrix vs unrolled multi-block sequences |
 | **`PAT-110`** (Target-Bound Data Variation Matrix Schema) | **`ANTI-59`** (Conceptual Untargeted Matrix Columns) | Binding matrix rows strictly to concrete test step target elements and columns to scenarios vs arbitrary conceptual flags |
-| **`PAT-109`** (One-Shot Microflow AST Extraction Protocol) | **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Single-pass ped_read_document (StudioPro MCP) or mxcli describe microflow for parameters, logic, annotations, and sub-flows vs multi-turn exploratory query cascades |
+| **`PAT-109`** (One-Shot Microflow AST Extraction Protocol) | **`ANTI-75`** (Redundant CLI Fallback Anti-Pattern) / **`ANTI-26`** (Redundant Exploratory Model Query Cascade) | Enforcing Studio Pro MCP live inspection exclusivity and single-pass extraction vs running redundant mxcli commands or query cascades |
 | **`PAT-91`** (Self-Contained Frontend Seeding) | **`ANTI-42`** (Ambient Precondition Reliance) | Explicit Case 1 seeding (Create + Persist) with master data distinction vs relying on ambient DB or copying unseeded server cases |
 | **`PAT-92`** (Symmetric Seeding Teardown Cleanup) | **`ANTI-43`** (Asymmetric Teardown Seeding Leak) | Enforcing Case 3 teardown cleanup for all Case 1 seeded records vs leaking master data |
 | **`PAT-94`** (DatePicker Format Model Extraction) | **`ANTI-45`** (Date Format Assumption / Defaulting) | Extracting exact CustomDateFormat via mxcli bson dump vs guessing default date format strings |

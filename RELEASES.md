@@ -4,6 +4,7 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
+| [v4.39.0](releases/v4.39.0.md) | 2026-10-15 | release: v1.26.5 - Set StudioPro MCP to preferred model source and improve state model for auto-execute |
 | [v1.26.4](releases/v1.26.4.md) | 2026-10-15 | improved skills for usage with StudioPro MCP server |
 | [v1.26.3](releases/v1.26.3.md) | 2026-10-12 | improved skills for MAIA usage & datavariation |
 | [v1.26.2](releases/v1.26.2.md) | 2026-10-08 | release: v1.26.2 - improved frontend validation trigger sequencing, multi-parameter sentinel variations, and pre-cons... |

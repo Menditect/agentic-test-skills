@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.43.0"
-changes: "Enabled Studio Pro MCP and Mendix MAIA model discovery (ped_read_document, pg_read_page) in PAT-109 with Chat Mode execution constraints."
+version: "6.44.0"
+changes: "Hard-enforced Studio Pro MCP priority over mxcli in model discovery (PAT-109, ANTI-75)."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -139,26 +139,27 @@ You must progress sequentially through these three interactive planning micro-st
       All planned test steps MUST be documented in a single, definitive Master Step Specification Ledger table in Section 3 (`## 3. Test Steps & Action Sequence`) of `EP_<TestCaseName>.md` per [execution-plan-template.md](references/execution-plan-template.md). Documenting unrolled steps or repeating steps across redundant collapsible blocks is strictly prohibited (`ANTI-60`).
       - *Adaptive Collapsing Standard:* Backend unit tests (≤15 steps) MUST render Section 3 as an uncollapsed, open table (omitting the redundant Case column) for immediate review. Frontend UI suites (>15 steps across 3 cases) MUST render the uncollapsed **Executive Test Pipeline & Data Flow Table** at the top of Section 3 to make cross-case data contracts immediately visible, followed by the complete 40–50 step master ledger folded inside `<details>`.
     - **Evidence-Based Pre-Approval Checklist & Negative Anti-Pattern Scan (`PAT-82`):**
-      The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 4-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, and `ANTI-20`.
+      The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 5-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, `ANTI-20`, and `ANTI-75` (verifying model discovery originated strictly from the active tier without cross-mode CLI leakage).
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
     *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `ped_read_document` (or `mxcli DESCRIBE MICROFLOW` / `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
     *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
-*   **⚡ One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol (`PAT-109`, `PAT-71`, `ANTI-26`, `ANTI-58`)**:
-    *   *Dynamic Model Source Resolution:* Resolve the discovery mechanism based on `mta_config.json.model_source` and active MCP tools in the session:
-        - **Mode A: Studio Pro MCP / MAIA Discovery** (Active when `model_source == "studiopro"` or Studio Pro MCP / MAIA inspection tools `ped_read_document` / `ped_find_document` are available in session):
-          - Mendix MAIA has the same inspection tools available as the Studio Pro MCP server (`ped_read_document`, `pg_read_page`, `ped_find_document`, `ped_list_folder`). Treat MAIA identically to the Studio Pro MCP server for model discovery.
-          - Microflow AST, parameters, return type, and flow logic: Call `ped_read_document(documentType="Microflows$Microflow", documentName="<ModuleName.MicroflowName>", depth=4)` (or higher depth to avoid `$stub` truncation).
-          - Page UI components: Call `pg_read_page(moduleName="<ModuleName>", pageName="<PageName>")`.
-          - Domain model entities, attributes, and associations: Call `ped_read_document(documentType="DomainModels$DomainModel", documentName="<ModuleName>")`.
+*   **⚡ One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol (`PAT-109`, `PAT-71`, `ANTI-26`, `ANTI-58`, `ANTI-75`)**:
+    *   *Dynamic Model Source Resolution & Studio Pro Exclusivity Invariant (`ANTI-75`):* Resolve the discovery mechanism based on active MCP tools in the session and `mta_config.json.model_source`:
+        - **Mode A: Studio Pro MCP / MAIA Discovery (Live Primary Source):** Active when `StudioPro` MCP server tools (`ped_read_document`, `ped_find_document`, `pg_read_page`) or MAIA are available in the session (or `model_source == "studiopro"`).
+          - *Studio Pro MCP Exclusivity Rule (`ANTI-75`):* If `StudioPro` MCP tools or MAIA are active in the session, running `mxcli` or shell commands for model inspection, AST extraction, or domain catalog queries is **STRICTLY PROHIBITED** (`ANTI-75`). Studio Pro MCP is the live, unsaved Single Source of Truth.
+          - Mendix MAIA shares identical inspection tools with Studio Pro MCP (`ped_read_document`, `pg_read_page`, `ped_find_document`, `ped_list_folder`). Treat MAIA identically for model discovery.
+          - *Microflow AST & Logic:* Call `ped_read_document(documentType="Microflows$Microflow", documentName="<ModuleName.MicroflowName>", depth=4)` (or higher depth to avoid `$stub` truncation) for parameter signatures, return types, annotations, decisions, and sub-microflow calls in a single turn.
+          - *Page UI Components:* Call `pg_read_page(moduleName="<ModuleName>", pageName="<PageName>")` for page widgets, forms, tabs, snippets, and action buttons.
+          - *Domain Model, Entities, Attributes & Associations:* Call `ped_read_document(documentType="DomainModels$DomainModel", documentName="<ModuleName>", depth=2)` (or `depth=3`). All module entities, attributes (types, lengths, defaults), associations, and domain constraints are returned in this single call—never execute secondary CLI queries or `catalog.db` lookups. Use `ped_find_document` to locate documents across modules and `ped_get_schema` to verify JSON schemas.
           - *Zero Model Mutation Invariant (`PAT-122`, `ANTI-73`):* Mutating Studio Pro MCP tools (`ped_create_document`, `ped_update_document`, `pg_patch_page`, `ped_create_module`) are strictly prohibited during test planning and seeding. The Mendix model must remain strictly READ-ONLY.
-        - **Mode B: Headless / mxcli Discovery** (Active when `model_source == "mxcli"` or Studio Pro MCP / MAIA is offline/unavailable):
+        - **Mode B: Headless / mxcli Discovery (Offline Fallback Only):** Permitted **strictly** when Studio Pro MCP and MAIA are absent, offline, or unregistered in the session tool catalog (or `model_source == "mxcli"` without Studio Pro tools):
           - Backend logic single-pass: `.\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>`
           - Page UI components: `.\mxcli.bat describe page <ModuleName>.<PageName> -p <project.mpr>`
           - Domain model, entity schemas & catalog tables: Native SQL catalog queries (`SELECT ... FROM CATALOG.<TABLE>`).
-    *   *Single Source of Truth Extraction:* Single-pass inspection via Mode A or Mode B provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
+    *   *Single Source of Truth Extraction:* Single-pass inspection via Mode A (or Mode B fallback) provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
     *   *Secondary Query Prohibition & Escape Hatch:* Agents are strictly forbidden from performing exploratory query cascades (such as querying `catalog.db`, running `SHOW ENTITIES`, or executing separate `DESCRIBE MICROFLOW` on sub-microflows) unless secondary queries are explicitly required to trace nested side-effects (`PAT-97`) or verify domain attribute length constraints (`PAT-53`).
-    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL in Headless Mode):* When operating in Mode B (headless) and Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
+    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL in Headless Mode Only):* When operating in Mode B (headless fallback only) and Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
         - Microflow metadata & complexity: `SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.Microflow';`
         - Activities & call graph: `SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.Microflow' ORDER BY Sequence;`
         - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
@@ -313,8 +314,19 @@ When the user's intent is manual exploratory testing or structured manual verifi
            - **Zero Configurations (`configurations.length == 0`):** Strictly do NOT call `GetTestConfigurationDetails` (no configurations exist and no MCP creation tool exists). Inform the user that 0 Test Configurations are registered under this Application in the MTA Platform, direct them to create one in the MTA Web UI (`[mta_base_url]/p/Application/[ApplicationKey]`), retain the plan as `status: "DRAFT"`, and offer Option A in-memory execution in the interim.
            - **Single Configuration (`configurations.length == 1`):** Auto-select the sole configuration and proceed immediately to Phase 2.
            - **Multiple Configurations (`configurations.length > 1` and unspecified):** Strictly **FORBID** calling `GetTestConfigurationDetails` or guessing `TCNF_TestConfigurations[0]` in this turn (`ANTI-67`). The agent **MUST HALT** and prompt the user with an explicit interactive selection (using `ask_question` modal where available, or a numbered markdown list in chat) presenting all available configuration names and keys.
-    *   *Phase 2: Targeted Suite Scan & Selection:*
-        Once the user confirms the chosen configuration (or after auto-selection), call `GetTestConfigurationDetails(selectedConfigurationKey)` to inspect available test suites and present the **Placement & Target Summary Box** (Checkpoint 2, `PLAN_STEP_3`) including configuration provenance count. If the user adjusts or rejects the chosen configuration or suite at Checkpoint 2, re-enter Phase 1 or Phase 2 within `STATE_BUILD_PLANNING` (`PLAN_STEP_3` ➔ `PLAN_STEP_2`) rather than resetting to `STATE_DISCOVERY`.
+    *   *Phase 2: Targeted Suite Scan & Mandatory Collision / Reuse Gate (PAT-123, ANTI-76):*
+        Once the target configuration is resolved, call GetTestConfigurationDetails(selectedConfigurationKey) to inspect available test suites:
+        - **⚠️ Mandatory Halt on Discovered Suite / Test Case Match (PAT-123, ANTI-76):**
+          - Inspect the returned suites and test cases. If an existing test suite or test case has a similar name, target microflow, or matching user flow to the proposed test:
+            - **DO NOT modify, overwrite, add test steps to, or execute the suite or test case in this turn.**
+            - **HALT IMMEDIATELY** and require explicit interactive user selection before proceeding.
+            - In Agentic Mode, call sk_question:
+              - *Option 1 (Recommended - Reuse / Repair):* Update & repair existing suite [SuiteName] (Key: [SuiteKey])
+              - *Option 2 (Create New):* Keep existing suite untouched and create a brand-new suite [ProposedNewName]
+            - In Chat Mode / MAIA, output the numbered decision choices and wait for user response.
+            - Mutating tools (CreateTestCase, EditTestStep, CreateObjectActionTestStep, etc.) and execution tools (ExecuteTest) are **STRICTLY PROHIBITED** until the user explicitly selects Option 1 or Option 2.
+        - **No Matching Suites Found:** Present the **Placement & Target Summary Box** (Checkpoint 2, PLAN_STEP_3) with the proposed new suite name for explicit Gate 2 sign-off.
+        - If the user adjusts or rejects the chosen configuration or suite at Checkpoint 2, re-enter Phase 1 or Phase 2 within STATE_BUILD_PLANNING (PLAN_STEP_3 -> PLAN_STEP_2) rather than resetting to STATE_DISCOVERY.
 *   **Existing & New Suite Checks:** For Frontend tests, present Playwright settings per [execution-settings.md](references/execution-settings.md) and handle suite overrides/conflicts per [placement-and-lifecycle.md](references/placement-and-lifecycle.md).
 
 ### 3. `PLAN_STEP_3: Placement Summary Presentation & Execution Plan Sign-Off (Part 3 - Checkpoint 2 Approval)`
@@ -370,7 +382,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 196 testing patterns/anti-patterns (`PAT-01..122`, `ANTI-01..74`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 199 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..76`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---
@@ -388,5 +400,5 @@ Depending on the approved Execution Strategy, output the appropriate handoff tri
 
 ## 🚫 MTA TEST SCOPING & DESIGN PATTERN REGISTRY
 
-All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-111`, and `ANTI-01` through `ANTI-60`) are centrally defined and maintained in the canonical pattern catalog:  
+All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-122`, and `ANTI-01` through `ANTI-75`) are centrally defined and maintained in the canonical pattern catalog:  
 ➔ **[references/mta-patterns-and-antipatterns-reference.md](references/mta-patterns-and-antipatterns-reference.md)**
