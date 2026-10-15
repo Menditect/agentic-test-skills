@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.37.0"
-changes: "Added Pre-Construction Suite Idempotency Audit (PAT-101) and Frontend Validation Trigger Sequencing (PAT-119, ANTI-74)."
+version: "6.38.0"
+changes: "Synchronized PAT-109 Studio Pro MCP and Mendix MAIA discovery protocol references and Chat Mode cognitive smoke audit."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -233,7 +233,7 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
                 3. **Capture Matrix Snapshot:** Single `GetTestCaseDetails(TestCaseKey)` call to capture newly created `TestCaseVariationKey` identifiers.
                 4. **Mandatory CoT Variation Key Mapping Table:** Output a markdown table mapping each `TestCaseVariationKey` to its corresponding Scenario Name and Item Keys from Section 7 of the Execution Plan. Calling cell setter tools before outputting this mapping table is strictly prohibited.
                 5. **Safe Scenario Chunking & Progress Receipts:** Dispatch cell updates grouped by scenario column. Batch cell updates in safe chunks of 15 to 20 tool calls per turn (`ANTI-32`). Output turn-by-turn progress receipts (`"Updated rows 1-2 across scenarios 1-6; proceeding to rows 3-4"`). For empty/null values, pass `SetValueToEmpty="_True"`. Maintain safe chunking until all $M \times N$ cells are populated.
-        *   **Chat Mode:** You have no write/execute tools. For each step of the approved Execution Plan, generate the exact, complete JSON payloads and parameters to execute. Instruct the user clearly where to paste or run these inputs, and wait for the user to confirm completion before outputting the next payload.
+        *   **Chat Mode / Mendix MAIA:** When mutating tools or filesystem access is unavailable, generate the exact, complete JSON payloads and parameters to execute. In Mendix MAIA, if active MTA mutating tools are connected, execute them natively; if not or in pure chat, output the exact payloads for manual execution.
 
 3. **Phase 3: `STATE_SMOKE_AUDIT`**
    - *State Header:* `[State: STATE_SMOKE_AUDIT | Temp State: None | Active Skill: mta-build]`
@@ -309,11 +309,13 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
         - The Variation Item Table (Phase 2)
         - The Scenario Metadata Table (Phase 3)
         - Cell Parity Confirmation (Phase 4).
-     3. **Automated Audit Verification via `mta-lint audit` (Agentic Mode):** In Agentic Mode, do NOT perform manual arithmetic calculation. Instead:
-        - Dispatch `GetTestCaseDetails(TestCaseKey)` to fetch server test case structure.
-        - Save the returned JSON to a temporary file (e.g. `scratch/server_case_<Key>.json`).
-        - Execute `node tools/mta-lint.mjs audit "${execution_plans_dir}/EP_<TestCaseName>.md" "scratch/server_case_<Key>.json"` to perform deterministic 4-phase verification in <50ms.
-        - Populate Section 6 with the linter's formatted verification table. If discrepancies are found, resolve them via mutating tools before declaring verification complete.
+     3. **Automated Audit Verification via `mta-lint audit` (Agentic Mode) / Cognitive Audit (Chat Mode / MAIA):**
+        - In Agentic Mode, do NOT perform manual arithmetic calculation. Instead:
+          - Dispatch `GetTestCaseDetails(TestCaseKey)` to fetch server test case structure.
+          - Save the returned JSON to a temporary file (e.g. `scratch/server_case_<Key>.json`).
+          - Execute `node tools/mta-lint.mjs audit "${execution_plans_dir}/EP_<TestCaseName>.md" "scratch/server_case_<Key>.json"` to perform deterministic 4-phase verification in <50ms.
+          - Populate Section 6 with the linter's formatted verification table. If discrepancies are found, resolve them via mutating tools before declaring verification complete.
+        - In Chat Mode / Mendix MAIA (where filesystem and CLI linter execution are unavailable), perform the 4-phase audit cognitively in-prompt by directly evaluating the active session `GetTestCaseDetails` output against the plan and rendering the Step, Variation, Scenario, and Cell Parity tables in the chat stream.
      4. **State Persistence:** Update `mta_state.json` with `execution_plan_status: "BUILT_AND_VERIFIED"`.
      5. **User Summary & Direct Links:** Render the Smoke Audit Summary in chat with direct clickable navigation links:
         - Configuration: `[MtaBaseUrl]/p/testconfiguration/[ConfigKey]`
@@ -323,7 +325,7 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 
    - **Mode-Specific Handling:**
      *   **Agentic Mode:** For multi-case suites (e.g. 3-case Frontend suites), dispatch `GetTestCaseDetails(TestCaseKey)` for **ONE test case per turn** to avoid context truncation and token exhaustion. Update local plan files and `mta_state.json` autonomously.
-     *   **Chat Mode:** Inspect `GetTestCaseDetails` from server response or user paste. Render the 4-Phase audit ledgers directly in the chat stream. If requested, provide the complete sealed Execution Plan with Section 6 in a single copyable ````markdown ```` code block.
+     *   **Chat Mode / Mendix MAIA:** Inspect `GetTestCaseDetails` from active session tool response or user paste. Conduct cognitive 4-Phase audit and render the audit ledgers directly in the chat stream. If requested, provide the complete sealed Execution Plan with Section 6 in a single copyable ````markdown ```` code block.
 
 When the smoke audit is successfully validated, prompt the user: *"The test cases and steps have successfully passed validation and are fully built. Would you like to transition to execution (`STATE_RUN_ANALYZE`) and run the tests?"*
 

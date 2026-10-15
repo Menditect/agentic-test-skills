@@ -52,15 +52,6 @@ When testing boundary branches where a microflow parameter is null or empty, set
 > In local exploratory JSON (`TCEX_RQ`), passing empty/null objects is configured directly per parameter via `"UseEmptyObjectList": true`. 
 > When promoting to or constructing on the persistent MTA Platform, parameter bindings are static; you **MUST** convert this to the **`PAT-07` Empty Object Retrieve Pattern** (`Retrieve Object` from upstream teststep with filter attribute set to short sentinels like `"NONE"` or `"NULL"` for empty object variations per the Universal Short Sentinel Law).
 
-> [!TIP]
-> **Unified Promotable Blueprint for Null Boundaries (`PAT-07`, `PAT-111`):**
-> When authoring Execution Plans that test both unassigned child associations (`$Car/Car_CarSize = empty`) and null root parameters (`$Car = empty`), always author the 5-step Master Step Ledger using the **Hierarchical Multi-Entity Sentinel Recipe** (`Create CarSize` -> `Retrieve CarSize [Sentinel == 'VALID']` -> `Create Car [Car_CarSize = filterHandle]` -> `Retrieve Car [CarSentinel == 'VALID']` -> `CallMicroflow [Car = filterHandle]`).
-> For local exploratory JSON (`TCEX_RQ`), the dispatcher compiles:
-> - Scenario #1 (Valid): sends both created handles.
-> - Scenario #2 (Unassigned Association): sends `Car` with `UseEmptyObjectList: true` on `Car_CarSize`.
-> - Scenario #3 (Null Root Parameter): sends `$Car` with `"UseEmptyObjectList": true`.
-> Because the Execution Plan documents the exact PAT-07 sentinel skeleton, promoting to Option B requires zero structural rework!
-
 
 
 ### Recipe B: Pre-Seeded Database Retrieval Strategy

@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.34.0"
-changes: "Added Pre-Construction Suite Idempotency Audit (PAT-101) and Frontend Validation Trigger Sequencing (PAT-119, ANTI-74)."
+version: "6.35.0"
+changes: "Synchronized PAT-109 Studio Pro MCP discovery protocol references."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill

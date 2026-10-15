@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.42.0"
-changes: "Added Adaptive Step Ledger Strategy, Executive Data Flow Contract for frontend suites, hierarchical dual-sentinel recipe, relaxed backend unit ledger column constraints, and ad-hoc data creation keyword triggers."
+version: "6.43.0"
+changes: "Enabled Studio Pro MCP and Mendix MAIA model discovery (ped_read_document, pg_read_page) in PAT-109 with Chat Mode execution constraints."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -65,7 +65,7 @@ To prevent the **Tautological Testing Trap** (where tests merely assert what bug
      * *Baseline:* **Mandatory External Specification.** Testing against the AST alone is strictly prohibited. Ground truth must come from a connected MCP tool (`jira_*`, `maia_plan_*`), documentation in `@annotation`, or explicit acceptance criteria provided in the prompt.
 2. **Autonomous Intent Derivation & Linguistic Classifier:**
    * **Prompt Linguistic Scan:** Prompts containing creation or modification verbs (*"I added", "I implemented", "new logic", "changed", "fixed", "updated", "build a test for this new feature", "test-driven"*) strictly forbid classification as `regression`. The agent MUST classify as `exploratory_feature` or `tdd`.
-   * **Live `.mpr` AST Stub Detection (`PAT-109`):** Before planning, inspect the target via `describe microflow <Flow> -p <project.mpr>`. If the microflow is empty, contains only start/end nodes, or lacks implementation logic, the agent MUST treat it as a stub and force `tdd` or `exploratory_feature` with mandatory external criteria.
+   * **Live `.mpr` AST Stub Detection (`PAT-109`):** Before planning, inspect the target via `ped_read_document` (Studio Pro MCP) or `describe microflow <Flow> -p <project.mpr>` (mxcli). If the microflow is empty, contains only start/end nodes, or lacks implementation logic, the agent MUST treat it as a stub and force `tdd` or `exploratory_feature` with mandatory external criteria.
    * **Connected MCP Server Tool Discovery:** Scan the session's active tool catalog. If tools matching `jira_*`, `atlassian_*`, `maia_plan_*`, or `sprintr_*` are present, autonomously call the relevant tool (e.g. `jira_get_issue`) to fetch acceptance criteria without asking the user to copy-paste.
    * **The Conservative Gate:** When intent cannot be inferred with certainty (no explicit verbs, no external spec, but the prompt says *"test this microflow"*), the agent MUST halt at Checkpoint 1 with an intent selection card rather than silently guessing `regression`.
 3. **Anti-Loophole Guardrails (`ANTI-68` through `ANTI-72`):**
@@ -129,7 +129,7 @@ You must progress sequentially through these three interactive planning micro-st
         **Anti-Pattern (`ANTI-74: Premature Validation Assertion`):** Placing validation feedback checks BEFORE the submit Action Button click is strictly prohibited, as validation has not yet been executed by Mendix.
       - *Two-Tier AST Inspection:* When designing frontend tests, the agent MUST:
         1. Scan the Page AST (`DESCRIBE PAGE <Module.Page>`) for input widgets and buttons with attached event handlers and verify the trigger configuration (`FormValidations = "All"`, `onChange` on blur/leave, `onEnterPress`).
-        2. Scan the event/action Microflow or Nanoflow AST (`describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection) for `ValidationFeedbackAction` activities (`Show Validation Feedback`). If found, map the validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, do NOT plan validation assertion steps for that event.
+        2. Scan the event/action Microflow or Nanoflow AST (`ped_read_document` or `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection) for `ValidationFeedbackAction` activities (`Show Validation Feedback`). If found, map the validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, do NOT plan validation assertion steps for that event.
       - *TestKit Validation Message Locators:* Use the dedicated microflow `MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage` (e.g. `Locate_MxWidget_TextBox_ValidationMessage`, `Locate_MxWidget_DropDown_ValidationMessage`, `Locate_MxWidget_DatePicker_ValidationMessage`, `Locate_MxWidget_ReferenceSelector_ValidationMessage`, `Locate_MxWidget_ComboBox_ValidationMessage`, `Locate_MxWidget_CheckBox_ValidationMessage`, `Locate_MxWidget_RadioButtons_ValidationMessage`) piping the widget locator.
       - *Assertion Semantics:* Assert negative presence on happy-path tests using `MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator` placed post-submit. For deliberate negative fault-injection tests, assert `ASR_Is_Visible_MxLocator` (and `ASR_Has_Text` / message content) on the invalid widget.
       - *Mandatory Step Description:* Whenever validation message test steps (`Locate_MxWidget_*_ValidationMessage` and `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) are added to an Execution Plan, the agent MUST populate a `Description` field on the test step explicitly documenting why it was added (naming the triggering event microflow/nanoflow or button action and the validated attribute).
@@ -142,16 +142,23 @@ You must progress sequentially through these three interactive planning micro-st
       The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 4-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, and `ANTI-20`.
 *   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
     *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
-    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `mxcli DESCRIBE MICROFLOW` (or `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
+    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `ped_read_document` (or `mxcli DESCRIBE MICROFLOW` / `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
     *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
 *   **⚡ One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol (`PAT-109`, `PAT-71`, `ANTI-26`, `ANTI-58`)**:
-    *   *Mandatory Initial Tool Call (`PAT-109`):* For any backend test, the very first model inspection action MUST be a single-pass:
-        ```bash
-        .\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>
-        ```
-    *   *Single Source of Truth Extraction:* The output of `describe microflow` provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
+    *   *Dynamic Model Source Resolution:* Resolve the discovery mechanism based on `mta_config.json.model_source` and active MCP tools in the session:
+        - **Mode A: Studio Pro MCP / MAIA Discovery** (Active when `model_source == "studiopro"` or Studio Pro MCP / MAIA inspection tools `ped_read_document` / `ped_find_document` are available in session):
+          - Mendix MAIA has the same inspection tools available as the Studio Pro MCP server (`ped_read_document`, `pg_read_page`, `ped_find_document`, `ped_list_folder`). Treat MAIA identically to the Studio Pro MCP server for model discovery.
+          - Microflow AST, parameters, return type, and flow logic: Call `ped_read_document(documentType="Microflows$Microflow", documentName="<ModuleName.MicroflowName>", depth=4)` (or higher depth to avoid `$stub` truncation).
+          - Page UI components: Call `pg_read_page(moduleName="<ModuleName>", pageName="<PageName>")`.
+          - Domain model entities, attributes, and associations: Call `ped_read_document(documentType="DomainModels$DomainModel", documentName="<ModuleName>")`.
+          - *Zero Model Mutation Invariant (`PAT-122`, `ANTI-73`):* Mutating Studio Pro MCP tools (`ped_create_document`, `ped_update_document`, `pg_patch_page`, `ped_create_module`) are strictly prohibited during test planning and seeding. The Mendix model must remain strictly READ-ONLY.
+        - **Mode B: Headless / mxcli Discovery** (Active when `model_source == "mxcli"` or Studio Pro MCP / MAIA is offline/unavailable):
+          - Backend logic single-pass: `.\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>`
+          - Page UI components: `.\mxcli.bat describe page <ModuleName>.<PageName> -p <project.mpr>`
+          - Domain model, entity schemas & catalog tables: Native SQL catalog queries (`SELECT ... FROM CATALOG.<TABLE>`).
+    *   *Single Source of Truth Extraction:* Single-pass inspection via Mode A or Mode B provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
     *   *Secondary Query Prohibition & Escape Hatch:* Agents are strictly forbidden from performing exploratory query cascades (such as querying `catalog.db`, running `SHOW ENTITIES`, or executing separate `DESCRIBE MICROFLOW` on sub-microflows) unless secondary queries are explicitly required to trace nested side-effects (`PAT-97`) or verify domain attribute length constraints (`PAT-53`).
-    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL):* When Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
+    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL in Headless Mode):* When operating in Mode B (headless) and Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
         - Microflow metadata & complexity: `SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.Microflow';`
         - Activities & call graph: `SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.Microflow' ORDER BY Sequence;`
         - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
@@ -234,7 +241,7 @@ You must progress sequentially through these three interactive planning micro-st
             - **Chat Mode (rendering directly in chat):** If client is Claude Desktop or user requests flat markdown, default to `false` (flat `##` Markdown headers) to prevent raw HTML rendering corruption.
     2. *Mode-Aware Execution Plan Delivery (`PAT-89`, `ANTI-41`):*
         - **Agentic Mode (Filesystem Tools Available):** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical blueprint in [execution-plan-template.md](references/execution-plan-template.md). Persist draft metadata (`execution_plan_file`, `execution_plan_id`, `execution_plan_status: "DRAFT"`) into `mta_state.json`. Run automated plan linting via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"`; if violations are flagged, auto-correct them prior to rendering. In the chat stream, render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the appropriate Checkpoint 1 Decision Card.
-        - **Chat Mode (No Filesystem Access / Pure Web Chat):** In the chat stream, render ONLY the concise Executive Summary Box (~35 lines) and the Checkpoint 1 Decision Card (which includes the `[Show Full Plan]` action option). If the user explicitly asks to view the full plan (or clicks `[Show Full Plan]`), render the complete plan inside a single copyable ````markdown ```` code block.
+        - **Chat Mode / Mendix MAIA (No Filesystem Access / Pure Chat):** In the chat stream, render the concise Executive Summary Box (~35 lines) and the Checkpoint 1 Decision Card (which includes the `[Show Full Plan]` action option). In Chat Mode and Mendix MAIA, filesystem tools (`write_to_file`) and terminal CLI execution (`run_command` / `tools/mta-lint.mjs`) are unavailable. The assistant conducts an in-prompt cognitive 21-rule lint and anti-pattern audit instead of executing `mta-lint.mjs`. When displaying the plan, output the complete plan and the structured Session Compaction JSON block inside the chat stream.
     3. *Mandatory Active MCP Server Discovery & Parity Verification (`PAT-82`, `ANTI-36`):* In all AI environments (MAIA, Gemini, Claude, Cursor, Antigravity) and modes (Agentic/Chat), inspect the active tool catalog in the current session:
         - *Tool Catalog & Server Status Probing:*
             - Check if `MTA` platform tools (`GetAppModelData`, `GetApplicationDetails`, `CreateTestSuite`, `ExecuteTest`, etc.) are registered in the current session. If registered, call read-only `GetAppModelData` to audit planned elements against the active MTA model revision.
@@ -247,23 +254,24 @@ You must progress sequentially through these three interactive planning micro-st
             - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Not Registered):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
     4. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
     5. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
-*   **⚡ Step 4: Mandatory Automated Quality & Compliance Pre-Flight Lint (`mta-lint plan`)**:
-    In Agentic Mode, immediately after drafting or editing `${execution_plans_dir}/EP_<TestCaseName>.md`, the AI assistant MUST run the plan linter:
-    ```bash
-    node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"
-    ```
+*   **⚡ Step 4: Mandatory Quality & Compliance Pre-Flight Lint (`mta-lint plan` / In-Prompt Cognitive Audit)**:
+    - **Agentic Mode (CLI Available):** Immediately after drafting or editing `${execution_plans_dir}/EP_<TestCaseName>.md`, the AI assistant MUST run the plan linter:
+      ```bash
+      node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"
+      ```
+    - **Chat Mode / Mendix MAIA (No CLI Available):** The AI assistant conducts the 21-rule audit cognitively in-prompt against the exact structural rules (`PAT-06`, `PAT-07`, `PAT-08`, `PAT-77`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`).
     - **Quality Gate:** Validates 21 structural and anti-pattern rules (`PAT-06`, `PAT-07`, `PAT-08`, `PAT-77`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`).
-    - **Self-Healing Loop:** If any check fails, do NOT present Checkpoint 1. Inspect the error output, modify the plan file to resolve the issue (e.g. converting conceptual columns to target step rows, removing associations from matrix rows), and re-run `node tools/mta-lint.mjs plan` until status is `PASS`.
+    - **Self-Healing Loop:** If any check fails, do NOT present Checkpoint 1. Modify the plan to resolve the issue (e.g. converting conceptual columns to target step rows, removing associations from matrix rows), and re-verify until status is `PASS`.
     - **Checkpoint 1 Sign-Off:** Only once all 21 checks pass, render the Executive Summary Box and present Checkpoint 1 to the user.
 *   **🚨 Mode-Aware Gate 1 Halt & Auto-Approval Law (`PAT-43`, `exploratory_execution_mode`)**:
     Evaluate `mta_config.json.exploratory_execution_mode` (default: `"auto_execute"`).
     
     1. **Option A Fast-Path Auto-Execution (`"auto_execute"`):**
        - **Applicability:** Applies strictly when `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`.
-       - **Action:** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"` (enforcing the 5-anchor contract). Persist plan metadata into `mta_state.json`.
+       - **Action:** In Agentic Mode, write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"` (enforcing the 5-anchor contract) and persist plan metadata into `mta_state.json`. In Chat Mode / MAIA, mark `status: "AUTO_APPROVED"` in the plan text and output the plan directly in chat with the Session Compaction block.
        - **Zero-Wait Invariant:** Do **NOT** halt at Checkpoint 1.
-       - **Immediate Execution:** In the **very same turn**, invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase`.
-       - **Turn Output:** Output the rich exploratory execution telemetry report along with a direct clickable link to the persisted plan (`[EP_<TestCaseName>.md](file:///...)`).
+       - **Immediate Execution:** In the **very same turn**, invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase` natively.
+       - **Turn Output:** Output the rich exploratory execution telemetry report along with a direct clickable link to the persisted plan (in Agentic Mode) or rendered plan summary and compaction block (in Chat Mode / MAIA).
     
     2. **Option A Governed Mode (`"prompt_approval"`):**
        - Write the Execution Plan with `status: "DRAFT"`, present the Executive Summary Box and Checkpoint 1 Decision Card, and **HALT** for explicit user approval before execution.
@@ -315,7 +323,7 @@ When the user's intent is manual exploratory testing or structured manual verifi
     Upon Gate 2 approval, store the Execution Plan locally at `${execution_plans_dir}/EP_<TestCaseName>.md`:
     - Prepend the collapsible **Execution Plan Metadata Header** YAML block from [checkpoint-templates.md](references/checkpoint-templates.md#collapsible-metadata-yaml-block-schema-v120) (`schema_version: "1.2.0"`, `revision`, `status: "APPROVED"`, `approved_at`, `approved_by`, `approver_system_user`, etc.).
     - Display the **Sealed Receipt Notification** from [checkpoint-templates.md](references/checkpoint-templates.md#sealed-receipt-notifications) with clickable file links.
-    - In Chat Mode (without file-writing tools), output the **Session Compaction JSON Block** from [checkpoint-templates.md](references/checkpoint-templates.md#5-💾-chat-only-session-compaction-json-block-pat-44).
+    - In Chat Mode / Mendix MAIA (without file-writing tools), output the **Session Compaction JSON Block** from [checkpoint-templates.md](references/checkpoint-templates.md#5-💾-chat-only-session-compaction-json-block-pat-44).
     - Write metadata to `mta_state.json` (`execution_plan_file`, `execution_plan_id`, `execution_plan_status`, `execution_plan_approved_at`, `execution_plan_approved_by`, `execution_plan_revision`, `execution_plan_supersedes_id`, `test_configuration`, `test_suite`, `test_cases`).
 *   **⚡ MTA Model Revision Synchronization & Decoupled Plan Storage Law**: Drafting and storing plans locally is always permitted even with uncommitted local elements (`PAT-36`).
 *   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps MUST be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"` (`PAT-17`, `ANTI-07`).

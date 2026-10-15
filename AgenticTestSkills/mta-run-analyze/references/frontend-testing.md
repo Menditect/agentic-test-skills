@@ -197,7 +197,7 @@ Agents must analyze the Mendix model before designing frontend validation steps:
        - *Option 3 (Neutral Location / Page Click Fallback):* In case keypress "Enter" is not possible or would trigger an unintended default button action/form submission, click at a neutral location or layout container on the page (e.g. `Locate_MxPage` -> `ACT_Click_Container` or clicking a non-interactive layout container/background) to safely remove focus and invoke the `onChange` validation.
      - **"While typing" (Debounced Delay, default 300 ms):** The event triggers dynamically as the user types after the delay expires.
    - **Verify `onEnterPress` Trigger Mode:** Only triggered when an explicit Enter key press action is executed in the input widget.
-2. **Tier 2 (Flow AST via `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection):**
+2. **Tier 2 (Flow AST via `ped_read_document` or `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection):**
    - Scan the target Microflow or Nanoflow AST for **`ValidationFeedbackAction`** nodes (Mendix activity type `Show Validation Feedback`).
    - If `ValidationFeedbackAction` exists: Extract the target Entity and Attribute (e.g. `Customer.Email`) and map it back to the corresponding UI widget.
    - If no `ValidationFeedbackAction` exists in the flow: **Do NOT generate validation assertion steps for that event.**

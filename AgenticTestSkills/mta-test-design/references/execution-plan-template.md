@@ -65,36 +65,19 @@ test_case_keys: []
 ## 3. Test Steps & Action Sequence
 *The step-by-step sequence of object creation, actions, and assertions.*
 
-<!-- ADAPTIVE STEP LEDGER DIRECTIVE:
-     - Backend Unit Tests (≤15 steps): Render uncollapsed as an open table below (omit redundant Case column).
-     - Frontend UI Suites (>15 steps / 3 cases): Render the 3-row Executive Test Pipeline & Data Flow table (always open), followed by the full Master Step Specification Ledger inside <details>. -->
+<details>
+<summary><b>View detailed step specifications (Click to expand)</b></summary>
 
-### Master Step Specification Ledger
 *This single canonical ledger serves as the Single Source of Truth for both the Option A in-memory JVM compiler and Option B persistent MTA construction. All handles, bindings, and assertions are explicitly specified.*
 
-| # | Step Action & Target | In | Out | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | `CreateObject` (`[ModuleName].[Entity1]`) | - | `entityHandle` | `Attr1 = 'TEST_001'`, `Status = StatusEnum.Active` | - | `None` / `Stop` | `PAT-06` |
-| **2** | `CreateObject` (`[ModuleName].[Entity2]`) | - | `seedHandle` | `Category = 'Standard'`, `SentinelKey = 'VALID'` | - | `None` / `Stop` | `PAT-06`, `PAT-07` |
-| **3** | `RetrieveObject` (`[ModuleName].[Entity2]`) | `seedHandle` | `filterHandle` | `RetrieveOption = "Teststep", Filter: SentinelKey == 'VALID'` | `Assert Object Count == 1` | `None` / `Stop` | `PAT-07`, `PAT-08` |
-| **4** | `CallMicroflow` (`[MicroflowName]`) | `entityHandle`, `filterHandle` | `resultHandle` | `Param1 = entityHandle`, `Param2 = filterHandle` | `Assert Return Value == true` | `None` / `Stop` | `PAT-14`, `PAT-17` |
-
-<!-- FRONTEND 3-CASE SUITE STRUCTURE ALTERNATIVE:
-### Executive Test Pipeline & Data Flow
-| Case | Steps | Purpose | Outputs Produced (Exported Handles) | Data Consumed (Piped Inputs) |
-| :--- | :---: | :--- | :--- | :--- |
-| **Case 1: Seeding** | 1–8 | Create baseline customer & order | `handleCustomer` (#1)<br>`handleOrder` (#2) | *(None - Database root)* |
-| **Case 2: UI Flow** | 9–35 | Execute browser user journey | `orderConfirmationId` (#24) | Piped from Case 1:<br>• `Customer.Email` (#1)<br>• `Order.OrderNumber` (#2) |
-| **Case 3: Teardown** | 36–42 | Clean up all seeded & runtime data | *(None - Teardown)* | Piped handles for direct deletion:<br>• `handleCustomer` (#1)<br>• `handleOrder` (#2)<br>• Filtered delete on Case 2 runtime data |
-
-<details>
-<summary><b>View Detailed 42-Step Master Specification Ledger (Click to expand)</b></summary>
-
-| # | Case | Step Action & Target | In | Out | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |
-... (all 42 rows) ...
+| # | Case | Step Action & Target | Input Handle | Output Handle | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |
+| :-: | :--: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | Case 1 | `CreateObject` (`[ModuleName].[Entity1]`) | - | `entityHandle` | `Attr1 = 'TEST_001'`, `Status = StatusEnum.Active` | - | `None` / `Stop` | `PAT-06` |
+| **2** | Case 1 | `CreateObject` (`[ModuleName].[Entity2]`) | - | `seedHandle` | `Category = 'Standard'`, `SentinelKey = 'VALID'` | - | `None` / `Stop` | `PAT-06`, `PAT-07` |
+| **3** | Case 1 | `RetrieveObject` (`[ModuleName].[Entity2]`) | - | `filterHandle` | *In-Memory Filter:* `SentinelKey = 'VALID'` | `Assert Object Count == 1` | `None` / `Stop` | `PAT-07`, `PAT-08` |
+| **4** | Case 1 | `CallMicroflow` (`[MicroflowName]`) | `entityHandle`, `filterHandle` | `resultHandle` | `Param1 = entityHandle`, `Param2 = filterHandle` | `Assert Return Value == true` | `None` / `Stop` | `PAT-14`, `PAT-17` |
 
 </details>
--->
 
 ## 4. Test Scenarios & Test Data
 *The business situations to verify, with inputs and expected outcomes for each scenario.*
