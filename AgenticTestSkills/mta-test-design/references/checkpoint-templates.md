@@ -263,18 +263,6 @@ For Frontend UI tests (`Category == Frontend`), browser test steps drive Playwri
 
 ---
 
-### Mandatory Discovered Suite Collision / Reuse Halt (PAT-123, ANTI-76)
-
-When inspecting existing suites under the target configuration:
-- If an existing suite or test case has a similar name, target microflow, or matching user flow:
-  - Do NOT modify its steps, parameters, or test cases in this turn.
-  - Do NOT execute it.
-  - **HALT IMMEDIATELY** and present the decision (via sk_question in Agentic Mode):
-    1. **Option 1 (Reuse / Repair):** Update & repair existing suite [SuiteName] (Key: [SuiteKey])
-    2. **Option 2 (Create New):** Keep existing suite untouched and create a brand-new suite [ProposedNewName]
-
----
-
 ## 3. 🚦 Checkpoint 2: Confirm Test Suite Placement & Settings Box (`PAT-43`, `PAT-79`, `PAT-118`)
 
 ```markdown

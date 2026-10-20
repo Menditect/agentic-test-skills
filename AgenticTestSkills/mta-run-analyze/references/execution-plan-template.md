@@ -72,24 +72,26 @@ test_case_keys: []
 
 | # | Case | Step Action & Target | Input Handle | Output Handle | Parameters, Bindings & Initial Values | Embedded Assertions | Exec Settings | Pattern Tag |
 | :-: | :--: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | Case 1 | `CreateObject` (`[ModuleName].[Entity1]`) | - | `entityHandle` | `Attr1 = 'TEST_001'`, `Status = StatusEnum.Active` | - | `None` / `Stop` | `PAT-06` |
-| **2** | Case 1 | `CreateObject` (`[ModuleName].[Entity2]`) | - | `seedHandle` | `Category = 'Standard'`, `SentinelKey = 'VALID'` | - | `None` / `Stop` | `PAT-06`, `PAT-07` |
-| **3** | Case 1 | `RetrieveObject` (`[ModuleName].[Entity2]`) | - | `filterHandle` | *In-Memory Filter:* `SentinelKey = 'VALID'` | `Assert Object Count == 1` | `None` / `Stop` | `PAT-07`, `PAT-08` |
-| **4** | Case 1 | `CallMicroflow` (`[MicroflowName]`) | `entityHandle`, `filterHandle` | `resultHandle` | `Param1 = entityHandle`, `Param2 = filterHandle` | `Assert Return Value == true` | `None` / `Stop` | `PAT-14`, `PAT-17` |
+| **1** | Case 1 | `CreateObject` (`[ModuleName].[ParentEntity]`) | - | `step1_Parent` | `Category = 'Standard'`, `SentinelKey = 'VALID'` | - | `None` / `Stop` | `PAT-06` |
+| **2** | Case 1 | `RetrieveObject` (`[ModuleName].[ParentEntity]`) | `step1_Parent` | `step2_Parent` | `RetrieveOption = "Teststep"`, *In-Memory Filter:* `SentinelKey = 'VALID'` | `Assert Object Count == 1` | `None` / `Stop` | `PAT-07`, `PAT-08` |
+| **3** | Case 1 | `CreateObject` (`[ModuleName].[HostEntity]`) | - | `step3_Host` | `Attr1 = 'TEST_001'`, `Host_Parent = step2_Parent`, `SentinelKey = 'VALID'` | - | `None` / `Stop` | `PAT-06` |
+| **4** | Case 1 | `RetrieveObject` (`[ModuleName].[HostEntity]`) | `step3_Host` | `step4_Host` | `RetrieveOption = "Teststep"`, *In-Memory Filter:* `SentinelKey = 'VALID'` | `Assert Object Count == 1` | `None` / `Stop` | `PAT-07`, `PAT-08` |
+| **5** | Case 1 | `CallMicroflow` (`[ModuleName].[MicroflowName]`) | `step4_Host` | `resultHandle` | `HostParam = step4_Host` | `Assert Return Value == true` | `None` / `Stop` | `PAT-14`, `PAT-17` |
 
 </details>
 
 ## 4. Test Scenarios & Test Data
 *The business situations to verify, with inputs and expected outcomes for each scenario.*
 
-| # | Step Target | Scenario #1 (Baseline) | Scenario #2 (Boundary) | Scenario #3 (Null Sentinel) |
+| # | Step Target | Scenario #1 (Baseline) | Scenario #2 (Unassigned Parent) | Scenario #3 (Null Host Parameter) |
 | :---: | :--- | :--- | :--- | :--- |
-| **0** | **Scenario Name** | Standard Baseline | Boundary Limit | Null Sentinel Fallback |
-| **0** | **Scenario Description** | Standard active customer verification | Boundary threshold condition | Unassigned parameter fallback |
-| 1 | Step 1: `Entity1.Attr1` | `'TEST_001'` | `'TEST_002'` | `'TEST_003'` |
-| 2 | Step 2: `Entity2.Category` | `'Standard'` | `'Premium'` | `'Standard'` |
-| 3 | Step 3: Filter `Entity2.SentinelKey` | `'VALID'` | `'VALID'` | `'NONE'` |
-| 4 | Step 4: Assert Return Value | `true` | `true` | `false` |
+| **0** | **Scenario Name** | Standard Baseline | Unassigned Parent Association | Null Host Parameter Fallback |
+| **0** | **Scenario Description** | Standard active verification | Parent association is unassigned/null | Host parameter object is null |
+| 1 | Step 1: `ParentEntity.Category` | `'Standard'` | `'Standard'` | `'Standard'` |
+| 2 | Step 2: Filter `ParentEntity.SentinelKey` | `'VALID'` | `'NONE'` | `'VALID'` |
+| 3 | Step 3: `HostEntity.Attr1` | `'TEST_001'` | `'TEST_001'` | `'TEST_001'` |
+| 4 | Step 4: Filter `HostEntity.SentinelKey` | `'VALID'` | `'VALID'` | `'NONE'` |
+| 5 | Step 5: Assert Return Value | `true` | `false` | `false` |
 
 ## 5. Quality & Compliance Checks
 *Automated rules and best-practice checks validated before running or building.*

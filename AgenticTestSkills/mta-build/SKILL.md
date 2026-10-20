@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.39.0"
-changes: "Synchronized PAT-109 Studio Pro MCP exclusivity protocol and ANTI-75 reference."
+version: "6.40.0"
+changes: "Enforced Mandatory Batch Tool Invocation (PAT-86, PAT-87) and added ANTI-77 Serial Matrix Churn prevention."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -101,6 +101,8 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 25. **Sequence Modification Serialization Law [^ANTI-44]**:
     *   Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls concurrently in parallel is strictly **PROHIBITED**. Sequence reordering calls cause uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences.
     *   When sequence reordering is required, dispatch calls sequentially one-by-one across separate turns, or eliminate them entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
+    *   > [!IMPORTANT]
+    *   > **Scope Clarification:** The restriction in `ANTI-44` applies **exclusively to sequence reordering** (`SetSequenceOfTestStep`, `SetSequenceOfTestCase`). Independent cell setters (`EditAttributeValue`, `EditMicroflowParameterValue`, `EditAssert*`) and scenario allocations (`CreateTestCaseVariation`) do not manipulate list ordinals and **MUST** be dispatched in concurrent batches (`PAT-86`, `PAT-87`, `ANTI-77`).
 26. **Step Decommissioning & Failure Recovery Protocol [^PAT-115] [^ANTI-64]**:
     *   Because the MTA MCP server lacks a `DeleteTestStep` API tool, when a test step fails to configure or is discovered to be invalid during construction (e.g. `ErrorNr: 21` due to locator type mismatch):
         1. *Neutralize:* Set `ExecutionCondition = "Skip"` via `EditTestStep` so the runner bypasses it.
@@ -161,6 +163,9 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
           - `SetSequenceOfTestStep(TestStepKey=S2, TestStepBeforeKey=S1)` -> S2 placed after S1 (Position 2).
           - *Deterministic Reverse-Order Reset ($N \rightarrow 1$):* To re-index a scrambled sequence, execute `SetSequenceOfTestStep(stepKey, 0)` in reverse order from Step $N$ down to Step 1.
     *   **Post-Construction Verification:** Always verify sequence using `GetTestSuiteDetails(TestSuiteKey)` (cases: `SequenceNumber 1..N`), `GetTestCaseDetails(TestCaseKey)` (steps: `SequenceNumber 1..N`), and `GetTestConfigurationDetails(TestConfigurationKey)` (suites).
+35. **Mandatory Batch Tool Invocation & Anti-Serial Churn Law [RULE_BATCH_TOOL_INVOCATION, ^PAT-86, ^PAT-87, ^ANTI-77]**:
+    *   **Bulk Allocation & Population (`PAT-86`, `PAT-87`):** When creating variation columns or populating matrix cells, agents **MUST** dispatch calls in concurrent batches (15 to 20 tool calls per turn). Emitting variation allocations or cell updates one call per turn across multiple roundtrips is strictly prohibited (`ANTI-77`).
+    *   **Deterministic In-Memory Key Mapping:** Capture container and cell keys via a single snapshot (`GetTestCaseDetails`), resolve all attribute and assertion keys in-memory against `TCVI_TestCaseVariationItems`, and emit cell updates column-by-column in parallel batches.
 
 ---
 
@@ -174,7 +179,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 199 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..76`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 200 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..77`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 

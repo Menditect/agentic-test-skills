@@ -1845,6 +1845,17 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### `ANTI-77`: Serial Matrix Churn Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Emitting sequential single-call turns to update individual data variation columns, attribute values (`EditAttributeValue`), microflow parameters (`EditMicroflowParameterValue`), or return assertions (`EditAssert*`), leading to 30–50+ unnecessary LLM roundtrips and severe latency.
+* **Root Cause:** Failure to leverage multi-tool batch execution, often caused by over-generalizing sequence reordering restrictions (`ANTI-44`) to independent cell setters.
+* **Remediation Pattern:** `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law) and `PAT-87` (Deterministic Cloned Variation Cell Key Indexing Law).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law), `PAT-87` (Deterministic Cloned Variation Cell Key Indexing Law).
+  * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-40` (Per-Column Variation Construction Roundtrip Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1912,8 +1923,8 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-83`** (Context-Preserving Diagnostic Drill-Down Law) | **`ANTI-37`** (Monolithic Log Retrieval Anti-Pattern) | Targeted 2-step retrieval (GetTestRunSummary -> GetTestCaseRunDetails) vs dumping entire suite logs |
 | **`PAT-84`** (Prior Execution Plan Discovery & Tri-Choice Lineage) | **`ANTI-38`** (Blind Prior Plan Overwrite or Amnesic Discard) | Preserving plan lineage, delta auditing & tri-choice decisions vs blind overwrite or amnesia |
 | **`PAT-85`** (Horizontal Layered Construction & Safe Cross-Step Batching) | **`ANTI-39`** (Vertical Per-Step Interleaving) | Constructing steps in horizontal cross-step layers vs fragmented vertical per-step roundtrips |
-| **`PAT-86`** (Upfront Column Provisioning & Bulk Chunked Population) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Concurrently provisioning all variation columns upfront vs sequential column-by-column roundtrips |
-| **`PAT-87`** (Deterministic Cloned Cell Key Indexing) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) | Indexing cloned cell keys in-memory by registration order vs redundant GetTeststepDetails queries |
+| **`PAT-86`** (Upfront Column Provisioning & Bulk Chunked Population) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) / **`ANTI-77`** (Serial Matrix Churn) | Concurrently provisioning all variation columns upfront and batching cell updates in chunks of 15–20 vs sequential turn-by-turn roundtrips |
+| **`PAT-87`** (Deterministic Cloned Cell Key Indexing) | **`ANTI-40`** (Per-Column Variation Construction Roundtrips) / **`ANTI-77`** (Serial Matrix Churn) | Indexing cloned cell keys in-memory by registration order vs redundant GetTeststepDetails queries |
 | **`PAT-43`** / **`PAT-70`** / **`PAT-89`** (Universal Execution Plan Mandate) | **`ANTI-46`** (Unplanned Test Construction & Execution Plan Bypass) | Persisting approved Execution Plan prior to construction or seeding vs bypassing planning |
 | **`PAT-95`** (Backend Direct Handle Piping Delete) | **`ANTI-03`** (Unasserted Consumer Piping) / Redundant DB Retrieve | Piping created entity handles directly to Delete Object vs redundant database roundtrips |
 | **`PAT-96`** (Business Microflow Execution & Return Assertion) | **`ANTI-13`** (Blind Void Microflow Testing) | Executing microflow and validating return values or feedback messages vs unverified execution |

@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.44.0"
-changes: "Hard-enforced Studio Pro MCP priority over mxcli in model discovery (PAT-109, ANTI-75)."
+version: "6.45.0"
+changes: "Synchronized pattern catalog with ANTI-77, mandatory PAT-07 sentinel empty parameter enforcement, and CreateObject input handle check."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -170,27 +170,32 @@ You must progress sequentially through these three interactive planning micro-st
     *   *Schema Resilience & Parameter Invariant:* Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard operation and MUST NOT trigger false catalog missing warnings. If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` before aborting.
     *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
     *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
-*   **🛑 Mandatory Empty-Guard Recognition Law (PAT-109 → PAT-07 Linkage)**:
-    *   *AST Null-Check Decision Scanner:* During single-pass microflow AST analysis (`PAT-109`), scan the AST for decisions, filters, or expressions checking:
-        1. **Parameter Null Checks:** `$Parameter == empty` or `$Parameter != empty`
-        2. **Associated Object / Association Null Checks:** `$Object/Association == empty` or `$Object/Association != empty`, or checking a retrieved associated object for empty.
-    *   *Mandatory Skeleton Decision Tree:* If the microflow contains any Decision or Filter checking `$Parameter == empty`, `$Parameter != empty`, or checking an associated object `$Object/Association == empty`:
-        - The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton.
-        - The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in Section 3:
+*   **🛑 Unconditional Backend Empty Parameter & Association Invariant (PAT-07, PAT-109, ANTI-48)**:
+    *   *Microflow Runtime Invariant:* In Mendix, microflow callers can always pass `empty` for entity parameters. MTA test cases operate on a fixed step ledger skeleton parameterized by a Data Variation Matrix; omitting `PAT-07` during initial construction makes testing null boundaries impossible without deleting and rebuilding the test case steps. Therefore, testing empty parameters is **MANDATORY and DEFAULT**, not optional.
+    *   *Mandatory Skeleton Decision Tree:* For ALL backend unit tests taking one or more entity object parameters or setting associated entities:
+        - The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton without an intermediate `PAT-07` retrieve filter.
+        - The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in Section 3 for each entity parameter:
           1. `CreateObject` (Entity) with a scalar sentinel attribute initialized (e.g. `Sentinel = 'VALID'`).
           2. `RetrieveObject` (`RetrieveOption = "Teststep"`, filtering on `Sentinel == 'VALID'`, embedding `Assert Object Count == 1` per `PAT-08`).
           3. Downstream step consumes the Retrieve Handle, allowing the variation matrix to yield Count = 1 (valid) when `Sentinel == 'VALID'` or Count = 0 (empty) when `Sentinel == 'NONE'`, without altering the step sequence.
+        - The agent **MUST UNCONDITIONALLY** scope at least $N + 1$ scenarios in the Section 7 Data Variation Matrix (1 Valid scenario with `Sentinel = 'VALID'`, plus 1 Empty/Null boundary scenario per object parameter with `Sentinel = 'NONE'`). Never ask the user whether empty parameters should be tested—generate them by default.
     *   *Empty Parameter Support Recipe:*
         - Step 1: `CreateObject` (`Entity`, initial attributes + synthetic key + sentinel attribute `Sentinel = 'VALID'`)
         - Step 2: `RetrieveObject` (`RetrieveOption = "Teststep"`, input handle = Step 1 output, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1`)
         - Step 3: `CallMicroflow` (parameter bound to Step 2 retrieve handle)
         - In Section 4 / Section 7 Data Variation Matrix: Scenario #1 (Valid) sets Step 1/2 Sentinel to `'VALID'`; Scenario #2 (Empty/Null) sets Step 1/2 Sentinel to `'NONE'`, producing an empty object handle in memory.
-    *   *Empty Association Support Recipe:*
-        - Step 1: `CreateObject` (Child Target Entity, setting sentinel attribute `Sentinel = 'VALID'`)
-        - Step 2: `RetrieveObject` (`RetrieveOption = "Teststep"`, input handle = Step 1 output, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1`)
-        - Step 3: `CreateObject` (Parent Host Entity, setting association `Parent_Child` to Step 2 retrieve handle)
-        - Step 4: `CallMicroflow` (parameter bound to Step 3 output handle)
-        - In Section 4 / Section 7 Data Variation Matrix: Scenario with unassigned association sets Step 1/2 Sentinel to `'NONE'`, resulting in 0 retrieved child objects and no association linked.
+    *   *CreateObject Input Handle Prohibition (PAT-06, ANTI-01):* All `CreateObject` steps MUST set `Input Handle = '-'`. In Menditect Test Automation, `CreateObject` instantiates a brand new entity in memory and does not accept an input handle. If an entity is associated to another entity (e.g. `Car_CarSize = step2_CarSize`), this association binding MUST be specified in the `Parameters, Bindings & Initial Values` column, referencing the retrieved parent handle. Specifying an `Input Handle` on `CreateObject` is invalid and fails linter check `INVALID_CREATE_OBJECT_INPUT_HANDLE`.
+    *   *Multi-Entity Associated Graph Support Recipe:*
+        When testing a microflow that takes a host entity (`Car`) associated with a related entity (`CarSize`), and both empty parameter and empty association boundary scenarios must be tested:
+        - Step 1: `CreateObject` (`CarSize`, `Input Handle = -`, initial attributes + `Sentinel = 'VALID'`)
+        - Step 2: `RetrieveObject` (`CarSize`, `Input Handle = step1_CarSize`, `RetrieveOption = "Teststep"`, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1` per `PAT-08`)
+        - Step 3: `CreateObject` (`Car`, `Input Handle = -`, initial attributes + association `Car_CarSize = step2_CarSize` + `Sentinel = 'VALID'`)
+        - Step 4: `RetrieveObject` (`Car`, `Input Handle = step3_Car`, `RetrieveOption = "Teststep"`, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1` per `PAT-08`)
+        - Step 5: `CallMicroflow` (`Input Handle = step4_Car`, `Car = step4_Car`, embedded assertions)
+        - In Section 4 / Section 7 Data Variation Matrix:
+          - Scenario #1 (Valid): Step 2 Filter `'VALID'`, Step 4 Filter `'VALID'`.
+          - Scenario #2 (Empty Association): Step 2 Filter `'NONE'`, Step 4 Filter `'VALID'`.
+          - Scenario #3 (Null Host Parameter): Step 2 Filter `'VALID'`, Step 4 Filter `'NONE'`.
     *   *Universal Short Sentinel Law (`PAT-07`):* Always use short scalar sentinels (`'VALID'`, `'NONE'`, `'NULL'`, `'TEST'`; `length <= 4` characters) on String or Integer attributes. Never use Enumerations (`Enum_`) or long verbose tokens (`'NON_EXISTENT'`, `'DOES_NOT_EXIST'`).
     *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`ANTI-60`, `ANTI-48`):* Low-level plugin attributes such as `"UseEmptyObjectList": true` or omitting `"TCEX_RQ_Sfar"` in ad-hoc steps are execution-level conveniences. When drafting or updating an Execution Plan (`EP_*.md`), the agent **MUST NOT** rely on these shortcuts to represent empty objects in Section 4. The underlying step skeleton in Section 3 must remain 100% promotable to central MTA via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
     *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
@@ -382,7 +387,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 199 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..76`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 200 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..77`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

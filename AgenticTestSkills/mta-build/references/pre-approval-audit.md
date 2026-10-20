@@ -37,7 +37,7 @@ This reference document defines the complete 14-point Pre-Approval Quality Audit
 ### [CHECK 5] Explicit Filter Attributes, Input Handles & Variation Matrix (`PAT-07`, `PAT-19`, `PAT-27`, `PAT-53`, `PAT-54`, `PAT-77`, `PAT-86`, `PAT-87`, `PAT-98`, `PAT-102`, `PAT-103`, `PAT-111`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-48`)
 - **Scope:** All Tests.
 - **Verification Criteria:** 
-  1. `Retrieve` steps specify `Input Handle Source`.
+  1. `Retrieve` steps specify `Input Handle Source`. `CreateObject` steps MUST set `Input Handle = '-'` (`CreateObject` instantiates a new entity in memory and does not accept an input handle; associations belong in parameters/bindings).
   2. Parameters/associations requiring empty/NULL variations use `Retrieve` with an explicit attribute filter and short $\le 4$-character sentinels (`'NONE'`, `'NULL'`) complying with the Universal Short Sentinel Law (`PAT-53`).
   3. **Attribute Constraint & Length Verification (`PAT-53`):** All literal values specified in Section 5 (step parameters) and Section 7 (variation matrix) are audited against Mendix Domain Model constraints (`SHOW ENTITY`, `DESCRIBE ENTITY`, or `GetAppModelData`).
   4. **Negative Validation Assertions (`PAT-98`):** Every negative scenario in the variation matrix MUST include explicit validation feedback assertions (`CreateAssertValidationFeedbackMessageCompare` or Count > 0).

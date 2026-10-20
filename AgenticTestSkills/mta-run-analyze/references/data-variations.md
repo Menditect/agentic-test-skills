@@ -134,10 +134,11 @@ MTA supports data variations at the **Test Suite** level in addition to the Test
 
 ## 🎯 EMPTY OBJECT PATTERN: QUICK DECISION GUIDE (`PAT-07`, `PAT-08`, `PAT-109`)
 
-### 🛑 Mandatory Empty-Guard Recognition Law (`PAT-109` → `PAT-07` Linkage)
-During single-pass microflow AST analysis (`PAT-109`), if the microflow contains any Decision or Filter checking `$Parameter == empty`, `$Parameter != empty`, or checking an associated object `$Object/Association == empty`:
-- The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton.
-- The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in the Master Step Ledger.
+### 🛑 Unconditional Backend Empty Parameter & Association Invariant (`PAT-07`, `PAT-109`, `ANTI-48`)
+In Mendix, microflows can always receive `empty` for entity parameters at runtime. Because MTA test cases use a fixed step ledger skeleton parameterized by a Data Variation Matrix, omitting `PAT-07` during initial test design makes testing null boundaries impossible without deleting and rebuilding steps. Therefore, testing empty parameters is **MANDATORY and DEFAULT**, not optional:
+- For ALL backend unit tests taking one or more entity object parameters or setting associated entities, the agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton without an intermediate `PAT-07` retrieve filter.
+- The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in the Master Step Ledger for each entity parameter.
+- The Data Variation Matrix **MUST UNCONDITIONALLY** include at least $N + 1$ scenarios (1 Valid scenario plus 1 Empty/Null boundary scenario per object parameter with `SentinelKey = 'NONE'`).
 
 ### Step-by-Step Recipe with the 51-Tool Primitive API:
 1. **Create Object Step:** Call `CreateObjectActionTestStep(ObjectAction="CreateObject", TestStepName="Create <Entity> for empty object pattern in datavariation")` for the base entity.
