@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.40.0"
-changes: "Enforced Mandatory Batch Tool Invocation (PAT-86, PAT-87) and added ANTI-77 Serial Matrix Churn prevention."
+version: "6.40.1"
+changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDocument response schema."
 ---
 
 # MTA Build, Design, & Optimization Skill

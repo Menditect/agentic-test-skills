@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.45.0"
-changes: "Synchronized pattern catalog with ANTI-77, mandatory PAT-07 sentinel empty parameter enforcement, and CreateObject input handle check."
+version: "6.45.1"
+changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDocument response schema."
 ---
 
 # MTA Test Scoping & Design Skill

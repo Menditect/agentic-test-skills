@@ -124,7 +124,7 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
   * Placed directly on `TCEX_RQ_TestStepRunOact` (sibling to `TCEX_RQ_EntityValueRun`).
   * `TestStepRunKey_output`: Numeric integer `Key` of the earlier test step that produced the associated object (e.g. `25401`).
   * `AssociationName`: Fully qualified association name (e.g. `"CarRentalModule.Car_CarSize"`).
-  * `AssociationOwner`: `"_Default"` (or `"_Both"`).
+  * `AssociationOwner`: `"_Default"` (or `"Both"`). Note: `"Both"` has no leading underscore.
   * `AssociationType`: `"Reference"` (or `"ReferenceSet"`).
   * `EntityParentQualifiedName`: Parent entity qualified name (e.g. `"CarRentalModule.Car"`).
   * `EntityChildQualifiedName`: Child entity qualified name (e.g. `"CarRentalModule.CarSize"`).
@@ -228,6 +228,10 @@ Used for `Create`, `Retrieve`, `Change`, `Delete`, and `Persist`.
 * `OverallResult`: `"Executed"`, `"Fail"`, `"ERROR"`, `"NotExecuted"`.
 * `ResultDescription`: Pass/fail message or root-cause description.
 * `ResultStacktrace`: Java exception trace on error.
+* `TCEX_RS_FileDocument`: Returned when creating/retrieving entities specializing `System.Image` or `System.FileDocument`.
+  * `FileID`: Integer ID.
+  * `FileName`: String or `null` (when `Name` is unpopulated).
+  * `HasContents`: Boolean.
 * `TCEX_RS_TestStepRun`: Array of per-step execution reports with runtime telemetry.
 * `TCEX_RS_ValidationFeedback`: Validation feedback messages generated during execution (entity, member, validation message).
 
