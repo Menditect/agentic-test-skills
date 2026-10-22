@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.37.1"
-changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDocument response schema."
+version: "6.38.0"
+changes: "Added PAT-124 Test-Driven Bug Fixing lifecycle, inverted evaluation, quarantined code repair, and lock verification."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
@@ -93,14 +93,14 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         - If the remote `MTA` MCP server is available: Offer immediate promotion/fallback to **Option B (Direct Persistent MTA Test)** via `mta-test-design` `PLAN_STEP_2`.
         - If the remote `MTA` MCP server is also unavailable (Dual Outage): Guide the user to start the local application in Studio Pro and verify `MTA_plugin` in `mta_config.json`, while confirming that the Execution Plan remains safely stored on disk (`status: "DRAFT"`).
     *   **Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `PAT-120`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`):**
-        *   *Zero-CLI Re-Query Law:* Pre-compile all variation blocks directly from Section 7 of the approved Execution Plan. Do **NOT** re-run any CLI or model inspection commands during execution.
-        *   *Single-Payload Execution Law (`PAT-73`, `ANTI-27`):* When Section 7 defines multiple variations (`VAR_01` through `VAR_0N`), compile all variations into **1 single `TCEX_RQ_TestStepRun` array** dispatched in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"`, `"ApplySecurityExecutor": "NONE"`, `"RollbackTcseAfterExecution": "Yes"` (or `"true"`), NO trailing `Persist` step, and verified entity attribute members (`PAT-75`). Invoking `execute-testcase` across multiple sequential agent turns is strictly **PROHIBITED** (`ANTI-27`) unless triggered by the Session Isolation Protocol (`PAT-74`, `PAT-120`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
+        *   *Zero-CLI Re-Query Law:* Pre-compile all variation blocks directly from Section 4 of the approved Execution Plan. Do **NOT** re-run any CLI or model inspection commands during execution.
+        *   *Single-Payload Execution Law (`PAT-73`, `ANTI-27`):* When Section 4 defines multiple variations (`VAR_01` through `VAR_0N`), compile all variations into **1 single `TCEX_RQ_TestStepRun` array** dispatched in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"`, `"ApplySecurityExecutor": "NONE"`, `"RollbackTcseAfterExecution": "Yes"` (or `"true"`), NO trailing `Persist` step, and verified entity attribute members (`PAT-75`). Invoking `execute-testcase` across multiple sequential agent turns is strictly **PROHIBITED** (`ANTI-27`) unless triggered by the Session Isolation Protocol (`PAT-74`, `PAT-120`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
         *   *Pre-Execution AST Conflict Audit (`PAT-74`, `ANTI-28`):* Audit microflow AST for potential single-session conflict vectors: (1) Database XPath queries or aggregate calculations (`COUNT`, `SUM`); (2) Unique constraint / duplicate existence checks; (3) Singleton entity mutations; (4) Non-transactional external side-effects (Java caches / REST APIs); (5) Validation Feedback Assertions (`PAT-120`).
         *   *Validation Feedback Isolation & Agent-Side Assertion Protocol (`PAT-120`):* In Mendix runtime, validation feedback messages (`TCEX_RS_ValidationFeedback`) are collected globally per session/request. When an Execution Plan contains validation feedback assertions (`Assert Validation Feedback Count` or `Assert Validation Feedback Compare`): (1) The agent **MUST** bypass single-payload chaining (`PAT-73`) and dispatch each variation scenario (`VAR_01`..`VAR_0N`) in an independent `execute-testcase` session (`PAT-120`) to prevent cross-scenario feedback pooling; (2) The agent strips assertion steps from `TCEX_RQ_TestStepRun` when assembling the request; (3) Upon receiving `FunctionalResponse`, the agent parses `TCEX_RS_ValidationFeedback` and evaluates count, member, and message assertions agent-side against the Execution Plan; (4) Any mismatch fails the scenario (`Status: FAIL`).
         *   *Intra-Block Teardown & Disjoint Keys:* For microflows that create or commit database records, insert an intra-block `Delete` step (`TCEX_RQ_Sfdr`) after each microflow call and enforce disjoint synthetic keys across blocks (`VAR01-xxx`, `VAR02-xxx`) to guarantee 100% database isolation under the existing plugin schema.
         *   *Session Isolation Fallback Protocol (`PAT-74`, `PAT-120`):* If unmanaged external side-effects, validation feedback assertions (`PAT-120`), or persistent cross-scenario contamination is detected, immediately fall back to dispatching each variation as an independent `execute-testcase` session.
         *   *Pure Calculation Microflows:* For calculation microflows with no commits, chain object instantiations and microflow calls sequentially in the single array.
-    *   **High-Speed Telemetry Evaluation & Mandatory Benchmark Profile (`PAT-76`, `PAT-120`, `ANTI-30`):** Compute concrete wall-clock execution duration from tool start/end timestamps and extract `Passed`, `ExecutionDurationInMs`, and `TestStepRunResult` items from `TCEX_RS_TestStepRun` alongside `TCEX_RS_ValidationFeedback` for each variation in memory. You **MUST** compute and render the complete **3-Part Performance & Benchmark Profile** (Wall-Clock Throughput, Operations Category Breakdown Table, and Per-Scenario Latency Table). Omitting concrete durations or using uncalculated placeholders is strictly **PROHIBITED** (`ANTI-30`).
+    *   **High-Speed Telemetry Evaluation & Mandatory Benchmark Profile (`PAT-76`, `PAT-120`, `ANTI-30`):** Verify scenario count parity: `Count(Executed Scenarios) == Count(Planned Scenarios)` defined in Section 4 Data Variation Matrix. If scenario count parity fails, flag `MISSING_SCENARIO_EXECUTION_DISCREPANCY` and set `Overall Result: FAIL`. Compute concrete wall-clock execution duration from tool start/end timestamps and extract `Passed`, `ExecutionDurationInMs`, and `TestStepRunResult` items from `TCEX_RS_TestStepRun` alongside `TCEX_RS_ValidationFeedback` for each variation in memory. You **MUST** compute and render the complete **3-Part Performance & Benchmark Profile** (Wall-Clock Throughput, Operations Category Breakdown Table, and Per-Scenario Latency Table). Omitting concrete durations or using uncalculated placeholders is strictly **PROHIBITED** (`ANTI-30`).
     *   **Standard Result Presentation (`PAT-61`, `PAT-76`):** You **MUST** format the execution outcome using the standardized Exploratory Test Execution Report format (aggregating all executed variations in the matrix):
         ```markdown
         ### 📊 MTA EXPLORATORY TEST EXECUTION REPORT
@@ -203,6 +203,43 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
 
         </details>
         ```
+    *   **Test-Driven Bug Fixing Lifecycle & Untouchable Oracle Protocol (`PAT-124`, `ANTI-78`):**
+        When an Execution Plan has `test_intent: "bug_reproduction"`, standard pass/fail evaluation is suspended in favor of the 4-phase TDBF lifecycle:
+        1. **Phase 1: Inverted Evaluation Protocol (`BUGFIX_REPRODUCE_RED`):**
+           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: BUGFIX_REPRODUCE_RED | Active Skill: mta-run-analyze]`
+           * The goal of this execution is to **prove the bug exists** by reproducing the failure against the buggy code.
+           * **Assertion Failure Matches Bug Symptoms:** The bug is successfully reproduced! Overall Result is **`PASS (Bug Reproduced)`**.
+             * *Transition:* Advance to Phase 2: Seal & Lock Oracle Test.
+           * **Unhandled Crash / Error:** Unhandled Java runtime exception before assertions were evaluated -> Overall Result is **`FAIL (Investigation Required)`**. Distinguish crashing defects from business logic assertion failures.
+           * **Unexpected Test Success (Assertion Passed):** The test unexpectedly passed on the buggy code -> Overall Result is **`FAIL (False Positive)`**. The test failed to reproduce the defect. Return to `mta-test-design` to correct input parameters or reproduction steps.
+        2. **Phase 2: Seal & Lock Oracle Test:**
+           * Lock and seal the test immediately after Phase 1 genuinely reproduces `FAIL_ASSERTION_MISMATCH` or `FAIL_VALIDATION_ERROR`:
+             - In Agentic Mode with CLI: run `node tools/mta-lint.mjs lock "${execution_plans_dir}/EP_<TestCaseName>.md"` to compute `locked_sha256` and latch the seal on disk (`protection_level: "locked"`).
+             - In Agentic Mode without Node: append the `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and set `protection_level: "locked"`.
+             - In Chat Mode / MAIA: embed the `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and enforce the Verbatim Payload Replay Law.
+           * Present **Checkpoint 4 Case C (Bug Reproduction Certified -> Quarantined Code Repair)** from `references/checkpoint-templates.md`.
+           * Advance to Phase 3 (`Temp State: CODE_REPAIR_INTERMISSION`).
+        3. **Phase 3: Quarantined Code Repair Gate (`CODE_REPAIR_INTERMISSION`):**
+           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: CODE_REPAIR_INTERMISSION | Active Skill: mta-run-analyze]`
+           * The test plan is an **Untouchable Oracle**.
+           * **Directory Write Quarantine:** Modifying, editing, appending to, or deleting any file within `${execution_plans_dir}/` is **STRICTLY PROHIBITED**.
+           * **MTA Mutating Tool Quarantine:** Calling `Create*`, `Edit*`, or `Set*` MTA tools on the persistent server is **STRICTLY PROHIBITED**.
+           * **Code Repair Scope:** The user or agent modifies ONLY the Mendix application model in Studio Pro (microflows, expressions, rules) to resolve the root cause.
+           * **Test Tampering Refusal (`ANTI-78`):** If during code repair the agent is tempted to change or "soften" the test's assertions, or if the user asks to modify the test, the agent MUST refuse per `ANTI-78: Assertion Softening & Test Tampering`. The test can only be modified if the user explicitly abandons bug reproduction.
+        4. **Phase 4: Fix Verification & Lock Audit Protocol (`BUGFIX_VERIFY_GREEN`):**
+           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: BUGFIX_VERIFY_GREEN | Active Skill: mta-run-analyze]`
+           * When code repair is complete and the user replies *"Run verified test"* or requests re-verification:
+             * **Pre-Execution Lock Verification:**
+               - In Agentic Mode with CLI: run `node tools/mta-lint.mjs verify-lock "${execution_plans_dir}/EP_<TestCaseName>.md"`. If hash mismatch or tampered, fail immediately with `TAMPERED_TEST_REJECTED` and refuse to run.
+               - In Agentic Mode without Node: inspect `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and git status of `${execution_plans_dir}/` to verify zero file modifications.
+               - In Chat Mode / MAIA: verify the payload matches the original sealed anchor verbatim.
+             * **Bytecode Desync Rebuild Gate:** Verify the Mendix model has been recompiled and restarted so the runtime executes fresh bytecode.
+             * **Re-execute the Untouchable Test:** Dispatch `execute-testcase` using the exact unmodified payload.
+             * **Fix Certification:**
+               - If assertions now pass: Overall Result is **`PASS (Bug Fixed & Verified)`**! Output the certification receipt and prompt for promotion to permanent regression suite (`PAT-106`).
+               - If assertions still fail: The code fix is incomplete. Retain quarantine and return to `CODE_REPAIR_INTERMISSION`.
+             * **2-Cycle Circuit Breaker:** A maximum of 2 failed verification cycles is permitted before mandatory escalation to the human developer.
+
     *   **Promotion Prompt & Reverse-Handoff Protocol (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-56`, `ANTI-61`):**
         *   **If the run passes (`PASS`):**
             *   *Evaluate Active License Tier & Server Connectivity:*
@@ -312,7 +349,14 @@ When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-
         *   **Mendix Exception Log:** `[Exact log snippet or exception trace]`
         *   **Root Cause Analysis (RCA):** `[Concise, technical description pinpointed by the Cognitive Reverse Trace]`
         *   **Proposed Surgical Fix:** `[The exact step edit or attribute correction required to fix the test]`
+
+        Reply **"Approved"** or **"Proceed"** to apply this surgical fix.
         ```
+        6. **Post-Approval Transition Loop:** Upon receiving user approval for the proposed surgical fix, execute the strict 4-step repair sequence:
+           - **Step 1 (Plan Update):** Update the Execution Plan file on disk (`${execution_plans_dir}/EP_<TestCaseName>.md`).
+           - **Step 2 (Plan Linter Audit):** Re-lint the plan via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"` to verify zero structural violations.
+           - **Step 3 (Construction & Batch Binding):** Transition state to `[State: STATE_CONSTRUCTION | Temp State: STEP_CREATION | Active Skill: mta-build]` to apply surgical edits to persistent MTA test steps/variations via batch setters.
+           - **Step 4 (Smoke Audit & Execution Re-trigger):** Transition state to `[State: STATE_SMOKE_AUDIT | Temp State: AUDIT_VERIFICATION | Active Skill: mta-build]` to update the Section 6 Build Receipt, then return to `[State: STATE_RUN_ANALYZE | Temp State: STATE_EXECUTION_VERIFY | Active Skill: mta-run-analyze]` to re-trigger verification execution (`ExecuteTest`).
 4.  `STATE_QA_ASSISTANCE`: Out-of-band QA assistance and conceptual consulting (`PAT-51`). Explaining existing test scripts to developers/testers, analyzing step sequencing, auditing pattern compliance against `references/mta-patterns-and-antipatterns-reference.md`, answering conceptual/general questions, or conducting MTF architecture reviews. When the user's inquiry is resolved, prompt the user with a direct question asking for approval to return to the active task (e.g. `STATE_CONSTRUCTION` or `STATE_BUILD_PLANNING`).
 
 ---

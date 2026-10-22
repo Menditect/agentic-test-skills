@@ -1,8 +1,8 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.45.1"
-changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDocument response schema."
+version: "6.46.0"
+changes: "Added Tier 4 bug_reproduction intent, PAT-124 Untouchable Oracle locking, and Checkpoint 1 Case 6."
 ---
 
 # MTA Test Scoping & Design Skill
@@ -54,7 +54,7 @@ You are **strictly prohibited** from:
 ### 3. Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol (`PAT-121`):
 To prevent the **Tautological Testing Trap** (where tests merely assert what buggy or incomplete code happens to do, creating confirmation bias), the agent MUST classify test intent and ground truth sources before drafting steps:
 
-1. **The 3-Tier Intent Classification Engine:**
+1. **The 4-Tier Intent Classification Engine:**
    * **Tier 1: `regression` (Verified Production Baseline):**
      * *Baseline:* The live `.mpr` AST is the accepted baseline.
      * *Supplementary Context:* If external context is available (user stories, docs, Jira), the agent captures it in `supplementary_context` to drive realistic data, scenario naming, and to document any `specification_drift`.
@@ -63,8 +63,15 @@ To prevent the **Tautological Testing Trap** (where tests merely assert what bug
      * *Scope:* Verifies code stability and exception resilience under extreme inputs.
    * **Tier 3: `exploratory_feature` / `tdd` (New or Modified Business Logic):**
      * *Baseline:* **Mandatory External Specification.** Testing against the AST alone is strictly prohibited. Ground truth must come from a connected MCP tool (`jira_*`, `maia_plan_*`), documentation in `@annotation`, or explicit acceptance criteria provided in the prompt.
+   * **Tier 4: `bug_reproduction` (Test-Driven Bug Fixing / Untouchable Oracle) (`PAT-124`):**
+     * *Baseline:* **External Defect Report / Bug Ticket / Prompt Error Description.** The buggy code AST is explicitly treated as **FLAWED**. Testing against buggy code AST is strictly prohibited. The expected value in assertions MUST come from the bug report or correct business specification, NOT the buggy code return value.
+     * *Outcome Target:* Expected pre-fix outcome is `FAIL` (`expected_pre_fix_outcome: "FAIL"`). The test MUST fail on the buggy code to prove reproduction.
+     * *Locking & Anchoring:* During initial plan drafting in `mta-test-design`, plans with `test_intent: "bug_reproduction"` set `protection_level: "unlocked"` so the plan can be reviewed/executed in Phase 1. The plan is cryptographically sealed and locked (`node tools/mta-lint.mjs lock <plan.md>`) during Phase 2 of `STATE_RUN_ANALYZE` strictly AFTER Phase 1 red verification genuinely confirms `FAIL_ASSERTION_MISMATCH` (`PAT-124`).
+
+
+
 2. **Autonomous Intent Derivation & Linguistic Classifier:**
-   * **Prompt Linguistic Scan:** Prompts containing creation or modification verbs (*"I added", "I implemented", "new logic", "changed", "fixed", "updated", "build a test for this new feature", "test-driven"*) strictly forbid classification as `regression`. The agent MUST classify as `exploratory_feature` or `tdd`.
+   * **Prompt Linguistic Scan:** Prompts containing bug or defect reproduction keywords (*"bug", "issue", "defect", "reproduce", "regression", "broken", "failing test", "wrong value", "crash"*) strictly mandate classification as `bug_reproduction` (`PAT-124`). Prompts containing creation or modification verbs (*"I added", "I implemented", "new logic", "changed", "fixed", "updated", "build a test for this new feature", "test-driven"*) strictly forbid classification as `regression` and mandate `exploratory_feature` or `tdd`.
    * **Live `.mpr` AST Stub Detection (`PAT-109`):** Before planning, inspect the target via `ped_read_document` (Studio Pro MCP) or `describe microflow <Flow> -p <project.mpr>` (mxcli). If the microflow is empty, contains only start/end nodes, or lacks implementation logic, the agent MUST treat it as a stub and force `tdd` or `exploratory_feature` with mandatory external criteria.
    * **Connected MCP Server Tool Discovery:** Scan the session's active tool catalog. If tools matching `jira_*`, `atlassian_*`, `maia_plan_*`, or `sprintr_*` are present, autonomously call the relevant tool (e.g. `jira_get_issue`) to fetch acceptance criteria without asking the user to copy-paste.
    * **The Conservative Gate:** When intent cannot be inferred with certainty (no explicit verbs, no external spec, but the prompt says *"test this microflow"*), the agent MUST halt at Checkpoint 1 with an intent selection card rather than silently guessing `regression`.
@@ -114,8 +121,8 @@ You must progress sequentially through these three interactive planning micro-st
       *Widget Metamodel Verification (`PAT-114`, `ANTI-63`):* Never infer widget types from element names (e.g. `Dropdown_Location` or `Select_Role` may be a Reference Selector, not a DropDown). Query the widget metamodel via `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` or `DESCRIBE PAGE <Module.Page>` and select the exact matching locator and action microflow from the Locator & Action Pairing Matrix in `frontend-testing.md`.
       *Fast Execution SlowMo Default (`PAT-116`, `ANTI-65`):* In Section 6 (Playwright Settings) and Step 101 (`LocalStartOptions`), default `SlowMo = 0 ms` (or omitted). Fast execution is essential for autonomous agent build, smoke audit, and execution cycles. Non-zero SlowMo (e.g. `100 ms`) is strictly opt-in for human visual debugging.
       *🚨 DatePicker Model Pre-Extraction Mandate (`PAT-94`, `ANTI-45`):*
-      AGENT MANDATE: Before specifying date input values, formatting parameters, or generating Section 4 for any DatePicker widget, the agent MUST run:
-      `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json`
+      AGENT MANDATE: Before specifying date input values, formatting parameters, or generating Section 4 for any DatePicker widget, the agent MUST inspect the page via Studio Pro MCP (`pg_read_page`) or run:
+      `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json` (targeted `PAT-94` carve-out under `ANTI-75`)
       and extract the exact `DateFormat` and `CustomDateFormat` properties from `FormattingInfo`. Hardcoding `yyyy-MM-dd`, `MM/dd/yyyy`, or assuming defaults without reading BSON output is strictly prohibited under `ANTI-45`. In the Section 2 Component Under Test (Input Widget Inventory table), the agent MUST document the exact BSON property path (e.g., `Page.widgets[name='datePicker_BirthDate'].formattingInfo.customDateFormat`).
       *⚡ Diagnostic Frontend Validation Feedback Assertions & Trigger Sequencing Law (`PAT-119`, `ANTI-74`):*
       - *Diagnostic Utility:* For form fields with validation rules, custom formatting, or required constraints (e.g., DatePickers, Email inputs, Required text boxes), happy-path execution plans SHOULD include diagnostic `ASR_Is_Hidden_MxLocator` assertions on validation message controls, or check validation feedback status after form interaction steps and major wizard step transitions.
@@ -198,22 +205,22 @@ You must progress sequentially through these three interactive planning micro-st
           - Scenario #3 (Null Host Parameter): Step 2 Filter `'VALID'`, Step 4 Filter `'NONE'`.
     *   *Universal Short Sentinel Law (`PAT-07`):* Always use short scalar sentinels (`'VALID'`, `'NONE'`, `'NULL'`, `'TEST'`; `length <= 4` characters) on String or Integer attributes. Never use Enumerations (`Enum_`) or long verbose tokens (`'NON_EXISTENT'`, `'DOES_NOT_EXIST'`).
     *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`ANTI-60`, `ANTI-48`):* Low-level plugin attributes such as `"UseEmptyObjectList": true` or omitting `"TCEX_RQ_Sfar"` in ad-hoc steps are execution-level conveniences. When drafting or updating an Execution Plan (`EP_*.md`), the agent **MUST NOT** rely on these shortcuts to represent empty objects in Section 4. The underlying step skeleton in Section 3 must remain 100% promotable to central MTA via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
-    *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 7 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
+    *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 4 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
 *   **🚨 Strict Target-Bound Data Variation Matrix Schema (`PAT-110`, `ANTI-59`)**:
-    *   *Matrix Schema Invariant:* Section 7 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
+    *   *Matrix Schema Invariant:* Section 4 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
         - `Step X: Entity.Attribute`
         - `Step Y: Filter Entity.Attribute` (for `PAT-07` empty object/association variations)
         - `Step Z: Assert Return Value` / `Assert Validation Feedback`
     *   *Scenario Columns:* Columns (X-Axis) must strictly represent Scenarios (`#1 (ScenarioName)` through `#N (ScenarioName)`).
     *   *Prohibition of Conceptual Columns (`ANTI-59`):* High-level conceptual column headers or arbitrary boolean flags (e.g. `Association Assigned: Yes/No`, `Discount Applied`) are strictly prohibited in matrix headers. Every varied dimension must bind 1:1 to an MTA variation item (`TCVI_TestCaseVariationItems`).
 *   **🚨 Mandatory Unified Promotable Blueprint Invariant & Anti-Unrolling Law (`PAT-111`, `ANTI-60`)**:
-    *   *Unified Promotable Blueprint Invariant (`PAT-111`):* Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 7 Data Variation Matrix.
+    *   *Unified Promotable Blueprint Invariant (`PAT-111`):* Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 4 Data Variation Matrix.
     *   *Prohibition of Unrolled Step Sequences (`ANTI-60`):* Documenting unrolled, concatenated, or multiplied step sequences (e.g. repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` is strictly prohibited.
     *   *Zero Plan Divergence:* The structure of `EP_*.md` on disk must be 100% identical whether drafted for Option A exploratory execution or Option B persistent MTA construction.
     *   *Option A Dynamic Plugin Execution Adapter Protocol:* The on-disk Execution Plan (`EP_*.md`) is the immutable Master Promotable Blueprint. When executing under Option A, the agent (`mta-run-analyze`) acts purely as a runtime compiler that programmatically expands the canonical skeleton across the $N$ variation matrix rows into the JVM `execute-testcase` payload in memory (or executes the parametric matrix) without altering the master blueprint on disk.
     *   *🚨 PLAN-TO-PAYLOAD MATRIX PARITY INVARIANT:* NEVER pass a scenario to `execute-testcase` or compile a JVM payload block that is not explicitly documented as a scenario column in Section 4 of `EP_*.md`. Scenario counts in `EP_*.md` Section 4 and `execute-testcase` JSON payloads MUST match 100%. If additional boundary scenarios are identified during execution payload assembly, `EP_*.md` MUST be updated on disk and re-verified via `node tools/run-linter.mjs plan` BEFORE invoking `execute-testcase`.
-    *   *🚨 OPTION A PAYLOAD TRAP & PARAMETER-LEVEL PAT-07 MANDATE (`PAT-07`, `PAT-111`, `ANTI-48`):* Even when drafting an Execution Plan for Option A local exploratory auto-execution, you are **STRICTLY PROHIBITED** from using raw plugin shortcuts in the documented `EP_*.md` file (such as placing association bindings in Section 7 matrix rows or relying on `UseEmptyObjectList: true`). The file written to disk MUST ALWAYS be the **Master Promotable Blueprint** using `PAT-07` Dual-Retrieve filter steps (`Size == 'Small'` vs `'NONE'`) for nullable objects and associations. **Parameter-Level Granularity Mandate:** When testing a Mendix microflow or backend operation with $N$ object parameters or entity associations, every parameter $P_i$ or handle that evaluates to `empty` or `null` in any Section 4 Variation Matrix scenario column MUST have its own paired `CreateObject` and `PAT-07` Retrieve-from-Teststep sentinel step (`SentinelKey == 'NONE'`) in Section 3. Global single-sentinel compliance is strictly insufficient when multiple object parameters/entities are scoped. When executing Option A, the agent acts purely as a runtime compiler that translates `PAT-07` empty object handles into the local JVM payload in memory.
-    *   *Seamless Promotion Guarantee (`PAT-106`):* Because the plan on disk is already a canonical MTA skeleton with `PAT-07` and Section 7 matrix, promoting an Option A exploratory test to Option B requires zero step restructuring or matrix translation. Construction proceeds directly from the exact same skeleton.
+    *   *🚨 OPTION A PAYLOAD TRAP & PARAMETER-LEVEL PAT-07 MANDATE (`PAT-07`, `PAT-111`, `ANTI-48`):* Even when drafting an Execution Plan for Option A local exploratory auto-execution, you are **STRICTLY PROHIBITED** from using raw plugin shortcuts in the documented `EP_*.md` file (such as placing association bindings in Section 4 matrix rows or relying on `UseEmptyObjectList: true`). The file written to disk MUST ALWAYS be the **Master Promotable Blueprint** using `PAT-07` Dual-Retrieve filter steps (`Size == 'Small'` vs `'NONE'`) for nullable objects and associations. **Parameter-Level Granularity Mandate:** When testing a Mendix microflow or backend operation with $N$ object parameters or entity associations, every parameter $P_i$ or handle that evaluates to `empty` or `null` in any Section 4 Variation Matrix scenario column MUST have its own paired `CreateObject` and `PAT-07` Retrieve-from-Teststep sentinel step (`SentinelKey == 'NONE'`) in Section 3. Global single-sentinel compliance is strictly insufficient when multiple object parameters/entities are scoped. When executing Option A, the agent acts purely as a runtime compiler that translates `PAT-07` empty object handles into the local JVM payload in memory.
+    *   *Seamless Promotion Guarantee (`PAT-106`):* Because the plan on disk is already a canonical MTA skeleton with `PAT-07` and Section 4 matrix, promoting an Option A exploratory test to Option B requires zero step restructuring or matrix translation. Construction proceeds directly from the exact same skeleton.
 *   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
     *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.
     *   *Single-Pass Page AST Seed Derivation (`PAT-72`):* If inspecting the local Mendix model via `mxcli`:
@@ -232,7 +239,7 @@ You must progress sequentially through these three interactive planning micro-st
 *   **🚨 Mandatory Multiple Seed Objects for Lists & Selection Widgets (`PAT-40`, `PAT-67`, `ANTI-26`)**: For repeating containers or selection widgets, create at least 2 distinct seed records in Case 1.
 *   **🚨 Mandatory Login & Role-Based Navigation Analysis (`PAT-41`)**: Determine authentication requirement (`Start_MxFrontend_Test_With_Login` vs `Start_MxFrontend_Test_Without_Login`) and resolve role-based home page navigation via `mxcli SHOW NAVIGATION`.
 *   **🚨 Mandatory Dynamic Scalar Selection Piping**: Use dynamic scalar value piping (`SelectValueForValue`) referencing upstream seed steps instead of hardcoding static literal strings.
-*   **🚨 Mandatory DatePicker Format & Offset Model Extraction Protocol (`PAT-42`, `PAT-94`, `ANTI-45`)**: Before specifying date input values, formatting parameters, or generating Section 3/4 for any DatePicker widget, the agent MUST run `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json` and inspect `FormattingInfo` to extract exact `DateFormat` and `CustomDateFormat` patterns (`PAT-94`). Hardcoding `yyyy-MM-dd` or assuming defaults without reading BSON output is strictly prohibited (`ANTI-45`). The agent MUST document the exact BSON property path in the Section 2 Component Under Test (Input Widget Inventory table).
+*   **🚨 Mandatory DatePicker Format & Offset Model Extraction Protocol (`PAT-42`, `PAT-94`, `ANTI-45`)**: Before specifying date input values, formatting parameters, or generating Section 3/4 for any DatePicker widget, the agent MUST inspect the page via Studio Pro MCP (`pg_read_page`) or run `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json` (targeted `PAT-94` carve-out under `ANTI-75`) and inspect `FormattingInfo` to extract exact `DateFormat` and `CustomDateFormat` patterns (`PAT-94`). Hardcoding `yyyy-MM-dd` or assuming defaults without reading model output is strictly prohibited (`ANTI-45`). The agent MUST document the exact property path in the Section 2 Component Under Test (Input Widget Inventory table).
 *   **🚨 Mandatory Domain Model Attribute Length & Constraint Inspection (`PAT-53`)**: Check every proposed literal string value against `String(N)` length limits in the domain model. Propose only valid length values.
 *   **🚨 Mandatory List Selection Filter Options Proposal**: Present Testkit filter options (`ELO_Filter_*_by_Text`, `ELO_Nth_*_Item`, scalar piping) in Section 5 (`PAT-52`).
 *   **🚨 Mandatory Closed Catalog Frontend Testkit Microflow Verification (`PAT-64`, `ANTI-21`)**: All Frontend UI test steps must strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` documented in [frontend-testing.md](references/frontend-testing.md).
@@ -258,6 +265,7 @@ You must progress sequentially through these three interactive planning micro-st
             - **Case 3 (Standalone Data Seeding):** Present **Checkpoint 1 Case 3** (Option A Direct Seeding vs Option B Persistent Seeding).
             - **Case 4 (Dual Outage — `MTA` Down/Unregistered AND `MTA_plugin` Down/Unregistered):** Mark Check 14 as `BLOCKED (Both MCP Servers Offline)`. Strictly block both Option A and Option B execution. If in Agentic Mode, save the draft plan (`status: "DRAFT"`), record metadata in `mta_state.json`, present **Checkpoint 1 Case 4 (Offline / Dual-Outage Mode)**, and provide setup instructions.
             - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Not Registered):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
+            - **Case 6 (Bug Reproduction Strategy & Untouchable Oracle — `test_intent: "bug_reproduction"`):** Present **Checkpoint 1 Case 6 (Bug Reproduction Strategy & Untouchable Oracle)** (Option A In-Memory Reproduction vs Option B Persistent Bugfix Oracle Suite).
     4. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
     5. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
 *   **⚡ Step 4: Mandatory Quality & Compliance Pre-Flight Lint (`mta-lint plan` / In-Prompt Cognitive Audit)**:
@@ -276,7 +284,7 @@ You must progress sequentially through these three interactive planning micro-st
        - **Applicability:** Applies strictly when `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`.
        - **Action:** In Agentic Mode, write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"` (enforcing the 5-anchor contract) and persist plan metadata into `mta_state.json`. In Chat Mode / MAIA, mark `status: "AUTO_APPROVED"` in the plan text and output the plan directly in chat with the Session Compaction block.
        - **Zero-Wait Invariant:** Do **NOT** halt at Checkpoint 1.
-       - **Immediate Execution:** In the **very same turn**, invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase` natively.
+       - **Linter Pre-Check & Immediate Execution:** In Agentic Mode, run `node tools/mta-lint.mjs plan <plan.md>` (or `node tools/run-linter.mjs plan`) to verify 0 errors. If lint passes, in the very same turn invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase` natively.
        - **Turn Output:** Output the rich exploratory execution telemetry report along with a direct clickable link to the persisted plan (in Agentic Mode) or rendered plan summary and compaction block (in Chat Mode / MAIA).
     
     2. **Option A Governed Mode (`"prompt_approval"`):**
@@ -357,20 +365,20 @@ When the user's intent is manual exploratory testing or structured manual verifi
 You **MUST** format the final approved Execution Plan strictly in accordance with the standardized blueprint defined in [execution-plan-template.md](references/execution-plan-template.md).
 
 The Execution Plan layout consists of:
-- **Execution Plan Metadata Header:** Collapsible `<details><summary><b>Execution Plan Metadata</b></summary>` YAML block (`schema_version: "1.2.0"`).
+- **Execution Plan Metadata Header:** Collapsible `<details><summary><b>Execution Plan Metadata</b></summary>` YAML block (`schema_version: "2.0.0"`).
 - **Single Unified Status Note:** Top-level status banner with Pre-Approval Quality Audit score (`14/14 checks executed`), MTA Server Parity status, and test category.
 - **Direct MTA Web Navigation Links Table (Post-Build):** Placed beneath top note upon smoke verification.
 - **Pre-Approval Quality Checklist:** Collapsible container verifying all 14 quality checks per [pre-approval-audit.md](references/pre-approval-audit.md).
-- **8 Core Numbered Sections (plus Section 9 Post-Build Receipt):**
-  1. *State Compaction & Target Placement*
+- **6 Canonical Numbered Sections:**
+  1. *Scope, Governance & Target Placement*
   2. *Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)*
-  3. *Test Case Scope & Dual-Risk Profile*
-  4. *Verified Model Elements & Testability Profile (with Input Widget Inventory)*
-  5. *Chronological Step Sequence Plan (with nested step drilldowns)*
-  6. *Playwright / Browser Settings*
-  7. *Data Variation Matrix & Metadata (with nested scenario descriptions)*
-  8. *Applied Testing Patterns & Rationale*
-  9. *MTA Build & Smoke Verification Receipt (Appended Post-Build)*
+  3. *Chronological Master Step Ledger & Testability Profile (with nested step drilldowns)*
+  4. *Target-Bound Data Variation Matrix & Metadata (with nested scenario descriptions)*
+  5. *Playwright / Browser Settings & Applied Patterns*
+  6. *MTA Build & Smoke Verification Receipt (Appended Post-Build)*
+
+
+
 
 Consult [execution-plan-template.md](references/execution-plan-template.md) for the complete verbatim template and code fences.
 
@@ -387,7 +395,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**. Load
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
 | *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
 | *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 200 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..77`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing Execution Plans, verifying all 202 testing patterns/anti-patterns (`PAT-01..124`, `ANTI-01..78`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
 
 ---

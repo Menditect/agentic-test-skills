@@ -315,7 +315,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Description:** When creating `ChangeObjects` or `DeleteObjects` steps via `CreateObjectActionTestStep`, the agent MUST pass the target memory object's `TestStepOutputKey` directly into the creation tool call. This binds the target object immediately at instantiation, eliminating the need for subsequent, separate calls to `SetTestStepOutputForSelectObjectForChange` or `SetTestStepOutputForSelectObjectForDelete` in subsequent conversation turns.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-34` (Unbound Object Action Step Anti-Pattern).
-  * **Related Patterns:** `PAT-06` (Direct Attribute & Association Initialization on Create Object), `PAT-11` (Forward Predecessor Chaining Law), `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law).
+  * **Related Patterns:** `PAT-06` (Direct Attribute & Association Initialization on Create Object), `PAT-11` (Forward Predecessor Chaining Law), `PAT-78` (Two-Phase Skeleton & Batch Binding Law).
 
 ---
 
@@ -1077,7 +1077,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Scope:** General | **Classification:** Platform Anti-Pattern
 * **Description:** Invoking configuration tools, setters, or container creators (`EditTestSuite`, `CreateTestCase`, `EditTestCase`, `CreateTestCaseVariation`, `EditTestCaseVariation`, `EditAttributeValue`, `EditMicroflowParameterValue`, `EditTestStep`, `AddTestCaseVariationItem`, `CreateAssert*`) sequentially one-by-one across multiple separate conversation turns after container or step keys have already been resolved. This chatty interaction introduces immense latency, token overhead, and fragmented context when tools can and must be batched at the suite, case, variation, and step levels. Enforces **Safe Batch Sizing (max 15-20 tool calls per turn)** to avoid generation instability or truncation. Since MTA MCP tools do not provide server-side atomic transactions or rollback capabilities for mutating tool calls, if any individual call within a batch fails, the agent must isolate the error from the response array and surgically retry or fix the failed call.
 * **Related Rules:**
-  * **Direct Counterpart Pattern:** `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law).
+  * **Direct Counterpart Pattern:** `PAT-78` (Two-Phase Skeleton & Batch Binding Law).
   * **Related Patterns:** `ANTI-05` (Parallel / Batched Creation in Same Container).
 
 ---
@@ -1681,7 +1681,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 * **Description:** Eliminates the sequential `CreateStep -> GetTeststepDetails -> EditParam` anti-pattern by enforcing a single `GetTestCaseDetails(TestCaseKey)` bulk sync per test case during Phase 2 of construction. After completing Phase 1 forward step chaining (`PAT-11`) and Phase 2A concurrent attribute inclusions and retrieve options (in batches of 15–20 calls/turn, `ANTI-32`), the agent calls `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** to capture all server-assigned `AttributeValueKey`, `SelectObjectForMicroflowParameterKey`, and `MicroflowParameterValueKey` IDs across all steps in the testcase. Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited. The agent parses the returned keys in memory and executes all Phase 2B setters concurrently in safe batches.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern) / `ANTI-39` (Vertical Per-Step Interleaving).
-  * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law), `PAT-78` (The 3-Turn Multi-Tool Batch Construction Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching).
+  * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching).
   * **Related Anti-Patterns:** `ANTI-66` (Existing Suite Reverse-Engineering & Anchoring).
 
 ---
@@ -1762,6 +1762,18 @@ For each rule, this document outlines its scope, category, detailed operational 
   * **Direct Counterpart Anti-Pattern:** ANTI-76 (Unsanctioned Suite Modification or Hijacking Anti-Pattern).
   * **Related Patterns:** PAT-76 (Checkpoint 2 Placement Summary Gate), PAT-79 (Target-Bound Placement Verification), PAT-118 (Interactive Multi-Configuration Placement Gate).
   * **Related Anti-Patterns:** ANTI-46 (Unplanned Test Construction), ANTI-56 (Exploratory-to-Persistent Shortcut Anti-Pattern), ANTI-67 (Silent Multi-Configuration Assumption).
+
+---
+
+---
+
+### PAT-124: Test-Driven Bug Reproduction Protocol
+* **Scope:** General | **Classification:** Methodological Law
+* **Description:** Whenever tests are designed to reproduce a bug (`test_intent: "bug_reproduction"`), the test MUST derive its expected outcomes and assertions strictly from the external bug report or specification, NEVER from the buggy code's current runtime behavior. The test must execute against the active code and produce a verified failure (`BUGFIX_REPRODUCE_RED`) on target business logic. Once confirmed, the test plan is cryptographically sealed (`mta-lint lock` / `IMMUTABLE_ASSERTION_ANCHOR`) and protected by Directory Write Quarantine during code repair. The bug is proven fixed only when the unaltered, sealed test re-runs green (`BUGFIX_VERIFY_GREEN`).
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-78` (Assertion Softening & Test Tampering Anti-Pattern).
+  * **Related Patterns:** `PAT-121` (Hierarchical Test Intent Classification), `PAT-122` (Zero-Pollution Read-Only Model Test Boundary).
+  * **Related Anti-Patterns:** `ANTI-69` (Circular Specification), `ANTI-72` (Assertion Softening).
 
 ---
 
@@ -1854,6 +1866,17 @@ For each rule, this document outlines its scope, category, detailed operational 
   * **Direct Counterpart Pattern:** `PAT-86` (Upfront Column Provisioning & Bulk Chunked Population Law), `PAT-87` (Deterministic Cloned Variation Cell Key Indexing Law).
   * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-40` (Per-Column Variation Construction Roundtrip Anti-Pattern).
 
+
+### ANTI-78: Assertion Softening & Test Tampering Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Modifying, weakening, or deleting test steps or assertion criteria in a failing bug reproduction test so that it reports `PASS` against buggy code, rather than fixing the defect in the Mendix application model. This includes altering expected equality values, broadening assertion ranges, removing failing scenario columns in Section 7, or changing step output checks. A pre-existing test that the agent is strictly forbidden to rewrite is the ONLY valid proof that a defect has truly been eliminated.
+* **Root Cause:** Optimization pressure to achieve green test status without resolving root-cause bugs in application microflows or domain rules.
+* **Remediation Pattern:** `PAT-124` (Test-Driven Bug Reproduction Protocol), Directory Write Quarantine on `${execution_plans_dir}/`, and one-way cryptographic locking (`mta-lint lock`).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-124` (Test-Driven Bug Reproduction Protocol).
+  * **Related Patterns:** `PAT-121` (Hierarchical Test Intent Classification), `PAT-122` (Zero-Pollution Read-Only Model Test Boundary).
+  * **Related Anti-Patterns:** `ANTI-69` (Circular Specification), `ANTI-72` (Assertion Softening).
+
 ---
 
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
@@ -1862,6 +1885,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | :--- | :--- | :--- |
 | **`PAT-119`** (Diagnostic Frontend Validation Feedback & Trigger Sequencing Law) | **`ANTI-74`** (Premature Validation Assertion Anti-Pattern) | Enforcing post-submit validation assertion sequence (Fill -> Submit -> Assert) vs premature checking before FormValidations="All" execution |
 | **`PAT-122`** (Zero-Pollution Read-Only Model Test Boundary Invariant) | **`ANTI-73`** (Test Microflow Proscription & Mendix Model Pollution) | Strictly read-only model access and in-memory/externalized testing vs generating polluting test microflows in Studio Pro |
+| **`PAT-124`** (Test-Driven Bug Reproduction Protocol) | **`ANTI-78`** (Assertion Softening & Test Tampering Anti-Pattern) | Reproducing bugs as sealed, failing tests before code repair vs tampering with test assertions to force green |
 | **`PAT-121`** (Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol) | **`ANTI-68`** (Intent Downgrading) / **`ANTI-69`** (Circular Specification) / **`ANTI-70`** (Rubber-Stamp Risk Matrix) / **`ANTI-71`** (Trivial Prompt Echoing) / **`ANTI-72`** (Assertion Softening) | Classifying test intent, requiring non-circular external ground truth, and enforcing exact return assertions vs tautological verification loopholes |
 | **`PAT-120`** (Validation Feedback Session Isolation & Agent-Side Assertion) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining) | Session-isolated dispatch & agent-side validation feedback evaluation vs cross-scenario feedback pooling |
 | **`PAT-119`** (Event-Driven Frontend Validation Feedback Assertion Protocol) | **`ANTI-14`** (Using MTA TestCase Validation Feedback Assertions in Frontend UI Tests) | Event-driven UI validation message locator and assertion chaining with mandatory step descriptions vs blind assertions or backend assertion substitution |
@@ -1915,7 +1939,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-74`** (Exploratory Single-Session Conflict Detection & Isolation Protocol) | **`ANTI-28`** (Cross-Variation State Contamination & Blind Chaining Anti-Pattern) | AST conflict vector audit, intra-block teardown & fallback to isolated sessions vs blind chained execution |
 | **`PAT-75`** (Verified Entity Fixture Attribute Binding Law) | **`ANTI-29`** (Unverified / Assumed Entity Fixture Attributes) | Verifying domain model attributes before fixture compilation vs guessing non-existent entity members |
 | **`PAT-76`** (Mandatory Exploratory Benchmark & Latency Telemetry Law) | **`ANTI-30`** (Exploratory Performance & Latency Telemetry Omission Anti-Pattern) | Extracting and displaying full 3-part performance profile vs omitting durations or using uncalculated placeholders |
-| **`PAT-78`** (The 3-Turn Multi-Tool Batch Construction Law) | **`ANTI-32`** (Chatterbox Sequential Setter Anti-Pattern) | 3-turn batch construction sequence vs sequential chatty setter round-trips |
+| **`PAT-78`** (Two-Phase Skeleton & Batch Binding Law) | **`ANTI-32`** (Chatterbox Sequential Setter Anti-Pattern) | 3-turn batch construction sequence vs sequential chatty setter round-trips |
 | **`PAT-79`** (Pre-Creation Execution User Resolution Law) | **`ANTI-33`** (Premature Test Case Creation Without Execution User Anti-Pattern) | Resolving ExecutionUserKey before TestCase creation vs foreign key creation failures |
 | **`PAT-80`** (Direct Output Binding on Object Action Creation) | **`ANTI-34`** (Unbound Object Action Step Creation Anti-Pattern) | Binding TestStepOutputKey at creation vs separate setter tool calls across turns |
 | **`PAT-81`** (IntegerLongValue Primitive Wire Format & Integer Key Law) | **`ANTI-35`** (Mismatched Integer Wire Format & Quoted Key Anti-Pattern) | Using IntegerLongValue property & raw integer keys vs synthetic field names and string quotes |

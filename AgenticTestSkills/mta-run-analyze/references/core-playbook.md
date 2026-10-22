@@ -148,6 +148,46 @@ Before outputting your response or executing any tool call, mentally verify thes
 
 ---
 
+
+---
+
+## 🔒 TEST-DRIVEN BUG FIXING (TDBF) & UNTOUCHABLE ORACLE LIFECYCLE (`PAT-124`, `ANTI-78`)
+
+When resolving defects or regressions via bug reproduction (`test_intent: "bug_reproduction"`), the system operates under a strict 4-phase lifecycle to ensure test integrity and prevent confirmation bias:
+
+```mermaid
+flowchart TD
+    A["Phase 1: Reproduce Red (BUGFIX_REPRODUCE_RED)"] --> B["Phase 2: Cryptographic Lock (mta-lint lock)"]
+    B --> C["Phase 3: Quarantined Code Repair (CODE_REPAIR_INTERMISSION)"]
+    C --> D["Pre-Run Rebuild Gate (mxcli build / compile)"]
+    D --> E["Phase 4: Verify Green (BUGFIX_VERIFY_GREEN)"]
+    E -- "PASS" --> F["Fix Certified! Unlock & Promote to Regression Suite"]
+    E -- "FAIL (Attempt 1)" --> C
+    E -- "FAIL (Attempt 2)" --> G["Circuit Breaker: Halt & Escalate to User"]
+```
+
+### The 4 Phases of TDBF:
+1. **Phase 1: Reproduce Red (`BUGFIX_REPRODUCE_RED`):**
+   - The agent drafts an Execution Plan derived strictly from the external bug report or user failure description (`PAT-121`), setting `expected_pre_fix_outcome: "FAIL"`.
+   - Test is dispatched via `MTA_plugin.execute-testcase` (or Option B persistent container).
+   - **Inverted Evaluation Protocol:** An assertion failure (`FAIL_ASSERTION_MISMATCH` or `FAIL_VALIDATION_ERROR`) is evaluated as **SUCCESSFUL_BUG_REPRODUCTION**. Unexpected passes or unhandled runtime crashes (`FAIL_RUNTIME_EXCEPTION`) reject reproduction.
+
+2. **Phase 2: Cryptographic Lock & Seal:**
+   - In Agentic Mode with Node: Agent executes `node tools/mta-lint.mjs lock <plan.md>`, stamping `protection_level: "locked"` and `locked_sha256`. The one-way latch forbids further writes without `--force`.
+   - In Agentic Mode without Node: Agent stamps `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` in Section 1 and strictly respects the Directory Write Quarantine.
+   - In Chat Mode (MAIA): Verbatim Payload Replay Law applies; the JSON payload emitted in Phase 1 is re-sent identically in Phase 4.
+
+3. **Phase 3: Quarantined Code Repair (`CODE_REPAIR_INTERMISSION`):**
+   - **Directory Write Quarantine:** Modifying or touching files in `${execution_plans_dir}/` is **STRICTLY PROHIBITED**.
+   - **MTA Mutating Tool Quarantine:** Mutating MTA tools (`EditTestCase`, `EditTestStep`, `Create*`) are strictly prohibited.
+   - Code fixes occur exclusively in the Mendix application model (Studio Pro MCP or user edits).
+
+4. **Phase 4: Verify Green (`BUGFIX_VERIFY_GREEN`):**
+   - **Bytecode Desync Gate:** Before dispatch, confirm Mendix code compilation / model rebuild.
+   - **Tamper Verification:** Execute `node tools/mta-lint.mjs verify-lock <plan.md>` (fails with `LOCKED_TEST_TAMPERED` if altered).
+   - Re-dispatch the test. If `PASS`, the bug fix is certified! The test can now be converted to `test_intent: "regression"` and promoted to the permanent regression suite.
+   - **2-Cycle Escalation Circuit Breaker:** If the test fails after 2 fix attempts, halt and escalate diagnostics to the user.
+
 ## 🗄️ BIFURCATED MODEL DISCOVERY PROTOCOL (`PAT-71`)
 
 To achieve maximum model discovery performance and eliminate multi-turn latency cascades (`ANTI-26`), test design enforces the bifurcated model inspection protocol:

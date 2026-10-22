@@ -1,8 +1,8 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.10.0"
-changes: "Added mta-lint self-test and config verification to workspace health checks."
+version: "1.11.0"
+changes: "Updated state machine for setup/discovery and aligned workspace health checks."
 ---
 
 # MTA Installation & Configuration Skill
@@ -41,7 +41,7 @@ This skill is triggered by instructions or queries containing:
 ## 🧠 MTA INSTALLATION PRE-RESPONSE SELF-AUDIT
 *Immediately before responding to any user setup or installation query, the AI assistant MUST mentally run this 5-point self-audit checklist to guarantee execution accuracy:*
 1.  **Did I verify the target Mendix version?** Ensure the target Mendix Studio Pro version meets the minimum requirements for the MTA Plugin.
-2.  **Did I output the State Header?** I **must** prefix the top of my response with the current `Active Setup State` and `Next Destination State` headers.
+2.  **Did I output the State Header?** I **must** prefix the top of my response with the canonical State Header: `[State: STATE_DISCOVERY | Temp State: SETUP_STEP_1..4 | Active Skill: mta-install-config]`.
 3.  **Did I respect module optionality?** I **must** explicitly clarify that *Menditect Commons* is optional and *Playwright/Frontend Testkit* are strictly required for Frontend tests only.
 4.  **Did I enforce the Playwright Driver-Bundle Version Law?** I **must** refuse to guess or assume a Playwright `.jar` driver version.
 5.  **Did I include Success Verification?** I **must** provide the concrete success checking checklist for the current state before declaring it complete.

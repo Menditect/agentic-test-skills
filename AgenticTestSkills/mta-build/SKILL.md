@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.40.1"
-changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDocument response schema."
+version: "6.41.0"
+changes: "Unified Execution Plan to canonical 6-section schema (v2.0.0), updated state machine for build, and aligned tool discovery with Studio Pro MCP."
 ---
 
 # MTA Build, Design, & Optimization Skill
@@ -26,10 +26,23 @@ changes: "Corrected AssociationOwner enum to Both and documented TCEX_RS_FileDoc
 
 ## Test Construction & Execution Pattern Registry
 
+### 1.1 Sub-State Machine & Tool Whitelist Table (`STATE_CONSTRUCTION`)
+
+Active test construction in `STATE_CONSTRUCTION` is partitioned into five distinct, sequential sub-states (reflected in `Temp State`):
+
+| Sub-State (`Temp State`) | Permitted Mutating Tools | Prohibited Tools | Next Sub-State / Transition Trigger |
+| :--- | :--- | :--- | :--- |
+| **`SKELETON_PROVISIONING`** | `CreateTestCase`, `SetSequenceOfTestCase`, `CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, `GenerateMicroflowCallTestStepLocateWidget`, `GenerateMicroflowCallTestStepLocatePage`, `SetSequenceOfTestStep` | All `Edit*`, `AddTestCaseVariationItem`, `CreateTestCaseVariation`, `ExecuteTest` | All planned steps created in chronological sequence via predecessor forward chaining (`PAT-11`). Transition to `BATCH_INCLUSION`. |
+| **`BATCH_INCLUSION`** | `EditAttributeValue(IncludeAttribute)`, `EditTestStepRetrieve(SetRetrieveOption)`, `CreateAssertMicroflowReturnValue`, `CreateAssertObjectCount`, `CreateAssertValidationFeedbackMessageCompare`, `CreateAssertValidationFeedbackMessageCount`, `CreateAssertException`, `AddTestCaseVariationItem(EnableTestCaseDatavariation)` (if Scenarios $\ge 2$) | Value setters (`SetStringValue`, etc.), `EditMicroflowParameterValue`, `CreateTestCaseVariation`, `ExecuteTest` | All attributes, retrieve modes, assertions included, and variations enabled (if Scenarios $\ge 2$). Transition to `Mid-Phase Bulk Sync` (`GetTestCaseDetails`). |
+| **`BATCH_BINDING`** | `EditAttributeValue(Set*Value, SetTestStepOutput*)`, `EditAttributeValueFilter(Set*Value)`, `CreateSelectObjectForAssociation`, `EditTestStepAssociation`, `EditMicroflowParameterValue`, `EditMicroflowObjectParameter`, `EditAssert*`, `EditTestStep(SetDescription, ExecutionCondition, ResumeExecutionAfterException, Highlight)`, `AddTestCaseVariationItem` (all variation items concurrently if Scenarios $\ge 2$) | Container allocators (`CreateTestCaseVariation`, `Create*TestStep`), `ExecuteTest` | All parameters, values, associations, annotations bound, and variation items registered. Transition to `VARIATION_ALLOCATION` (if Scenarios $\ge 2$) or advance case loop / `STATE_SMOKE_AUDIT` (if single scenario). |
+| **`VARIATION_ALLOCATION`** | `CreateTestCaseVariation` (concurrently for Scenarios $2..N$ in 1 turn, `PAT-86`), `EditTestCaseVariation(SetName, SetDescription)` | Step creation/editing tools, cell value setters (`TCVA`), `ExecuteTest` | All scenario containers allocated and snapshot captured via single `GetTestCaseDetails` (`PAT-87`). Transition to `VARIATION_POPULATION`. |
+| **`VARIATION_POPULATION`** | `EditAttributeValue(TCVA cell overrides)`, `EditMicroflowParameterValue`, `EditAssert*(TCVA cell overrides)`, `EditTestCaseVariation` | Step creation/deletion tools, container allocation (`CreateTestCaseVariation`), `ExecuteTest` | All cells populated across all scenarios in safe chunks (15-20 calls/turn). Transition to next case in loop ($i+1$) or to `STATE_SMOKE_AUDIT`. |
+
 You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` and `references/golden-rules.md` at all times. Here is the checklist of active construction boundaries:
 1. **No conversational refusals [^PAT-51]**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual or general questions.
 2. **Deterministic Horizontal Layered Construction Protocol [^PAT-85] [^PAT-16] [^PAT-78] [^PAT-86] [^PAT-87] [^PAT-117] [^ANTI-05] [^ANTI-32] [^ANTI-39] [^ANTI-40]**:
-   * Construct all test steps horizontally across layers (Phase 1 Skeleton Provisioning -> Phase 2A Bulk Inclusion -> Mid-Phase Sync [^PAT-117] -> Phase 2B Bulk Binding -> Phase 3 Variation Registration -> Phase 4 Variation Population) rather than vertically step-by-step (`ANTI-39`).
+   * Construct all test steps horizontally across layers (Phase 1 Skeleton Provisioning -> Phase 2A Bulk Inclusion -> Mid-Phase Sync [^PAT-117] -> Phase 2B Bulk Binding -> Phase 3A Variation Allocation -> Phase 3B Variation Population) rather than vertically step-by-step (`ANTI-39`).
+   * In multi-case suites (e.g. Frontend Setup ➔ Action ➔ Teardown), execute cases sequentially in a case loop ($i=1..M$) so that upstream output handles (e.g. Case 1 setup objects) are in-memory before downstream cases bind them (`Option 3B`).
    * Follow the complete step-by-step pipeline, safe batch sizing, and scenario column batching detailed in **`references/construction-sop.md`**.
    * Call `GetTestCaseDetails(TestCaseKey)` **EXACTLY ONCE** during Mid-Phase Bulk Sync (`PAT-117`). Calling `GetTeststepDetails` in a loop across individual steps is strictly prohibited (`ANTI-32`, `ANTI-39`).
    * **Strict 4-Step Partial Failure Handling:** Because MTA MCP tools do not support server-side atomic transactions, if an individual call fails within a batch, do NOT abort the build or discard earlier steps. Follow the 4-step recovery flow:
@@ -51,10 +64,10 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
 11. **🚫 STRICT DATA VARIATION PROMOTION & EXHAUSTIVE CELL RECONCILIATION LAW [^PAT-19] [^PAT-27] [^PAT-54] [^PAT-77] [^ANTI-08] [^ANTI-11] [^ANTI-31]**: 
     *   **Proactive Variation Identification:** For all Backend tests, you **MUST** actively seek to use MTA **Data Variations** rather than designing or proposing separate, duplicate test cases that only modify input data. Proposing duplicate test cases with different inputs is a severe quality violation (`ANTI-08`).
     *   **Consolidate to a Single Test Structure:** If multiple scenarios (e.g. happy path, boundary values, invalid inputs) can be tested using the same sequential step sequence, you **MUST** design a single, reusable test case structure and enable Data Variations to define a variation matrix (`PAT-19`).
-    *   **Zero Disconnect Execution Plan Variation Item Lock (`PAT-110`, `ANTI-32`, `ANTI-59`):** The Data Variation Items registered on the server via `AddTestCaseVariationItem` **MUST strictly match** the variation items declared in Section 7 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, assertion, or conceptual boolean flag to the variation matrix that is not explicitly declared as a variation item in the approved plan (`ANTI-32`, `ANTI-59`).
+    *   **Zero Disconnect Execution Plan Variation Item Lock (`PAT-110`, `ANTI-32`, `ANTI-59`):** The Data Variation Items registered on the server via `AddTestCaseVariationItem` **MUST strictly match** the variation items declared in Section 4 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). You are **strictly prohibited** from improvising or adding any attribute, parameter, retrieve filter, assertion, or conceptual boolean flag to the variation matrix that is not explicitly declared as a variation item in the approved plan (`ANTI-32`, `ANTI-59`).
     *   **Mandatory Variation Container Metadata & Description Persistence (`PAT-77`, `ANTI-31`):** When creating or promoting data variations, you **MUST** configure both the Name and Description on the MTA server for every variation container:
         1. *Template Variation (Scenario #1):* Upon calling `AddTestCaseVariationItem (Action="EnableTestCaseDatavariation")`, immediately call `EditTestCaseVariation (SetName)(TemplateVariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(TemplateVariationKey, Description)`.
-        2. *Duplicated Variations (Scenarios #2..#N):* For each column created via `CreateTestCaseVariation`, immediately call `EditTestCaseVariation (SetName)(NewVariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(NewVariationKey, Description)` matching Section 7 of the Execution Plan. Leaving descriptions empty or unpersisted on the server is strictly prohibited (`ANTI-31`).
+        2. *Duplicated Variations (Scenarios #2..#N):* For each column created via `CreateTestCaseVariation`, immediately call `EditTestCaseVariation (SetName)(NewVariationKey, Name)` AND `EditTestCaseVariation (SetDescription)(NewVariationKey, Description)` matching Section 4 of the Execution Plan. Leaving descriptions empty or unpersisted on the server is strictly prohibited (`ANTI-31`).
     *   **Exhaustive $M \times N$ Matrix Cell Reconciliation Law (`PAT-54`, `ANTI-11`):** Calling `CreateTestCaseVariation` ONLY allocates a new variation column container. It DOES NOT set scenario values. You are strictly prohibited from performing "delta-only overrides" or assuming copied columns inherit correct values (`ANTI-11`). After duplicating columns and setting container metadata (`PAT-77`), you MUST call `GetTestCaseDetails`, iterate through **EVERY SINGLE CELL $(i, j)$** in the $M \times N$ matrix, compare the live MTA value against the Execution Plan matrix, and explicitly call the setter tool for every cell that does not match (`PAT-54`).
     *   **Dual Retrieve/Filter Empty Object Law (Data Variations) [^PAT-07]:** In MTA Data Variations, step structure and association setters are fixed across all variations. You **CANNOT** set or unset an association directly inside a Data Variation item. To dynamically vary between a valid object and an `empty` (NULL) object across variations:
         1. *For Microflow Parameters:* Create a Retrieve/Filter step filtering on a target attribute (e.g. `LicensePlate`). Set filter = `'VALID'` for valid object variations, or `'NONE'` / `'NULL'` for null object variations (strictly complying with the Universal Short Sentinel Law [^PAT-53] using <=4-char values). Pass the Retrieve step output to the microflow parameter.
@@ -71,7 +84,7 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   **Escape Hatch:** If a critical technical identifier, parameter name, or domain model detail is discovered to be missing from the Execution Plan during tool binding, you are permitted to make a targeted `mxcli` query (e.g. `DESCRIBE MICROFLOW` or `SHOW ENTITY`) to resolve it, and you MUST patch the local Execution Plan markdown file to maintain SSOT integrity.
 16. **Allowed Operational States for Parameter Setters & AALC Assertions [^PAT-48]**:
     *   Do not call parameter setters, custom association builders, output binding tools, and assertions during planning, discovery, or placement states.
-    *   These tools are exclusively permitted inside **`[State: STATE_CONSTRUCTION | Temp State: BATCH_BINDING]`**.
+    *   These tools are exclusively permitted inside **`[State: STATE_CONSTRUCTION | Temp State: BATCH_BINDING]`** (for base values, step parameters, or updates originating from `STATE_SELF_REPAIR`) and **`[State: STATE_CONSTRUCTION | Temp State: VARIATION_POPULATION]`** (for scenario cell overrides).
 17. **Post-Batch Construction Verification [^PAT-49]**:
     *   **The Guardrail:** During `[STATE_CONSTRUCTION]`, do NOT halt incrementally after every single step.
     *   **The Action:** After dispatching all concurrent setters and bindings during the `BATCH_BINDING` phase, verify the test case bulk via `GetTestCaseDetails` before finalizing the state transition.
@@ -103,12 +116,15 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   When sequence reordering is required, dispatch calls sequentially one-by-one across separate turns, or eliminate them entirely by constructing steps forward in correct sequence order from the start (`PAT-11`).
     *   > [!IMPORTANT]
     *   > **Scope Clarification:** The restriction in `ANTI-44` applies **exclusively to sequence reordering** (`SetSequenceOfTestStep`, `SetSequenceOfTestCase`). Independent cell setters (`EditAttributeValue`, `EditMicroflowParameterValue`, `EditAssert*`) and scenario allocations (`CreateTestCaseVariation`) do not manipulate list ordinals and **MUST** be dispatched in concurrent batches (`PAT-86`, `PAT-87`, `ANTI-77`).
-26. **Step Decommissioning & Failure Recovery Protocol [^PAT-115] [^ANTI-64]**:
+26. **Two-Tier Step Recovery & Decommissioning Protocol [^PAT-115] [^ANTI-64]**:
     *   Because the MTA MCP server lacks a `DeleteTestStep` API tool, when a test step fails to configure or is discovered to be invalid during construction (e.g. `ErrorNr: 21` due to locator type mismatch):
-        1. *Neutralize:* Set `ExecutionCondition = "Skip"` via `EditTestStep` so the runner bypasses it.
-        2. *Rename & Annotate:* Rename the step title to prefix `[TO DELETE]` (e.g. `[TO DELETE] Step 203 - ACT_SelectOption_DropDown`) and annotate the description with `[Pattern: PAT-DEPRECATE-STEP - Decommissioned due to <reason>; replaced by Step <M>]`.
-        3. *Construct Replacement:* Build the correct replacement step forward in the chain.
-        4. *Smoke Audit Reconciliation:* In Section 9 / Checkpoint 3, record the step with status `⚠️ SKIPPED (PAT-115 Decommissioned)` and append the Manual Cleanup Recommendation box for user deletion in Studio Pro (`ANTI-64`).
+        - **Tier 1 (Non-Destructive Attribute/Parameter Correction):** Call `EditAttributeValue(EditAction="ExcludeAttribute")` or re-execute the specific setter tool (`EditMicroflowParameterValue`, `EditAttributeValueFilter`) to overwrite the value without decommissioning the entire step.
+        - **Tier 2 (In-Place Step Decommissioning - Hard Lock Recovery):**
+          1. *Neutralize:* Set `ExecutionCondition = "Skip"` via `EditTestStep`. Note: MTA's native compiler invalidates downstream handles referencing skipped steps, raising `TCER_TestConstructionErrors > 0` if broken handles remain.
+          2. *Highlight & Rename:* Call `EditTestStep` with `Highlight = "_True"` (blue highlight in MTA Web UI), prefix `[TO DELETE]` to `TestStepName` (e.g. `[TO DELETE] Step 203 - ACT_SelectOption_DropDown`), and annotate description with `[Pattern: PAT-DEPRECATE-STEP (PAT-115) - Decommissioned due to <reason>; replaced by Step <M>]`.
+          3. *Strict Limit (Max 1 Step):* A maximum of **1 decommissioned step** is permitted per build container. If 2 or more steps are corrupted, abort and escalate to user.
+          4. *Construct Replacement:* Build the correct replacement step forward in the chain.
+          5. *Active-Step Alignment & Audit Reconciliation:* Smoke audit and linters exclude decommissioned steps (`isDecommissioned`), matching `activeServerSteps` 1:1 against planned steps (`PAT-59`, `PAT-88`). In Section 9 / Checkpoint 3, record the step with status `⚠️ SKIPPED (PAT-115 Decommissioned)` and append the Manual Cleanup Recommendation box for user deletion in Studio Pro (`ANTI-64`).
 27. **Playwright Fast Execution Default [^PAT-116] [^ANTI-65]**:
     *   When provisioning `LocalStartOptions` (Step 101) for Frontend UI testing, leave `SlowMo` omitted / `0 ms` by default. Do NOT inject artificial delay unless the user explicitly requested visual slow-motion debugging.
 28. **Prohibition of Existing Suite Reverse-Engineering & Anchoring [^ANTI-66] [^PAT-71]**:
@@ -132,12 +148,13 @@ You **MUST** strictly follow the Golden Rules defined in `references/core-playbo
     *   Before calling ANY MTA creation or mutation tool (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, `CreateMicroflowCallTestStep`, `GenerateMicroflowCallTestStepLocateWidget`, `Edit*`, `Set*`, `Add*`), the agent MUST verify that Gate 2 (Checkpoint 2: Placement & Target Summary) has been explicitly presented to the user in chat and approved.
     *   If entering `STATE_CONSTRUCTION` without an approved Checkpoint 2 in transcript context, the agent **MUST HALT** and output Checkpoint 2 (Target Test Suite Name, Target Application Instance, Browser Engine, Headless Mode, and Application Target Web URL).
     *   Transitioning directly into construction or calling mutation tools without explicit user approval at Checkpoint 2 is strictly prohibited (`ANTI-56`).
-32. **Mandatory 1-to-1 Plan-to-MTA Case Mapping [RULE_3_CASE_SUITE_MAPPING, ^PAT-03, ^PAT-44]**:
+32. **Mandatory 1-to-1 Plan-to-MTA Case Mapping & Option 3B Sequential Case Construction Loop [RULE_3_CASE_SUITE_MAPPING, ^PAT-03, ^PAT-44]**:
     *   When building an Execution Plan (`EP_*.md`) that defines a multi-case or 3-case architecture (Case 1: Setup, Case 2: Playwright Execution, Case 3: Teardown), the agent MUST create exactly 3 separate Test Cases inside the target Test Suite on MTA:
         1. `EP_<Name> - Case 1: Setup` (Seeding, browser start options, `ExecutionCondition="Always"`, `ResumeExecutionAfterException="_Continue"`)
         2. `EP_<Name> - Case 2: Playwright Execution` (UI navigation, interactions, assertions)
         3. `EP_<Name> - Case 3: Teardown` (Delete seeded data, cleanup, `ExecutionCondition="Always"`, `ResumeExecutionAfterException="_Continue"`)
     *   Shunting setup, Playwright execution, and teardown steps into a single monolithic MTA Test Case is strictly prohibited. Steps defined for Case 1 must be created inside Case 1's `TestCaseKey`, steps for Case 2 inside Case 2's `TestCaseKey`, and steps for Case 3 inside Case 3's `TestCaseKey`.
+    *   **Option 3B Sequential Case Construction Loop:** Multi-case suites MUST execute the construction pipeline sequentially case-by-case (Case 1 ➔ Case 2 ➔ Case 3). Case 1 MUST complete Phase 1, Phase 2A, Sync, and Phase 2B before Case 2 steps are created. This ensures all Case 1 seeded output handles (`TestStepOutputKey`) are resolved in memory and immediately available for Case 2 UI assertions and Case 3 teardown deletions without uncommitted dependency errors.
 33. **High-Level Widget Generator Priority [RULE_USE_WIDGET_GENERATORS, ^PAT-64]**:
     *   For all Playwright widget locator steps targeting standard Mendix widgets (`TextBox`, `DropDown`, `DatePicker`, `ReferenceSelector`, `Button`, `CheckBox`, `RadioButtons`, `ComboBox`, etc.), the agent MUST use the dedicated MTA generator tool **`GenerateMicroflowCallTestStepLocateWidget`** (or **`GenerateMicroflowCallTestStepLocatePage`**).
     *   Iterative loops of low-level primitive calls (`CreateMicroflowCallTestStep` -> `GetTeststepDetails` -> `EditMicroflowParameterValue` -> `EditMicroflowObjectParameter`) cause context clutter and are strictly prohibited for standard widget locators. Manual parameter editing is reserved exclusively for custom business microflows.
@@ -179,7 +196,7 @@ To maximize token efficiency, **DO NOT load reference files preemptively**, exce
 | *Execution conditions, cascading skip/provider, rollback defaults* | **`references/execution-settings.md`** |
 | *Approved execution plan structure, section schema, or variation layout* | **`references/execution-plan-template.md`** |
 | *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Auditing step sequences, validating all 200 testing patterns/anti-patterns (`PAT-01..123`, `ANTI-01..77`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
+| *Auditing step sequences, validating all 202 testing patterns/anti-patterns (`PAT-01..124`, `ANTI-01..78`), auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
 | *Step building, layered construction, batching tool calls, variation population SOP* | **`references/construction-sop.md`** |
 | *Promoted exploratory tests, TCEX_RQ to MTA construction transformer (`PAT-70`)* | **`references/mta-plugin-mcp-schema.md`** |
 
@@ -197,7 +214,7 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 > *Note: `Phase 1: STATE_BUILD_PLANNING` is exclusively owned by `mta-test-design`. This skill assumes an approved Execution Plan is already available.*
 
 1. **Phase 2: `STATE_CONSTRUCTION`**
-   - *State Header:* `[State: STATE_CONSTRUCTION | Temp State: [SKELETON_PROVISIONING | BATCH_INCLUSION | BATCH_BINDING | VARIATION_REGISTRATION | VARIATION_POPULATION] | Active Skill: mta-build]`
+   - *State Header:* `[State: STATE_CONSTRUCTION | Temp State: [SKELETON_PROVISIONING | BATCH_INCLUSION | BATCH_BINDING | VARIATION_ALLOCATION | VARIATION_POPULATION] (Case X/Y) | Active Skill: mta-build]`
    - *Milestone:* Actively construct test steps, option bindings, parameters, and assertions on the server (unlocked only if an approved Execution Plan is saved locally or verified in chat context).
     - **Mandatory 5-Point Semantic Audit Protocol (`PAT-07`, `PAT-80`, `PAT-06`, `ANTI-52`, `PAT-19`, `PAT-78`, `PAT-107`, `ANTI-57`):**
       > [!CRITICAL]
@@ -206,8 +223,8 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
       > 1. **Retrieve Option & Predecessor Handle Binding (`PAT-07`, `PAT-80`):** For all in-memory `RetrieveObjects` steps, assert `OactRetrieveOption == "From_memory_database"` (or `"By_teststep"`) and assert `SOFR_SelectObjectForRetrieve.TestStepOutputKey` is explicitly bound to the producer step key.
       > 2. **Retrieve Attribute Filters (`PAT-07`):** If the plan specifies scalar filters on Retrieve steps (e.g., `Size == 'Small'`, `LicensePlate == 'TST-001'`), verify that `ATVL_AttributeValues` contains the filter attribute with `FilterComparisonOperator: "Equal"`.
       > 3. **Association Ownership (`PAT-06`, `ANTI-52`):** Verify that `SOFA_SelectObjectForAssociations` is bound on the owner entity and references the retrieved object handle.
-      > 4. **Data Variation Item Count & Target Parity (`PAT-19`, `PAT-78`):** Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 7 of the Execution Plan, and each item maps to the correct target (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute).
-      > 5. **Cell-by-Cell Variation Matrix Parity (`PAT-107`, `ANTI-57`):** Verify that all scenario names, descriptions, overridden values, and empty/null flags (`SetValueToEmpty: "_True"`, `'NONE'`) match Section 7 cell-by-cell.
+      > 4. **Data Variation Item Count & Target Parity (`PAT-19`, `PAT-78`):** Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 4 of the Execution Plan, and each item maps to the correct target (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute).
+      > 5. **Cell-by-Cell Variation Matrix Parity (`PAT-107`, `ANTI-57`):** Verify that all scenario names, descriptions, overridden values, and empty/null flags (`SetValueToEmpty: "_True"`, `'NONE'`) match Section 4 cell-by-cell.
       - **Step 0: Pre-Construction Plan Integrity, Ingestion, Placement Gating & Drift Check (PAT-43, PAT-44, PAT-89, PAT-106, ANTI-56):**
         *   **Agentic Mode:** Read the local Execution Plan `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/` or path in `mta_state.json`). Inspect metadata block (supporting `<details><summary><b>Execution Plan Metadata</b></summary>`, legacy `<details><summary><b>Execution Plan Provenance & Sealed Headers</b></summary>`, and legacy top-level YAML frontmatter) to extract `plan_id`, `schema_version`, `revision`, `status`, `approved_at`, `approved_by`, `approver_system_user`, `target_configuration`, `target_configuration_key`, `target_suite`, `target_suite_key`, and `supersedes_plan_id`. Compare against `execution_plan_id`, `execution_plan_revision`, and `execution_plan_approved_at` recorded in `mta_state.json`.
         *   **🛑 Missing Placement Gate Invariant (PAT-43, PAT-106, ANTI-56):** If `target_configuration_key` or `target_suite_key` is null/unresolved (e.g. promoting an Option A exploratory test or drafting offline during an MTA server outage without Gate 2 placement), you are **strictly prohibited** from calling mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.). Immediately hand off to `mta-test-design` (`PLAN_STEP_2: Placement Discovery`) to query `GetApplicationDetails` / `GetTestConfigurationDetails` / `GetExecutionUsers` on the MTA server, present Checkpoint 2 (Placement & Target Summary Box), and obtain Gate 2 approval before proceeding with construction.
@@ -231,18 +248,17 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
             - **Phase 2A (`BATCH_INCLUSION`):** Concurrently dispatch attribute inclusions, retrieve filters, and assertions in safe batches (15-20 calls/turn, `ANTI-32`).
             - **Mid-Phase Sync:** Single `GetTestCaseDetails` call to capture all generated keys.
             - **Phase 2B (`BATCH_BINDING`):** Concurrently dispatch value bindings, parameters, associations, and pattern annotations in safe batches (15-20 calls/turn, `ANTI-32`).
-            - **Phase 3 (`VARIATION_REGISTRATION`):** Concurrently register planned variation items from Section 7 of the Execution Plan in safe batches (`ANTI-32`).
-             - **Phase 4 (`VARIATION_POPULATION`):**
-                1. **Upfront Topology Inspection & Recovery:** Query `GetTestCaseDetails(TestCaseKey)` before allocating containers. Inspect existing `TestCaseVariation` entries to detect any partial state from an interrupted previous turn.
-                2. **Idempotent Delta Column Allocation:** If scenarios $1..k$ already exist on the server, allocate ONLY the missing scenarios $k+1..N$ via `CreateTestCaseVariation`. Never issue duplicate `CreateTestCaseVariation` calls for already existing scenario names.
-                3. **Capture Matrix Snapshot:** Single `GetTestCaseDetails(TestCaseKey)` call to capture newly created `TestCaseVariationKey` identifiers.
-                4. **Mandatory CoT Variation Key Mapping Table:** Output a markdown table mapping each `TestCaseVariationKey` to its corresponding Scenario Name and Item Keys from Section 7 of the Execution Plan. Calling cell setter tools before outputting this mapping table is strictly prohibited.
-                5. **Safe Scenario Chunking & Progress Receipts:** Dispatch cell updates grouped by scenario column. Batch cell updates in safe chunks of 15 to 20 tool calls per turn (`ANTI-32`). Output turn-by-turn progress receipts (`"Updated rows 1-2 across scenarios 1-6; proceeding to rows 3-4"`). For empty/null values, pass `SetValueToEmpty="_True"`. Maintain safe chunking until all $M \times N$ cells are populated.
+            - **Phase 2A & 2B (`BATCH_INCLUSION` & `BATCH_BINDING` - Option 1A):** If Scenarios $\ge 2$, include `EnableTestCaseDatavariation` in Phase 2A and batch-register all planned variation items concurrently in Phase 2B (`Option 1A`).
+            - **Phase 3A (`VARIATION_ALLOCATION`):** Verify pre-clone item parity (`TCVI_TestCaseVariationItems.length == plannedItems.length`), dispatch `CreateTestCaseVariation` for ALL remaining scenarios ($2..N$) in 1 single turn (`PAT-86`), and capture snapshot via single `GetTestCaseDetails` (`PAT-87`).
+            - **Phase 3B (`VARIATION_POPULATION`):**
+                1. **Compact CoT Key Mapping (Option 4A):** In `🧠 Tool Execution Reasoning`, emit a compact map: `Scenario #K [VarKey]: { TargetName: ItemKey }`. Giant markdown tables in chat are strictly prohibited.
+                2. **Safe Scenario Chunking:** Dispatch cell updates grouped by scenario column in safe chunks of 15 to 20 tool calls per turn (`ANTI-32`). For empty/null values, pass `SetValueToEmpty="_True"`. Maintain safe chunking until all $M \times N$ cells are populated.
         *   **Chat Mode / Mendix MAIA:** When mutating tools or filesystem access is unavailable, generate the exact, complete JSON payloads and parameters to execute. In Mendix MAIA, if active MTA mutating tools are connected, execute them natively; if not or in pure chat, output the exact payloads for manual execution.
 
 3. **Phase 3: `STATE_SMOKE_AUDIT`**
    - *State Header:* `[State: STATE_SMOKE_AUDIT | Temp State: None | Active Skill: mta-build]`
    - *Milestone:* Execute the **Native 4-Phase Deterministic Smoke Audit** against the approved Execution Plan and the live server state (`GetTestCaseDetails`), verify 0 construction discrepancies, 0 missing data variations, and 0 compiler errors, seal the Execution Plan receipt, and output the Post-Construction Smoke Audit Report.
+   - *Circuit Breaker:* Maximum of **2 repair rollback cycles** to `STATE_CONSTRUCTION` are allowed before mandatory human escalation.
    
    - **Native 4-Phase Deterministic Smoke Audit Protocol (`PAT-59`, `PAT-88`, `PAT-107`, `ANTI-57`):**
      To eliminate attention fatigue and prevent hallucinated matches on large JSON payloads, the audit must proceed through four discrete, sequential verification phases:
@@ -250,7 +266,7 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
      *   **Phase 1: Step Ledger Reconciliation (Count & Keys)**
          1. Query `GetTestCaseDetails(TestCaseKey)`.
          2. Extract the server `steps` array.
-         3. Evaluate: $\text{Count}(\text{Server Steps}) == \text{Count}(\text{Planned Steps in Master Step Ledger})$.
+         3. Evaluate: $\text{Count}(\text{Active Server Steps excluding [TO DELETE]}) == \text{Count}(\text{Planned Steps in Master Step Ledger})$.
          4. Output the **Step Reconciliation Table** mapping every planned step to its built server key:
             ```markdown
             | Case # | Planned Step # | Planned Step Name / Action | Built MTA Step Key | Action Type | Status |
@@ -263,23 +279,23 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 
      *   **Phase 2: Variation Item Registration Ledger**
          1. Inspect `TCVI_TestCaseVariationItems` from `GetTestCaseDetails`.
-         2. For every row declared in Section 7 of the Execution Plan:
+         2. For every row declared in Section 4 of the Execution Plan:
             - Verify that an item exists pointing to the target step and target attribute/parameter/assertion key.
             - Record the live `TestCaseVariationItemKey`.
          3. Output the **Variation Item Registration Table**:
             ```markdown
-            | Section 7 Row Name | Target Step | Target Attribute / Parameter | Built MTA Item Key | Status |
+            | Section 4 Row Name | Target Step | Target Attribute / Parameter | Built MTA Item Key | Status |
             | :--- | :--- | :--- | :---: | :---: |
             | `Step 1: Entity.Attribute` | Step 6503 | `AttributeValueKey: 1201` | Item 4501 | ✅ REGISTERED |
             | `Step 3: Assert Return` | Step 6510 | `AssertReturnCompareKey: 1202` | Item 4502 | ✅ REGISTERED |
             ```
-         *Variation Item Hard Gate:* If any row from Section 7 has no registered variation item (`❌ UNREGISTERED`), the audit **MUST FAIL** immediately with status `MISSING_DATA_VARIATION_DISCREPANCY (Unregistered Item: [Row Name])`. Construction must resume to register missing items (`AddTestCaseVariationItem`).
+         *Variation Item Hard Gate:* If any row from Section 4 has no registered variation item (`❌ UNREGISTERED`), the audit **MUST FAIL** immediately with status `MISSING_DATA_VARIATION_DISCREPANCY (Unregistered Item: [Row Name])`. Construction must resume to register missing items (`AddTestCaseVariationItem`).
 
      *   **Phase 3: Scenario Metadata & Description Ledger**
          1. Inspect the `TestCaseVariation` array from `GetTestCaseDetails`.
-         2. Verify that the server column count matches Section 7 ($\text{Built Columns} == \text{Planned Columns}$).
+         2. Verify that the server column count matches Section 4 ($\text{Built Columns} == \text{Planned Columns}$).
          3. For every scenario column, verify:
-            - `Name` matches Section 7 exactly.
+            - `Name` matches Section 4 exactly.
             - `Description` is non-empty and provides scenario context (`PAT-77`, `ANTI-31`).
          4. Output the **Scenario Metadata Table**:
             ```markdown
@@ -292,7 +308,7 @@ This skill is activated and coordinated by the global orchestrator (`agents.md`)
 
      *   **Phase 4: Exhaustive $M \times N$ Cell Parity Ledger**
          1. Inspect `TCVA_TestCaseVariationValues` from `GetTestCaseDetails`.
-         2. Verify every cell coordinate $(i, j)$ against Section 7 of the Execution Plan:
+         2. Verify every cell coordinate $(i, j)$ against Section 4 of the Execution Plan:
             - Value matches the planned scenario value.
             - For empty/null fields, verify `SetValueToEmpty == "_True"`.
          3. Output the **Cell Parity Verification Summary**:

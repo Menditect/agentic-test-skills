@@ -1,7 +1,7 @@
 # Standardized MTA Execution Plan Blueprint
 
 **📍 Location:** `references/execution-plan-template.md` | **🏠 Parent:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) / [MTA Build Skill](../../mta-build/SKILL.md)  
-*Patterns Enforced: `PAT-06`, `PAT-07`, `PAT-08`, `PAT-11`, `PAT-12`, `PAT-18`, `PAT-34`, `PAT-43`, `PAT-44`, `PAT-54`, `PAT-59`, `PAT-60`, `PAT-64`, `PAT-67`, `PAT-77`, `PAT-82`, `PAT-88`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `PAT-95`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-03`, `ANTI-20`, `ANTI-21`, `ANTI-31`, `ANTI-32`, `ANTI-36`, `ANTI-42`, `ANTI-43`, `ANTI-44`, `ANTI-48`, `ANTI-57`, `ANTI-59`, `ANTI-60`*
+*Patterns Enforced: `PAT-06`, `PAT-07`, `PAT-08`, `PAT-11`, `PAT-12`, `PAT-18`, `PAT-34`, `PAT-43`, `PAT-44`, `PAT-54`, `PAT-59`, `PAT-60`, `PAT-64`, `PAT-67`, `PAT-77`, `PAT-82`, `PAT-88`, `PAT-91`, `PAT-92`, `PAT-93`, `PAT-94`, `PAT-95`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-03`, `ANTI-20`, `ANTI-21`, `ANTI-31`, `ANTI-32`, `ANTI-36`, `ANTI-42`, `ANTI-43`, `ANTI-44`, `ANTI-48`, `ANTI-57`, `ANTI-59`, `ANTI-60`, `PAT-124`, `ANTI-78`*
 
 This document defines the canonical layout and schema for an approved MTA Execution Plan (`EP_<TestCaseName>.md`). Both `mta-test-design` (during plan generation) and `mta-build` (during pre-construction ingestion and post-construction smoke auditing) MUST adhere to this exact specification.
 
@@ -30,6 +30,14 @@ test_type: "Unit"
 execution_target: "MTA_plugin"
 rollback: "Yes"
 status: "DRAFT"
+test_intent: "regression"            # regression | exploratory_robustness | exploratory_feature | bug_reproduction
+expected_pre_fix_outcome: "PASS"     # PASS | FAIL (strictly FAIL for bug_reproduction)
+protection_level: "unlocked"         # unlocked | locked (sealed by mta-lint lock)
+locked_sha256: null                  # 64-character SHA-256 hash when locked
+spec_source:
+  type: "user_story"                 # user_story | bug_report | jira_ticket | prompt_spec
+  reference: "TICKET-123"
+  summary: "Verified functional expectation"
 created_at: "2026-10-01T12:00:00Z"
 author: "Antigravity"
 linter_verified: true
@@ -47,6 +55,12 @@ test_case_keys: []
 * **Functional Scope:** [Clear description of functional requirements and behaviors being validated]
 * **Robustness & Edge Cases:** [Boundary values, null/empty parameters, and edge scenarios tested]
 * **Database Isolation:** [Execution settings, e.g. Backend Unit test with automatic in-memory rollback (`RollbackTcseAfterExecution = "Yes"`), or Frontend test with Case 1 synthetic seed & Case 3 reverse teardown]
+
+### 🔒 IMMUTABLE_ASSERTION_ANCHOR (Bug Reproduction Only)
+```markdown
+### 🔒 IMMUTABLE_ASSERTION_ANCHOR: TARGET=[ModuleName].[MicroflowName] | ASSERT_EQUAL=[ExpectedValue]
+```
+*(Mandatory for `test_intent: "bug_reproduction"`. Verifies that target return assertion is permanently bound to the external bug specification and protected from tampering.)*
 
 ## 2. Component Under Test
 *The Mendix microflow or page being verified, including its inputs and expected return.*

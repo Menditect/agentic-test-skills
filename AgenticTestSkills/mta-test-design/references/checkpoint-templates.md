@@ -254,6 +254,37 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 
 ---
 
+
+---
+
+### Case 6: Test-Driven Bug Reproduction & Oracle Locking (Intent: bug_reproduction) (`PAT-124`, `ANTI-78`)
+
+```markdown
+---
+
+## 🚦 CHECKPOINT 1: TEST PLAN REVIEW & BUG REPRODUCTION STRATEGY
+
+> [!IMPORTANT]
+> **Test-Driven Bug Fixing Mode Active (`PAT-124`):** Bug Reproduction & Untouchable Oracle Sealing
+> * **Target Bug / Issue:** <spec_source.reference>: <spec_source.summary>
+> * **Pre-Fix Expected Outcome:** Overall Result: `FAIL` (Expected failure on business assertion: <AssertionTarget> == <ExpectedValue>)
+> * **Tamper Protection:** Cryptographic Lock via `mta-lint lock` (`locked_sha256`) + Directory Write Quarantine.
+
+### 🧭 Execution Strategy Availability
+
+| Strategy Option | Target Environment | Status | Description |
+| :--- | :--- | :---: | :--- |
+| **Option A: Local In-Memory Reproduction** | Local App (`MTA_plugin`) | **`ACTIVE`** | Executes in-memory with JVM rollback (`~2s`) to confirm baseline failure reproduces. |
+| **Option B: Persistent MTA Test Case** | MTA Server Platform | **`ACTIVE`** | Constructs persistent test case in MTA Platform before code repair. |
+
+### 💬 Decision Required:
+> **Do you approve this Bug Reproduction Plan?**
+> - **[Reproduce Bug (Red)]** ➔ Execute in-memory test now to confirm baseline failure reproduces against live code.
+> - **[Adjust Bug Spec]** ➔ Refine expected values or scenario parameters if the failure expectation needs adjustment.
+> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before executing.
+---
+```
+
 ### Frontend UI Tests Policy Notice (`PAT-62`)
 For Frontend UI tests (`Category == Frontend`), browser test steps drive Playwright sessions on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`:
 - **When `MTA` Server is Active:** Tests route exclusively to **Option B (Persistent MTA Platform)**:
