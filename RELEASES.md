@@ -4,7 +4,6 @@ This page lists all the releases of the Menditect Agentic Test Skills, with link
 
 | Release Version | Date | Key Highlights / Release Message |
 | :--- | :--- | :--- |
-| [v4.39.0](releases/v4.39.0.md) | 2026-10-15 | Set StudioPro MCP to preferred model source and improve state model for auto-execute |
 | [v1.28.0](releases/v1.28.0.md) | 2026-10-27 | hardened state model with better linting |
 | [v1.27.0](releases/v1.27.0.md) | 2026-10-22 | feat(release): release v1.27.0 - improved state model for build and bug fixing |
 | [v1.26.7](releases/v1.26.7.md) | 2026-10-20 | fixed error in MTA plugin handling of system image and documents |
