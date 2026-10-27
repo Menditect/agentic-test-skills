@@ -28,16 +28,25 @@ N. **Microflow Call:** `MenditectMxFrontendTestKit.Stop_MxFrontendTest` (`Page` 
 
 ### Case 3: Browser Teardown & Domain Cleanup (`Always` / `_Continue`)
 1. **Microflow Call:** `MenditectPlaywrightConnector.Teardown_Playwright` (Mandatory: releases browser processes and node driver).
-2..N. **Transactional Domain Cleanup:** Delete/clean up test data seeded in Case 1.
+2. **Runtime Transactional Entities Retrieval & Deletion (PAT-92, ANTI-43):** When a frontend test completes a workflow that commits new domain entities (e.g. Booking, Order), Case 3 teardown MUST retrieve the runtime-created entity (via association to seeded data or synthetic filters) and call `DeleteObject` before deleting seeded master data.
+3..N. **Transactional Domain Cleanup:** Delete/clean up test data seeded in Case 1 via direct handle piping (`DeleteObjects`), followed by trailing batch `Persist`.
 
 ---
 
 ### Universal Rules & Invariants
+*   **The Frontend Transactional Teardown Rule (PAT-92, ANTI-43):** When a frontend test completes a workflow that commits new domain entities (e.g. Booking, Order), Case 3 teardown MUST retrieve the runtime-created entity (via association to seeded data) and call DeleteObject before deleting seeded master data.
 *   **The Options Parameter Rule:** If a frontend/testkit microflow has an Object-type `options` parameter, ALWAYS set it to empty by calling `EditMicroflowObjectParameter(SelectObjectForMicroflowParameterKey, EditAction="SetInputToEmpty")` (or use Options Protocol). Do not leave unbound.
 *   **The Frontend Testkit Default Law (CRITICAL):** For all Mendix applications, the **Menditect Frontend Testkit** (represented by the module `MenditectMxFrontendTestKit`) is the strict default and MUST be used exclusively to construct frontend UI tests. Falling back to low-level Playwright Connector commands (e.g. raw clicks, fills, presses) due to encountering an issue is strictly prohibited, unless the user has explicitly and unambiguously approved this workaround in the active session.
 *   **The Module Packaging Rule:** The Menditect Frontend Testkit (`MenditectMxFrontendTestKit`), Menditect Playwright Connector (`MenditectPlaywrightConnector`), and MTA Commons (`MenditectMtaCommons`) modules are packaged and imported as standard Mendix `.mxmodule` modules.
 *   **The Parent Context Rule:** All child widgets on a Mendix page require an `MxPageLocator` (returned by `Locate_MxPage`) or parent item locator passed as their parent locator (`TestStepProvidesParentWidgetKey`) to resolve selectors.
-*   **The Locate Page/Widget Tool Enforcement Rule:** For microflows that locate a page or a widget, the specialized locate page (`GenerateMicroflowCallTestStepLocatePage`) or locate widget (`GenerateMicroflowCallTestStepLocateWidget`) tool **MUST** be used. Calling these tools registers and sets the microflow to look for the page or widget in MTA. A manual reference to the CSS class of the page or the widget **DOES NOT WORK**. If an error occurs in calling the locate page or locate widget tool, you **MUST STOP AND ASK THE USER FOR INPUT**. Do **NOT** use any fallback strategy.
+*   **The Locate Page/Widget Tool Enforcement Rule (ANTI-79):** For microflows that locate a page or a widget, the specialized locate page (`GenerateMicroflowCallTestStepLocatePage`) or locate widget (`GenerateMicroflowCallTestStepLocateWidget`) tool **MUST** be used. Calling these tools registers and sets the microflow to look for the page or widget in MTA.
+    *   **Page Locator Parameters (ANTI-79):** `PageQualifiedName` MUST specify the fully qualified Mendix page name (e.g., `"CarRentalModule.Home_Renter"`). `PageClassName` MUST specify the clean Mendix simple page name (e.g., `"Home_Renter"`). Passing raw browser DOM or CSS class selectors (such as `'page-content mx-name-CarRentalModule_Home_Renter'`, `'.mx-name-...'`, or `'div.page-content'`) for `PageClassName` **DOES NOT WORK** and is strictly prohibited (`ANTI-79`).
+    *   **Widget Locator Parameters:** Standard page widgets require `IsGlobalWidget="_False"`, `WidgetName`, `PageQualifiedName`, `PageClassName`, and `TestStepProvidesParentWidgetKey` referencing the preceding page locator step.
+    *   **Zero Fallback:** If an error occurs in calling the locate page or locate widget tool, you **MUST STOP AND ASK THE USER FOR INPUT**. Do **NOT** use any fallback strategy.
+*   **The Frontend Authentication Startup Decision Law (PAT-125, ANTI-81):** When planning or constructing frontend tests, agents MUST inspect Mendix Project Security (guest access enabled / anonymous user) and Navigation Profiles (default homepage) before selecting the session startup microflow:
+    *   If the target workflow starts on an anonymously accessible page (guest access allowed), use `Start_MxFrontend_Test_Without_Login`.
+    *   Only use `Start_MxFrontend_Test_With_Login` if the target workflow requires user authentication.
+    *   When `Start_MxFrontend_Test_With_Login` is used, credentials MUST correspond to a verified demo user or execution user. Setting dummy or hallucinated passwords (such as `'1'`, `'123'`, `'password'`) is strictly prohibited (`ANTI-81`).
 *   **The BrowserType Enumeration Law (CRITICAL):** `BrowserType` is a Mendix **Enumeration**, NOT a standard string.
     *   **Binding Tool:** You **MUST** call `EditMicroflowParameterValue(MicroflowParameterValueKey, EditAction="SetEnumerationValue", EnumerationValue=...)` to bind its value. Calling `"SetStringValue"` is incorrect and will cause an execution-time validation error.
     *   **Literal Value Casing:** Allowed values are strictly PascalCase: `"Chromium"`, `"Firefox"`, or `"Webkit"`. Lowercase variants (like `"chromium"`) will fail validation.
@@ -491,15 +500,15 @@ Every standard action (e.g., `ACT_Fill_TextBox_Input`, `ACT_Click_Button`) or as
 Instead of calling `CreateMicroflowCallTestStep` for locator microflows, you **MUST** call the specialized generator tools. These tools create the step, register the locator output, and configure standard parameters in a single call:
 *   **Locate Page:** Call `GenerateMicroflowCallTestStepLocatePage`
     *   *TestCaseKey:* Key of the test case.
-    *   *PageClassName:* The CSS class name of the target page (e.g., `"MxLoginFormPage"`).
-    *   *PageQualifiedName:* Fully qualified page name (e.g., `"MyModule.MyPage"`).
+    *   *PageQualifiedName:* Fully qualified page name (e.g., `"CarRentalModule.Home_Renter"` or `"Sales.Order_NewEdit"`).
+    *   *PageClassName:* Clean Mendix page name / class name (e.g., `"Home_Renter"` or `"Order_NewEdit"`). **STRICT BAN (ANTI-79):** NEVER pass raw browser DOM or CSS selector strings (such as `'page-content mx-name-CarRentalModule_Home_Renter'`, `'.mx-name-...'`, or `'div.page-content'`). Pass ONLY the clean Mendix page name.
     *   *TestStepProvidesPlaywrightPageKey:* The `TestStepKey` of Case 1's Start Playwright step (the browser session).
 *   **Locate Widget (Container/Page Scoped):** Call `GenerateMicroflowCallTestStepLocateWidget`
     *   *TestCaseKey:* Key of the test case.
     *   *IsGlobalWidget:* `"_False"` (for standard page-scoped widgets).
     *   *WidgetName:* Name of the widget in the Mendix model (e.g., `"username-input"`).
-    *   *PageClassName:* CSS class name of the page.
-    *   *PageQualifiedName:* Fully qualified page name.
+    *   *PageQualifiedName:* Fully qualified page name (e.g., `"CarRentalModule.Home_Renter"`).
+    *   *PageClassName:* Clean Mendix simple page name (e.g., `"Home_Renter"`).
     *   *TestStepProvidesParentWidgetKey:* The `TestStepKey` of the preceding `GenerateMicroflowCallTestStepLocatePage` step (or parent container locator step).
     *   *(Note: For global widgets, set `IsGlobalWidget="_True"`, pass `WidgetType`, and provide `TestStepProvidesPlaywrightPageKey`).*
 

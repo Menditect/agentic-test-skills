@@ -50,20 +50,40 @@ To create and initialize a new test suite from scratch, follow this canonical 4-
 *   **`GetTestConfigurationDetails(TestConfigurationKey)`**: Lists all test suites and metadata under the specified test configuration.
 
 ### 4. ⚡ Step-by-Step Interactive Placement Discovery Law (`PAT-118`, `ANTI-67`)
-To prevent token bloat and silent index-0 defaulting errors (`ANTI-67`), resolve placement interactively using the two-phase gate (`PAT-118`):
+To prevent token bloat, premature construction, and silent index-0 defaulting errors (`ANTI-67`, `ANTI-56`), resolve placement interactively using the two-phase gate (`PAT-118`):
+
+> 🛑 **OPTION B STRATEGY BRANCH GUARD (ANTI-56):**
+> Selecting **Option B (Persistent MTA Test)** in `PLAN_STEP_1` (Checkpoint 1) is strictly an architectural decision—**it is NOT permission to build**. Calling mutating MTA tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.) immediately upon receiving Option B is strictly prohibited (`ANTI-56`). The agent **MUST** proceed to `PLAN_STEP_2` (Placement & Settings Discovery) and compile Checkpoint 2 in `PLAN_STEP_3`.
+
 1.  **Phase 1: Application Resolution & Test Configuration Gate (`PAT-118`, `ANTI-67`)**
     *   Call `GetApplicationDetails(ApplicationName)` to retrieve the `ApplicationKey` and registered `TCNF_TestConfigurations` (and call `GetExecutionUsers` concurrently).
-    *   **Configuration Count Evaluation:**
+    *   **Configuration Count & Mismatch Evaluation:**
         - **If `configurations.length == 0` (Zero Configuration Escape Branch):** Do NOT call `GetTestConfigurationDetails` or guess keys (no configurations exist and no MCP creation tool exists). Inform the user that 0 Test Configurations are registered under this Application in the MTA Platform, provide a clickable link to create one in the MTA Web UI (`[mta_base_url]/p/Application/[ApplicationKey]`), retain the Execution Plan as `status: "DRAFT"` on disk, and offer Option A (in-memory execution via plugin) in the interim.
         - **If specified in prompt or active plan:** Fast-path directly to that configuration and proceed to Phase 2.
         - **If `configurations.length == 1`:** Auto-select the sole configuration and proceed immediately to Phase 2.
-        - **If `configurations.length > 1` (Unspecified):** Strictly **FORBID** calling `GetTestConfigurationDetails` or guessing index 0 in the same turn (`ANTI-67`). The agent **MUST HALT** and present an explicit interactive selection to the user (via `ask_question` modal where available, or a numbered markdown list in chat) displaying all available configuration names and keys.
-2.  **Phase 2: Targeted Test Suite Scan & Selection**
-    *   Only after the user confirms their chosen configuration (or after auto-selection), call `GetTestConfigurationDetails(selectedConfigurationKey)` to inspect available test suites.
+        - **If `configurations.length > 1` (Unspecified) OR Configuration Mismatch:** If multiple configurations exist, or if `mta_config.json`'s `default_app_instance` does not exist on MTA Cloud, strictly **FORBID** guessing index 0 or calling `GetTestConfigurationDetails` in the same turn (`ANTI-67`). The agent **MUST HALT** and present an explicit interactive selection to the user using the `ask_question` modal (or a numbered markdown list in chat):
+          ```json
+          {
+            "questions": [
+              {
+                "question": "Which active MTA Test Configuration should be targeted for this test case?",
+                "options": [
+                  "(Recommended) mta-trial-1 (Key: 131)",
+                  "mta-trial-3 (Key: 133)"
+                ],
+                "is_multi_select": false
+              }
+            ]
+          }
+          ```
+2.  **Phase 2: Targeted Test Suite Scan & Selection (`PAT-123`, `ANTI-76`)**
+    *   Only after the user confirms their chosen configuration (or after single-config auto-selection), call `GetTestConfigurationDetails(selectedConfigurationKey)` to inspect available test suites.
+    *   **Frontend Test Settings Elicitation (if Frontend UI Test):** For all Frontend UI tests entering Phase 2, dispatch `ask_question` to gather Playwright execution settings (Browser engine, Headless vs Headed mode, and SlowMo delay) per [execution-settings.md](execution-settings.md) prior to Checkpoint 2 presentation.
     *   Compile and display the **Placement & Target Summary Box** (Checkpoint 2, `PAT-79`) including configuration provenance count (e.g. `Selected from N available configurations`). Present choices and **HALT** for Gate 2 sign-off.
     *   *Intra-State Placement Loop:* If the user rejects or requests a different configuration or suite at Checkpoint 2 (Gate 2), re-enter Phase 1 or Phase 2 within `STATE_BUILD_PLANNING` (`PLAN_STEP_3` ➔ `PLAN_STEP_2`) rather than resetting the entire session to `STATE_DISCOVERY`.
 3.  **Phase 3: Test Case Scan & Pre-Construction Audit (`PAT-101`)**
     *   Call `GetTestSuiteDetails(TestSuiteKey)` to inspect test cases and verify name uniqueness before container creation (`PAT-101`).
+    *   **Pre-Approval Metadata Lock Gate:** An Execution Plan can only transition from `status: "DRAFT"` to `status: "APPROVED"` when `target_configuration_key` and `target_suite_key` are populated with verified numeric IDs. If these keys are `null`, mutating tools (`CreateTestCase`, etc.) remain hard-blocked.
 
 ---
 
@@ -207,13 +227,14 @@ Upon receiving explicit user approval for Gate 2 at the end of `STATE_BUILD_PLAN
 
         ```yaml
         plan_id: "<TestCaseName>-v<revision>"
-        schema_version: "1.2.0"
+        schema_version: "2.0.0"
         supersedes_plan_id: "<TestCaseName>-v<old_revision> | null"
         revision: 1
-        status: "APPROVED"
-        approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
-        approved_by: "<UserEmailOrName>"
-        approver_system_user: "<OSUsername>"
+        status: "DRAFT" # Initial creation status. Transitions to "APPROVED" only after explicit user sign-off.
+        approved_at: null # Populated upon Gate 1 & Gate 2 human approval
+        approved_by: null # Populated upon Gate 1 & Gate 2 human approval
+        approval_turn_id: null # Populated upon Gate 1 & Gate 2 human approval
+        approver_system_user: null # Populated upon Gate 1 & Gate 2 human approval
         build_started_at: null
         built_at: null
         builder_system_user: null

@@ -117,10 +117,10 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-11`: Predecessor Forward Chaining Law
 * **Scope:** General | **Classification:** Platform API Quirk
-* **Description:** Dictates that when creating test steps sequentially via MTA MCP tools, each step must pass the non-zero database key returned by the immediately preceding step as its `TestStepBeforeKey` parameter to ensure strict chronological ordering (for piping) in the MTA database.
+* **Description:** Dictates that when creating ordered entities in MTA (Test Suites within a configuration, Test Cases within a suite, or Test Steps within a case), each newly created item MUST be explicitly forward-chained to its immediate predecessor. Because MTA APIs default to prepending to Position 1 (head insertion) whenever `*BeforeKey` is omitted or passed as `0`, creating items in chronological order ($1 \to 2 \to \dots \to N$) without predecessor anchors results in an upside-down container in exact reverse order ($N \to \dots \to 2 \to 1$). Across the three tiers: (1) **Test Steps:** Step 1 passes `TestStepBeforeKey = 0` (or omitted); Step $N$ ($N \ge 2$) MUST pass `TestStepBeforeKey = Step(N-1)Key` directly in `Create*TestStep` / `Generate*`. (2) **Test Cases:** Case 1 passes `TestCaseBeforeKey = 0` (or omitted); Case $N$ ($N \ge 2$) MUST pass `TestCaseBeforeKey = Case(N-1)Key` directly in `CreateTestCase`, completely eliminating retroactive reordering roundtrips. (3) **Test Suites:** Because `CreateTestSuite` lacks a `TestSuiteBeforeKey` parameter, multiple suites MUST be immediately sequenced upon creation via `SetSequenceOfTestSuite(TestSuiteKey = SuiteNKey, TestSuiteBeforeKey = Suite(N-1)Key)`. Establishing sequence order deterministically at creation time is mandatory; retroactive batch reordering is strictly prohibited (`ANTI-44`).
 * **Related Rules:**
-  * **Related Patterns:** `PAT-15` (The Predecessor `0` Rule), `PAT-16` (Sequential Step Execution Ban).
-  * **Direct Counterpart Anti-Pattern:** `ANTI-05` (Parallel / Batched Creation in Same Container).
+  * **Related Patterns:** `PAT-15` (The Predecessor `0` Rule), `PAT-16` (Sequential Step Execution Ban), `PAT-78` (Two-Phase Skeleton & Batch Binding Law).
+  * **Direct Counterpart Anti-Pattern:** `ANTI-05` (Parallel / Batched Creation in Same Container), `ANTI-44` (Parallel Sequence Reordering Anti-Pattern).
 
 ---
 
@@ -391,6 +391,7 @@ For each rule, this document outlines its scope, category, detailed operational 
   4. **Parameter Binding Rule:** Downstream microflow parameter bindings MUST be mapped to the **Retrieve step's output handle**, NEVER directly to the upstream Create step.
   5. **Pattern Recipes:** Can be implemented via the Standard Pattern (fixed dummy filter attribute), Alternative Pattern A (Same-Attribute neutral baseline), or Alternative Pattern B (Different-Attribute coordination).
   6. **Self-Documenting Step Naming Law:** Test steps implementing this pattern MUST be named `Create <Entity> for empty object pattern in datavariation` and `Retrieve <Entity> for empty object pattern in datavariation`. Internal terminology like "Sentinel" is strictly prohibited in step names (`PAT-55`).
+  7. **Backend Logic vs. Data Provisioning Boundary (`PAT-70`, `ANTI-48`):** The `PAT-07` sentinel retrieve pattern is **mandatory and default** for all Backend Logic and Unit Tests taking entity parameters or testing entity associations, guaranteeing that null/empty boundaries can be varied without restructuring steps. Conversely, pure Standalone Data Provisioning (`test_intent: "data_seeding"`) generating valid business records with direct object associations (e.g. `Car_Location = locHandle`) is **EXEMPT** from intermediate sentinel retrieves, phantom null scenarios, and direct association blocking. `PAT-07` is activated in data seeding ONLY if the prompt or variation matrix explicitly specifies generating records with unassigned (`empty`) associations.
 * **Related Rules:**
   * **Related Patterns:** `PAT-08` (Retrieve Output Object Count Assertion), `PAT-19` (Data Variation Consolidation), `PAT-31` (Retrieve-for-Asserting Set & Count Law), `PAT-53` (Domain Model Attribute Length & Constraint Verification).
 
@@ -914,7 +915,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 ### `PAT-70`: Data Script & Manual Scenario to MTA Conversion Protocol
 * **Scope:** General | **Classification:** Methodological Law
 * **Description:** Governs converting live test data provisioning / seeding scripts (`TCEX_RQ`) and verified manual test scenarios into persistent MTA Platform assets. Strictly mandates the **Universal Execution Plan Law** (`PAT-43`): no data script may bypass the `# MTA EXECUTION PLAN SIGN-OFF` (Gate 1) and Placement Discovery (Gate 2). Whenever a data script is ready for persistent conversion, the agent MUST present an explicit 3-choice menu with clear educational explanations:
-  1. *Option 1: Standalone Data Seeding Test Case (Persistent Data Generator)* - Generates a Backend Execution Plan (1 Case: Data Seeding, direct attribute and association bindings, trailing `Persist`, **NO teardown steps in this test case** so records remain available in the database for manual QA, demos, or downstream tests; Section 6 Playwright is marked NA).
+  1. *Option 1: Standalone Data Seeding Test Case (Persistent Data Generator)* - Generates a Backend Execution Plan (1 Case: Data Seeding, direct attribute and association bindings onto `CreateObjectActionTestStep` handles, trailing `Persist`, execution settings `None / Stop`, **NO teardown steps in this test case** so records remain available in the database for manual QA, demos, or downstream tests; Section 6 Playwright is marked NA). Pure data provisioning is exempt from `PAT-07` sentinel retrieves and phantom empty scenarios unless unassigned associations are explicitly requested.
   2. *Option 2: Automated Frontend Test Suite (3-Case UI Pattern)* - Transitions to `mta-test-design` to prompt for the target page, executes single-pass page AST discovery (`PAT-72`), presents the full 10-setting Playwright table, and generates a Frontend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Playwright UI Actions` using `MenditectMxFrontendTestKit`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`).
   3. *Option 3: Automated Backend Integration Suite (3-Case Backend Pattern)* - Prompts for target backend logic, performs catalog-first discovery or `DESCRIBE MICROFLOW` (`PAT-71`), and generates a Backend Execution Plan (`Case 1: Setup Data Seed` with `_Always`/`_Continue`, `Case 2: Microflow Calls & Assertions`, `Case 3: Teardown Cleanup` with cascading delete and `_Always`/`_Continue`; Section 6 Playwright is marked NA).
 * **Related Rules:**
@@ -1310,9 +1311,9 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-44`: Parallel Sequence Reordering Anti-Pattern
 * **Scope:** General | **Classification:** Platform Anti-Pattern
-* **Description:** Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls in parallel within the same turn, or misinterpreting `TestStepBeforeKey = 0` as a tail append instead of head insertion. Reordering operations modify ordinal list positions against uncommitted database state; concurrent execution causes transaction race conditions and inverted sequence order in Mendix. Sequence modification calls MUST be executed sequentially one-by-one or eliminated entirely by constructing steps forward in correct sequence order from the start (`PAT-11`). If full re-indexing of an existing test case is necessary, execute `SetSequenceOfTestStep(stepKey, 0)` in deterministic reverse order (from Step N down to Step 1).
+* **Description:** Dispatching multiple `SetSequenceOfTestStep` or `SetSequenceOfTestCase` calls in parallel within the same turn, or falling into retroactive reordering churn because elements were created without predecessor forward chaining (`PAT-11`). Reordering operations modify ordinal list positions against uncommitted database state; concurrent execution causes transaction race conditions and inverted sequence order in Mendix. Misinterpreting `*BeforeKey = 0` as a tail append instead of head insertion further scrambles ordering. Sequence modification calls MUST be eliminated entirely by forward-chaining items at creation time (`PAT-11` across Suites, Cases, Steps). If sequence reordering of an existing container is unavoidable, calls MUST be executed strictly sequentially one-by-one, or by executing `SetSequenceOfTestStep(stepKey, 0)` in deterministic reverse order (from Step N down to Step 1).
 * **Related Rules:**
-  * **Related Patterns:** `PAT-11` (Forward Predecessor Chaining), `PAT-15` (The Predecessor `0` Rule), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
+  * **Related Patterns:** `PAT-11` (Predecessor Forward Chaining Law), `PAT-15` (The Predecessor `0` Rule), `PAT-78` (Two-Phase Skeleton & Batch Binding Law), `PAT-85` (Horizontal Layered Construction & Safe Cross-Step Batching Law).
   * **Related Anti-Patterns:** `ANTI-32` (Chatterbox Sequential Setter Anti-Pattern), `ANTI-39` (Vertical Per-Step Interleaving Anti-Pattern).
 
 ---
@@ -1601,7 +1602,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `PAT-113`: Vendor Tool & Skill Immutability Law
 * **Scope:** General | **Classification:** Methodological Law
-* **Description:** Upstream tools (`tools/mta-lint.mjs`, `mxcli`) and official skills (`.agent/skills/` / `skills/`) are managed by Menditect upstream and automatically overwritten during updates (`npm run update`). Direct modification of `tools/mta-lint.mjs` or official skills in consumer workspaces is strictly prohibited (`ANTI-62`). When a local bug fix, custom check, or false-positive bypass is required, agents MUST: (1) Copy `tools/mta-lint.mjs` to `tools/mta-lint.custom.mjs`, (2) Apply fixes exclusively to `tools/mta-lint.custom.mjs`, (3) Execute via `tools/run-linter.mjs`, and (4) Proactively initiate the Upstream Feedback & Contribution Protocol by offering to submit a Pull Request to `Menditect/agentic-test-workspace` or `Menditect/agentic-test-skills`, or outputting a structured bug report email template addressed to `support@menditect.com`.
+* **Description:** Upstream tools (`tools/mta-lint.mjs`, `mxcli`) and official skills (`.agent/skills/` / `skills/`) are managed by Menditect upstream and automatically overwritten during updates (`npm run update`). AI agents must treat `tools/mta-lint.mjs` and official skills as strictly immutable read-only software (`ANTI-62`). Creating or modifying local linter overrides (e.g. `mta-lint.custom.mjs`) or editing linter rules to force an audit pass is strictly prohibited. If a linter check fails, agents MUST either: (1) Correct the Execution Plan (`EP_*.md`) to comply with the standard, or (2) Proactively report true linter bugs or false positives to the user and upstream maintainers by offering a Pull Request to `Menditect/agentic-test-workspace` (for linters/tools) or `Menditect/agentic-test-skills` (for skills), or outputting a structured bug report email template addressed to `support@menditect.com`. Never edit or override the linter.
 * **Related Rules:**
   * **Direct Counterpart Anti-Pattern:** `ANTI-62` (Vendor Tool & Skill Tampering Anti-Pattern).
   * **Related Patterns:** `PAT-01` (Test Scoping & Pyramid Layer Alignment), `PAT-45` (Mandatory Tool Execution Reasoning Chain of Thought).
@@ -1611,7 +1612,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### `ANTI-62`: Vendor Tool & Skill Tampering Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Directly modifying upstream vendor tools (`tools/mta-lint.mjs`, `mxcli`) or official skills in consumer workspaces. Any direct edits are fragile and will be silently overwritten by upstream package updates (`npm run update`), causing lost customizations, broken linting pipelines, and unreproducible testing behavior. Custom rules or fixes must be isolated in `.custom.mjs` extension files and contributed upstream.
+* **Description:** Directly modifying upstream vendor tools (`tools/mta-lint.mjs`, `mxcli`), official skills, or creating local override files (such as `tools/mta-lint.custom.mjs`) in consumer workspaces to bypass linting errors or force an audit to pass. Modifying the grading engine instead of fixing the test plan undermines testing integrity, masks defects, and violates governance. If a false positive or true tool defect occurs, agents must report the issue upstream (`support@menditect.com`) rather than mutating local tool software.
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-113` (Vendor Tool & Skill Immutability Law).
   * **Related Anti-Patterns:** `ANTI-58` (Ad-Hoc Script MCP Invocation Anti-Pattern).
@@ -1777,6 +1778,16 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### PAT-125: Frontend Authentication Startup Decision Protocol
+* **Scope:** Frontend | **Classification:** Platform Construction Law
+* **Description:** When constructing frontend UI tests, agents MUST inspect Project Security (`Guest Access: true` / anonymous user) and Navigation Profile defaults before choosing the session startup microflow. If the target entry page is accessible to anonymous users (guest flow), agents MUST use `Start_MxFrontend_Test_Without_Login`. Only if the target flow requires authentication may agents use `Start_MxFrontend_Test_With_Login`. When `Start_MxFrontend_Test_With_Login` is used, credentials MUST correspond to a verified demo user or execution user; specifying dummy or hallucinated passwords (e.g. `'1'`, `'123'`, `'password'`) is strictly prohibited.
+* **Core Enforcement:** Inspect security settings and anonymous user access; prevent dummy credentials and unnecessary login flows.
+* **Related Rules:**
+  * **Direct Counterpart Anti-Pattern:** `ANTI-81` (Frontend Authentication Dummy Credentials & Unnecessary Login Anti-Pattern).
+  * **Related Patterns:** `PAT-41` (Anonymous vs. Role Navigation Resolution), `PAT-62` (Frontend Persistent MTA Construction Law).
+
+---
+
 ### `ANTI-68`: Intent Downgrading Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
 * **Description:** Downgrading an exploratory feature or user story test to a simple boundary check (`exploratory_robustness`) or regression test simply to avoid requesting or specifying external ground truth.
@@ -1879,6 +1890,53 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### ANTI-79: Generic Microflow Frontend Locator & Raw DOM Class Anti-Pattern
+* **Scope:** Frontend | **Classification:** Platform Anti-Pattern
+* **Description:** Calling generic microflow execution tools (`CreateMicroflowCallTestStep` or `CallMicroflow`) with microflow `MenditectMxFrontendTestKit.Locate_MxPage` or standard widget locators (`Locate_TextBox`, `Locate_Button`, etc.) rather than MTA's dedicated high-level locator generator tools (`GenerateMicroflowCallTestStepLocatePage` and `GenerateMicroflowCallTestStepLocateWidget`). Generic calls leave internal Playwright locator graph parameters (`Page`, `BrowserContext`, parent widget handles) unbound or empty, causing runtime errors such as `"Page cannot be empty"`.
+* **Root Cause:** Defaulting to generic microflow call steps without leveraging MTA's native high-level Playwright locator generator tools.
+* **Remediation Pattern:** `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law), using `GenerateMicroflowCallTestStepLocatePage` for page locators, `GenerateMicroflowCallTestStepLocateWidget` for standard widget locators, and forward-chaining `Page` / parent widget output keys.
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-64` (Closed Catalog Frontend Testkit Microflow Verification Law).
+  * **Related Patterns:** `PAT-13` (Structural Locator Laws), `PAT-62` (Frontend Persistent MTA Construction Law).
+  * **Related Anti-Patterns:** `ANTI-19` (Trial-and-Error Frontend Execution & Selector Bypass), `ANTI-21` (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern).
+
+---
+
+### ANTI-80: Unverified Status Promotion or Auto-Approve Scope Bypass Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Setting `status: "AUTO_APPROVED"` on Execution Plans that mutate persistent database state (`rollback: "No"`), target Frontend UI tests (`category: "Frontend"`), target the persistent MTA server (`execution_target: "MTA"`), or reproduce defects (`test_intent: "bug_reproduction"`), or promoting an `AUTO_APPROVED` exploratory plan directly into `STATE_CONSTRUCTION` without explicit Gate 2 human sign-off (`status: "APPROVED"`).
+* **Root Cause:** Conflating fast-path in-memory exploratory auto-execution (`Rollback: "Yes"`) with human-approved Gate 1/Gate 2 authorization (`status: "APPROVED"`).
+* **Remediation Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol) and `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
+  * **Related Anti-Patterns:** `ANTI-46` (Unplanned Test Step Construction & Execution Plan Bypass), `ANTI-56` (Unplaced Exploratory Promotion Bypass).
+
+---
+
+### ANTI-81: Frontend Authentication Dummy Credentials & Unnecessary Login Anti-Pattern
+* **Scope:** Frontend | **Classification:** Platform Anti-Pattern
+* **Description:** Using `Start_MxFrontend_Test_With_Login` on entry pages that allow anonymous or guest access, or specifying dummy, placeholder, or hallucinated passwords (such as `'1'`, `'123'`, `'password'`) instead of verified demo user credentials. This leads to authentication failures, brittle test startup, or unnecessary test overhead.
+* **Root Cause:** Assuming every frontend test requires explicit login or guessing trivial dummy passwords without checking project security and demo user configurations.
+* **Remediation Pattern:** `PAT-125` (Frontend Authentication Startup Decision Protocol).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-125` (Frontend Authentication Startup Decision Protocol).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-125` (Frontend Authentication Startup Decision Protocol).
+  * **Related Anti-Patterns:** `ANTI-79` (Generic Microflow Frontend Locator & Raw DOM Class Anti-Pattern).
+
+---
+
+### ANTI-82: Unbounded Discovery & Compaction Starvation Anti-Pattern
+* **Scope:** General | **Classification:** Methodological Anti-Pattern
+* **Description:** Executing more than 3 model discovery queries (`mxcli` / `ped_read_document` / `pg_read_page`) in `PLAN_STEP_1` without flushing the `EP_*.md` draft to disk, or calling `GetApplicationDetails` / `GetTestConfigurationDetails` during `PLAN_STEP_1` before the `EP_*.md` draft is written and linted. This exhausts the LLM context window before any file is persisted to disk, causing context compaction starvation and unapproved Gate 1/2 skips upon session resumption.
+* **Root Cause:** Attempting exhaustive model and MTA server placement discovery in memory before persisting the `status: "DRAFT"` Execution Plan to disk.
+* **Remediation Pattern:** `PAT-89` (File-First Drafting & Chat Summary) and `PAT-43` (Mandatory Dual-Gate Approval Protocol).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-89` (File-First Drafting & Chat Summary), `PAT-43` (Mandatory Dual-Gate Approval Protocol).
+  * **Related Anti-Patterns:** `ANTI-26` (Redundant Exploratory Model Query Cascade), `ANTI-80` (Unverified Status Promotion or Auto-Approve Scope Bypass Anti-Pattern).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |
@@ -1928,6 +1986,7 @@ For each rule, this document outlines its scope, category, detailed operational 
 | **`PAT-62`** (Frontend Persistent MTA Construction Law) | **`ANTI-19`** (Trial-and-Error Frontend Execution & Selector Bypass) | Direct 3-case persistent MTA Platform construction vs exploratory UI trial-and-error |
 | **`PAT-63`** (Backend Exploratory Single-Payload Blueprint) | **`ANTI-20`** (Frontend UI to Backend Microflow Substitution) | Single-payload exploratory plan for backend vs substituting backend microflows in UI tests |
 | **`PAT-64`** (Closed Catalog Frontend Testkit Microflow Verification Law) | **`ANTI-21`** (Frontend Testkit Microflow Invention / Hallucination Anti-Pattern) | Using only verified MenditectMxFrontendTestKit catalog microflows vs inventing synthetic helper microflows |
+| **`PAT-64`** (Closed Catalog Frontend Testkit Microflow Verification Law) | **`ANTI-79`** (Generic Microflow Frontend Locator Anti-Pattern) | Enforcing high-level locator generator tools (`GenerateMicroflowCallTestStepLocatePage`, `GenerateMicroflowCallTestStepLocateWidget`) vs generic microflow step calls causing unbound page errors |
 | **`PAT-66`** (Exhaustive Exploratory Matrix Execution Law) | **`ANTI-22`** (Single-Scenario Exploratory Truncation Anti-Pattern) | Iterating through all data variation rows vs stopping after baseline scenario |
 | **`PAT-67`** (Exhaustive Page & Snippet Input Widget Discovery and Domain Reconciliation Law) | **`ANTI-23`** (Shallow Page Inspection & Form Input Omission Anti-Pattern) | Recursive multi-level widget extraction & domain attribute reconciliation vs omitting nested snippet/tab form inputs |
 | **`PAT-68`** (Live Test Data Provisioning & Manual Test Plan Protocol) | **`ANTI-25`** (Manual UI Data Entry Slog Anti-Pattern) | Automated live data provisioning & manual test plans vs tedious manual UI form typing |

@@ -1,417 +1,67 @@
 ---
 name: mta-test-design
 description: "Onboarding, starting prompts, design, scoping, and planning of test cases for Menditect Test Automation (MTA), answering general testing/prompting questions, exploratory test design, test data provisioning strategies, and performance benchmarking plans. Trigger on keywords: MTA design, test plan, execution plan, exploratory test, exploratory testing, test scoping, data seeding strategy, benchmark plan, create records, create entities, create test data, create data in my app, seed data, populate data, generate records, generate test data."
-version: "6.46.0"
-changes: "Added Tier 4 bug_reproduction intent, PAT-124 Untouchable Oracle locking, and Checkpoint 1 Case 6."
+version: "6.55.0"
+changes: "Explicitly enforced Mode A Studio Pro MCP (list_modules -> ped_read_document) for Ad-Hoc Data Seeding entity resolution and restricted CATALOG.ENTITIES to Mode B offline fallback per PAT-109 and ANTI-75."
 ---
 
 # MTA Test Scoping & Design Skill
 
-## 🚦 Entry Rule: Vague Testing Requests, Exploratory Tests & Ad-Hoc Data Creation Triggers
+## 🧭 State Dispatch Table (`STATE_BUILD_PLANNING`)
 
-### 1. General Vague Testing & Exploratory Test Ingestion:
-If the user's request is vague, exploratory, asks for an exploratory test (e.g. *"run an exploratory test using the MTA_plugin"*), or contains phrases such as:
-- "exploratory test"
-- "run an exploratory test"
-- "exploratory testing"
-- "test using MTA_plugin" / "in-memory test"
-- "test this microflow" / "test this entity"
-- "I want to test this app"
-- "How should I start testing?"
-- "What is the best way to test?"
-- "Where do I begin with testing?"
-- "Show me some prompts for MTA"
+Track progress in the global State Header: `[State: STATE_BUILD_PLANNING | Temp State: <TEMP_STATE> | Active Skill: mta-test-design]`. Detailed walkthroughs for every state live in **`references/mta-scoping-reference.md`**.
 
-Or if an AI agent (like MAIA or another AI) has built or modified software in the Mendix application (detectable by a modified Mendix `.mpr` document, a new Git commit, or upon application startup):
-- **You MUST proactively ask the user if they need automated testing for the newly built/modified software.**
-
-…you MUST load and follow this skill FIRST, before `mta-build` or `mta-run-analyze`.
-Do NOT assume a specific test case or microflow target. 
-**Onboarding Requirement:** You MUST immediately respond by presenting the onboarding guide and copy-pasteable starter prompts from [prompts-templates.md](references/prompts-templates.md#🚀-onboarding--starter-prompts-for-new-users) to make it extremely easy for the user to start successfully. Begin at `STATE_BUILD_PLANNING (PLAN_STEP_1)`.
-
-### 2. Ad-Hoc Data & Entity Creation Ingestion Protocol (`PAT-70`, `ANTI-46`, `PAT-89`):
-If the user's prompt requests creating, seeding, or generating business entities or records—regardless of how conversational, informal, or underspecified—such as:
-- *"create 5 cars with 2 carsizes and 2 locations in my app"*
-- *"seed 3 orders with 2 customers"*
-- *"generate 10 invoices in module Billing"*
-- *"add some test data for products"*
-
-You are **strictly prohibited** from:
-1. Executing tool calls directly to insert data without an Execution Plan (`ANTI-46`).
-2. Asking unstructured, open-ended conversational questions (e.g. "which microflow should I use?").
-3. Bypassing `STATE_BUILD_PLANNING`.
-
-**Mandatory Autonomous Action Protocol:**
-1. **Autonomous Domain Entity Resolution (Single-Pass `mxcli`):** Extract the entity and association nouns (e.g. `cars` -> `Car`, `carsizes` -> `CarSize`, `locations` -> `Location`). Silently execute `mxcli SHOW ENTITIES` (or `SHOW MODULES`) to resolve fully qualified entity names (e.g., `CarRental.Car`, `CarRental.CarSize`, `CarRental.Location`) and their cross-entity associations (`Car_CarSize`, `Car_Location`).
-2. **Draft Standalone Data Seeding Execution Plan (`PAT-70` Option 1):** Immediately draft an `# MTA EXECUTION PLAN SIGN-OFF` (`EP_Seed_<Entity>.md`) with `status: "DRAFT"` in `${execution_plans_dir}/`:
-   - *Profile:* Standalone Data Seeding Test Case (1-Case Generator with trailing `Persist` step and no teardown steps; `Rollback = No`).
-   - *Attribute & Association Init:* Map initial attributes and associations directly onto `CreateObjectActionTestStep(ObjectAction="CreateObject")` (`PAT-06`).
-   - *Data Variations Matrix (Section 7):* Compile the requested counts into a balanced $N$-variation matrix (`VAR_01`..`VAR_0N`) systematically distributing the permutations (e.g., distributing the 2 sizes and 2 locations across the 5 cars).
-3. **Present Checkpoint 1 Decision Card (`PAT-89`):** Render the concise Executive Summary Box (~35 lines) and present the universal execution environment decision (referencing Case 3 in [checkpoint-templates.md](references/checkpoint-templates.md#case-3-for-standalone-data-seeding-plans-ep_seed_entitymd--rollback--no)):
-   - **Option A (Local Direct Seeding):** Dispatches the data seeding payload directly into the running local Mendix JVM via `MTA_plugin.execute-testcase` with `Rollback = No` and trailing batch `Persist`. *Zero server placement/configuration scanning; immediate execution in 1 turn.*
-   - **Option B (Persistent MTA Platform Seeding Test Case):** Constructs a reusable 1-case Data Generator test case on the MTA Server (`Rollback = No`, trailing `Persist`, no teardown) for CI/CD or team use. *Proceeds to `PLAN_STEP_2` for configuration and suite placement.*
-
-### 3. Hierarchical Test Intent Classification & Anti-Tautology Verification Protocol (`PAT-121`):
-To prevent the **Tautological Testing Trap** (where tests merely assert what buggy or incomplete code happens to do, creating confirmation bias), the agent MUST classify test intent and ground truth sources before drafting steps:
-
-1. **The 4-Tier Intent Classification Engine:**
-   * **Tier 1: `regression` (Verified Production Baseline):**
-     * *Baseline:* The live `.mpr` AST is the accepted baseline.
-     * *Supplementary Context:* If external context is available (user stories, docs, Jira), the agent captures it in `supplementary_context` to drive realistic data, scenario naming, and to document any `specification_drift`.
-   * **Tier 2: `exploratory_robustness` (Technical Boundary & Fault Tolerance):**
-     * *Baseline:* Live `.mpr` AST conditional decision splits (`PAT-109`) combined with boundary heuristics (zero, negative, thresholds, null sentinel retrieve `PAT-07`, exception handling).
-     * *Scope:* Verifies code stability and exception resilience under extreme inputs.
-   * **Tier 3: `exploratory_feature` / `tdd` (New or Modified Business Logic):**
-     * *Baseline:* **Mandatory External Specification.** Testing against the AST alone is strictly prohibited. Ground truth must come from a connected MCP tool (`jira_*`, `maia_plan_*`), documentation in `@annotation`, or explicit acceptance criteria provided in the prompt.
-   * **Tier 4: `bug_reproduction` (Test-Driven Bug Fixing / Untouchable Oracle) (`PAT-124`):**
-     * *Baseline:* **External Defect Report / Bug Ticket / Prompt Error Description.** The buggy code AST is explicitly treated as **FLAWED**. Testing against buggy code AST is strictly prohibited. The expected value in assertions MUST come from the bug report or correct business specification, NOT the buggy code return value.
-     * *Outcome Target:* Expected pre-fix outcome is `FAIL` (`expected_pre_fix_outcome: "FAIL"`). The test MUST fail on the buggy code to prove reproduction.
-     * *Locking & Anchoring:* During initial plan drafting in `mta-test-design`, plans with `test_intent: "bug_reproduction"` set `protection_level: "unlocked"` so the plan can be reviewed/executed in Phase 1. The plan is cryptographically sealed and locked (`node tools/mta-lint.mjs lock <plan.md>`) during Phase 2 of `STATE_RUN_ANALYZE` strictly AFTER Phase 1 red verification genuinely confirms `FAIL_ASSERTION_MISMATCH` (`PAT-124`).
-
-
-
-2. **Autonomous Intent Derivation & Linguistic Classifier:**
-   * **Prompt Linguistic Scan:** Prompts containing bug or defect reproduction keywords (*"bug", "issue", "defect", "reproduce", "regression", "broken", "failing test", "wrong value", "crash"*) strictly mandate classification as `bug_reproduction` (`PAT-124`). Prompts containing creation or modification verbs (*"I added", "I implemented", "new logic", "changed", "fixed", "updated", "build a test for this new feature", "test-driven"*) strictly forbid classification as `regression` and mandate `exploratory_feature` or `tdd`.
-   * **Live `.mpr` AST Stub Detection (`PAT-109`):** Before planning, inspect the target via `ped_read_document` (Studio Pro MCP) or `describe microflow <Flow> -p <project.mpr>` (mxcli). If the microflow is empty, contains only start/end nodes, or lacks implementation logic, the agent MUST treat it as a stub and force `tdd` or `exploratory_feature` with mandatory external criteria.
-   * **Connected MCP Server Tool Discovery:** Scan the session's active tool catalog. If tools matching `jira_*`, `atlassian_*`, `maia_plan_*`, or `sprintr_*` are present, autonomously call the relevant tool (e.g. `jira_get_issue`) to fetch acceptance criteria without asking the user to copy-paste.
-   * **The Conservative Gate:** When intent cannot be inferred with certainty (no explicit verbs, no external spec, but the prompt says *"test this microflow"*), the agent MUST halt at Checkpoint 1 with an intent selection card rather than silently guessing `regression`.
-3. **Anti-Loophole Guardrails (`ANTI-68` through `ANTI-72`):**
-   * `ANTI-68` (Intent Downgrading): Downgrading a prompt with modification verbs to `regression` to avoid spec enforcement is strictly prohibited.
-   * `ANTI-69` (Circular Specification): Setting `spec_source.summary` to trivial tautologies (e.g. `/as\s+implemented/i`, `/derived\s+from\s+code/i`) is rejected by the linter.
-   * `ANTI-70` (Rubber-Stamp Risk Matrix): Every risk in `risks_covered` must address non-trivial boundary conditions or failure modes (`null`, `empty`, `exceed`, `unauthorized`, `negative`, `boundary`, `invalid`, `fail`) mapped to concrete scenario columns.
-   * `ANTI-71` (Trivial Prompt Echoing): Prompt criteria summaries must be $\ge 30$ characters and contain conditional outcome keywords (`if`, `when`, `must`, `should`, `equal`, `returns`).
-   * `ANTI-72` (Assertive Softening): Feature test microflow return assertions must assert exact expected scalar values (`Equal`), not merely non-empty or object existence.
-
-### 4. Zero Mendix Model Mutation & Test Microflow Proscription (`PAT-122`, `ANTI-73`):
-AI assistants (including Mendix Studio Pro's MAIA) are strictly forbidden from creating, generating, or modifying Mendix microflows, nanoflows, entities, or pages for testing purposes.
-1. **Testing is Strictly Externalized:** Testing logic is compiled into MTA primitives or executed in-memory via `MTA_plugin.execute-testcase` with automated JVM transaction rollback (`RollbackTcseAfterExecution = "Yes"`).
-2. **Never Build Test Microflows:** Even if an Execution Plan documents test steps, and even if MTA MCP servers or plugins are offline, unreachable, or unconfigured, the agent MUST NEVER translate an Execution Plan into Mendix microflows (e.g. `Test_CalculateDiscount`, `UT_Order`).
-3. **Offline / Outage Fallback:** If neither `MTA` nor `MTA_plugin` is available, save the draft `EP_*.md` to `${execution_plans_dir}/` and HALT with Checkpoint 1 Case 4. Do NOT attempt to build test artifacts in Studio Pro.
-
-This skill helps the user identify what to test by analyzing business requirements (user stories, documentation) and Mendix model changes (commits, microflow typologies, page layouts). It systematically scores both technical and business risks, maps them to the appropriate tier of the MTF Testing Pyramid, and generates build blueprints that serve as structured input prompts for the `mta-build` skill.
+| `Temp State` | Entry Condition | Mandatory Actions & Linter Gate | Allowed Mutating Tools | Next State Transition |
+| :--- | :--- | :--- | :--- | :--- |
+| **`PLAN_STEP_1B`** | Existing `EP_*.md` found in `${execution_plans_dir}/` targeting same flow/page (`PAT-84`, `ANTI-38`), or revising suite in `PLAN_STEP_2` | Run Pre-Flight AST Delta Audit (`ped_read_document` / `pg_read_page` or `mxcli DESCRIBE`); present Lineage Decision Card (`Path 0: As-Is`, `Path A: Evolve`, `Path B: Branch`, `Path C: Clean Slate`) per [checkpoint-templates.md](references/checkpoint-templates.md) | `write_file` / `edit_file` on `EP_*.md` (`status: "DRAFT"`, `revision + 1`, `supersedes_plan_id`) and `mta_state.json`; zero MTA mutating tools | `PLAN_STEP_1` (or `PLAN_STEP_2` if `Path 0`) |
+| **`PLAN_STEP_1`** | New test/seeding request or after `PLAN_STEP_1B` lineage resolution | **Bounded 2-Turn Discovery (`ANTI-82`):** (Turn 1) Read `mta_config.json`, inspect AST (`PAT-109`, `ANTI-75`), optional `GetAppModelData(false,false)` parity probe (`PAT-82`). (Turn 2) Extract DatePicker BSON (`PAT-94`) / domain constraints (`PAT-53`), write `${execution_plans_dir}/EP_<TestCaseName>.md` (`status: "DRAFT"`, `target_*_key: null`), run `node tools/mta-lint.mjs plan` (records `DRAFT_LINTED` in `.mta-gate-ledger.json`), render ~35-line Executive Summary + Checkpoint 1 (`PAT-89`, `ANTI-41`) and **HALT** | `write_file` / `edit_file` on `EP_*.md` (`status: "DRAFT"`) and `mta_state.json`; zero `GetTestSuiteDetails`/`GetTestCaseDetails` (`ANTI-82`, `ANTI-66`) and zero MTA mutating tools (`ANTI-56`) | **Option A Approved:** seal `status: "APPROVED"`, run `mta-lint.mjs pre-exec`, -> `STATE_RUN_ANALYZE` (`STATE_EXPLORATORY_EXECUTION` / `BUGFIX_REPRODUCE_RED` / `STATE_LIVE_DATA_PROVISIONING`). **Option B Selected:** keep `status: "DRAFT"`, -> `PLAN_STEP_2` (`ANTI-56`) |
+| **`FAST_PATH_EXECUTION`** | `Category == "Backend"`, `Target == "MTA_plugin"`, `Rollback == "Yes"`, `mta_config.json.exploratory_execution_mode == "auto_execute"`, `test_intent != "bug_reproduction"`, unambiguous ground truth (`PAT-43`, `PAT-63`, `ANTI-80`) | Write `EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"`, sync `mta_state.json`, run `node tools/mta-lint.mjs pre-exec` (records `AUTO_APPROVED_EXEC`), and dispatch `MTA_plugin.execute-testcase` in the **same turn** without halting at Checkpoint 1 (`ANTI-46`) | `write_file` on `EP_*.md` (`status: "AUTO_APPROVED"`), `mta_state.json`, and `MTA_plugin.execute-testcase`; zero `MTA` platform mutating tools | `STATE_RUN_ANALYZE` (`STATE_EXPLORATORY_EXECUTION`) in same turn |
+| **`PLAN_STEP_2`** | User selects Option B at Checkpoint 1, or promotes from `STATE_RUN_ANALYZE` (`PAT-57`, `PAT-70`, `PAT-106`) | Verify `MTA` MCP server reachable (`PAT-95`); call `GetApplicationDetails` (`PAT-118`: **HALT** via `ask_question` if `configurations.length > 1`, never guess index 0 [`ANTI-67`]); for Frontend elicit 3 Playwright options (`playwright_browser`, `playwright_execution_mode`, `playwright_slow_mo_ms`, `frontend_options_confirmed_by_user: true`); call `GetTestConfigurationDetails` and **HALT** on suite/case collision (`PAT-123`, `ANTI-76`) | Read-only `Get*` tools only; keep `EP_*.md` at `status: "DRAFT"` (or `"AUTO_APPROVED"`); zero `Create*`/`Edit*`/`Set*` tools (`ANTI-56`) | `PLAN_STEP_3` (or `PLAN_STEP_1B` if reusing suite requires structural step updates) |
+| **`PLAN_STEP_3`** | Placement & Playwright settings resolved in `PLAN_STEP_2` | **Turn N (Stage & Halt):** Run `node tools/mta-lint.mjs stage-placement <plan.md> --config-key <K> --suite-key <K\|NEW_SUITE>` (records `PLACEMENT_STAGED` in `.mta-gate-ledger.json`), render **Checkpoint 2: Confirm Test Suite Placement & Settings** (`PAT-43`, `PAT-79`), and **HALT** (`ANTI-80`). **Turn N+1 (After User Replies "Approved"):** Update `EP_*.md` to `status: "APPROVED"` with `approved_by`, `approved_at`, `approval_turn_id`, `target_configuration_key > 0`, `target_suite_key > 0` (or `"NEW_SUITE"`), sync `mta_state.json` (`PAT-44`, `PAT-47`), run `node tools/mta-lint.mjs pre-build <plan.md>` | `write_file` / `edit_file` on `EP_*.md` and `mta_state.json` (sealing `status: "APPROVED"` ONLY in Turn N+1 after user reply); zero MTA mutating tools | `STATE_CONSTRUCTION` (`SKELETON_PROVISIONING` in `mta-build`) |
+| **`STATE_QA_ASSISTANCE`** | Out-of-state QA/architecture question (`PAT-51`) | Answer concisely using `references/*.md` and prompt to return to prior `Temp State` | None (Read-only `Get*` only) | Restore `<PRIOR_TEMP_STATE>` |
 
 ---
 
-## 🧭 THE 3-STEP INTERACTIVE PLANNING LOOP (STATE_BUILD_PLANNING)
-When active under the macro state `STATE_BUILD_PLANNING`, track your current planning progress using the Temp State property in the global State Header:
+## 🚦 Entry Rules & Intent Governance (`references/mta-scoping-reference.md`)
 
-`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_X | Active Skill: mta-test-design]`
-
-You must progress sequentially through these three interactive planning micro-steps to build a rock-solid Execution Plan with dual user approval gates:
-
-### 1. `PLAN_STEP_1: Scoping & Test Specification Drafting (Part 1 - Gate 1 Approval)`
-*   **Action**: Perform `mxcli` model audit, define functional scope, test objectives, authentication/login requirement (*With vs Without Login*), and draft the complete Execution Plan directly to a local `.md` file at `${execution_plans_dir}/EP_<TestCaseName>.md` (resolved from `mta_config.json` > `execution_plans_dir`, falling back to `${MTA_OUTPUT_PATH}/execution-plans/`) with `status: "DRAFT"` (`PAT-89`). In the chat, render ONLY the concise Executive Summary Box (~35 lines), the clickable file link, and the Checkpoint 1 Decision Card (`ANTI-41`).
-*   **📚 Taxonomy Index of MTA Pattern Families (Quick Reference)**:
-    Before designing steps, identify which pattern families apply to your target:
-    - **Test Pyramid & Scoping:** `PAT-01`, `PAT-02`, `PAT-26`, `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-121` (Hierarchical Intent & Anti-Tautology Verification Protocol), `ANTI-02`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-68`..`ANTI-72` (Specification Anti-Loopholes)
-    - **Object Lifecycle & Creation:** `PAT-06` (Direct Init on Create), `PAT-16`, `PAT-95` (Direct Piping Delete), `ANTI-01`, `ANTI-05`
-    - **Retrieve, Filtering & Object Count:** `PAT-07` (Dual Filter/Null), `PAT-08` (Embedded Count Assertion), `ANTI-03`, `ANTI-06`
-    - **Backend Microflow Calling & Assertions:** `PAT-04` (Void Flow Side-Effects), `PAT-10` (Validation Feedback Assertion), `PAT-14` (Embedded Assertions), `PAT-17` (Backend Settings `None`/`Stop`), `PAT-109` (One-Shot Microflow AST Extraction Protocol), `PAT-120` (Validation Feedback Session Isolation & Agent-Side Assertion), `ANTI-07`, `ANTI-10`, `ANTI-13`, `ANTI-14`
-    - **Data Variations & Consolidation:** `PAT-19`, `PAT-27`, `PAT-54`, `PAT-77` (Variation Descriptions), `PAT-86`, `PAT-87`, `PAT-110` (Target-Bound Variation Matrix Schema), `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`, `ANTI-59` (Conceptual Untargeted Matrix Columns)
-    - **Frontend UI Testing & Locators:** `PAT-03` (3-Case Split), `PAT-18` (UI Settings `Always`/`_Continue`), `PAT-41` (Navigation/Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog Testkit), `PAT-67` (Widget Inventory), `PAT-72` (Single-Pass Page AST), `PAT-94` (DatePicker Format via BSON dump), `PAT-114` (Widget-Type-Driven Locator & Action Resolution), `PAT-116` (Playwright Zero SlowMo Default), `PAT-119` (Diagnostic Frontend Validation Feedback & Trigger Sequencing Law), `ANTI-20`, `ANTI-21`, `ANTI-23`, `ANTI-45` (Date Format Guessing), `ANTI-63` (Element Name Widget Guessing), `ANTI-65` (SlowMo Latency Overhead), `ANTI-74` (Premature Validation Assertion)
-    - **Execution Strategy & TDM:** `PAT-60` (Dual-Track), `PAT-63` (Exploratory Single-Payload), `PAT-68`..`PAT-70` (Live Data Seeding/MTP), `PAT-73`..`PAT-76` (Matrix Execution & Telemetry), `PAT-111` (Unified Promotable Blueprint Invariant), `PAT-112` (Free MTA Exploratory License Detection & Consultative Value Protocol), `PAT-120` (Validation Feedback Session Isolation & Agent-Side Assertion Protocol), `ANTI-24`..`ANTI-30`, `ANTI-60` (Unrolled Step Sequence Anti-Pattern), `ANTI-61` (Deceptive Offline Masking & Commercial Spamming Anti-Pattern)
-    - **Governance, Lineage & Verification:** `PAT-43` (Gate Enforcement), `PAT-44` (Plan Sealing), `PAT-82` (14-Point Pre-Approval Audit), `PAT-84` (Plan Lineage), `PAT-88` (Smoke Link Sealing), `PAT-89` (File-First Drafting & Executive Chat Summary), `ANTI-36`, `ANTI-38`, `ANTI-41`
-*   **⚡ Step 0: Mandatory Domain Rule Activation Gate (Before Step Design)**:
-    Before drafting any test steps or execution plan, you MUST classify the test target into its active domain and enforce the corresponding architectural rules:
-    - **Domain 1: Backend Logic (Unit / Integration Tests):**
-      *Activate Rules:* `PAT-06` (Direct Init on Create), `PAT-07` (Dual Filter Sentinels for nulls), `PAT-08` (Embedded Count Assertions), `PAT-10` (Validation Feedback Assertion), `PAT-11` (Ordered Sequential Creation), `PAT-17` (Settings `None`/`Stop`), `PAT-95` (Direct Piping Delete), `PAT-109` (One-Shot AST Extraction), `PAT-110` (Target-Bound Matrix), `PAT-111` (Unified Promotable Blueprint), `PAT-120` (Validation Feedback Session Isolation & Agent-Side Assertion), `ANTI-01`, `ANTI-03`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`.
-      *Validation Feedback Assertions (`PAT-10`, `PAT-120`):* Validation feedback assertions (`Assert Validation Feedback Count`, `Assert Validation Feedback Compare`) are fully supported in both Option A and Option B. In Option A exploratory plans, these assertions are evaluated agent-side using session-isolated dispatches per scenario (`PAT-120`); in Option B persistent plans, they map directly to native MTA assertion steps (`CreateAssertValidationFeedbackMessage*`).
-    - **Domain 2: Frontend UI Flows (Playwright Tests):**
-      *Activate Rules:* `PAT-03` (3-Case Split), `PAT-18` (Settings `Always`/`_Continue`), `PAT-41` (Navigation & Login), `PAT-42` (Date Offsets), `PAT-52` (List Filters), `PAT-64` (Closed Catalog TestKit), `PAT-67` (Widget Inventory), `PAT-72` (Page AST), `PAT-91` (Self-Contained Seeding), `PAT-92` (Symmetric Teardown with Trailing Persist), `PAT-93` (Reverse Dependency Deletion), `PAT-94` (DatePicker Format via BSON dump), `PAT-114` (Widget-Type-Driven Locator & Action Resolution), `PAT-116` (Playwright Zero SlowMo Default), `PAT-119` (Diagnostic Frontend Validation Feedback & Trigger Sequencing Law), `ANTI-20` (No Microflow Substitutions), `ANTI-21`, `ANTI-23`, `ANTI-42`, `ANTI-43`, `ANTI-45` (Date Format Guessing), `ANTI-63` (Element Name Widget Guessing), `ANTI-65` (SlowMo Latency Overhead), `ANTI-74` (Premature Validation Assertion).
-      *Widget Metamodel Verification (`PAT-114`, `ANTI-63`):* Never infer widget types from element names (e.g. `Dropdown_Location` or `Select_Role` may be a Reference Selector, not a DropDown). Query the widget metamodel via `GetAppModelData(RetrieveAction="RetrieveWidgetsByPage")` or `DESCRIBE PAGE <Module.Page>` and select the exact matching locator and action microflow from the Locator & Action Pairing Matrix in `frontend-testing.md`.
-      *Fast Execution SlowMo Default (`PAT-116`, `ANTI-65`):* In Section 6 (Playwright Settings) and Step 101 (`LocalStartOptions`), default `SlowMo = 0 ms` (or omitted). Fast execution is essential for autonomous agent build, smoke audit, and execution cycles. Non-zero SlowMo (e.g. `100 ms`) is strictly opt-in for human visual debugging.
-      *🚨 DatePicker Model Pre-Extraction Mandate (`PAT-94`, `ANTI-45`):*
-      AGENT MANDATE: Before specifying date input values, formatting parameters, or generating Section 4 for any DatePicker widget, the agent MUST inspect the page via Studio Pro MCP (`pg_read_page`) or run:
-      `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json` (targeted `PAT-94` carve-out under `ANTI-75`)
-      and extract the exact `DateFormat` and `CustomDateFormat` properties from `FormattingInfo`. Hardcoding `yyyy-MM-dd`, `MM/dd/yyyy`, or assuming defaults without reading BSON output is strictly prohibited under `ANTI-45`. In the Section 2 Component Under Test (Input Widget Inventory table), the agent MUST document the exact BSON property path (e.g., `Page.widgets[name='datePicker_BirthDate'].formattingInfo.customDateFormat`).
-      *⚡ Diagnostic Frontend Validation Feedback Assertions & Trigger Sequencing Law (`PAT-119`, `ANTI-74`):*
-      - *Diagnostic Utility:* For form fields with validation rules, custom formatting, or required constraints (e.g., DatePickers, Email inputs, Required text boxes), happy-path execution plans SHOULD include diagnostic `ASR_Is_Hidden_MxLocator` assertions on validation message controls, or check validation feedback status after form interaction steps and major wizard step transitions.
-        **Diagnostic Benefit:** If test execution fails due to invalid data, formatting, or missing field inputs, the Playwright test run log will explicitly capture and report the visible validation feedback text (e.g., 'Enter a valid date format dd-MM-yyyy'), enabling instant root-cause identification rather than ambiguous timeout failures on downstream buttons.
-      - *🛑 Validation Trigger Sequencing Law (`PAT-119`, `ANTI-74`):*
-        Form validation feedback assertions MUST be ordered **AFTER** the action button click (or event trigger) that executes form validation (`FormValidations = "All"`).
-        **Canonical 3-Stage Sequence:**
-        1. **Fill Input Widgets:** (`ACT_Set_TextBox_Text`, `ACT_Fill_DatePicker_Input`, `ACT_Set_DropDown_Value`, etc.)
-        2. **Click Submit Action Button:** (`ACT_Click_MxButton` on button with `FormValidations = "All"` such as 'Next', 'Save', or 'Confirm')
-        3. **Locate & Assert Validation Feedback State:** (`Locate_MxWidget_*_ValidationMessage` -> `ASR_Is_Hidden_MxLocator` for happy path, or `ASR_Is_Visible_MxLocator` for negative tests)
-        **Anti-Pattern (`ANTI-74: Premature Validation Assertion`):** Placing validation feedback checks BEFORE the submit Action Button click is strictly prohibited, as validation has not yet been executed by Mendix.
-      - *Two-Tier AST Inspection:* When designing frontend tests, the agent MUST:
-        1. Scan the Page AST (`DESCRIBE PAGE <Module.Page>`) for input widgets and buttons with attached event handlers and verify the trigger configuration (`FormValidations = "All"`, `onChange` on blur/leave, `onEnterPress`).
-        2. Scan the event/action Microflow or Nanoflow AST (`ped_read_document` or `describe microflow <Flow> -p <project.mpr>` / `PAT-109` or Nanoflow inspection) for `ValidationFeedbackAction` activities (`Show Validation Feedback`). If found, map the validated attributes back to page widgets. If no `ValidationFeedbackAction` exists in the flow, do NOT plan validation assertion steps for that event.
-      - *TestKit Validation Message Locators:* Use the dedicated microflow `MenditectMxFrontendTestKit.Locate_MxWidget_[Widgetname]_ValidationMessage` (e.g. `Locate_MxWidget_TextBox_ValidationMessage`, `Locate_MxWidget_DropDown_ValidationMessage`, `Locate_MxWidget_DatePicker_ValidationMessage`, `Locate_MxWidget_ReferenceSelector_ValidationMessage`, `Locate_MxWidget_ComboBox_ValidationMessage`, `Locate_MxWidget_CheckBox_ValidationMessage`, `Locate_MxWidget_RadioButtons_ValidationMessage`) piping the widget locator.
-      - *Assertion Semantics:* Assert negative presence on happy-path tests using `MenditectMxFrontendTestKit.ASR_Is_Hidden_MxLocator` placed post-submit. For deliberate negative fault-injection tests, assert `ASR_Is_Visible_MxLocator` (and `ASR_Has_Text` / message content) on the invalid widget.
-      - *Mandatory Step Description:* Whenever validation message test steps (`Locate_MxWidget_*_ValidationMessage` and `ASR_Is_Hidden_MxLocator` / `ASR_Is_Visible_MxLocator`) are added to an Execution Plan, the agent MUST populate a `Description` field on the test step explicitly documenting why it was added (naming the triggering event microflow/nanoflow or button action and the validated attribute).
-    - **Domain 3: Standalone Test Data Seeding:**
-      *Activate Rules:* `PAT-70` (1-Case Generator), `PAT-06` (Direct Init on Create), `PAT-110` (Target-Bound Matrix), `ANTI-01`, `ANTI-46`.
-    - **Master Step Specification Ledger Schema Mandate (`PAT-12`, `PAT-34`, `PAT-111`, `ANTI-60`):**
-      All planned test steps MUST be documented in a single, definitive Master Step Specification Ledger table in Section 3 (`## 3. Test Steps & Action Sequence`) of `EP_<TestCaseName>.md` per [execution-plan-template.md](references/execution-plan-template.md). Documenting unrolled steps or repeating steps across redundant collapsible blocks is strictly prohibited (`ANTI-60`).
-      - *Adaptive Collapsing Standard:* Backend unit tests (≤15 steps) MUST render Section 3 as an uncollapsed, open table (omitting the redundant Case column) for immediate review. Frontend UI suites (>15 steps across 3 cases) MUST render the uncollapsed **Executive Test Pipeline & Data Flow Table** at the top of Section 3 to make cross-case data contracts immediately visible, followed by the complete 40–50 step master ledger folded inside `<details>`.
-    - **Evidence-Based Pre-Approval Checklist & Negative Anti-Pattern Scan (`PAT-82`):**
-      The 14-point pre-approval checklist in Section 5 (`## 5. Quality & Compliance Checks`) MUST cite concrete structural proof (step numbers, handle variables, sentinel values, and `Association Rows: NONE (Verified)`). The checklist MUST conclude with the 5-point Negative Anti-Pattern Scan certifying zero violations of `ANTI-01`, `ANTI-48`, `ANTI-44`, `ANTI-20`, and `ANTI-75` (verifying model discovery originated strictly from the active tier without cross-mode CLI leakage).
-*   **⚡ Phase 0: Prior Execution Plan Discovery & Tri-Choice Lineage Law (`PAT-84`, `ANTI-38`)**:
-    *   *Silent Discovery:* Before drafting a new Execution Plan, silently search `${execution_plans_dir}/` for any existing `EP_*.md` files targeting the same microflow or page.
-    *   *Pre-Flight AST Delta Audit:* If an existing plan is found, parse its metadata header and run `ped_read_document` (or `mxcli DESCRIBE MICROFLOW` / `DESCRIBE PAGE`) to compare the live AST against Section 4 of the prior plan. Identify added/removed/renamed elements.
-    *   *Lineage Decision Card:* Present the audit summary using the canonical Lineage Decision Card template in [checkpoint-templates.md](references/checkpoint-templates.md#1-⚡-phase-0-prior-plan-lineage-decision-card-pat-84-anti-38) (**Path 0: Use Existing Plan As-Is**, **Path A: Evolve & Supersede**, **Path B: Branch Companion Case**, **Path C: Clean Slate**).
-*   **⚡ One-Shot Microflow AST Extraction & Bifurcated Model Discovery Protocol (`PAT-109`, `PAT-71`, `ANTI-26`, `ANTI-58`, `ANTI-75`)**:
-    *   *Dynamic Model Source Resolution & Studio Pro Exclusivity Invariant (`ANTI-75`):* Resolve the discovery mechanism based on active MCP tools in the session and `mta_config.json.model_source`:
-        - **Mode A: Studio Pro MCP / MAIA Discovery (Live Primary Source):** Active when `StudioPro` MCP server tools (`ped_read_document`, `ped_find_document`, `pg_read_page`) or MAIA are available in the session (or `model_source == "studiopro"`).
-          - *Studio Pro MCP Exclusivity Rule (`ANTI-75`):* If `StudioPro` MCP tools or MAIA are active in the session, running `mxcli` or shell commands for model inspection, AST extraction, or domain catalog queries is **STRICTLY PROHIBITED** (`ANTI-75`). Studio Pro MCP is the live, unsaved Single Source of Truth.
-          - Mendix MAIA shares identical inspection tools with Studio Pro MCP (`ped_read_document`, `pg_read_page`, `ped_find_document`, `ped_list_folder`). Treat MAIA identically for model discovery.
-          - *Microflow AST & Logic:* Call `ped_read_document(documentType="Microflows$Microflow", documentName="<ModuleName.MicroflowName>", depth=4)` (or higher depth to avoid `$stub` truncation) for parameter signatures, return types, annotations, decisions, and sub-microflow calls in a single turn.
-          - *Page UI Components:* Call `pg_read_page(moduleName="<ModuleName>", pageName="<PageName>")` for page widgets, forms, tabs, snippets, and action buttons.
-          - *Domain Model, Entities, Attributes & Associations:* Call `ped_read_document(documentType="DomainModels$DomainModel", documentName="<ModuleName>", depth=2)` (or `depth=3`). All module entities, attributes (types, lengths, defaults), associations, and domain constraints are returned in this single call—never execute secondary CLI queries or `catalog.db` lookups. Use `ped_find_document` to locate documents across modules and `ped_get_schema` to verify JSON schemas.
-          - *Zero Model Mutation Invariant (`PAT-122`, `ANTI-73`):* Mutating Studio Pro MCP tools (`ped_create_document`, `ped_update_document`, `pg_patch_page`, `ped_create_module`) are strictly prohibited during test planning and seeding. The Mendix model must remain strictly READ-ONLY.
-        - **Mode B: Headless / mxcli Discovery (Offline Fallback Only):** Permitted **strictly** when Studio Pro MCP and MAIA are absent, offline, or unregistered in the session tool catalog (or `model_source == "mxcli"` without Studio Pro tools):
-          - Backend logic single-pass: `.\mxcli.bat describe microflow <ModuleName>.<MicroflowName> -p <project.mpr>`
-          - Page UI components: `.\mxcli.bat describe page <ModuleName>.<PageName> -p <project.mpr>`
-          - Domain model, entity schemas & catalog tables: Native SQL catalog queries (`SELECT ... FROM CATALOG.<TABLE>`).
-    *   *Single Source of Truth Extraction:* Single-pass inspection via Mode A (or Mode B fallback) provides parameter signatures, return types, documentation annotations (`@annotation`) containing business rules and constraints, all decision nodes (`if`, `case`) and expression logic, sub-microflow calls, and inline entity mutations (`change $Object`) in 1 single turn.
-    *   *Secondary Query Prohibition & Escape Hatch:* Agents are strictly forbidden from performing exploratory query cascades (such as querying `catalog.db`, running `SHOW ENTITIES`, or executing separate `DESCRIBE MICROFLOW` on sub-microflows) unless secondary queries are explicitly required to trace nested side-effects (`PAT-97`) or verify domain attribute length constraints (`PAT-53`).
-    *   *Path B: Domain Model, Entity Schema & Call-Graph Discovery (Catalog SQL in Headless Mode Only):* When operating in Mode B (headless fallback only) and Case 1 seeding or call-graph tracing requires catalog queries, query SQLite catalog (`[MENDIX_MPR_PATH]\.mxcli\catalog.db`) using native `mxcli` SQL commands (`.\mxcli.bat -c "SELECT ... FROM CATALOG.<TABLE>"`):
-        - Microflow metadata & complexity: `SELECT Name, QualifiedName, ReturnType, ParameterCount, ActivityCount, Complexity FROM CATALOG.MICROFLOWS WHERE QualifiedName = 'Module.Microflow';`
-        - Activities & call graph: `SELECT Sequence, ActivityType, Caption, ActionType, ActionRef, EntityRef FROM CATALOG.ACTIVITIES WHERE MicroflowQualifiedName = 'Module.Microflow' ORDER BY Sequence;`
-        - Referenced entities & subflows: `SELECT SourceName, TargetName, TargetType, RefKind FROM CATALOG.REFS WHERE SourceName = 'Module.Microflow';`
-        - Entity verification: `SELECT Name, QualifiedName, EntityType, AttributeCount FROM CATALOG.ENTITIES WHERE QualifiedName = 'Module.Entity';`
-        - Domain attributes & types (`PAT-75`, `PAT-53`, `ANTI-29`): `SELECT Name, DataType, Length, IsRequired FROM CATALOG.ATTRIBUTES WHERE EntityQualifiedName = 'Module.Entity';`
-        - Java Action input parameters (when testing Java Actions): `SELECT Name, ParameterType, Ordinal FROM CATALOG.JAVA_ACTION_PARAMETERS WHERE QualifiedName = 'Module.JavaAction' ORDER BY Ordinal;`
-    *   *Prohibition of Ad-Hoc Scripts (`ANTI-58`):* All SQLite catalog queries MUST be executed via the standard `mxcli` CLI interface (`.\mxcli.bat -c "..."`). Generating or running ad-hoc Python, PowerShell, or Node.js SQLite inspection scripts is strictly prohibited.
-    *   *Schema Resilience & Parameter Invariant:* Microflow parameters are not stored in catalog tables (there is no `MICROFLOW_PARAMETERS` table); parameter discovery via `DESCRIBE MICROFLOW` is standard operation and MUST NOT trigger false catalog missing warnings. If any catalog query fails due to unexpected column schema changes, the agent executes `DESCRIBE CATALOG.<TABLE>;` before aborting.
-    *   *Self-Contained Structure Extraction:* Extract parameters, return types, variables, called subflows, member expressions, and enum literals without running broad exploratory listing cascades (`SHOW MODULES`, `SHOW MICROFLOWS`, `SHOW ENTITIES`, `DESCRIBE ENUMERATION`) (`ANTI-26`).
-    *   *Deep Semantic Path Tracing:* Systematically trace the microflow control flow graph (cascading guards, decision combinations, and formula calculations) with 100% logic fidelity to capture all boundary variations.
-*   **🛑 Unconditional Backend Empty Parameter & Association Invariant (PAT-07, PAT-109, ANTI-48)**:
-    *   *Microflow Runtime Invariant:* In Mendix, microflow callers can always pass `empty` for entity parameters. MTA test cases operate on a fixed step ledger skeleton parameterized by a Data Variation Matrix; omitting `PAT-07` during initial construction makes testing null boundaries impossible without deleting and rebuilding the test case steps. Therefore, testing empty parameters is **MANDATORY and DEFAULT**, not optional.
-    *   *Mandatory Skeleton Decision Tree:* For ALL backend unit tests taking one or more entity object parameters or setting associated entities:
-        - The agent is **STRICTLY PROHIBITED** from generating a direct `CreateObject` → `CallMicroflow` or direct `CreateObject` → `CreateObject` (association) skeleton without an intermediate `PAT-07` retrieve filter.
-        - The agent **MUST** provision the **`PAT-07` Dual Retrieve/Filter Empty Object Pattern** in Section 3 for each entity parameter:
-          1. `CreateObject` (Entity) with a scalar sentinel attribute initialized (e.g. `Sentinel = 'VALID'`).
-          2. `RetrieveObject` (`RetrieveOption = "Teststep"`, filtering on `Sentinel == 'VALID'`, embedding `Assert Object Count == 1` per `PAT-08`).
-          3. Downstream step consumes the Retrieve Handle, allowing the variation matrix to yield Count = 1 (valid) when `Sentinel == 'VALID'` or Count = 0 (empty) when `Sentinel == 'NONE'`, without altering the step sequence.
-        - The agent **MUST UNCONDITIONALLY** scope at least $N + 1$ scenarios in the Section 7 Data Variation Matrix (1 Valid scenario with `Sentinel = 'VALID'`, plus 1 Empty/Null boundary scenario per object parameter with `Sentinel = 'NONE'`). Never ask the user whether empty parameters should be tested—generate them by default.
-    *   *Empty Parameter Support Recipe:*
-        - Step 1: `CreateObject` (`Entity`, initial attributes + synthetic key + sentinel attribute `Sentinel = 'VALID'`)
-        - Step 2: `RetrieveObject` (`RetrieveOption = "Teststep"`, input handle = Step 1 output, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1`)
-        - Step 3: `CallMicroflow` (parameter bound to Step 2 retrieve handle)
-        - In Section 4 / Section 7 Data Variation Matrix: Scenario #1 (Valid) sets Step 1/2 Sentinel to `'VALID'`; Scenario #2 (Empty/Null) sets Step 1/2 Sentinel to `'NONE'`, producing an empty object handle in memory.
-    *   *CreateObject Input Handle Prohibition (PAT-06, ANTI-01):* All `CreateObject` steps MUST set `Input Handle = '-'`. In Menditect Test Automation, `CreateObject` instantiates a brand new entity in memory and does not accept an input handle. If an entity is associated to another entity (e.g. `Car_CarSize = step2_CarSize`), this association binding MUST be specified in the `Parameters, Bindings & Initial Values` column, referencing the retrieved parent handle. Specifying an `Input Handle` on `CreateObject` is invalid and fails linter check `INVALID_CREATE_OBJECT_INPUT_HANDLE`.
-    *   *Multi-Entity Associated Graph Support Recipe:*
-        When testing a microflow that takes a host entity (`Car`) associated with a related entity (`CarSize`), and both empty parameter and empty association boundary scenarios must be tested:
-        - Step 1: `CreateObject` (`CarSize`, `Input Handle = -`, initial attributes + `Sentinel = 'VALID'`)
-        - Step 2: `RetrieveObject` (`CarSize`, `Input Handle = step1_CarSize`, `RetrieveOption = "Teststep"`, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1` per `PAT-08`)
-        - Step 3: `CreateObject` (`Car`, `Input Handle = -`, initial attributes + association `Car_CarSize = step2_CarSize` + `Sentinel = 'VALID'`)
-        - Step 4: `RetrieveObject` (`Car`, `Input Handle = step3_Car`, `RetrieveOption = "Teststep"`, filter `Sentinel == 'VALID'`, embedded `Assert Object Count == 1` per `PAT-08`)
-        - Step 5: `CallMicroflow` (`Input Handle = step4_Car`, `Car = step4_Car`, embedded assertions)
-        - In Section 4 / Section 7 Data Variation Matrix:
-          - Scenario #1 (Valid): Step 2 Filter `'VALID'`, Step 4 Filter `'VALID'`.
-          - Scenario #2 (Empty Association): Step 2 Filter `'NONE'`, Step 4 Filter `'VALID'`.
-          - Scenario #3 (Null Host Parameter): Step 2 Filter `'VALID'`, Step 4 Filter `'NONE'`.
-    *   *Universal Short Sentinel Law (`PAT-07`):* Always use short scalar sentinels (`'VALID'`, `'NONE'`, `'NULL'`, `'TEST'`; `length <= 4` characters) on String or Integer attributes. Never use Enumerations (`Enum_`) or long verbose tokens (`'NON_EXISTENT'`, `'DOES_NOT_EXIST'`).
-    *   *Prohibition of Raw JSON Shortcuts in Execution Plans (`ANTI-60`, `ANTI-48`):* Low-level plugin attributes such as `"UseEmptyObjectList": true` or omitting `"TCEX_RQ_Sfar"` in ad-hoc steps are execution-level conveniences. When drafting or updating an Execution Plan (`EP_*.md`), the agent **MUST NOT** rely on these shortcuts to represent empty objects in Section 4. The underlying step skeleton in Section 3 must remain 100% promotable to central MTA via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton.
-    *   *Prohibition of Association Rows in Variation Matrix (`ANTI-48`):* Association bindings (e.g. `Car.Car_CarSize`, `Order.Order_Customer`) and Object Reference Handles are structural step settings and **CAN NEVER appear as rows in the Section 4 Data Variation Matrix**. MTA's variation engine (`AddTestCaseVariationItem`) only accepts scalar attributes, parameters, and assertions.
-*   **🚨 Strict Target-Bound Data Variation Matrix Schema (`PAT-110`, `ANTI-59`)**:
-    *   *Matrix Schema Invariant:* Section 4 Data Variation Matrices must strictly bind Rows (Y-Axis) to concrete test steps and registered variation items:
-        - `Step X: Entity.Attribute`
-        - `Step Y: Filter Entity.Attribute` (for `PAT-07` empty object/association variations)
-        - `Step Z: Assert Return Value` / `Assert Validation Feedback`
-    *   *Scenario Columns:* Columns (X-Axis) must strictly represent Scenarios (`#1 (ScenarioName)` through `#N (ScenarioName)`).
-    *   *Prohibition of Conceptual Columns (`ANTI-59`):* High-level conceptual column headers or arbitrary boolean flags (e.g. `Association Assigned: Yes/No`, `Discount Applied`) are strictly prohibited in matrix headers. Every varied dimension must bind 1:1 to an MTA variation item (`TCVI_TestCaseVariationItems`).
-*   **🚨 Mandatory Unified Promotable Blueprint Invariant & Anti-Unrolling Law (`PAT-111`, `ANTI-60`)**:
-    *   *Unified Promotable Blueprint Invariant (`PAT-111`):* Every Execution Plan (`EP_<TestCaseName>.md`) written to disk MUST strictly document a single, minimal, canonical MTA step skeleton (e.g. 1 Create/Retrieve chain per entity + 1 Microflow Call) parameterized by Section 4 Data Variation Matrix.
-    *   *Prohibition of Unrolled Step Sequences (`ANTI-60`):* Documenting unrolled, concatenated, or multiplied step sequences (e.g. repeating 3 steps 8 times to produce a 24-step plan across 8 scenario blocks) in `EP_*.md` is strictly prohibited.
-    *   *Zero Plan Divergence:* The structure of `EP_*.md` on disk must be 100% identical whether drafted for Option A exploratory execution or Option B persistent MTA construction.
-    *   *Option A Dynamic Plugin Execution Adapter Protocol:* The on-disk Execution Plan (`EP_*.md`) is the immutable Master Promotable Blueprint. When executing under Option A, the agent (`mta-run-analyze`) acts purely as a runtime compiler that programmatically expands the canonical skeleton across the $N$ variation matrix rows into the JVM `execute-testcase` payload in memory (or executes the parametric matrix) without altering the master blueprint on disk.
-    *   *🚨 PLAN-TO-PAYLOAD MATRIX PARITY INVARIANT:* NEVER pass a scenario to `execute-testcase` or compile a JVM payload block that is not explicitly documented as a scenario column in Section 4 of `EP_*.md`. Scenario counts in `EP_*.md` Section 4 and `execute-testcase` JSON payloads MUST match 100%. If additional boundary scenarios are identified during execution payload assembly, `EP_*.md` MUST be updated on disk and re-verified via `node tools/run-linter.mjs plan` BEFORE invoking `execute-testcase`.
-    *   *🚨 OPTION A PAYLOAD TRAP & PARAMETER-LEVEL PAT-07 MANDATE (`PAT-07`, `PAT-111`, `ANTI-48`):* Even when drafting an Execution Plan for Option A local exploratory auto-execution, you are **STRICTLY PROHIBITED** from using raw plugin shortcuts in the documented `EP_*.md` file (such as placing association bindings in Section 4 matrix rows or relying on `UseEmptyObjectList: true`). The file written to disk MUST ALWAYS be the **Master Promotable Blueprint** using `PAT-07` Dual-Retrieve filter steps (`Size == 'Small'` vs `'NONE'`) for nullable objects and associations. **Parameter-Level Granularity Mandate:** When testing a Mendix microflow or backend operation with $N$ object parameters or entity associations, every parameter $P_i$ or handle that evaluates to `empty` or `null` in any Section 4 Variation Matrix scenario column MUST have its own paired `CreateObject` and `PAT-07` Retrieve-from-Teststep sentinel step (`SentinelKey == 'NONE'`) in Section 3. Global single-sentinel compliance is strictly insufficient when multiple object parameters/entities are scoped. When executing Option A, the agent acts purely as a runtime compiler that translates `PAT-07` empty object handles into the local JVM payload in memory.
-    *   *Seamless Promotion Guarantee (`PAT-106`):* Because the plan on disk is already a canonical MTA skeleton with `PAT-07` and Section 4 matrix, promoting an Option A exploratory test to Option B requires zero step restructuring or matrix translation. Construction proceeds directly from the exact same skeleton.
-*   **⚡ Mandatory Single-Pass Page AST Seed Derivation & Testkit Auto-Mapping (`PAT-72`, `PAT-67`, `ANTI-23`, `ANTI-26`)**: When building an Execution Plan for Frontend tests:
-    *   *MTA Server Fast-Path (Zero-CLI):* Execute a silent read-only `GetAppModelData` probe (`RetrieveAction="RetrievePagesByApplicationAndTestConfiguration"` and `"RetrieveWidgetsByPage"`) if MTA is reachable to retrieve page keys, custom CSS classes, widget keys, and types in sub-second time.
-    *   *Single-Pass Page AST Seed Derivation (`PAT-72`):* If inspecting the local Mendix model via `mxcli`:
-        1. **Page AST Inspection:** Execute `DESCRIBE PAGE <Module.Page>` (and recursive `DESCRIBE SNIPPET <Module.Snippet>` only for embedded snippets).
-        2. **Single-Pass Seed Graph Extraction:** Derive the root DataView entity, bound form input attributes (`TextBox`, `DropDown`, `DatePicker`), parent-child association dependencies (`ReferenceSelector`), and collection entities (`DataGrid2`/`ListView`). Eliminates 3–5 redundant `DESCRIBE ENTITY` queries.
-        3. **Deterministic Testkit Auto-Mapping & Two-Step Chain Law (Law 1, PAT-64, ANTI-21):** Every UI interaction strictly enforces the Two-Step Chain (`Locate` returning `Locator` -> `ACT` consuming `Locator`). Map discovered widgets to verified `MenditectMxFrontendTestKit` microflows per [frontend-testing.md](references/frontend-testing.md).
-        4. **Pluggable Widget & String Resolution via mxcli v0.21.0:** For complex widgets run `DESCRIBE WIDGET <kind>`, and for text locators run `SEARCH STRINGS '<Text>'`.
-        5. **Input Widget Inventory:** In Section 4 of the Execution Plan, construct an explicit **Input Widget Inventory** table listing every form widget, widget type, location, bound attribute, and verified Testkit locator microflow (`PAT-67`).
-*   **🚨 Mandatory Self-Contained Seed Data Invariant with Master Data Distinction (Frontend Plans) (`PAT-91`, `PAT-92`, `PAT-93`, `ANTI-42`, `ANTI-43`)**:
-    *   *Default Invariant (Transactional Seeding):* Plan explicit `Create Object` steps for all primary business entities and selectable catalog records bound to page widgets, concluded by a batch `Persist` step in Case 1 before launching the browser (`ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
-    *   *Symmetric Teardown Cleanup Law (`PAT-92`, `ANTI-43`):* Every transactional entity instantiated during Case 1 setup MUST have a corresponding direct handle delete in Case 3 Teardown (`TestStepOutputKey = Case1_CreateStepKey`), followed by a mandatory trailing batch `Persist` step (`ObjectAction = "Persist"`, `ExecutionCondition = "Always"`, `ResumeExecutionAfterException = "_Continue"`).
-    *   *Reverse Dependency Order Deletion Protocol (`PAT-93`):* Teardown deletions in Case 3 MUST strictly proceed in reverse association dependency order ($\text{Leaf / Child Entities} \rightarrow \text{Intermediate Associations} \rightarrow \text{Root Entities}$) to prevent constraint errors.
-    *   *Master / Reference Data Retrieval Exemption:* Static configuration entities (e.g. `Country`, `Currency`, `UserRole`) use explicit `Retrieve` steps with attribute filters in Case 1.
-    *   *Disjoint Synthetic Identifiers:* All seeded records in Case 1 MUST use unique synthetic identifiers (e.g., prefixing codes with `'TEST_'`).
-    *   *Precondition Prohibition (`ANTI-42`):* Preconditions must NEVER state *"Master data pre-seeded"* as a substitute for test steps.
-*   **🚨 Mandatory Multiple Seed Objects for Lists & Selection Widgets (`PAT-40`, `PAT-67`, `ANTI-26`)**: For repeating containers or selection widgets, create at least 2 distinct seed records in Case 1.
-*   **🚨 Mandatory Login & Role-Based Navigation Analysis (`PAT-41`)**: Determine authentication requirement (`Start_MxFrontend_Test_With_Login` vs `Start_MxFrontend_Test_Without_Login`) and resolve role-based home page navigation via `mxcli SHOW NAVIGATION`.
-*   **🚨 Mandatory Dynamic Scalar Selection Piping**: Use dynamic scalar value piping (`SelectValueForValue`) referencing upstream seed steps instead of hardcoding static literal strings.
-*   **🚨 Mandatory DatePicker Format & Offset Model Extraction Protocol (`PAT-42`, `PAT-94`, `ANTI-45`)**: Before specifying date input values, formatting parameters, or generating Section 3/4 for any DatePicker widget, the agent MUST inspect the page via Studio Pro MCP (`pg_read_page`) or run `.\mxcli.bat bson dump -p "[project.mpr]" --type page --object "<ModuleName>.<PageName>" --format json` (targeted `PAT-94` carve-out under `ANTI-75`) and inspect `FormattingInfo` to extract exact `DateFormat` and `CustomDateFormat` patterns (`PAT-94`). Hardcoding `yyyy-MM-dd` or assuming defaults without reading model output is strictly prohibited (`ANTI-45`). The agent MUST document the exact property path in the Section 2 Component Under Test (Input Widget Inventory table).
-*   **🚨 Mandatory Domain Model Attribute Length & Constraint Inspection (`PAT-53`)**: Check every proposed literal string value against `String(N)` length limits in the domain model. Propose only valid length values.
-*   **🚨 Mandatory List Selection Filter Options Proposal**: Present Testkit filter options (`ELO_Filter_*_by_Text`, `ELO_Nth_*_Item`, scalar piping) in Section 5 (`PAT-52`).
-*   **🚨 Mandatory Closed Catalog Frontend Testkit Microflow Verification (`PAT-64`, `ANTI-21`)**: All Frontend UI test steps must strictly use verified microflows from `MenditectMxFrontendTestKit` and `MenditectPlaywrightConnector` documented in [frontend-testing.md](references/frontend-testing.md).
-*   **Intended Purpose & Void Flow Audit**: If target microflow returns Void, audit database side-effects for retrieve/count assertions (`PAT-04`). For Backend microflows, audit validation feedback actions (`AssertValidationFeedbackMessageCompare`/`Count`).
-*   **Local-Level Execution Plan Drafting & Pre-Approval Parity Audit (`PAT-82`, `PAT-89`, `ANTI-36`, `ANTI-41`)**:
-    1. *Execution Plan Formatting Resolution (`execution_plan_collapsible`):*
-        Resolve the formatting style (Collapsible `<details>` vs Flat `##` Markdown) according to this strict hierarchy:
-        - **1. Conversational Prompt:** If user explicitly requests "flat plan", "no collapsible tags", or "collapsible plan", follow prompt directly.
-        - **2. `mta_config.json`:** If available, evaluate `execution_plan_collapsible` (boolean: `true` or `false`).
-        - **3. Mode-Aware Fallback:**
-            - **Agentic Mode (saving `.md` to disk):** Default to `true` (Collapsible `<details>`), guaranteeing compact navigation in IDEs (VS Code/Cursor/GitHub). Ensure blank lines surround `<summary>...</summary>` and `</details>` per CommonMark.
-            - **Chat Mode (rendering directly in chat):** If client is Claude Desktop or user requests flat markdown, default to `false` (flat `##` Markdown headers) to prevent raw HTML rendering corruption.
-    2. *Mode-Aware Execution Plan Delivery (`PAT-89`, `ANTI-41`):*
-        - **Agentic Mode (Filesystem Tools Available):** Write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "DRAFT"` using the canonical blueprint in [execution-plan-template.md](references/execution-plan-template.md). Persist draft metadata (`execution_plan_file`, `execution_plan_id`, `execution_plan_status: "DRAFT"`) into `mta_state.json`. Run automated plan linting via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"`; if violations are flagged, auto-correct them prior to rendering. In the chat stream, render ONLY the concise Executive Summary Box (~35 lines), clickable file link, and the appropriate Checkpoint 1 Decision Card.
-        - **Chat Mode / Mendix MAIA (No Filesystem Access / Pure Chat):** In the chat stream, render the concise Executive Summary Box (~35 lines) and the Checkpoint 1 Decision Card (which includes the `[Show Full Plan]` action option). In Chat Mode and Mendix MAIA, filesystem tools (`write_to_file`) and terminal CLI execution (`run_command` / `tools/mta-lint.mjs`) are unavailable. The assistant conducts an in-prompt cognitive 21-rule lint and anti-pattern audit instead of executing `mta-lint.mjs`. When displaying the plan, output the complete plan and the structured Session Compaction JSON block inside the chat stream.
-    3. *Mandatory Active MCP Server Discovery & Parity Verification (`PAT-82`, `ANTI-36`):* In all AI environments (MAIA, Gemini, Claude, Cursor, Antigravity) and modes (Agentic/Chat), inspect the active tool catalog in the current session:
-        - *Tool Catalog & Server Status Probing:*
-            - Check if `MTA` platform tools (`GetAppModelData`, `GetApplicationDetails`, `CreateTestSuite`, `ExecuteTest`, etc.) are registered in the current session. If registered, call read-only `GetAppModelData` to audit planned elements against the active MTA model revision.
-            - Check if `MTA_plugin` tools (`execute-testcase`) are registered in the current session.
-        - *Outcome Classification:*
-            - **Case 1 (`MTA` Not Registered / Down / Out-of-Sync / Free Exploratory License & `MTA_plugin` Active):** If `MTA` tools are not registered in the tool catalog (e.g., in MAIA with only `MTA_plugin` configured or under Free MTA Exploratory License `mta_license_tier: "free_exploratory"`, `PAT-112`) or unreachable, mark Check 14 as `BLOCKED (Free Exploratory Tier / MTA Server Not Registered | Plugin Active)`. Strictly block Option B (`ANTI-36`, `ANTI-61`). For Backend tests, Option A remains **ACTIVE**. Present **Checkpoint 1 Case 1**. NEVER present Option B as available.
-            - **Case 2 (`MTA` In-Sync & Active AND `MTA_plugin` Active):** Both servers are registered and live. Mark Check 14 as `PASS (Verified)`. Present **Checkpoint 1 Case 2** (Dual Track Option A vs Option B).
-            - **Case 3 (Standalone Data Seeding):** Present **Checkpoint 1 Case 3** (Option A Direct Seeding vs Option B Persistent Seeding).
-            - **Case 4 (Dual Outage — `MTA` Down/Unregistered AND `MTA_plugin` Down/Unregistered):** Mark Check 14 as `BLOCKED (Both MCP Servers Offline)`. Strictly block both Option A and Option B execution. If in Agentic Mode, save the draft plan (`status: "DRAFT"`), record metadata in `mta_state.json`, present **Checkpoint 1 Case 4 (Offline / Dual-Outage Mode)**, and provide setup instructions.
-            - **Case 5 (Asymmetric Outage — `MTA` In-Sync & Active, but `MTA_plugin` Down / Not Registered):** Mark Check 14 as `PASS (MTA Verified) | BLOCKED (Local Plugin Offline)`. Option A is blocked. Option B is **ACTIVE**. Present **Checkpoint 1 Case 5 (Persistent MTA Platform Only)**.
-            - **Case 6 (Bug Reproduction Strategy & Untouchable Oracle — `test_intent: "bug_reproduction"`):** Present **Checkpoint 1 Case 6 (Bug Reproduction Strategy & Untouchable Oracle)** (Option A In-Memory Reproduction vs Option B Persistent Bugfix Oracle Suite).
-    4. *Offline Draft Resumption & Model Parity Law:* When resuming an offline draft or retrying Option B after an outage, you **MUST** re-evaluate Check 14 (`GetAppModelData`) to verify model parity against the server revision before proceeding to placement discovery (`PLAN_STEP_2`).
-    5. *Frontend UI Offline Invariant (`PAT-62`):* Frontend UI tests drive browser sessions via Playwright on the MTA Platform and **cannot** execute via `MTA_plugin.execute-testcase`. When `Category: Frontend` and the `MTA` MCP server is unavailable, Option A is NOT available; save the plan to disk as `status: "DRAFT"` (updating `mta_state.json`) and inform the user that test execution is queued until the MTA server is available.
-*   **⚡ Step 4: Mandatory Quality & Compliance Pre-Flight Lint (`mta-lint plan` / In-Prompt Cognitive Audit)**:
-    - **Agentic Mode (CLI Available):** Immediately after drafting or editing `${execution_plans_dir}/EP_<TestCaseName>.md`, the AI assistant MUST run the plan linter:
-      ```bash
-      node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"
-      ```
-    - **Chat Mode / Mendix MAIA (No CLI Available):** The AI assistant conducts the 21-rule audit cognitively in-prompt against the exact structural rules (`PAT-06`, `PAT-07`, `PAT-08`, `PAT-77`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`).
-    - **Quality Gate:** Validates 21 structural and anti-pattern rules (`PAT-06`, `PAT-07`, `PAT-08`, `PAT-77`, `PAT-110`, `PAT-111`, `ANTI-01`, `ANTI-44`, `ANTI-48`, `ANTI-59`, `ANTI-60`).
-    - **Self-Healing Loop:** If any check fails, do NOT present Checkpoint 1. Modify the plan to resolve the issue (e.g. converting conceptual columns to target step rows, removing associations from matrix rows), and re-verify until status is `PASS`.
-    - **Checkpoint 1 Sign-Off:** Only once all 21 checks pass, render the Executive Summary Box and present Checkpoint 1 to the user.
-*   **🚨 Mode-Aware Gate 1 Halt & Auto-Approval Law (`PAT-43`, `exploratory_execution_mode`)**:
-    Evaluate `mta_config.json.exploratory_execution_mode` (default: `"auto_execute"`).
-    
-    1. **Option A Fast-Path Auto-Execution (`"auto_execute"`):**
-       - **Applicability:** Applies strictly when `Category == "Backend"`, `Target == "MTA_plugin"`, and `RollbackTcseAfterExecution == "Yes"`.
-       - **Action:** In Agentic Mode, write the complete Execution Plan directly to `${execution_plans_dir}/EP_<TestCaseName>.md` with `status: "AUTO_APPROVED"` (enforcing the 5-anchor contract) and persist plan metadata into `mta_state.json`. In Chat Mode / MAIA, mark `status: "AUTO_APPROVED"` in the plan text and output the plan directly in chat with the Session Compaction block.
-       - **Zero-Wait Invariant:** Do **NOT** halt at Checkpoint 1.
-       - **Linter Pre-Check & Immediate Execution:** In Agentic Mode, run `node tools/mta-lint.mjs plan <plan.md>` (or `node tools/run-linter.mjs plan`) to verify 0 errors. If lint passes, in the very same turn invoke `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION`) to compile the JSON blueprint and execute `MTA_plugin.execute-testcase` natively.
-       - **Turn Output:** Output the rich exploratory execution telemetry report along with a direct clickable link to the persisted plan (in Agentic Mode) or rendered plan summary and compaction block (in Chat Mode / MAIA).
-    
-    2. **Option A Governed Mode (`"prompt_approval"`):**
-       - Write the Execution Plan with `status: "DRAFT"`, present the Executive Summary Box and Checkpoint 1 Decision Card, and **HALT** for explicit user approval before execution.
-    
-    3. **Option B (MTA Platform) & Live Database Seeding (`Rollback == "No"`):**
-       - Strictly prohibited from auto-executing. The agent **MUST ALWAYS HALT** for explicit user approval (Checkpoint 1 for plan review, followed by Checkpoint 2 for placement).
-*   **🚨 Checkpoint 1 Halt Rule & Strategy Decision Card (When Halting for Approval)**: Present the Executive Summary Box (and clickable link in Agentic Mode), render the appropriate Checkpoint 1 Decision Card from [checkpoint-templates.md](references/checkpoint-templates.md#2-🚦-checkpoint-1-test-plan-review--execution-strategy-decision-cards-pat-43-pat-60-pat-82-pat-89-anti-36-anti-41), and **HALT** for explicit user approval:
-    - **Case 1 (Model Delta / Mismatch or MTA MCP Server Unavailable, MTA_plugin Active):** Render Case 1 card (Option B Blocked, Option A Active for Backend).
-    - **Case 2 (In-Sync Parity & Both MCP Servers Active):** Render Case 2 card (Dual Track Option A vs Option B).
-    - **Case 3 (Standalone Data Seeding):** Render Case 3 card (Option A Direct Local Seeding vs Option B Persistent Seeding).
-    - **Case 4 (Dual Outage — Both MCP Servers Unavailable):** Render Case 4 card (Both Execution Routes Blocked, Draft Saved to Disk, Diagnostic Steps).
-    - **Case 5 (Asymmetric Outage — MTA Active & In-Sync, Local Plugin Offline):** Render Case 5 card (Option A Blocked, Option B Active).
-    - **Frontend UI Tests Policy Notice (`PAT-62`):** Frontend tests route exclusively to Option B (Persistent MTA Platform) when the MTA MCP server is available.
-*   **⚡ Execution Strategy Decision Flow & Fast-Path Local Execution Law (`PAT-63`)**:
-    *   **If User Selects Option A (Immediate Local Execution - Exploratory Test or Live Data Seeding):** Zero server scanning. Transition immediately to `mta-run-analyze` (`Temp State: STATE_EXPLORATORY_EXECUTION` or `STATE_LIVE_DATA_PROVISIONING`) to execute via `MTA_plugin.execute-testcase` in 1 turn.
-    *   **If User Selects Option B (Direct Persistent MTA Test - Default for Frontend):** Proceed to `PLAN_STEP_2` (Placement Discovery) and `PLAN_STEP_3` (Gate 2 Approval).
-
-### 📋 Manual Test Plan (MTP) & Live Test Data Provisioning Mode (`PAT-68`, `PAT-69`, `PAT-70`, `ANTI-24`, `ANTI-25`)
-When the user's intent is manual exploratory testing or structured manual verification:
-*   **Action**: Leverage `MTA_plugin.execute-testcase` as an ultra-fast, deterministic TDM engine (`RollbackTcseAfterExecution = "false"`).
-*   **Data Script to MTA Conversion Protocol (`PAT-70`, `PAT-43`, `ANTI-46`):**
-    1. *No Direct Construction Bypasses (`ANTI-46`):* Generate official Execution Plan (Gate 1) and resolve placement (Gate 2) before calling persistent construction tools.
-    2. *Execution Plan Profiles:* Option 1 (Default: Standalone Data Seeding 1-Case Generator, `Rollback = No`, no teardown), Option 2 (Automated Frontend Test Suite, 3 cases), Option 3 (Automated Backend Integration Suite, 3 cases).
-
-### 2. `PLAN_STEP_2: Placement & Settings Discovery (Part 2 - User Input Phase)`
-*   **Action**: Interactively scan and resolve placement parameters and execution settings based on user input.
-*   **🛑 Pre-Flight MTA MCP Server Availability Gate:** Before querying `GetApplicationDetails` or `GetTestConfigurationDetails`, verify that the remote `MTA` MCP server is registered and responsive. If unreachable (offline, connection error, or missing auth token per `PAT-95`):
-    - Do NOT throw an unhandled error or attempt write operations.
-    - Retain the Execution Plan on disk as `status: "DRAFT"` and update `mta_state.json`.
-    - Output the `PAT-95` Sanitized Layered Return Message with diagnostic configuration steps, keeping the conversation active without deadlocking.
-*   **Promotion Routing Rules**:
-    *   **From In-Memory Exploratory Test (`PAT-57` — `Rollback = Yes`):** Promote directly 1:1 to a persistent Backend Test Case with Data Variations without prompting for structure type.
-    *   **From Live Data Seeding (`PAT-70` — `Rollback = No`):** Default directly to **Type 1: Standalone Data Seeding Test Case (1-Case Generator)**.
-*   **Mandatory Placement Discovery Protocol & Multi-Configuration Gate (`PAT-118`, `ANTI-67`):**
-    *   *Fast-Path Placement (Known Placement):* If the target configuration is explicitly specified in the user prompt or active `EP_*.md` metadata, query `GetApplicationDetails` to resolve keys, then sequentially query `GetTestConfigurationDetails` and `GetExecutionUsers` to validate targets and present the **Placement & Target Summary Box** (`PLAN_STEP_3`).
-    *   *Phase 1: Application Resolution & Configuration Count Evaluation (`PAT-118`):*
-        1. Query `GetApplicationDetails(ApplicationName)` (and optionally `GetExecutionUsers` in parallel) to retrieve registered `TCNF_TestConfigurations`.
-        2. Inspect the number of configurations returned:
-           - **Zero Configurations (`configurations.length == 0`):** Strictly do NOT call `GetTestConfigurationDetails` (no configurations exist and no MCP creation tool exists). Inform the user that 0 Test Configurations are registered under this Application in the MTA Platform, direct them to create one in the MTA Web UI (`[mta_base_url]/p/Application/[ApplicationKey]`), retain the plan as `status: "DRAFT"`, and offer Option A in-memory execution in the interim.
-           - **Single Configuration (`configurations.length == 1`):** Auto-select the sole configuration and proceed immediately to Phase 2.
-           - **Multiple Configurations (`configurations.length > 1` and unspecified):** Strictly **FORBID** calling `GetTestConfigurationDetails` or guessing `TCNF_TestConfigurations[0]` in this turn (`ANTI-67`). The agent **MUST HALT** and prompt the user with an explicit interactive selection (using `ask_question` modal where available, or a numbered markdown list in chat) presenting all available configuration names and keys.
-    *   *Phase 2: Targeted Suite Scan & Mandatory Collision / Reuse Gate (PAT-123, ANTI-76):*
-        Once the target configuration is resolved, call GetTestConfigurationDetails(selectedConfigurationKey) to inspect available test suites:
-        - **⚠️ Mandatory Halt on Discovered Suite / Test Case Match (PAT-123, ANTI-76):**
-          - Inspect the returned suites and test cases. If an existing test suite or test case has a similar name, target microflow, or matching user flow to the proposed test:
-            - **DO NOT modify, overwrite, add test steps to, or execute the suite or test case in this turn.**
-            - **HALT IMMEDIATELY** and require explicit interactive user selection before proceeding.
-            - In Agentic Mode, call sk_question:
-              - *Option 1 (Recommended - Reuse / Repair):* Update & repair existing suite [SuiteName] (Key: [SuiteKey])
-              - *Option 2 (Create New):* Keep existing suite untouched and create a brand-new suite [ProposedNewName]
-            - In Chat Mode / MAIA, output the numbered decision choices and wait for user response.
-            - Mutating tools (CreateTestCase, EditTestStep, CreateObjectActionTestStep, etc.) and execution tools (ExecuteTest) are **STRICTLY PROHIBITED** until the user explicitly selects Option 1 or Option 2.
-        - **No Matching Suites Found:** Present the **Placement & Target Summary Box** (Checkpoint 2, PLAN_STEP_3) with the proposed new suite name for explicit Gate 2 sign-off.
-        - If the user adjusts or rejects the chosen configuration or suite at Checkpoint 2, re-enter Phase 1 or Phase 2 within STATE_BUILD_PLANNING (PLAN_STEP_3 -> PLAN_STEP_2) rather than resetting to STATE_DISCOVERY.
-*   **Existing & New Suite Checks:** For Frontend tests, present Playwright settings per [execution-settings.md](references/execution-settings.md) and handle suite overrides/conflicts per [placement-and-lifecycle.md](references/placement-and-lifecycle.md).
-
-### 3. `PLAN_STEP_3: Placement Summary Presentation & Execution Plan Sign-Off (Part 3 - Checkpoint 2 Approval)`
-*   **Action**: Compile and display the dedicated **Placement & Target Summary Box** from [checkpoint-templates.md](references/checkpoint-templates.md#3-🚦-checkpoint-2-confirm-test-suite-placement--settings-box-pat-43-pat-79) for Gate 2 approval.
-*   **⚡ Mandatory Local Plan Storage, Revision Sealing & Sign-Off Protocol (`PAT-43`, `PAT-44`, `PAT-47`):**
-    Upon Gate 2 approval, store the Execution Plan locally at `${execution_plans_dir}/EP_<TestCaseName>.md`:
-    - Prepend the collapsible **Execution Plan Metadata Header** YAML block from [checkpoint-templates.md](references/checkpoint-templates.md#collapsible-metadata-yaml-block-schema-v120) (`schema_version: "1.2.0"`, `revision`, `status: "APPROVED"`, `approved_at`, `approved_by`, `approver_system_user`, etc.).
-    - Display the **Sealed Receipt Notification** from [checkpoint-templates.md](references/checkpoint-templates.md#sealed-receipt-notifications) with clickable file links.
-    - In Chat Mode / Mendix MAIA (without file-writing tools), output the **Session Compaction JSON Block** from [checkpoint-templates.md](references/checkpoint-templates.md#5-💾-chat-only-session-compaction-json-block-pat-44).
-    - Write metadata to `mta_state.json` (`execution_plan_file`, `execution_plan_id`, `execution_plan_status`, `execution_plan_approved_at`, `execution_plan_approved_by`, `execution_plan_revision`, `execution_plan_supersedes_id`, `test_configuration`, `test_suite`, `test_cases`).
-*   **⚡ MTA Model Revision Synchronization & Decoupled Plan Storage Law**: Drafting and storing plans locally is always permitted even with uncommitted local elements (`PAT-36`).
-*   **🛑 Backend Unit Test Execution Settings Law**: For ALL Backend Unit Tests, ALL test steps MUST be configured with `ExecutionCondition = "None"` and `ResumeExecutionAfterException = "Stop"` (`PAT-17`, `ANTI-07`).
-*   **🛑 Direct Attribute & Association Initialization on Create Object Law**: Set all initial attributes and associations directly on `CreateObjectActionTestStep(ObjectAction="CreateObject")` (`PAT-06`, `ANTI-01`).
-*   **🛑 Retrieve / Microflow Output Object Count Assertion Law**: Whenever an output object is consumed downstream, embed `Assert Object Count` directly in Field 6 of the producer step (`PAT-08`, `ANTI-03`).
-*   **🛑 Dual Retrieve/Filter Empty Object Law (Data Variations)**: Use filter values (`'TEST_VAL'` vs `'NON_EXISTENT'`) to dynamically vary between valid and null objects/associations across variation rows (`PAT-07`).
-*   **🚫 Strict Data Variation Consolidation**: Consolidate test cases with identical step topology into a single test case with an $N$-row Data Variation matrix (`PAT-19`, `ANTI-08`).
-*   **🔄 Execution Plan Iteration & Modification Protocol (`PAT-89`, `ANTI-41`)**: When modifying a plan, update the `.md` file on disk, re-audit patterns against [pre-approval-audit.md](references/pre-approval-audit.md), and output ONLY the updated Executive Summary Box and Checkpoint 1 card in chat (`ANTI-41`).
+1. **Vague Requests & `.mpr` Changes:** Load this skill FIRST before `mta-build` or `mta-run-analyze`, ask if automated testing is needed on `.mpr` edits, and present starter prompts from [prompts-templates.md](references/prompts-templates.md) at `PLAN_STEP_1`.
+2. **Ad-Hoc Data Seeding (`PAT-70`, `PAT-06`, `PAT-89`, `PAT-109`, `ANTI-46`, `ANTI-75`):** Never execute tools without an Execution Plan (`ANTI-46`). Resolve domain entities strictly via **Mode A Studio Pro MCP** (`StudioPro.list_modules` -> `StudioPro.ped_read_document(type="DomainModels$DomainModel", name="<Module>.DomainModel", depth=2)`; running `mxcli` when Studio Pro MCP is active violates `ANTI-75`), or **Mode B Offline Fallback** (`SELECT Name, QualifiedName FROM CATALOG.ENTITIES` ONLY when Studio Pro MCP is offline/unreachable). Draft `${execution_plans_dir}/EP_Seed_<Entity>.md` (`status: "DRAFT"`, `test_intent: "data_seeding"`, 1-Case Generator with trailing `Persist`, `Rollback = No`, direct `CreateObject` init `PAT-06`, no `PAT-07` sentinels unless testing `empty`), and present Checkpoint 1 Case 3 from [checkpoint-templates.md](references/checkpoint-templates.md).
+3. **5-Tier Intent Classification & Anti-Loophole Rules (`PAT-121`, `PAT-124`, `ANTI-68`..`ANTI-72`):**
+   - Classify intent as: **Tier 1 `regression`** (live `.mpr` AST + `specification_drift`), **Tier 2 `exploratory_robustness`** (AST splits `PAT-109` + boundary/null `PAT-07` heuristics), **Tier 3 `exploratory_feature`/`tdd`** (mandatory external spec; AST-only prohibited), **Tier 4 `bug_reproduction`** (`PAT-124`, defect spec oracle, `expected_pre_fix_outcome: "FAIL"`, initial `protection_level: "unlocked"` until `mta-lint.mjs lock` after Red run), or **Tier 5 `data_seeding`** (`PAT-70`, `PAT-06`).
+   - Defect verbs force `bug_reproduction`; creation/change verbs or stub flows (`PAT-109`) force `exploratory_feature`/`tdd`; ambiguous requests halt at **The Conservative Gate** at Checkpoint 1.
+   - Linter blocks intent downgrading (`ANTI-68`), circular spec summaries (`ANTI-69`), rubber-stamp risks lacking boundary tokens (`ANTI-70`), trivial prompt echoes `< 30` chars (`ANTI-71`), and softened non-`Equal` scalar assertions (`ANTI-72`).
+4. **Zero Model Mutation (`PAT-122`, `ANTI-73`):** Never create or modify Mendix microflows (`Test_*`, `UT_*`), entities, or pages for testing. Save `EP_*.md` (`status: "DRAFT"`) and halt with Checkpoint 1 Case 4 if both MCP servers are offline.
 
 ---
 
-## 📋 Standardized AI-Generated Execution Plan Blueprint
+## 🧭 Core Planning & Discovery Invariants (`STATE_BUILD_PLANNING`)
 
-You **MUST** format the final approved Execution Plan strictly in accordance with the standardized blueprint defined in [execution-plan-template.md](references/execution-plan-template.md).
-
-The Execution Plan layout consists of:
-- **Execution Plan Metadata Header:** Collapsible `<details><summary><b>Execution Plan Metadata</b></summary>` YAML block (`schema_version: "2.0.0"`).
-- **Single Unified Status Note:** Top-level status banner with Pre-Approval Quality Audit score (`14/14 checks executed`), MTA Server Parity status, and test category.
-- **Direct MTA Web Navigation Links Table (Post-Build):** Placed beneath top note upon smoke verification.
-- **Pre-Approval Quality Checklist:** Collapsible container verifying all 14 quality checks per [pre-approval-audit.md](references/pre-approval-audit.md).
-- **6 Canonical Numbered Sections:**
-  1. *Scope, Governance & Target Placement*
-  2. *Prompt & Input Log vs. MTA Skill Conflicts (MANDATORY)*
-  3. *Chronological Master Step Ledger & Testability Profile (with nested step drilldowns)*
-  4. *Target-Bound Data Variation Matrix & Metadata (with nested scenario descriptions)*
-  5. *Playwright / Browser Settings & Applied Patterns*
-  6. *MTA Build & Smoke Verification Receipt (Appended Post-Build)*
-
-
-
-
-Consult [execution-plan-template.md](references/execution-plan-template.md) for the complete verbatim template and code fences.
+1. **Lineage Audit & Bounded 2-Turn Discovery (`PLAN_STEP_1B` & `PLAN_STEP_1`, `PAT-53`, `PAT-71`, `PAT-82`, `PAT-84`, `PAT-89`, `PAT-94`, `PAT-97`, `PAT-109`, `ANTI-26`, `ANTI-38`, `ANTI-41`, `ANTI-58`, `ANTI-66`, `ANTI-75`, `ANTI-82`):**
+   - Check `${execution_plans_dir}/` for prior `EP_*.md` files (`PAT-84`, `ANTI-38`).
+   - Within **max 2 read-only turns** (`ANTI-82`, zero `GetTestSuiteDetails`/`GetTestCaseDetails` `ANTI-66` and zero ad-hoc scripts `ANTI-58`): use **Mode A Studio Pro MCP** (`ped_read_document` / `pg_read_page`, where `mxcli`/shell discovery is forbidden per `ANTI-75` except `PAT-94` DatePicker BSON dump) or **Mode B Headless `mxcli`** (`describe microflow|page` and `SELECT ... FROM CATALOG.*`, zero `SHOW *` cascades `ANTI-26`).
+   - Write `${execution_plans_dir}/EP_<TestCaseName>.md` (`status: "DRAFT"`, `target_*_key: null`), run `node tools/mta-lint.mjs plan` (records `DRAFT_LINTED`), and render the ~35-line Executive Summary + Checkpoint 1 (`PAT-89`, `ANTI-41`).
+2. **Taxonomy & Domain Rule Coverage (`PAT-01`..`PAT-125`, `ANTI-01`..`ANTI-82`):**
+   - *Scoping & Matrix:* `PAT-01`, `PAT-02`, `PAT-26`, `PAT-110` (Target-Bound Matrix Rows `Step X: Entity.Attribute` / `Step Y: Filter Entity.Attribute` / `Step Z: Assert Return Value`, zero handles/booleans in Section 4 `ANTI-48`, `ANTI-59`), `PAT-111` (Unified Promotable Blueprint, zero unrolled steps `ANTI-60`, 100% Plan-to-Payload parity), `ANTI-02`.
+   - *Backend (Domain 1):* `PAT-04`, `PAT-06` (`CreateObject` direct init, `Input Handle = '-'`, `ANTI-01`, `ANTI-05`), `PAT-07` (Paired Dual-Retrieve sentinels `'VAL'`/`'NON'`, $\le 4$ chars), `PAT-08` (Embedded Count Assertion in Field 6, `ANTI-03`, `ANTI-06`), `PAT-10` & `PAT-120` (Validation Feedback & Session Isolation), `PAT-11` (`TestStepBeforeKey` chaining, `ANTI-44`), `PAT-14` (`ANTI-10`, `ANTI-13`, `ANTI-14`), `PAT-16`, `PAT-17` (`None`/`Stop`, `ANTI-07`), `PAT-19`, `PAT-27`, `PAT-53`, `PAT-54`, `PAT-77`, `PAT-86`, `PAT-87`, `PAT-95`, `ANTI-08`, `ANTI-11`, `ANTI-31`, `ANTI-40`.
+   - *Frontend UI (Domain 2):* `PAT-03` (3-Case Split), `PAT-18` (`Always`/`_Continue`), `PAT-40` (2+ list records), `PAT-41` & `PAT-125` (Guest Access check for `Without_Login` vs verified credentials, `ANTI-81`), `PAT-42` & `PAT-94` (DatePicker BSON format, `ANTI-45`), `PAT-52` (`ELO_Filter_*_by_Text`, `SelectValueForValue`), `PAT-64` & `ANTI-79` (`MenditectMxFrontendTestKit`, `GenerateMicroflowCallTestStepLocatePage` with clean `PageClassName` & `GenerateMicroflowCallTestStepLocateWidget`, `ANTI-20`, `ANTI-21`), `PAT-67` & `PAT-72` (Section 2 Widget Inventory, `ANTI-23`), `PAT-91` (Case 1 `'TEST_'` keys + `Persist`, `ANTI-42`), `PAT-92` & `PAT-93` (Case 3 reverse-order teardown + trailing `Persist`, `ANTI-43`), `PAT-114` (`ANTI-63`), `PAT-116` (`SlowMo = 0 ms`, `ANTI-65`), `PAT-119` (Post-trigger `Locate_MxWidget_*_ValidationMessage` + `Description`, `ANTI-74`).
+   - *Strategy, TDM & Audit:* `PAT-12`, `PAT-34`, `PAT-36`, `PAT-43`, `PAT-44`, `PAT-60`, `PAT-62`, `PAT-63`, `PAT-68`..`PAT-70` (`ANTI-24`..`ANTI-30`, `ANTI-46`), `PAT-73`..`PAT-76`, `PAT-82` (14-Point Checklist + 6-Point Negative Scan in Section 5 per [pre-approval-audit.md](references/pre-approval-audit.md), `ANTI-36`), `PAT-88`, `PAT-112` (`ANTI-61`).
+3. **Gate 1, Placement Discovery & Two-Turn Gate 2 (`PLAN_STEP_2` & `PLAN_STEP_3`, `PAT-43`, `PAT-44`, `PAT-47`, `PAT-57`, `PAT-63`, `PAT-79`, `PAT-95`, `PAT-106`, `PAT-116`, `PAT-118`, `PAT-123`, `ANTI-56`, `ANTI-65`, `ANTI-67`, `ANTI-76`, `ANTI-80`):**
+   - Only `Backend` + `Rollback == "Yes"` + `auto_execute` + unambiguous non-bugfix ground truth may use `FAST_PATH_EXECUTION` (`status: "AUTO_APPROVED"` + `mta-lint.mjs pre-exec`). All other flows halt at Checkpoint 1 (`ANTI-80`).
+   - When Option B is chosen (`ANTI-56`), keep `status: "DRAFT"` (or `"AUTO_APPROVED"`), run `GetApplicationDetails` (halting via `ask_question` if `> 1` config `PAT-118`, `ANTI-67`), elicit Frontend Playwright options (`PAT-116`, `ANTI-65`), scan `GetTestConfigurationDetails` for suite collisions (`PAT-123`, `ANTI-76`), stage via `node tools/mta-lint.mjs stage-placement <plan.md> --config-key <K> --suite-key <K|NEW_SUITE>`, and **HALT** at Checkpoint 2 (`PAT-79`).
+   - Only in the **next turn** after user approval, seal `status: "APPROVED"`, populate numeric `target_configuration_key > 0` and `target_suite_key > 0` (or `"NEW_SUITE"`), sync `mta_state.json` (`PAT-44`, `PAT-47`), and run `node tools/mta-lint.mjs pre-build <plan.md>`.
 
 ---
 
-## 📅 STRICT REACTIVE LOADING STRATEGY
+## 📋 Reactive Reference Loading Strategy
 
-To maximize token efficiency, **DO NOT load reference files preemptively**. Load them **strictly on-demand** based on the state or request:
+Format all `EP_<TestCaseName>.md` files strictly per **`references/execution-plan-template.md`** (`schema_version: "2.1.0"` + 6 Canonical Sections). Load references strictly on-demand:
 
 | State / Focus Area | Load ONLY this file: |
-| --- | --- |
-| *Checkpoint 1 Decision Cards, Checkpoint 2 Summary Box, Lineage Cards & Sealed Receipts* | **`references/checkpoint-templates.md`** |
-| *Execution Plan canonical layout, code fences & 8-section sign-off template* | **`references/execution-plan-template.md`** |
-| *14-point Pre-Approval Quality Checklist details & verification criteria* | **`references/pre-approval-audit.md`** |
-| *Identifying technical or business risks, evaluating microflow typologies* | **`references/risk-matrix.md`** |
-| *Constructing and formatting build prompts for Backend or Frontend* | **`references/prompts-templates.md`** |
-| *Auditing Execution Plans, verifying all 202 testing patterns/anti-patterns (`PAT-01..124`, `ANTI-01..78`), or auto-registering new learned patterns* | **`references/mta-patterns-and-antipatterns-reference.md`** |
-| *Local Exploratory Execution, TCEX_RQ schema & bidirectional mapping* | **`references/mta-plugin-mcp-schema.md`** |
-
----
-
-## 🔄 Downstream Handoff Trigger
-Depending on the approved Execution Strategy, output the appropriate handoff trigger:
-
-* **If Option A (Local Execution & Data Provisioning) was approved:**
-  > 🚀 **Handoff Trigger (Local Execution Track)**: Ready to transition to `mta-run-analyze`. Load the `mta-run-analyze` skill to execute the test/seeding directly against the local application via `MTA_plugin.execute-testcase` (`Rollback = Yes (true)` with in-memory execution by default; `Rollback = No` only for `PAT-68` live test data seeding with batch `Persist`).
-
-* **If Option B (Direct Persistent MTA Test) was approved in Gate 2 (`PLAN_STEP_3`):**
-  > 🚀 **Handoff Trigger (Persistent Track)**: Ready to transition to `mta-build`. Load the `mta-build` skill with the generated prompt to construct the test on the MTA server.
-
----
-
-## 🚫 MTA TEST SCOPING & DESIGN PATTERN REGISTRY
-
-All testing patterns, laws, and anti-patterns enforced during test design (`PAT-01` through `PAT-122`, and `ANTI-01` through `ANTI-75`) are centrally defined and maintained in the canonical pattern catalog:  
-➔ **[references/mta-patterns-and-antipatterns-reference.md](references/mta-patterns-and-antipatterns-reference.md)**
+| :--- | :--- |
+| *Detailed `STATE_BUILD_PLANNING` walkthroughs, entry rules & SQL catalog queries* | **`references/mta-scoping-reference.md`** |
+| *Checkpoint 1/2 Cards, Lineage Cards, YAML Header & Sealed Receipts* | **`references/checkpoint-templates.md`** |
+| *Execution Plan 6-section canonical template & code fences* | **`references/execution-plan-template.md`** |
+| *14-point Pre-Approval Quality Checklist & 6-point Negative Scan* | **`references/pre-approval-audit.md`** |
+| *Frontend TestKit closed catalog, Locator & Action Pairing Matrix* | **`references/frontend-testing.md`** |
+| *Playwright settings, suite placement/lifecycle, risk matrix & prompts* | **`references/execution-settings.md`** \| **`references/placement-and-lifecycle.md`** \| **`references/risk-matrix.md`** \| **`references/prompts-templates.md`** |
+| *Local Exploratory Execution `TCEX_RQ` schema & 207-rule catalog* | **`references/mta-plugin-mcp-schema.md`** \| **`references/mta-patterns-and-antipatterns-reference.md`** |

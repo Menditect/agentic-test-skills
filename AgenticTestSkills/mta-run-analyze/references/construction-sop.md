@@ -31,7 +31,7 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
              │
 [Phase 2B: Batch Binding] (Values, Parameters, Outputs, Descriptions - 15-20 calls/turn)
              │
-[Phase 3: Variation Registration] (AddTestCaseVariationItem across all targets)
+[Phase 3: Variation Allocation] (AddTestCaseVariationItem across all targets)
              │
 [Phase 4: Upfront Column Provisioning & Bulk Chunked Population] (Scenarios 2..N)
 ```
@@ -39,16 +39,36 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
 ---
 
 ### Phase 1: Sequential Step Pipeline (`Temp State: SKELETON_PROVISIONING`)
-1. **Multi-Case Allocation (`RULE_3_CASE_SUITE_MAPPING`, `PAT-03`, `PAT-44`):**
+
+> [!CAUTION]
+> ### 🚨 Mandatory Predecessor Forward Chaining Protocol (`PAT-11`, `ANTI-44`)
+> MTA insertion APIs default to **prepending to Position 1 (head insertion)**, NOT appending to the end! Omitting predecessor placement keys causes containers to end up in **exact reverse order** ($N \to \dots \to 2 \to 1$).
+>
+> 1. **Test Steps:**
+>    - Step 1: `Create*TestStep(TestStepBeforeKey = 0)` (or omit).
+>    - Step $N$ ($N \ge 2$): **MUST** pass `TestStepBeforeKey = <Key returned by Step N-1>` directly in the creation tool.
+>    - **NEVER** omit `TestStepBeforeKey` after Step 1.
+> 2. **Test Cases:**
+>    - Case 1: `CreateTestCase(TestCaseBeforeKey = 0)` (or omit).
+>    - Case $N$ ($N \ge 2$): **MUST** pass `TestCaseBeforeKey = <Key returned by Case N-1>` directly in `CreateTestCase`.
+>    - Concurrently batch-creating test cases without `TestCaseBeforeKey` is strictly prohibited.
+> 3. **Test Suites:**
+>    - Suite 1: `CreateTestSuite` (created at Position 1).
+>    - Suite $N$ ($N \ge 2$): Because `CreateTestSuite` lacks a `TestSuiteBeforeKey` parameter, immediately forward-chain upon creation via `SetSequenceOfTestSuite(TestSuiteKey = SuiteNKey, TestSuiteBeforeKey = Suite(N-1)Key)`.
+>
+> ⚠️ **Strict Ban:** Creating all items first and attempting retroactive batch reordering via `SetSequenceOf*` is strictly prohibited (`ANTI-44`). Sequence must be established **at creation time**.
+
+1. **Multi-Case Allocation (`RULE_3_CASE_SUITE_MAPPING`, `PAT-03`, `PAT-11`, `PAT-44`):**
    - In multi-case test suites (e.g., Frontend 3-Case lifecycle: Case 1 Setup with seeding + batch Persist, Case 2 Action, Case 3 Teardown with reverse deletes + batch Persist [`PAT-03`, `PAT-91`, `PAT-92`, `PAT-93`]), create exactly 3 distinct Test Cases inside the target Test Suite:
-     1. `EP_<Name> - Case 1: Setup`
-     2. `EP_<Name> - Case 2: Playwright Execution`
-     3. `EP_<Name> - Case 3: Teardown`
+     1. `EP_<Name> - Case 1: Setup` (passes `TestCaseBeforeKey = 0`)
+     2. `EP_<Name> - Case 2: Playwright Execution` (passes `TestCaseBeforeKey = Case1Key`)
+     3. `EP_<Name> - Case 3: Teardown` (passes `TestCaseBeforeKey = Case2Key`)
    - Shunting all steps into a single monolithic test case is strictly prohibited.
-   - Dispatch all planned `CreateTestCase` calls concurrently with pre-resolved `ExecutionUserKey` (`PAT-79`).
+   - Test cases MUST be forward-chained at creation time via `TestCaseBeforeKey` (`PAT-11`), pre-resolving `ExecutionUserKey` (`PAT-79`). This eliminates retroactive `SetSequenceOfTestCase` calls.
 2. **Predecessor Anchor Sequencing Semantics (`RULE_SEQUENCING_SEMANTICS`, `ANTI-44`):**
-   - `SetSequenceOfTestCase(TestCaseKey, TestCaseBeforeKey)` places `TestCaseKey` **AFTER** `TestCaseBeforeKey`. Pass `TestCaseBeforeKey = 0` to set `TestCaseKey` as Position 1.
-   - **Canonical 3-Case Ordering Recipe:**
+   - `*BeforeKey` (`TestSuiteBeforeKey`, `TestCaseBeforeKey`, `TestStepBeforeKey`) represents the **predecessor anchor** (i.e. *"the element that comes BEFORE the target"*). The target element is ALWAYS placed **directly AFTER** the predecessor anchor.
+   - Passing `*BeforeKey = 0` ALWAYS places the element at **Position 1 (Head)**. It NEVER appends to the end.
+   - If reordering is ever required on existing legacy containers:
      1. `SetSequenceOfTestCase(TestCaseKey=C1, TestCaseBeforeKey=0)` -> C1 is Position 1.
      2. `SetSequenceOfTestCase(TestCaseKey=C2, TestCaseBeforeKey=C1)` -> C2 is Position 2 (after C1).
      3. `SetSequenceOfTestCase(TestCaseKey=C3, TestCaseBeforeKey=C2)` -> C3 is Position 3 (after C2).
@@ -57,14 +77,109 @@ To prevent transaction locks, avoid partial-state failures, and maximize through
    - For all Playwright widget locator steps targeting standard Mendix widgets (`TextBox`, `DropDown`, `DatePicker`, `ReferenceSelector`, `Button`, `CheckBox`, `RadioButtons`, `ComboBox`, etc.), use the dedicated MTA generator tool **`GenerateMicroflowCallTestStepLocateWidget`** (or **`GenerateMicroflowCallTestStepLocatePage`**).
    - Low-level manual parameter editing loops (`CreateMicroflowCallTestStep` -> `GetTeststepDetails` -> `EditMicroflowParameterValue` -> `EditMicroflowObjectParameter`) are strictly prohibited for standard widget locators.
 4. **Step Forward-Chaining:** Create empty steps in chronological order using predecessor chaining (`TestStepBeforeKey = PreviousStepKey`, `PAT-11`).
-   - For the very first step in a test case, pass `TestStepBeforeKey = 0`.
-     > [!WARNING]
-     > **⚠️ `TestStepBeforeKey = 0` IS HEAD INSERTION ONLY:**
-     > Passing `0` for `TestStepBeforeKey` in `CreateMicroflowCallTestStep`, `CreateObjectActionTestStep`, or `SetSequenceOfTestStep` **ALWAYS** places the step at **Position 1 (the absolute beginning / head)** of the test case. It **NEVER** appends to the end.
-   - Steps in the same test case cannot be batched concurrently because each step requires its predecessor's generated key.
-   - **Sequence Modification Serialization (`ANTI-44`):** If reordering steps or test cases after creation via `SetSequenceOfTestStep` or `SetSequenceOfTestCase`, you MUST execute these calls sequentially one-by-one across separate turns. Dispatching multiple sequence reordering calls in parallel causes uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences. Wherever possible, construct steps forward in correct sequence order from the start (`PAT-11`) to eliminate the need for `SetSequenceOfTestStep` entirely.
+   - For Step 1: pass `TestStepBeforeKey = 0` (or omit).
+   - For Step $N$ ($N \ge 2$): pass `TestStepBeforeKey = Step(N-1)Key`.
+   - Steps in the same test case cannot be batched concurrently because each step requires its predecessor's generated key (`PAT-16`).
+   - **Sequence Modification Serialization (`ANTI-44`):** If reordering steps after creation via `SetSequenceOfTestStep`, you MUST execute these calls sequentially one-by-one across separate turns. Dispatching multiple sequence reordering calls in parallel causes uncommitted transaction race conditions on ordinal list positions in Mendix, resulting in scrambled step sequences. Constructing steps forward in correct sequence order from the start (`PAT-11`) eliminates the need for `SetSequenceOfTestStep` entirely.
    - **Deterministic Reverse-Order Re-indexing Pattern ($N \rightarrow 1$):** If an existing multi-step test case needs its sequence completely re-ordered, execute `SetSequenceOfTestStep(stepKey, 0)` in **reverse order** (from Step $N$ down to Step 1). This deterministically establishes the contiguous sequence $[1..N]$ without ordinal list collisions.
 5. **Direct Output Binding:** For `ChangeObjects` and `DeleteObjects` steps, pass `TestStepOutputKey` directly into `CreateObjectActionTestStep` at creation time (`PAT-80`).
+
+#### 📋 Concrete Forward Chaining Tool Call Examples (`PAT-11`)
+
+**Tier 3: Test Steps Forward Chaining:**
+```json
+// Step 1: Create Object (Position 1 / Head)
+// Tool: CreateObjectActionTestStep
+{
+  "TestCaseKey": 1200,
+  "TestStepName": "Create Booking",
+  "EntityQualifiedName": "MyModule.Booking",
+  "ObjectAction": "CreateObject",
+  "TestStepBeforeKey": 0
+}
+// Returns: "TestStepKey: 6701"
+
+// Step 2: Validate Booking (Chained after Step 1)
+// Tool: CreateMicroflowCallTestStep
+{
+  "TestCaseKey": 1200,
+  "TestStepName": "Validate Booking",
+  "MicroflowQualifiedName": "MyModule.VAL_Booking",
+  "TestStepBeforeKey": 6701  // <-- Non-zero key returned by Step 1
+}
+// Returns: "TestStepKey: 6702"
+
+// Step 3: Locate Submit Button (Chained after Step 2)
+// Tool: GenerateMicroflowCallTestStepLocateWidget
+{
+  "TestCaseKey": 1200,
+  "TestStepName": "Locate Submit Button",
+  "PageQualifiedName": "MyModule.Booking_NewEdit",
+  "WidgetName": "btnSubmit",
+  "WidgetType": "Button",
+  "TestStepBeforeKey": 6702  // <-- Non-zero key returned by Step 2
+}
+```
+
+**Tier 2: Test Cases Forward Chaining:**
+```json
+// Case 1: Setup (Position 1 / Head)
+// Tool: CreateTestCase
+{
+  "TestSuiteKey": 500,
+  "TestCaseName": "EP_Booking - Case 1: Setup",
+  "ApplicationKey": 10,
+  "ExecutionUserKey": 42,
+  "TestCaseBeforeKey": 0
+}
+// Returns: "TestCaseKey: 1201"
+
+// Case 2: Playwright Execution (Chained directly after Case 1)
+// Tool: CreateTestCase
+{
+  "TestSuiteKey": 500,
+  "TestCaseName": "EP_Booking - Case 2: Playwright Execution",
+  "ApplicationKey": 10,
+  "ExecutionUserKey": 42,
+  "TestCaseBeforeKey": 1201  // <-- Key returned by Case 1
+}
+// Returns: "TestCaseKey: 1202"
+
+// Case 3: Teardown (Chained directly after Case 2)
+// Tool: CreateTestCase
+{
+  "TestSuiteKey": 500,
+  "TestCaseName": "EP_Booking - Case 3: Teardown",
+  "ApplicationKey": 10,
+  "ExecutionUserKey": 42,
+  "TestCaseBeforeKey": 1202  // <-- Key returned by Case 2
+}
+```
+
+**Tier 1: Test Suites Forward Chaining:**
+```json
+// Suite 1: Created at Position 1
+// Tool: CreateTestSuite
+{
+  "TestConfigurationKey": 100,
+  "Name": "TS_Unit_Tests"
+}
+// Returns: "TestSuiteKey: 501"
+
+// Suite 2: Created and immediately chained after Suite 1
+// Tool: CreateTestSuite
+{
+  "TestConfigurationKey": 100,
+  "Name": "TS_Integration_Tests"
+}
+// Returns: "TestSuiteKey: 502"
+
+// Tool: SetSequenceOfTestSuite
+{
+  "TestSuiteKey": 502,
+  "TestSuiteBeforeKey": 501  // <-- Placed directly after Suite 1
+}
+```
 
 ---
 
@@ -147,10 +262,10 @@ Because MTA does not expose a `DeleteTestStep` MCP tool, when a test step is mis
 
 ---
 
-### Phase 3: Upfront Variation Registration (`Temp State: VARIATION_REGISTRATION`)
+### Phase 3: Upfront Variation Allocation (`Temp State: VARIATION_ALLOCATION`)
 1. Enable variations on the test case: `AddTestCaseVariationItem(Action="EnableTestCaseDatavariation")`.
 2. Concurrently dispatch **ALL** planned `AddTestCaseVariationItem` calls across all variation columns in safe batches (15-20 calls per turn).
-   - *SSOT Lock & Target-Bound Schema (`PAT-110`, `ANTI-32`, `ANTI-59`):* Every variation item registered MUST match Section 7 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). Zero unapproved additions, conceptual boolean flags, or improvisations allowed (`ANTI-32`, `ANTI-59`).
+   - *SSOT Lock & Target-Bound Schema (`PAT-110`, `ANTI-32`, `ANTI-59`):* Every variation item registered MUST match Section 4 of the approved Execution Plan 1:1, binding directly to concrete test step target elements (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute). Zero unapproved additions, conceptual boolean flags, or improvisations allowed (`ANTI-32`, `ANTI-59`).
 
 ---
 
@@ -167,7 +282,7 @@ Enforce `PAT-86`, `PAT-87`, and `ANTI-40`:
    Dispatch cell updates **Scenario-by-Scenario (Column-by-Column)**:
    - Group cell updates by scenario in sequential order. You may batch multiple scenarios per turn up to the safe batch limit of 15 to 20 tool calls per turn (`ANTI-32`), provided scenario column order is maintained and all mapped keys match the upfront CoT mapping table.
    - Container metadata (`EditTestCaseVariation`), attribute overrides, parameter overrides, and assertion overrides should be completed for a scenario before advancing to the next.
-   - For null/empty values, use `SetValueToEmpty="_True"`.
+   - For null/empty values (`PAT-102`), newly cloned variation columns default to empty/NULL; leave them empty by omitting the setter tool call (never pass `SetValueToEmpty="_True"` or string `"NULL"`), or use `PAT-07` short filter sentinels (`'NONE'` / `'NON'`) for nullable object/association retrievals.
    - Cloned `AssertObjectCount` containers default to `0`; call `EditAssertObjectCount(SetExpectedObjectCount)` with `ExpectedObjectCount: N` for scenarios expecting $\ge 1$ objects.
    - Limit calls to safe batches of 15 to 20 calls per turn (`ANTI-32`).
 ---
@@ -187,8 +302,8 @@ Enforce `PAT-86`, `PAT-87`, and `ANTI-40`:
 3. **Association Ownership (`PAT-06`, `ANTI-52`):**
    - Verify that `SOFA_SelectObjectForAssociations` is bound on the owner entity and references the retrieved object handle.
 4. **Data Variation Item Count & Target Parity (`PAT-19`, `PAT-78`):**
-   - Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 7 of the Execution Plan.
+   - Assert that the number of items in `TCVI_TestCaseVariationItems` equals the number of planned variation items in Section 4 of the Execution Plan.
    - Assert each item maps to the correct target (`AttributeValueKey`, `AssertMicroflowReturnValueCompareKey`, or Filter attribute).
-5. **Cell-by-Cell Variation Matrix Parity (`PAT-107`, `ANTI-57`):**
-   - Verify that all scenario names, descriptions, overridden values, and empty/null flags (`SetValueToEmpty: "_True"`, `'NONE'`) match Section 7 cell-by-cell.
+5. **Cell-by-Cell Variation Matrix Parity (`PAT-102`, `PAT-107`, `ANTI-57`):**
+   - Verify that all scenario names, descriptions, overridden values, and empty/null values (omitted setter call on cloned variation columns per `PAT-102`, or `'NONE'` / `'NON'` filter sentinels per `PAT-07`) match Section 4 cell-by-cell.
 

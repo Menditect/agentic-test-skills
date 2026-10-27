@@ -138,3 +138,12 @@ You **MUST** strictly adhere to the following architectural boundaries regarding
 5.  **Complete Frontend UI Isolation:** 
     In Frontend tests, **all test cases (Case 1 Setup, Case 2 Execution, Case 3 Teardown) MUST use `MxAdmin` as the backend Execution User at the test case level**. The user that logs in via the login step (e.g. `Start_MxFrontend_Test_With_Login`) in Case 2 is strictly the frontend user executing the test in the browser. Apply Security (`ApplySecurityExecutor`) is set to `"NONE"` at the test case level.
 
+---
+
+## 🌐 MANDATORY FRONTEND PLAYWRIGHT SETTINGS ELICITATION (`PLAN_STEP_2`)
+
+When resolving placement and test settings for Frontend tests (or when transitioning from Option A to Option B), the agent **MUST** explicitly prompt the user for Playwright browser configuration using `ask_question` modal (or chat) before compiling Checkpoint 2:
+1. **Browser Engine:** `Chromium` (Default/Recommended), `Firefox`, `WebKit`.
+2. **Execution Mode:** `Headless` (Default for CI/automation) vs. `Headed` (Visual debugging).
+3. **SlowMo Delay:** `0 ms` (Default fast), `250 ms`, `500 ms` (Visual debugging pacing).
+4. **Target URL:** Local (`http://localhost:8080`) vs. Custom environment port.

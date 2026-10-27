@@ -1,369 +1,57 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.38.0"
-changes: "Added PAT-124 Test-Driven Bug Fixing lifecycle, inverted evaluation, quarantined code repair, and lock verification."
+version: "6.44.0"
+changes: "Further compressed SKILL.md by referencing the enriched mta-analysis-diagnostics-reference.md while preserving the State Dispatch Table and 100% of PAT/ANTI citations."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill
 
-🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS OR UNPLANNED TESTS** 🚨
-
 > [!IMPORTANT]
-> **If the user's request is vague, exploratory, indicates they are starting fresh, asks for prompts/onboarding, OR requests an exploratory test / test execution that does NOT yet have an approved Execution Plan (`EP_*.md`):**
-> *   You **MUST** immediately stop using this `mta-run-analyze` skill.
-> *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
-> *   In `mta-test-design`, inspect the component AST/catalog, generate the formal Execution Plan (`EP_<TestCaseName>.md`), save it to disk, and present Checkpoint 1 (Option A vs Option B) before executing `MTA_plugin.execute-testcase`.
-
-🚨 **CRITICAL MTA GUARDRAIL: READ-ONLY CONTEXT DISCOVERY & EXECUTION TOOL GATING** 🚨
-
-> [!IMPORTANT]
-> ### 🔍 READ-ONLY MTA `GET*` MCP TOOLS ALWAYS AUTHORIZED
-> You are **ALWAYS authorized** to execute read-only MTA `Get*` MCP tools (e.g. `GetApplicationDetails`, `GetTestConfigurationDetails`, `GetAppModelData`, `GetExecutionUsers`, `GetTestSuiteDetails`, `GetTestCaseDetails`, `GetTeststepDetails`, `GetTestRunResults`) at any time, including on the very first turn of a request. To build clickable MTA navigation links and resolve configuration parameters (including the MCP server endpoint `[MtaUrl]/primitivetools/mcp`), evaluate in order: (1) `mta_config.json` (`default_app_instance_token` / `default_app_instance` / `mta_base_url`), (2) project-level `AGENTS.md` (fallback), (3) `.vscode/settings.json` / `mta_state.json` (legacy fallback), or (4) prompt the user on turn 1.
-> Use read-only MTA `Get*` tools freely in any state to build context, discover existing test structures, and present clear options to the user.
-
-> [!IMPORTANT]
-> ### 🛑 TEST MICROFLOW PROCRIPTION & ZERO MODEL MUTATION INVARIANT (PAT-122, ANTI-73)
-> Test execution and exploratory testing MUST NEVER create or run Mendix test microflows in Studio Pro. Execution occurs in-memory via `MTA_plugin.execute-testcase` with automated rollback or against the MTA platform via `ExecuteTest`. The Mendix application model is strictly read-only.
-
-> [!IMPORTANT]
-> ### ⚡ EXECUTION & MUTATING TOOL GATING
-> You are strictly prohibited from executing **execution or mutating MTA tools** (e.g. `ExecuteTest`, `CreateTestCase`, `EditTestStep`, etc.) on the first turn or during discovery until the target execution parameters (Configuration, Suite, or Case) are explicitly confirmed by the user.
+> - **Fresh / Vague / Unplanned Request Redirection:** If the user's request is vague, exploratory, or requests executing a test for a Microflow/Entity/Page without an existing approved Execution Plan (`EP_*.md`), immediately switch to **`mta-test-design`** (`.agent/skills/mta-test-design/SKILL.md`) to draft `EP_<TestCaseName>.md` and present Checkpoint 1 (`PAT-43`, `ANTI-46`, `ANTI-76`).
+> - **Zero Model Mutation Invariant (`PAT-122`, `ANTI-73`):** Never create or run Mendix test microflows in Studio Pro. Execution occurs via `MTA_plugin.execute-testcase` or `MTA.ExecuteTest`. The Mendix model is strictly read-only except during `CODE_REPAIR_INTERMISSION` under a locked (`locked_sha256`) oracle test (`PAT-124`).
 
 ---
 
-### 🎯 Interactive Discovery Question Template
-```markdown
-**Active State:** `STATE_DISCOVERY`
+## 🧭 State Dispatch Table (`STATE_RUN_ANALYZE`)
 
-Hello! I can help you run tests, retrieve execution logs, or explain and analyze existing test structures for your application **[AppName]**.
+Detailed micro-state walkthroughs live in **`references/mta-analysis-diagnostics-reference.md`** and **`references/exploratory-execution-guide.md`**.
 
-#### 1. Specify Test Placement (Starting Path):
-*   **Direct Path:** Specify the Target Configuration and Suite name right now (e.g., *"Run Config 'Staging' and Suite 'Checkout'"* or *"Explain TestCase 'TC_VerifyPayment'"*).
-*   **Scan Path (Explore):** Ask me to scan available Test Configurations so you can select one. (To save tokens, I will then scan Test Suites and Test Cases step-by-step as you select them).
-```
-
----
-
-## 🚫 CRITICAL DIAGNOSTIC & EXECUTION RULES
-
-You **MUST** strictly follow the Golden Rules defined in `references/core-playbook.md` at all times. Here is a brief checklist of active diagnostic boundaries:
-1. **No conversational refusals**: Transition to `[STATE_QA_ASSISTANCE]` if the user asks conceptual, general, or educational questions.
-2. **No raw Playwright bypasses**: Rely exclusively on Menditect Frontend Testkit.
-3. **Strict State Isolation**: Output your concise chain of thought in the `🧠 Tool Execution Reasoning` format before every MTA tool call.
-4. **Strict Direct Link Formatting**: Web links must follow `[MtaBaseUrl]/p/[ObjectType]/[Key]` exactly. Available `ObjectTypes`: `testconfiguration`, `testsuite`, `testcase`, `testrun`, `testsuiterun`, `testcaserun`.
-5. **State File Key Resolution Law**: Before executing any persistent test case, test suite, or configuration on the MTA platform, check `mta_state.json` (if in Agentic Mode) or the Session Compaction Block (if in Chat Mode) to load the exact numeric `key` for the target test case (`test_cases[].key`) or test suite (`test_suite.key`). If missing keys, use read-only discovery tools (`GetTestConfigurationDetails`, `GetTestSuiteDetails`) to locate the entity on the MTA server, and immediately persist them. *(Note: Local in-memory exploratory tests executed under `STATE_EXPLORATORY_EXECUTION` via `MTA_plugin.execute-testcase` are strictly EXEMPT from key requirements).*
-6. **Pattern Audit & Auto-Registration Protocol**: When analyzing existing test cases or auditing step sequences in `STATE_QA_ASSISTANCE`, verify step patterns against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-xx] [^ANTI-xx]. If a new pattern or anti-pattern is identified or learned, auto-register it in `mta-patterns-and-antipatterns-reference.md` and add footnote cross-references (`[^PAT-xx]` / `[^ANTI-xx]`) to related instruction lines across skill files.
-7. **Pre-Flight Zero Construction Error & 1-to-1 Step Reconciliation Law [^PAT-59] [^ANTI-18]**: Before calling `ExecuteTest`, you **MUST** verify that `GetTestCaseDetails` returns **0 construction errors** and has passed the mandatory **1-to-1 Plan-to-Server Step Reconciliation** without discrepancies (in Agentic Mode, run `node tools/mta-lint.mjs audit "${execution_plans_dir}/EP_<TestCaseName>.md" "<server_data.json>"` to verify 0 discrepancies before calling `ExecuteTest`). If construction errors exist on the server or planned steps are missing (`INCOMPLETE_BUILD_DISCREPANCY`), you are **strictly prohibited** from invoking execution tools (`ANTI-18`). Halt immediately, report the exact construction errors or missing steps to the user, and explain that execution cannot proceed until model revision synchronization or step construction issues are resolved.
-8. **Decommissioned Steps Reconciliation & Manual Cleanup Output [^PAT-115] [^ANTI-64]**: Test steps marked as decommissioned via `PAT-DEPRECATE-STEP` (`ExecutionCondition = "Skip"` and prefixed with `[TO DELETE]`) do not block test execution. When presenting post-run analysis or test explanations, if `[TO DELETE]` steps exist in the test case, append the standardized **Manual Cleanup Recommendation** box prompting the user to remove them in Mendix Studio Pro or MTA Web UI.
-9. **Event-Driven Frontend Validation Feedback Assertion Diagnostics [^PAT-119]**:
-    * In Mendix, entering values into input widgets does not automatically trigger validation feedback unless an event (`onChange` on leave / with delay, `onEnterPress`) or action button (`onClick` on Save/Submit) executes validation logic in a Microflow or Nanoflow.
-    * Validation assertions are implemented via `Locate_MxWidget_[Widgetname]_ValidationMessage` followed by `ASR_Is_Hidden_MxLocator` (for nominal flows) or `ASR_Is_Visible_MxLocator` / `ASR_Has_Text` (for negative fault-injection flows).
-    * If an `ASR_Is_Hidden_MxLocator` step fails during execution, an unexpected validation message was displayed on that widget. In `STATE_RUN_ANALYZE` and `STATE_SELF_REPAIR`, inspect the triggering event microflow/nanoflow (or button action), event timing (`onChange` on leave vs while typing delay), and the input value to determine why validation failed, rather than modifying locator coordinates.
+| `Temp State` | Entry Condition | Mandatory Actions & Linter Gate | Allowed Mutating Tools | Next State Transition |
+| :--- | :--- | :--- | :--- | :--- |
+| **`STATE_EXPLORATORY_EXECUTION`** | Option A approved at Gate 1 (`status: "APPROVED"`) or `FAST_PATH_EXECUTION` (`status: "AUTO_APPROVED"`), `Category == "Backend"` (`PAT-62`), `Rollback == "Yes"` | Verify `${execution_plans_dir}/EP_<TestCaseName>.md` passes `node tools/mta-lint.mjs pre-exec <plan.md>` (`PAT-43`, `ANTI-46`). Compile single-payload `TCEX_RQ_TestStepRun` (`PAT-66`, `PAT-73`, `PAT-75`, `ANTI-22`, `ANTI-27`, `ANTI-29`) or isolated validation feedback sessions (`PAT-74`, `PAT-120`, `ANTI-28`). Render 3-Part Benchmark Profile (`PAT-61`, `PAT-76`, `ANTI-30`) + Checkpoint 4 Case A/B/C (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-56`, `ANTI-61`) | `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "Yes"`, no trailing `Persist`); zero `MTA` platform mutating tools | **Promote to Option B:** -> `STATE_BUILD_PLANNING` (`PLAN_STEP_2` in same turn, run `GetApplicationDetails`, stage placement, halt at Checkpoint 2 `ANTI-56`, `ANTI-80`) |
+| **`STATE_LIVE_DATA_PROVISIONING`** | Option A Live Data Seeding (`Rollback == "No"`, `status: "APPROVED"`, never `AUTO_APPROVED`, `PAT-68`) | Run `node tools/mta-lint.mjs pre-exec <plan.md>` (`PAT-43`, `ANTI-46`). Dispatch `MTA_plugin.execute-testcase` with `RollbackTcseAfterExecution: "No"` + trailing parameterless `{"Action": "Persist"}` (`PAT-21`, `PAT-69`). Present Data Script Conversion Bridge (`PAT-70`, `PAT-106`) | `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "No"`, trailing `Persist`); zero `MTA` platform mutating tools | **Option 1 (1-Case Generator):** -> `PLAN_STEP_2`. **Option 2 (3-Case Suite):** -> `PLAN_STEP_1B` (`ANTI-14`) |
+| **`STATE_EXECUTION_VERIFY`** | Persistent test passed `STATE_SMOKE_AUDIT` (`status: "BUILT_AND_VERIFIED"`, `0` construction errors `PAT-59`, `ANTI-18`), or user commands running an existing named Suite/Case | Verify `0` construction errors & `mta-lint.mjs audit` pass (`PAT-59`, `ANTI-18`). Resolve `ApplicationInstanceToken` from `mta_config.json` (`PAT-95`). Call `ExecuteTest`, then drill down via `GetTestRunResults(GetTestRunSummary -> GetTestCaseRunDetails)` (`PAT-83`, `ANTI-37`). Extract `FileUUID` Playwright trace URL (`PAT-90`) | `MTA.ExecuteTest` only; zero `Create*`/`Edit*`/`Set*` tools | Pass -> Complete; Fail -> `STATE_SELF_REPAIR` (or `CODE_REPAIR_INTERMISSION` if locked oracle `PAT-124`, `ANTI-78`) |
+| **`BUGFIX_REPRODUCE_RED`** | `test_intent == "bug_reproduction"` (`PAT-124`), Phase 1 Red Verification | Run `mta-lint.mjs pre-exec` and execute test against buggy code. Verify setup steps passed and target assertion failed (`FAIL_ASSERTION_MISMATCH` / `FAIL_VALIDATION_ERROR`). Immediately seal & lock via `node tools/mta-lint.mjs lock <plan.md>` (`protection_level: "locked"`, `locked_sha256`), present Checkpoint 4 Case C | `MTA_plugin.execute-testcase` (or `MTA.ExecuteTest`) + `mta-lint.mjs lock`; zero `Create*`/`Edit*` tools | `CODE_REPAIR_INTERMISSION` (or `mta-test-design` if `FAIL_TEST_SETUP_DEFECT` / False Positive) |
+| **`CODE_REPAIR_INTERMISSION`** | Phase 2 lock sealed (`protection_level: "locked"`, `locked_sha256`) | **Directory Write Quarantine** on `${execution_plans_dir}/` and **MTA Mutating Tool Quarantine**. Modify ONLY Mendix application model in Studio Pro (`ped_update_document`) to fix production bug; disclose AST diff; refuse assertion softening (`ANTI-78`) | Studio Pro model repair tools only; **ZERO** writes to `EP_*.md` and **ZERO** MTA mutating tools | `BUGFIX_VERIFY_GREEN` when user replies *"Run verified test"* |
+| **`BUGFIX_VERIFY_GREEN`** | Code repair complete in `CODE_REPAIR_INTERMISSION` | Run `node tools/mta-lint.mjs verify-lock <plan.md>` (`TAMPERED_TEST_REJECTED` on mismatch). Verify Mendix bytecode rebuild (`ANTI-75`). Replay verbatim test payload. On green (`PASS`), lift quarantine, append Section 6 receipt (keep `status: "APPROVED"` if promoting to Option B, else `"BUILT_AND_VERIFIED"`). Enforce 2-Cycle Circuit Breaker on repeated failure | `MTA_plugin.execute-testcase` / `MTA.ExecuteTest`; `edit_file` on `EP_*.md` Section 6 ONLY after green certification | **Promote to Option B:** -> `PLAN_STEP_2` (`status: "APPROVED"`). **2nd Fail:** 3-choice Circuit Breaker |
+| **`STATE_SELF_REPAIR`** | Runtime failure in `STATE_EXECUTION_VERIFY` (non-locked test or upstream wiring defect) | Auto-retrieve logs (`PAT-83`, `PAT-90`, `PAT-119`), run 5-step Cognitive Reverse Trace, present **MTA Run Failure Diagnostic & Self-Repair Plan** and **HALT** for user approval. After approval: (1) atomically update `EP_*.md` (`status: "APPROVED"`, `revision + 1`, `supersedes_plan_id`; run `mta-lint.mjs lock --reseal-wiring` or `--force` if locked), (2) run `mta-lint.mjs plan`, (3) transition to `mta-build` | None until user approves diagnostic plan; after approval: `edit_file` on `EP_*.md` & `mta_state.json` | `STATE_CONSTRUCTION` (`BATCH_INCLUSION` or `BATCH_BINDING`) -> `STATE_SMOKE_AUDIT` -> `STATE_EXECUTION_VERIFY` |
+| **`STATE_QA_ASSISTANCE`** | Out-of-band QA/explanation/pattern audit question (`PAT-51`) | Explain test intent/steps, audit against `references/mta-patterns-and-antipatterns-reference.md` [^PAT-xx] [^ANTI-xx], and prompt to return to prior `Temp State` | None (Read-only `Get*` only) | Restore `<PRIOR_TEMP_STATE>` |
 
 ---
 
-## 📅 STRICT REACTIVE LOADING STRATEGY
+## 🛠️ Core Execution, Diagnostics & Lifecycle Rules (`references/mta-analysis-diagnostics-reference.md`)
 
-To maximize token efficiency, **DO NOT load reference files preemptively**, except for `core-playbook.md` on the first active turn. Load other reference files **strictly on-demand** based on the request:
-
-| User request mentions... | ...then load ONLY this file: |
-| --- | --- |
-| *MTA request startup, workflow states, transitions, or core rules* | **`references/core-playbook.md`** (Preemptive) |
-| *Failing runs, runtime errors, log diagnostics, retry logic, or debugging* | **`references/troubleshooting.md`** |
-| *Test structure hierarchy, suites/cases, 3-Case pattern, or setups/teardowns* | **`references/placement-and-lifecycle.md`** |
-| *Unfamiliar technical acronyms, prefixes, or parameter glossary* | **`references/glossary.md`** |
-| *Local exploratory testing, JVM telemetry, execute-testcase outputs* | **`references/exploratory-execution-guide.md`** |
-
----
-
-## 🧭 MICRO-STATES (Within STATE_RUN_ANALYZE)
-When active under the macro state `STATE_RUN_ANALYZE`, track your current micro-state using the Temp State property in the global State Header:
-
-`[State: STATE_RUN_ANALYZE | Temp State: MICRO_STATE | Active Skill: mta-run-analyze]`
-
-1.  `STATE_EXPLORATORY_EXECUTION`: Running local exploratory tests and data seeding directly against the Mendix JVM for Backend Microflows and domain logic via `MTA_plugin.execute-testcase`.
-    *   **Handoff Acceptance & Tool Sequencing Invariant (`PAT-43`, `ANTI-46`):** This state accepts direct handoffs from `mta-test-design` (Option A Execution). When transitioning into this state, immediately assume responsibility for compiling the execution payload from the active Execution Plan, running the test, and presenting telemetry. Before calling `MTA_plugin.execute-testcase`, the agent **MUST** verify that the Execution Plan file exists on disk (persisted by `write_to_file` with `status: "AUTO_APPROVED"` or `"APPROVED"`). Running `execute-testcase` without an existing plan file is strictly **PROHIBITED** (`ANTI-46`). Under `exploratory_execution_mode: "auto_execute"`, plan generation and tool execution execute in the **very same turn**.
-    *   **⚠️ Prohibition of Plugin-Only Shortcuts in Promotable Plans (`ANTI-60`, `ANTI-48`):** Low-level plugin attributes such as `"UseEmptyObjectList": true` or omitting `"TCEX_RQ_Sfar"` in ad-hoc steps are execution-level conveniences. When drafting or updating an Execution Plan (`EP_*.md`), the agent **MUST NOT** rely on these shortcuts to represent empty objects in Section 4. The underlying step skeleton in Section 3 must remain 100% promotable to central MTA via `PAT-07` Dual-Retrieve sentinels in the canonical skeleton. During Option A dispatch, the agent compiles `PAT-07` empty-handle boundaries into the local JVM payload in-memory without corrupting the on-disk promotable blueprint.
-    *   **🛑 Frontend Prohibition Invariant (PAT-62):** `MTA_plugin.execute-testcase` runs exclusively in-memory within the local Mendix JVM and cannot drive browser sessions or execute Playwright locators. If the Execution Plan's category is `Frontend`, you are **strictly prohibited** from compiling or executing it via `MTA_plugin`. Immediately inform the user that Frontend tests require the MTA Platform, and route to `mta-test-design` (`PLAN_STEP_2`) if the MTA server is online, or retain the plan on disk as `status: "DRAFT"` if the server is offline.
-    *   **The 6 Universal MTA Plugin Execution Principles:** (1) Targeted Cluster Discovery (`mxcli` batch queries for all entities/flows), (2) Mandatory Execution User Context (`ExecutorUsername: "MxAdmin"` / `ApplySecurityExecutor: "NONE"`), (3) Verified Entity Fixture Attribute Binding (`PAT-75`, `ANTI-29`), (4) Canonical Data Type Serialization (strict ISO-8601 UTC `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` for `DateTimeType`, typed scalars, bare enums), (5) Explicit Object Topology & Handle Binding (`TCEX_RQ_Sfar` / `TCEX_RQ_Sfcr`), (6) Execution Mode Governance (`RollbackTcseAfterExecution = "Yes"` with NO trailing `Persist` step by default for exploratory tests to guarantee zero database pollution, or `RollbackTcseAfterExecution = "No"` with a trailing batch `Persist` step for live test data seeding per `PAT-68`).
-    *   **Pre-Flight Probing & Transport Fallback (`PAT-95`):** Verify that the local Mendix runtime is active and the `MTA_plugin` MCP endpoint is reachable. If unreachable (connection refused `ECONNREFUSED`, network timeout, 404, or 401/403 auth error):
-        - Intercept the error using `PAT-95` Sanitized Layered Return Message.
-        - Silently probe whether the remote `MTA` MCP server is registered and responsive.
-        - If the remote `MTA` MCP server is available: Offer immediate promotion/fallback to **Option B (Direct Persistent MTA Test)** via `mta-test-design` `PLAN_STEP_2`.
-        - If the remote `MTA` MCP server is also unavailable (Dual Outage): Guide the user to start the local application in Studio Pro and verify `MTA_plugin` in `mta_config.json`, while confirming that the Execution Plan remains safely stored on disk (`status: "DRAFT"`).
-    *   **Chained Single-Payload Matrix Assembly & Exhaustive Execution (`PAT-66`, `PAT-73`, `PAT-74`, `PAT-75`, `PAT-120`, `ANTI-22`, `ANTI-27`, `ANTI-28`, `ANTI-29`):**
-        *   *Zero-CLI Re-Query Law:* Pre-compile all variation blocks directly from Section 4 of the approved Execution Plan. Do **NOT** re-run any CLI or model inspection commands during execution.
-        *   *Single-Payload Execution Law (`PAT-73`, `ANTI-27`):* When Section 4 defines multiple variations (`VAR_01` through `VAR_0N`), compile all variations into **1 single `TCEX_RQ_TestStepRun` array** dispatched in **1 single `execute-testcase` tool call** with `"ExecutorUsername": "MxAdmin"`, `"ApplySecurityExecutor": "NONE"`, `"RollbackTcseAfterExecution": "Yes"` (or `"true"`), NO trailing `Persist` step, and verified entity attribute members (`PAT-75`). Invoking `execute-testcase` across multiple sequential agent turns is strictly **PROHIBITED** (`ANTI-27`) unless triggered by the Session Isolation Protocol (`PAT-74`, `PAT-120`). For explicit test data seeding (`PAT-68`), `"RollbackTcseAfterExecution": "No"` with a trailing batch `Persist` step is applied.
-        *   *Pre-Execution AST Conflict Audit (`PAT-74`, `ANTI-28`):* Audit microflow AST for potential single-session conflict vectors: (1) Database XPath queries or aggregate calculations (`COUNT`, `SUM`); (2) Unique constraint / duplicate existence checks; (3) Singleton entity mutations; (4) Non-transactional external side-effects (Java caches / REST APIs); (5) Validation Feedback Assertions (`PAT-120`).
-        *   *Validation Feedback Isolation & Agent-Side Assertion Protocol (`PAT-120`):* In Mendix runtime, validation feedback messages (`TCEX_RS_ValidationFeedback`) are collected globally per session/request. When an Execution Plan contains validation feedback assertions (`Assert Validation Feedback Count` or `Assert Validation Feedback Compare`): (1) The agent **MUST** bypass single-payload chaining (`PAT-73`) and dispatch each variation scenario (`VAR_01`..`VAR_0N`) in an independent `execute-testcase` session (`PAT-120`) to prevent cross-scenario feedback pooling; (2) The agent strips assertion steps from `TCEX_RQ_TestStepRun` when assembling the request; (3) Upon receiving `FunctionalResponse`, the agent parses `TCEX_RS_ValidationFeedback` and evaluates count, member, and message assertions agent-side against the Execution Plan; (4) Any mismatch fails the scenario (`Status: FAIL`).
-        *   *Intra-Block Teardown & Disjoint Keys:* For microflows that create or commit database records, insert an intra-block `Delete` step (`TCEX_RQ_Sfdr`) after each microflow call and enforce disjoint synthetic keys across blocks (`VAR01-xxx`, `VAR02-xxx`) to guarantee 100% database isolation under the existing plugin schema.
-        *   *Session Isolation Fallback Protocol (`PAT-74`, `PAT-120`):* If unmanaged external side-effects, validation feedback assertions (`PAT-120`), or persistent cross-scenario contamination is detected, immediately fall back to dispatching each variation as an independent `execute-testcase` session.
-        *   *Pure Calculation Microflows:* For calculation microflows with no commits, chain object instantiations and microflow calls sequentially in the single array.
-    *   **High-Speed Telemetry Evaluation & Mandatory Benchmark Profile (`PAT-76`, `PAT-120`, `ANTI-30`):** Verify scenario count parity: `Count(Executed Scenarios) == Count(Planned Scenarios)` defined in Section 4 Data Variation Matrix. If scenario count parity fails, flag `MISSING_SCENARIO_EXECUTION_DISCREPANCY` and set `Overall Result: FAIL`. Compute concrete wall-clock execution duration from tool start/end timestamps and extract `Passed`, `ExecutionDurationInMs`, and `TestStepRunResult` items from `TCEX_RS_TestStepRun` alongside `TCEX_RS_ValidationFeedback` for each variation in memory. You **MUST** compute and render the complete **3-Part Performance & Benchmark Profile** (Wall-Clock Throughput, Operations Category Breakdown Table, and Per-Scenario Latency Table). Omitting concrete durations or using uncalculated placeholders is strictly **PROHIBITED** (`ANTI-30`).
-    *   **Standard Result Presentation (`PAT-61`, `PAT-76`):** You **MUST** format the execution outcome using the standardized Exploratory Test Execution Report format (aggregating all executed variations in the matrix):
-        ```markdown
-        ### 📊 MTA EXPLORATORY TEST EXECUTION REPORT
-
-        <details>
-        <summary><b>Execution Metadata & Environment Details</b></summary>
-
-        *   **Timestamp:** `[YYYY-MM-DD HH:mm:ss (Local Time)]`
-        *   **Run ID:** `[TCEX-YYYYMMDD-HHMMSS-XXXX]`
-        *   **Total Wall-Clock Execution Time:** `[X ms]` (computed from tool execution start/completion timestamps)
-        *   **Execution User:** `[Username / Roles]`
-        *   **Rollback Mode:** `[Retained in Database (RollbackTcseAfterExecution = No) | Automatic (RollbackTcseAfterExecution = Yes)]`
-        *   **Execution Throughput:** `[X.X steps/sec | Y ms per step]`
-
-        </details>
-
-        #### 1. Test Goal & Scope
-        *   **Goal of the Test:** `[Clear description of what this test verified]`
-        *   **Target Component:** `[Target Microflow / Entity / Page]`
-        *   **Category:** `[Backend | Frontend]`
-
-        #### 2. Overall Result
-        *   **Status:** `[PASS | FAIL | ERROR]`
-            *   `PASS`: All steps, microflows, return values, and assertions succeeded.
-            *   `FAIL`: Steps executed, but assertions failed (return value / count / validation feedback mismatch).
-            *   `ERROR`: Unhandled exception or runtime crash occurred (Java exception / runtime error).
-        *   **Summary Description:** `[High-level outcome statement]`
-
-        #### 3. Test Case Level Summary
-        | Aspect | Details |
-        | :--- | :--- |
-        | **Input** | `[Input entities, parameter values, or seeded state passed to the test]` |
-        | **Actual Output** | `[Actual returned value, object GUIDs, side-effects, or validation feedback returned]` |
-        | **Expected Result** | `[Expected return value, attributes, or expected validation state]` |
-
-        #### 4. Performance & Benchmark Profile (MANDATORY - PAT-76)
-
-        ##### 4.1. Wall-Clock & Throughput Telemetry
-        *   **Total Wall-Clock Time:** `[X ms]`
-        *   **Total Steps Executed:** `[N steps across M scenarios]`
-        *   **Execution Throughput:** `[X.X steps/sec]`
-        *   **Average Step Duration:** `[Y.Y ms/step]`
-        *   **Database Transaction Overhead:** `[In-Memory Rollback (0 ms DB commit overhead) | Live Committed (Z ms DB commit overhead)]`
-
-        ##### 4.2. Operations Breakdown by Step Category
-        | Operation Category | Step Count | Total Time (ms) | Time Share (%) | Avg Duration / Step |
-        | :--- | :-: | :-: | :-: | :-: |
-        | **Object Instantiation / Seeding (`Oact: Create`)** | `N` | `X ms` | `A%` | `Y.Y ms` |
-        | **Microflow Logic Execution (`MicroflowCall`)** | `N` | `X ms` | `B%` | `Y.Y ms` |
-        | **Assertions & Validations (`Assert*`)** | `N` | `X ms` | `C%` | `Y.Y ms` |
-        | **Intra-Block Teardown (`Oact: Delete`)** | `N` | `X ms` | `D%` | `Y.Y ms` |
-        | **Transaction Rollback Overhead** | `1` | `X ms` | `E%` | `Y.Y ms` |
-
-        ##### 4.3. Per-Scenario Latency Breakdown
-        | Scenario Code | Scenario Description | Steps | Elapsed Latency | Status |
-        | :--- | :--- | :-: | :-: | :-: |
-        | `VAR_01` | `[Baseline / Nominal Scenario]` | `N` | `X ms` | `PASS` |
-        | `VAR_02` | `[Boundary / Edge Case]` | `N` | `X ms` | `PASS` |
-
-        #### 5. MTA Platform Promotion Call-to-Action (MANDATORY on PASS - PAT-106 Bridge)
-        *   **Case A (Connected MTA Platform Server Active):**
-            > 🚀 **Promote to MTA Platform (Option B):**
-            > This exploratory test passed cleanly in-memory. Would you like to save it permanently to MTA for CI/CD regression testing?
-            > * **Application:** `[AppName]`
-            > * **Target Suite:** `[SuiteName]` (e.g. 'Unit tests')
-            > * **Execution User:** `[ExecutionUser]` (e.g. 'MxAdmin')
-            > 
-            > *Reply **"Yes"** to construct persistent test assets on the MTA Platform.*
-
-        *   **Case B (Free MTA Exploratory License Active - PAT-112, ANTI-61):**
-            > 🚀 **Exploratory Run Complete (Free Exploratory License):**
-            > This exploratory test passed cleanly in-memory (`Rollback = Yes`).
-            > * **Execution Plan:** [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md)
-            > 
-            > *Note: Promotion to persistent MTA Platform storage, Playwright UI testing, and CI/CD pipelines requires a paid MTA Platform License ([Menditect](https://menditect.com)).*
-
-        *   **Case C (MTA Server Offline / Unreachable):**
-            > 💾 **Exploratory Run Complete (Offline Mode):**
-            > This exploratory test passed cleanly in-memory.
-            > * **Execution Plan:** Saved locally as draft at [`EP_[TestCaseName].md`](file:///path/to/EP_[TestCaseName].md).
-            > 
-            > *Note: Promotion is suspended until the remote MTA Platform server is reachable.*
-
-        #### 6. Error & Diagnostic Logs (Included on FAIL or ERROR)
-        *   **Exception Class / Type:** `[e.g. com.mendix.systemwideinterfaces.MendixRuntimeException]`
-        *   **Error Message:** `[Exact error message or assertion failure detail]`
-        *   **Stack Trace / Feedback:**
-            ```text
-            [Stack trace or error log details if present]
-            ```
-        *   **Diagnostic Rationale:** `[Root cause explanation and suggested fix]`
-
-        <details>
-        <summary><b>Step Level Execution Breakdown & Latency Telemetry</b></summary>
-
-        | # | Step Name / Type | Input (Handles / Values) | Actual Output | Expected Result / Assertions | Result | Duration |
-        | :-: | :--- | :--- | :--- | :--- | :-: | -: |
-        | 1 | `[Oact: Create]` | `[Attributes...]` | `GUID: [123...]` | `Object instantiated` | `PASS` | `12 ms` |
-        | 2 | `[MicroflowCall: SUB_...]` | `Car = [Handle #1]` | `ReturnValue = '120.00'` | `ReturnValue == '120.00'` | `PASS` | `28 ms` |
-
-        </details>
-        ```
-    *   **Test-Driven Bug Fixing Lifecycle & Untouchable Oracle Protocol (`PAT-124`, `ANTI-78`):**
-        When an Execution Plan has `test_intent: "bug_reproduction"`, standard pass/fail evaluation is suspended in favor of the 4-phase TDBF lifecycle:
-        1. **Phase 1: Inverted Evaluation Protocol (`BUGFIX_REPRODUCE_RED`):**
-           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: BUGFIX_REPRODUCE_RED | Active Skill: mta-run-analyze]`
-           * The goal of this execution is to **prove the bug exists** by reproducing the failure against the buggy code.
-           * **Assertion Failure Matches Bug Symptoms:** The bug is successfully reproduced! Overall Result is **`PASS (Bug Reproduced)`**.
-             * *Transition:* Advance to Phase 2: Seal & Lock Oracle Test.
-           * **Unhandled Crash / Error:** Unhandled Java runtime exception before assertions were evaluated -> Overall Result is **`FAIL (Investigation Required)`**. Distinguish crashing defects from business logic assertion failures.
-           * **Unexpected Test Success (Assertion Passed):** The test unexpectedly passed on the buggy code -> Overall Result is **`FAIL (False Positive)`**. The test failed to reproduce the defect. Return to `mta-test-design` to correct input parameters or reproduction steps.
-        2. **Phase 2: Seal & Lock Oracle Test:**
-           * Lock and seal the test immediately after Phase 1 genuinely reproduces `FAIL_ASSERTION_MISMATCH` or `FAIL_VALIDATION_ERROR`:
-             - In Agentic Mode with CLI: run `node tools/mta-lint.mjs lock "${execution_plans_dir}/EP_<TestCaseName>.md"` to compute `locked_sha256` and latch the seal on disk (`protection_level: "locked"`).
-             - In Agentic Mode without Node: append the `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and set `protection_level: "locked"`.
-             - In Chat Mode / MAIA: embed the `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and enforce the Verbatim Payload Replay Law.
-           * Present **Checkpoint 4 Case C (Bug Reproduction Certified -> Quarantined Code Repair)** from `references/checkpoint-templates.md`.
-           * Advance to Phase 3 (`Temp State: CODE_REPAIR_INTERMISSION`).
-        3. **Phase 3: Quarantined Code Repair Gate (`CODE_REPAIR_INTERMISSION`):**
-           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: CODE_REPAIR_INTERMISSION | Active Skill: mta-run-analyze]`
-           * The test plan is an **Untouchable Oracle**.
-           * **Directory Write Quarantine:** Modifying, editing, appending to, or deleting any file within `${execution_plans_dir}/` is **STRICTLY PROHIBITED**.
-           * **MTA Mutating Tool Quarantine:** Calling `Create*`, `Edit*`, or `Set*` MTA tools on the persistent server is **STRICTLY PROHIBITED**.
-           * **Code Repair Scope:** The user or agent modifies ONLY the Mendix application model in Studio Pro (microflows, expressions, rules) to resolve the root cause.
-           * **Test Tampering Refusal (`ANTI-78`):** If during code repair the agent is tempted to change or "soften" the test's assertions, or if the user asks to modify the test, the agent MUST refuse per `ANTI-78: Assertion Softening & Test Tampering`. The test can only be modified if the user explicitly abandons bug reproduction.
-        4. **Phase 4: Fix Verification & Lock Audit Protocol (`BUGFIX_VERIFY_GREEN`):**
-           * State Header: `[State: STATE_RUN_ANALYZE | Temp State: BUGFIX_VERIFY_GREEN | Active Skill: mta-run-analyze]`
-           * When code repair is complete and the user replies *"Run verified test"* or requests re-verification:
-             * **Pre-Execution Lock Verification:**
-               - In Agentic Mode with CLI: run `node tools/mta-lint.mjs verify-lock "${execution_plans_dir}/EP_<TestCaseName>.md"`. If hash mismatch or tampered, fail immediately with `TAMPERED_TEST_REJECTED` and refuse to run.
-               - In Agentic Mode without Node: inspect `### 🔒 IMMUTABLE_ASSERTION_ANCHOR` and git status of `${execution_plans_dir}/` to verify zero file modifications.
-               - In Chat Mode / MAIA: verify the payload matches the original sealed anchor verbatim.
-             * **Bytecode Desync Rebuild Gate:** Verify the Mendix model has been recompiled and restarted so the runtime executes fresh bytecode.
-             * **Re-execute the Untouchable Test:** Dispatch `execute-testcase` using the exact unmodified payload.
-             * **Fix Certification:**
-               - If assertions now pass: Overall Result is **`PASS (Bug Fixed & Verified)`**! Output the certification receipt and prompt for promotion to permanent regression suite (`PAT-106`).
-               - If assertions still fail: The code fix is incomplete. Retain quarantine and return to `CODE_REPAIR_INTERMISSION`.
-             * **2-Cycle Circuit Breaker:** A maximum of 2 failed verification cycles is permitted before mandatory escalation to the human developer.
-
-    *   **Promotion Prompt & Reverse-Handoff Protocol (`PAT-57`, `PAT-106`, `PAT-112`, `ANTI-56`, `ANTI-61`):**
-        *   **If the run passes (`PASS`):**
-            *   *Evaluate Active License Tier & Server Connectivity:*
-                - **Case A: Connected MTA Platform Server Active (`paid_enterprise` / Configured MCP):**
-                  Present **Checkpoint 4 Case A** from `references/checkpoint-templates.md`:
-                  > *"The exploratory test executed and passed in [X] ms with full rollback. Would you like to promote this test to a persistent test on the MTA Platform?"*
-                - **Case B: Free MTA Exploratory License Active (`free_exploratory`, `PAT-112`, `ANTI-61`):**
-                  Present **Checkpoint 4 Case B** from `references/checkpoint-templates.md`. Transparently inform the user that local in-memory exploratory testing remains active and unlimited, while persistent test suites, Playwright Frontend UI testing, and CI/CD pipelines require a paid MTA Platform License. Offer the collapsible platform upgrade guide referencing [Menditect](https://menditect.com) without disruptive commercial interruptions (`ANTI-61`).
-                - **Case C: Offline / Server Down (Configured but Unreachable):**
-                  > *"The exploratory test executed and passed in [X] ms with full rollback. 💾 **Note:** Promotion to persistent MTA storage is currently suspended because the remote MTA Platform server is offline. Your Execution Plan is safely stored on disk as a draft (`status: 'DRAFT'`). Once the MTA server is available, you can request persistent construction."*
-        *   **If the run encounters failures (`FAIL` or `ERROR`):**
-            *   Output the diagnostic log and provide actionable next-step guidance:
-                > ❓ **Next Steps:**
-                > - **Adjust Execution Plan** ➔ Return to `mta-test-design` to update inputs, expected outputs, or data variations.
-                > - **Fix Microflow in Studio Pro** ➔ Update your logic in Mendix Studio Pro and reply **"Re-run exploratory test"** to re-test in memory.
-                > - **Inspect Diagnostics** ➔ Ask for deeper root-cause analysis or stack trace inspection.
-        *   **If User Confirms Promotion (When MTA Server is Active) (`PAT-106`, `ANTI-56`):**
-            1. Update State Header: `[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_2 | Active Skill: mta-test-design]`
-            2. **Immediate Placement Discovery Execution (`PAT-106`):** In the SAME turn promotion is requested, the agent MUST autonomously execute read-only placement discovery tools:
-               - `GetApplicationDetails(RetrieveAction="GetRootElements")`
-               - `GetTestConfigurationDetails(RetrieveAction="GetTestConfigurations")`
-               - `GetExecutionUsers()`
-            3. **Render Checkpoint 2 (Gate 2: Placement & Target Summary) Box (`PAT-43`, `PLAN_STEP_3`):**
-               Present the discovered configurations, suites, execution users, and suggested test case name to the user for explicit confirmation:
-               ```markdown
-               > ### 🎯 Checkpoint 2: Confirm Test Suite Placement & Settings
-               > * **Test Configuration:** `[Discovered or Selected Test Configuration]` (Key: `[Key]`)
-               > * **Target Test Suite:** `[Discovered or Selected Test Suite]` (Key: `[Key]`)
-               > * **Test Case Name:** `[TestCaseName]`
-               > * **Execution User:** `[Discovered Execution User]` (Key: `[Key]`)
-               > * **Playwright Browser Settings:** Default (Chromium, 1280x720, Headless) *(Frontend only)*
-               >
-               > Reply **"Approved"** or **"Proceed"** to build persistent MTA containers and steps.
-               ```
-            4. **Gate 2 Enforcement (`ANTI-56`):** Calling mutating tools (`CreateTestSuite`, `CreateTestCase`, `CreateObjectActionTestStep`, etc.) or transitioning to `STATE_CONSTRUCTION` is **STRICTLY PROHIBITED** until the user explicitly approves Checkpoint 2.
-            5. Optionally output the **Reverse State Compaction Block (Promotion Bridge Restore)** for cross-session resumption:
-               ```markdown
-               ### 💾 MTA STATE COMPACTION BLOCK (PROMOTION BRIDGE RESTORE)
-               <!-- Copy and paste this block into a new chat session if switching environments. -->
-               ```json
-               {
-                 "MtaState": "STATE_BUILD_PLANNING",
-                 "TempState": "PLAN_STEP_2",
-                 "TargetConfig": null,
-                 "TargetSuite": null,
-                 "TestCase": "[ApprovedTestCaseName]",
-                 "Category": "[Backend | Frontend]",
-                 "MtaBaseUrl": "[MtaBaseUrl]",
-                 "ExecutionPlanFile": "[PathToSavedExecutionPlan.md | null]",
-                 "ExecutionPlanId": "[urn:uuid:UUID | null]",
-                 "ExecutionPlanStatus": "[APPROVED | BUILT_AND_VERIFIED | null]",
-                 "ExecutionPlanApprovedAt": "[ISO 8601 | null]",
-                 "ExecutionPlanApprovedBy": "[ApprovedBy | null]",
-                 "ExecutionPlanRevision": null,
-                 "ExecutionPlanSupersedesId": null,
-                 "Context": "Promoting verified exploratory test for [Components Under Test] to persistent MTA suite. Proceed to Gate 2 placement."
-               }
-               ```
-               ```
-
-2.  `STATE_LIVE_DATA_PROVISIONING`: Executing live test data provisioning and teardown for manual testing via `MTA_plugin.execute-testcase` (`RollbackTcseAfterExecution = "No"`).
-    *   **Targeted Cluster Discovery Protocol:** For data provisioning, inspect all target entities and mandatory associations in a single batched `mxcli` call. Omit optional attributes unless explicitly requested.
-    *   **Dual-Requirement Persistence Law (`PAT-21`):** In-memory creations/mutations are only committed to the database when BOTH (1) `RollbackTcseAfterExecution: "No"` is set, and (2) a standalone batch `Persist` step (`{"Action": "Persist"}`) is appended to the end of the step sequence. The `Persist` step is parameterless and MUST NOT have `EntityQualifiedName` or `TCEX_RQ_Sf*` handle mappings.
-    *   **Local Executor Context Protocol:** Standard local execution context requires `ExecutorUsername: "MxAdmin"` combined with `ApplySecurityExecutor: "NONE"` to satisfy runtime user identity while bypassing entity access constraints for unhindered seeding.
-    *   **Direct Execution Protocol (`PAT-69`):** Execute live data seeding and business microflows directly with `Rollback = "No"` and trailing batch `Persist` by default (committing records directly to the local database without requiring preliminary dry-run loops, unless explicit rollback is requested).
-    *   **Data Script Conversion Bridge (`PAT-70`):** After live test data provisioning completes:
-        *   *Silent MTA Server Availability Probe:*
-            *   *If `MTA` Server is Active:* Prompt the user:
-                > *"Live test data provisioning completed. Would you like to save this data seeding script as a persistent Data Generator test case on the MTA Platform?"*
-                > *   **1. Standalone Data Seeding Test Case (Default):** Single persistent test case to generate and keep this data in the database (no teardown).
-                > *   **2. Automated Regression Test Suite (Optional):** 3-case suite with setup, UI or backend assertions, and teardown cleanup.
-            *   *If `MTA` Server is Offline:* Inform the user:
-                > *"Live test data provisioning completed. Records have been committed to your local database. 💾 Note: Conversion to persistent MTA storage is currently suspended because the MTA Platform server is offline. When your server is available, you can convert this session to a persistent test suite."*
-        *   **Promotion Reverse-Handoff Protocol:** Upon the user selecting an option when MTA is active, transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_1 | Active Skill: mta-test-design]`) to draft the formal `# MTA EXECUTION PLAN SIGN-OFF` corresponding to the chosen profile. Direct construction without an approved Execution Plan (Gate 1) and Placement Summary (Gate 2) is strictly **PROHIBITED** (`PAT-43`, `ANTI-14`).
-
-3.  `STATE_EXECUTION_VERIFY`: Triggering persistent MTA test executions (cases, suites, or configurations), polling results, pulling logs, and parsing errors.
-    *   **Execution Initiation & Scoping (`ExecuteTest`):**
-        *   Call `ExecuteTest(ApplicationInstanceToken="...", ExecutionLevel="TestCase"|"TestSuite"|"TestConfiguration", TestCaseKey=... | TestSuiteKey=... | TestConfigurationKey=...)`.
-        *   *App Instance Token Auto-Resolution (`STATE_EXECUTION`):* `ApplicationInstanceToken` is mandatory for `ExecuteTest`. Before calling `ExecuteTest`, resolve `ApplicationInstanceToken` directly from `mta_config.json.default_app_instance_token` (or matching `token` in `app_instances[]`). If the user specifies an environment name (e.g. 'Local', 'Staging', or custom name), search `app_instances[]` for a matching `name` to extract its `token`, `mtaUrl`, and `runtimeUrl`. Fall back to project-level `AGENTS.md`, `.env` (`MTA_APP_INSTANCE_TOKEN`), or prompt the user for their App Instance Token only if missing across all configuration sources.
-        *   *Sanitized Token & Auth Failure Guard (`PAT-95`, `CWE-209`):* If `ApplicationInstanceToken` cannot be resolved prior to dispatch, OR if `ExecuteTest` (or any read/write MCP call) fails with HTTP `401 Unauthorized`, HTTP `403 Forbidden`, or server token rejection, do NOT throw an unhandled exception or dump internal Mendix stack traces. Immediately format and output the appropriate **Sanitized Layered Return Message** (Option 1: Missing Token, Option 2: Expired Token, Option 3: Invalid Token, Option 4: Insufficient Permissions, or Option 5: Missing Target Instance) as defined in `references/troubleshooting.md`, completely free of internal entity, microflow, or cryptographic names.
-        *   Prefer single test case execution (`ExecutionLevel="TestCase"`) during active construction or verification for fast, isolated feedback loops.
-        *   The call returns `TestRunKey` and `TestRunExecutionId`.
-    *   **Context-Preserving Diagnostic Drill-Down Protocol (`PAT-83` / `ANTI-37`):**
-        *   **Step 1 (Summary):** Call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestRunSummary")` to check overall execution status and identify any failing test case run keys (`TestCaseRunKey`).
-        *   **Step 2 (Targeted Details):** For each failed test case, call `GetTestRunResults(TestRunExecutionId="...", RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=<numeric_key>)` to retrieve isolated step receipts and logs strictly for that case.
-        *   **Prohibition (`ANTI-37`):** Never invoke `RetrieveAction="GetTestRunDetails"` blindly across an entire suite or configuration, as monolithic dumps cause rapid context window exhaustion.
-        *   **Playwright Tracefile & Interactive Viewer Integration (`PAT-90`):**
-            When verifying frontend test execution results (`GetTestRunResults` with `RetrieveAction="GetTestCaseRunDetails"`), inspect the response for a `FileUUID` property representing the recorded Playwright trace artifact.
-            If a `FileUUID` is present (whether the run failed or succeeded):
-            1. **Resolve Playwright Viewer URL:** Evaluate `mta_config.json` (`playwright_viewer_url`), fallback to `.env` (`PLAYWRIGHT_VIEWER_URL`), fallback to default: `https://trace.playwright.dev/?trace=`.
-            2. **Resolve Tracefile Base URL:** Evaluate `mta_config.json` (`tracefile_base_url`), fallback to `.env` (`MTA_TRACEFILE_BASE_URL`), fallback to dynamic default derived from `mta_base_url`: `${mta_base_url.replace(/\/$/, '')}/rest/private/tracefile?fileUUID=`.
-            3. **Assemble Clickable Viewer URL:** Combine into `${playwright_viewer_url}${tracefile_base_url}${FileUUID}` (e.g. `https://trace.playwright.dev/?trace=https://[mta-or-runtime-domain]/rest/private/tracefile?fileUUID=4835a9c0-6d43-4e89-8b89-f53eb9d59218`).
-            4. **Present Clickable Link:** Always render the clickable viewer link in the diagnostic report or execution receipt for instant visual inspection of browser actions, network logs, and DOM snapshots.
-    *   **🚨 THE AUTOMATED SELF-REPAIR PROTOCOL (CRITICAL):**
-        If a test execution fails during runtime verification, you **MUST NOT** simply report the failure and wait. You **MUST** immediately initiate this automated self-repair loop in the same turn:
-        1. **Auto-Retrieve logs via PAT-83 Drill-Down:** Call `GetTestRunResults(RetrieveAction="GetTestRunSummary")` to get `TestCaseRunKey`, followed by `GetTestRunResults(RetrieveAction="GetTestCaseRunDetails", TestCaseRunKey=...)`, and `GetTeststepDetails(TestStepKey=...)` for the failing step to programmatically extract the failure receipt. Check for and extract any `FileUUID` tracefile artifact.
-        2. **Perform a Cognitive Reverse Trace:** Analyze the transaction memory of the 5 steps preceding the failing step to check if the error is a cascade from an upstream state modification or invalid validation.
-        3. **Formulate the Surgical Fix:** Map the root cause to a precise, actionable modification (e.g., updating a specific input attribute, correcting date format casing, or unskipping a cascading provider).
-        4. **Lock in Self-Repair State:** Update your State Header to: `[State: STATE_RUN_ANALYZE | Temp State: STATE_SELF_REPAIR | Active Skill: mta-run-analyze]`.
-        5. **Format the Premium Diagnostic Blueprint:** You **MUST** format your diagnostic analysis using this exact standard markdown structure to present your diagnosis and halt for click-to-proceed approval:
-        ```markdown
-        ### 🚨 MTA RUN FAILURE DIAGNOSTIC & SELF-REPAIR PLAN
-        *   **Failing Test Case:** `[TestCaseName]`
-        *   **Failing Step Index:** `[StepNumber] - [StepName]`
-        *   **Failure Category:** `[e.g., AssertMismatch | Timeout | ClassNotFound | NetworkError]`
-        *   **Playwright Trace Viewer:** `[Open Trace in Playwright Viewer](${TraceViewerUrl})` *(if FileUUID is present in frontend test run)*
-        *   **Mendix Exception Log:** `[Exact log snippet or exception trace]`
-        *   **Root Cause Analysis (RCA):** `[Concise, technical description pinpointed by the Cognitive Reverse Trace]`
-        *   **Proposed Surgical Fix:** `[The exact step edit or attribute correction required to fix the test]`
-
-        Reply **"Approved"** or **"Proceed"** to apply this surgical fix.
-        ```
-        6. **Post-Approval Transition Loop:** Upon receiving user approval for the proposed surgical fix, execute the strict 4-step repair sequence:
-           - **Step 1 (Plan Update):** Update the Execution Plan file on disk (`${execution_plans_dir}/EP_<TestCaseName>.md`).
-           - **Step 2 (Plan Linter Audit):** Re-lint the plan via `node tools/mta-lint.mjs plan "${execution_plans_dir}/EP_<TestCaseName>.md"` to verify zero structural violations.
-           - **Step 3 (Construction & Batch Binding):** Transition state to `[State: STATE_CONSTRUCTION | Temp State: STEP_CREATION | Active Skill: mta-build]` to apply surgical edits to persistent MTA test steps/variations via batch setters.
-           - **Step 4 (Smoke Audit & Execution Re-trigger):** Transition state to `[State: STATE_SMOKE_AUDIT | Temp State: AUDIT_VERIFICATION | Active Skill: mta-build]` to update the Section 6 Build Receipt, then return to `[State: STATE_RUN_ANALYZE | Temp State: STATE_EXECUTION_VERIFY | Active Skill: mta-run-analyze]` to re-trigger verification execution (`ExecuteTest`).
-4.  `STATE_QA_ASSISTANCE`: Out-of-band QA assistance and conceptual consulting (`PAT-51`). Explaining existing test scripts to developers/testers, analyzing step sequencing, auditing pattern compliance against `references/mta-patterns-and-antipatterns-reference.md`, answering conceptual/general questions, or conducting MTF architecture reviews. When the user's inquiry is resolved, prompt the user with a direct question asking for approval to return to the active task (e.g. `STATE_CONSTRUCTION` or `STATE_BUILD_PLANNING`).
+1. **Pre-Flight Zero Construction Error, Audit & Key Resolution ([^PAT-45] [^PAT-46] [^PAT-59] [^PAT-115] [^ANTI-18] [^ANTI-64]):**
+   - Output `🧠 Tool Execution Reasoning` (`PAT-45`) and format links as `[MtaBaseUrl]/p/[ObjectType]/[Key]` (`PAT-46`). Before `ExecuteTest`, verify `0` construction errors and `node tools/mta-lint.mjs audit` pass (`PAT-59`, `ANTI-18`). Decommissioned `[TO DELETE]` steps (`Skip`, `PAT-115`) do not block execution; include the Manual Cleanup Recommendation box (`ANTI-64`) in post-run reports.
+2. **Exploratory Execution, Single-Payload Matrix & Telemetry (`STATE_EXPLORATORY_EXECUTION`, `PAT-43`, `PAT-61`, `PAT-62`, `PAT-66`, `PAT-73`..`PAT-76`, `PAT-95`, `PAT-120`, `ANTI-22`, `ANTI-27`..`ANTI-30`, `ANTI-46`, `ANTI-48`, `ANTI-60`):**
+   - Never run `Frontend` tests on `MTA_plugin` (`PAT-62`) or use plugin-only shortcuts (`"UseEmptyObjectList": true`, omitting `"TCEX_RQ_Sfar"`; compile `PAT-07` sentinels literally `ANTI-48`, `ANTI-60`). Enforce the 6 Plugin Principles (`MxAdmin`, `NONE`, verified attributes `PAT-75`/`ANTI-29`, ISO-8601 UTC dates, explicit handles, `RollbackTcseAfterExecution = "Yes"`, `PAT-95` on connection/auth errors).
+   - Compile `VAR_01..VAR_0N` into **1 `TCEX_RQ_TestStepRun` array** with intra-block `Delete` and disjoint keys (`PAT-66`, `PAT-73`, `ANTI-22`, `ANTI-27`), or dispatch isolated `execute-testcase` sessions per scenario on AST conflicts (`PAT-74`, `ANTI-28`) or Validation Feedback Assertions (`PAT-120`). Verify `Count(Executed) == Count(Planned)` and render the **3-Part Performance & Benchmark Profile** + **Checkpoint 4 Promotion Card** (`PAT-57`, `PAT-61`, `PAT-76`, `PAT-106`, `PAT-112`, `ANTI-30`, `ANTI-61`).
+3. **Option A -> Option B Promotion Bridge (`PAT-21`, `PAT-57`, `PAT-68`..`PAT-70`, `PAT-82`, `PAT-106`, `PAT-118`, `PAT-123`, `PAT-124`, `ANTI-14`, `ANTI-56`, `ANTI-67`, `ANTI-76`, `ANTI-80`):**
+   - On promotion from `STATE_EXPLORATORY_EXECUTION` or `STATE_LIVE_DATA_PROVISIONING`, switch to `STATE_BUILD_PLANNING (PLAN_STEP_2)` (or `PLAN_STEP_1B` for 3-case expansion `ANTI-14`) in the same turn, run read-only discovery (`GetAppModelData` `PAT-82`, `GetApplicationDetails` `PAT-118`/`ANTI-67`, `GetExecutionUsers`, `GetTestConfigurationDetails` `PAT-123`/`ANTI-76`), stage placement via `mta-lint.mjs stage-placement`, render **Checkpoint 2**, and **HALT** (`ANTI-56`, `ANTI-80`). Only in the next turn after user reply **"Approved"**, seal `status: "APPROVED"`, run `mta-lint.mjs lock --reseal-wiring` if needed (`PAT-124`), and pass `mta-lint.mjs pre-build`.
+4. **4-Phase Test-Driven Bug Fixing & Self-Repair (`PAT-83`, `PAT-90`, `PAT-95`, `PAT-119`, `PAT-123`, `PAT-124`, `ANTI-37`, `ANTI-46`, `ANTI-75`, `ANTI-76`, `ANTI-78`):**
+   - Execute Phase 1 (`BUGFIX_REPRODUCE_RED`: setup passes + genuine `FAIL_ASSERTION_MISMATCH`), Phase 2 (`node tools/mta-lint.mjs lock <plan.md>`), Phase 3 (`CODE_REPAIR_INTERMISSION`: `${execution_plans_dir}/` write quarantine + MTA mutating tool quarantine, Studio Pro repair only, zero assertion softening `ANTI-78`), and Phase 4 (`BUGFIX_VERIFY_GREEN`: `mta-lint.mjs verify-lock`, bytecode rebuild check `ANTI-75`, verbatim replay, 2-Cycle Circuit Breaker).
+   - For persistent runs (`STATE_EXECUTION_VERIFY`), drill down via `GetTestRunResults(GetTestRunSummary -> GetTestCaseRunDetails)` (`PAT-83`, `ANTI-37`, Playwright trace `PAT-90`), and on failure enter `STATE_SELF_REPAIR` (`PAT-119`) to present the **MTA Run Failure Diagnostic & Self-Repair Plan** and **HALT** for user approval.
 
 ---
 
-## 🔄 MCP Tool Description Context & Bridge Rule
+## 📅 Reactive Reference Loading Strategy
 
-> [!NOTE]
-> **MTA Tool Context Mapping:**
-> The MTA MCP tools and schemas refer to the "mta skill" or "MTA". Since we have split the monolithic `mta` skill into `mta-build` and `mta-run-analyze`, treat all tool schema references to "mta skill" as referring to these two specialized skills.
+Load `core-playbook.md` on the first active turn and load remaining files strictly on-demand:
 
+| Focus Area | Load ONLY this file: |
+| :--- | :--- |
+| *Detailed `STATE_RUN_ANALYZE` walkthroughs, `PAT-124` TDBF & Click-to-Repair* | **`references/mta-analysis-diagnostics-reference.md`** \| **`references/core-playbook.md`** |
+| *Local exploratory testing, `TCEX_RQ` compilation & 3-Part Benchmark Report* | **`references/exploratory-execution-guide.md`** |
+| *Checkpoint 4 Promotion/Bugfix Cards, `PAT-95` errors & debugging* | **`references/checkpoint-templates.md`** \| **`references/troubleshooting.md`** |
+| *3-Case lifecycle, glossary & 207-rule catalog (`PAT-01..125`, `ANTI-01..82`)* | **`references/placement-and-lifecycle.md`** \| **`references/glossary.md`** \| **`references/mta-patterns-and-antipatterns-reference.md`** |

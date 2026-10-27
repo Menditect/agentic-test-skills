@@ -1,7 +1,7 @@
 # 🚦 MTA Checkpoint & Decision Card Templates Reference
 **📍 Location:** `.agent/skills/mta-shared/references/checkpoint-templates.md`  
 **🏠 Return to:** [MTA Test Design Skill](../../mta-test-design/SKILL.md) | [MTA Build Skill](../../mta-build/SKILL.md) | [MTA Run & Analyze Skill](../../mta-run-analyze/SKILL.md) | [Patterns Reference](mta-patterns-and-antipatterns-reference.md)  
-*Metadata: Version 1.0.0 | Primary Audience: AI Coding Assistant (Antigravity, MAIA, Subagents)*
+*Metadata: Version 2.1.0 | Primary Audience: AI Coding Assistant (Antigravity, MAIA, Subagents)*
 
 ---
 
@@ -18,7 +18,7 @@ When an existing Execution Plan (`EP_*.md`) targeting the same microflow or page
 > [!NOTE]
 > **Existing Execution Plan Detected (`PAT-84`)**
 > * **Existing Plan ID:** `<TestCaseName>-v<revision>` ([`EP_<TestCaseName>.md`](file:///absolute/path/to/EP_<TestCaseName>.md))
-> * **Status:** `<DRAFT | APPROVED | BUILT_AND_VERIFIED>` (Approved at: `<timestamp>`)
+> * **Status:** `<DRAFT | AUTO_APPROVED | APPROVED | BUILT_AND_VERIFIED>` (Approved at: `<timestamp>`)
 > * **AST Delta Summary:** `<1–2 line summary of detected changes between live Mendix AST and prior plan>`
 
 ### 🧭 Prior Plan Lineage Options
@@ -105,7 +105,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 ### 💬 Decision Required:
 > **Do you approve this Execution Plan for immediate local execution?**
 > - **[Yes, Execute Option A]** ➔ Dispatches local in-memory exploratory test (`< 1s` execution via `MTA_plugin`).
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before deciding.
 > - **[Adjust Plan]** ➔ Make changes to test steps, assertions, or data variations first.
 > - **[Enable Option B]** ➔ `[Register the MTA MCP server in your settings | Set up Branch Subscription or trigger a manual model upload]` to unlock Option B.
 
@@ -143,7 +143,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 > **Do you approve this Execution Plan? If so, which execution route would you like to take?**
 > - **Reply "A"** ➔ Run immediate local exploratory execution via `MTA_plugin`.
 > - **Reply "B"** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to build persistent test cases in MTA.
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before deciding.
 > - **Reply "Adjust"** ➔ Modify test steps, assertions, or data variations first.
 
 ---
@@ -173,7 +173,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 > **Do you approve this Data Seeding Plan? If so, which execution route would you like to take?**
 > - **Reply "A"** ➔ Execute local direct seeding immediately via `MTA_plugin` (zero server scanning, 1-turn execution).
 > - **Reply "B"** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to construct persistent test case in MTA.
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before deciding.
 > - **Reply "Adjust"** ➔ Modify entity attributes, associations, or variation counts first.
 
 ---
@@ -212,7 +212,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 ### 💬 Decision Required:
 > **How would you like to proceed?**
 > - **[Save & Exit]** ➔ Retain the draft plan on disk. When a server becomes available later, simply ask to build/execute it.
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before deciding.
 > - **[Start Local App]** ➔ Launch your app in Studio Pro, then reply **"Retry Option A"** to run immediate in-memory testing.
 > - **[Enable MTA Server]** ➔ Register your MTA server endpoint/token, then reply **"Retry Option B"** to resolve placement (Gate 2) and build persistent tests.
 > - **[Adjust Plan]** ➔ Modify test steps, entity attributes, or assertions while offline.
@@ -245,7 +245,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 ### 💬 Decision Required:
 > **Do you approve this Execution Plan? How would you like to proceed?**
 > - **[Yes, Proceed with Option B]** ➔ Proceed to Checkpoint 2 (Placement & Target Configuration) to construct persistent test cases in MTA.
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before deciding.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before deciding.
 > - **[Start Local App for Option A]** ➔ Launch your app in Studio Pro, then reply **"Retry Option A"**.
 > - **[Adjust Plan]** ➔ Modify test steps, assertions, or data variations first.
 
@@ -281,7 +281,7 @@ To construct persistent test cases on the MTA server (Option B), the `MTA` MCP s
 > **Do you approve this Bug Reproduction Plan?**
 > - **[Reproduce Bug (Red)]** ➔ Execute in-memory test now to confirm baseline failure reproduces against live code.
 > - **[Adjust Bug Spec]** ➔ Refine expected values or scenario parameters if the failure expectation needs adjustment.
-> - **[Show Full Plan]** ➔ Render the complete 8-section Execution Plan in chat before executing.
+> - **[Show Full Plan]** ➔ Render the complete 6-section Execution Plan in chat before executing.
 ---
 ```
 
@@ -315,21 +315,39 @@ For Frontend UI tests (`Category == Frontend`), browser test steps drive Playwri
 
 ## 4. 📄 Collapsible Execution Plan Metadata Header & Sealed Receipts (`PAT-44`, `PAT-88`)
 
-### Collapsible Metadata YAML Block (Schema v1.2.0)
+### Collapsible Metadata YAML Block (Schema v2.1.0)
 Prepend this block to the top of `${execution_plans_dir}/EP_<TestCaseName>.md`:
 
 ```markdown
-<details><summary><b>Execution Plan Metadata</b></summary>
+<details><summary><b>Execution Plan Metadata (Click to expand)</b></summary>
 
 ```yaml
 plan_id: "<TestCaseName>-v<revision>"
-schema_version: "1.2.0"
+schema_version: "2.1.0"
 supersedes_plan_id: "<TestCaseName>-v<old_revision> | null"
 revision: 1
-status: "APPROVED"
-approved_at: "<ISO 8601 Timestamp, e.g. 2026-09-08T16:11:41+02:00>"
-approved_by: "<UserEmailOrName>"
-approver_system_user: "<OSUsername>"
+target: "<ModuleName>.<MicroflowOrPageName>"
+test_type: "<Unit | Integration | UI>"
+execution_target: "<MTA_plugin | MTA>"
+rollback: "<Yes | No>"
+status: "DRAFT" # Values: DRAFT, AUTO_APPROVED, APPROVED, BUILT_AND_VERIFIED, REJECTED
+test_intent: "regression" # regression | exploratory_robustness | exploratory_feature | bug_reproduction
+expected_pre_fix_outcome: "PASS" # PASS | FAIL (strictly FAIL for bug_reproduction)
+protection_level: "unlocked" # unlocked | locked (sealed by mta-lint lock)
+locked_sha256: null # 64-character SHA-256 hash when locked
+spec_source:
+  type: "user_story" # user_story | bug_report | jira_ticket | prompt_spec
+  reference: "<TicketOrSpecId>"
+  summary: "<Verified functional expectation>"
+risks_covered:
+  - id: "R-01"
+    category: "business_logic"
+    description: "<Primary functional branch and boundary handling>"
+    mitigated_by_scenarios: [1, 2, 3]
+approved_at: null # Populated upon Gate 1 & Gate 2 human approval
+approved_by: null # Populated upon Gate 1 & Gate 2 human approval
+approval_turn_id: null # Populated upon Gate 1 & Gate 2 human approval
+approver_system_user: null # Populated upon Gate 1 & Gate 2 human approval
 build_started_at: null
 built_at: null
 builder_system_user: null
@@ -337,9 +355,10 @@ verified_at: null
 verifier_system_user: null
 test_case_name: "<TestCaseName>"
 target_configuration: "<TargetConfig>"
-target_configuration_key: null
+target_configuration_key: null # Populated at Gate 2 placement approval
 target_suite: "<TargetSuite>"
-target_suite_key: null
+target_suite_key: null       # Populated at Gate 2 placement approval (numeric key > 0, or "NEW_SUITE" if creating a new suite)
+test_case_key: null # Populated upon CreateTestCase in STATE_CONSTRUCTION
 test_case_keys: []
 category: "<Backend | Frontend>"
 ```
@@ -439,7 +458,7 @@ Output this structured report upon completing step construction and batch bindin
 
 #### 2. Compiler & Server Validation (`GetTestCaseDetails`)
 * **Construction Errors:** 0 errors reported by MTA compiler.
-* **Variation Matrix:** Verified cell-by-cell ($M \times N$ matrix matches Section 7).
+* **Variation Matrix:** Verified cell-by-cell ($M \times N$ matrix matches Section 4).
 * **Execution Topologies & Settings:** Verified (`ExecutionCondition` & `ResumeExecutionAfterException` conform to `PAT-17`/`PAT-18`).
 
 #### 3. Direct MTA Web Navigation Links
@@ -526,3 +545,24 @@ To learn more or request a license, visit [Menditect](https://menditect.com) or 
 > ❓ *How would you like to proceed?*
 ```
 
+
+### Case C: Bug Reproduction Certified ➔ Quarantined Code Repair (`PAT-124`, `ANTI-78`)
+*Presented after `BUGFIX_REPRODUCE_RED` genuinely fails on an explicit assertion (`FAIL_ASSERTION_MISMATCH`) and `node tools/mta-lint.mjs lock` seals `locked_sha256`.*
+
+```markdown
+## 🔒 CHECKPOINT 4: ORACLE TEST LOCKED & CODE REPAIR INTERMISSION
+
+> [!IMPORTANT]
+> **Bug Reproduction Verified (`FAIL_ASSERTION_MISMATCH`):** The oracle test successfully reproduced the defect.  
+> **Cryptographic Lock Sealed:** [`EP_<TestCaseName>.md`](file:///absolute/path/to/EP_<TestCaseName>.md) (`locked_sha256: <hash>`)  
+> **Active Quarantine (`ANTI-78`):** Modifying `EP_*.md` or mutating MTA test steps during code repair is strictly prohibited.
+
+### 🧭 Next Step Options
+
+| Option | Action | Target | Description |
+| :---: | :--- | :--- | :--- |
+| **Option 1** | **Repair Mendix Model Now** *(Recommended)* | Studio Pro | Repair the production microflow/logic in Studio Pro (or authorize AI repair via Studio Pro MCP), compile/restart runtime, and run `BUGFIX_VERIFY_GREEN`. |
+| **Option 2** | **Inspect Failure Stacktrace** | Local Workspace | Review the detailed step-by-step assertion mismatch and variable values before modifying the model. |
+
+> ❓ *Once the production fix is saved and the Mendix runtime is restarted (`F5`), reply **"Verify Fix"** to execute Phase 4 (`BUGFIX_VERIFY_GREEN`).*
+```

@@ -136,9 +136,8 @@ When building or fixing tests, running a full test configuration (`ExecuteTest(E
     *   **Single Suite Execution (`ExecuteTest` with `ExecutionLevel="TestSuite"`):** Use this when verifying the interactions or sequence of multiple related test cases within the same suite (`TestSuiteKey`).
 *   **Why:** These scoped calls isolate execution strictly to your active work, avoid noise or failures from other suites/cases, reduce execution queue times, and complete significantly faster.
 *   **When to suggest:**
-    1. During `STATE_CONSTRUCTION` when doing dry runs or teststep verification (highly recommend `ExecuteTest`).
-    2. During `STATE_RUN_ANALYZE` as the primary method of verifying the newly built test case.
-    3. During troubleshooting when verifying that an applied fix has resolved a specific error.
+    1. During STATE_RUN_ANALYZE (following successful STATE_SMOKE_AUDIT) as the primary method of verifying newly built or refactored test cases.
+    2. During troubleshooting when verifying that an applied fix has resolved a specific error.
 
 ---
 

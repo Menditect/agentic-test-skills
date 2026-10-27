@@ -1,170 +1,51 @@
 ---
 name: mta-install-config
 description: "Guides the installation, configuration, and setup of Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser for local or cloud environments."
-version: "1.11.0"
-changes: "Updated state machine for setup/discovery and aligned workspace health checks."
+version: "1.15.0"
+changes: "Compressed inline micro-state walkthroughs into references/mta-installation-reference.md while preserving the top-level State Dispatch Table (STATE_DISCOVERY), golden rules, and PAT-51/PAT-95 gates."
 ---
 
 # MTA Installation & Configuration Skill
 
-🚨 **MANDATORY CROSS-SKILL REDIRECTION FOR VAGUE / FRESH REQUESTS** 🚨
-
 > [!IMPORTANT]
-> **If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., "I want to test", "How to start", "Where do I begin", "Give me some prompts", or "Show me prompts"):**
-> *   You **MUST** immediately stop using this `mta-install-config` skill.
-> *   You **MUST** load and switch to the **`mta-test-design`** skill instead (`.agent/skills/mta-test-design/SKILL.md`).
-> *   Follow the onboarding guide and starter prompts in `mta-test-design` to help the user design their test before building or running anything.
-
-This skill guides the user and the AI assistant in installing, configuring, and connecting Menditect Test Automation (MTA), the MTA Mendix Plugin, and the Playwright Browser.
+> **Mandatory Cross-Skill Redirection for Vague / Fresh Testing Requests:**
+> If the user's request is vague, exploratory, indicates they are starting fresh, or asks for prompts/onboarding (e.g., *"I want to test"*, *"How to start"*, *"Where do I begin"*, *"Give me some prompts"*), immediately switch to **`mta-test-design`** (`.agent/skills/mta-test-design/SKILL.md`).
 
 ---
 
-## 📅 TRIGGER KEYWORDS
-This skill is triggered by instructions or queries containing:
-*   `install mta`, `mta installation`, `setup mta`, `mta requirements`
-*   `import plugin`, `mta plugin`, `git rm --cached modules/javasource`, `git-fix.cmd`
-*   `playwright connector`, `frontend testkit`, `driver-bundle`, `install playwright`
-*   `configure mta`, `mendix pat`, `personal access token`, `project mapping`
+## 🧭 State Dispatch Table (`STATE_DISCOVERY`)
+
+Track progress in the global State Header: `[State: STATE_DISCOVERY | Temp State: <TEMP_STATE> | Active Skill: mta-install-config]`.
+
+| `Temp State` | Entry Condition | Mandatory Actions & Linter Gate | Allowed Mutating Tools | Next State Transition |
+| :--- | :--- | :--- | :--- | :--- |
+| **`STATE_INFRA_PROVISIONING`** | Fresh MTA backend deployment or sizing request | Ask target environment (Mendix Cloud `M21-STANDARD`, Azure, On-Prem, Docker/K8s) before recommending; enforce **4 GB App RAM, 4 GB DB RAM, 1 CPU core** minimum (`MtaUtils.DeploymentType`, `ApiMendixModule.WebsocketStage`); verify admin console & zero OOM logs | None (Read-only `Get*` only) | `STATE_PLUGIN_INTEGRATION` |
+| **`STATE_PLUGIN_INTEGRATION`** | Importing MTA Plugin or configuring `MTA_plugin` MCP | Provide Marketplace links ([MTA Plugin 214717](https://marketplace.mendix.com/link/component/214717), [Agentic Test Skills 305457](https://marketplace.mendix.com/link/component/305457); flag [Menditect Commons 254123](https://marketplace.mendix.com/link/component/254123) as optional), Git `modules/javasource` cache cleanup commands, `ASU_Setup_Connection_MTA` startup hook, and `MtaPluginModule.EnableMcpServer = true` + `McpServerAccessToken` (mandatory 256-bit Bearer token on non-localhost) at `[RootUrl]/plugin/mcp` | None (Read-only `Get*` only) | `STATE_PLAYWRIGHT_SETUP` (Frontend) or `STATE_PLATFORM_CONNECT` (Backend only) |
+| **`STATE_PLAYWRIGHT_SETUP`** | User confirms Frontend UI tests are needed (skip for Backend-only) | Provide [Playwright Connector (214764)](https://marketplace.mendix.com/link/component/214764) & [Frontend Test Kit (206637)](https://marketplace.mendix.com/link/component/206637) links; instruct checking Connector release notes for exact matching `driver-bundle-{version}.jar` in `/userlib` (never guess versions); select hosting (`Locally`, `Azure`, `PlaywrightServer`); verify zero `ClassNotFoundException` | None (Read-only `Get*` only) | `STATE_PLATFORM_CONNECT` |
+| **`STATE_PLATFORM_CONNECT`** | Linking Mendix PAT, `mta_config.json`, or `agentic-test-workspace` | Guide Mendix PAT (`user-settings.mendix.com/link/developersettings`), Service Account (**"Call Primitive Tools"** enabled, `MTA_MCP_AUTH_HEADER`), `agentic-test-workspace` lifecycle (`git clone`, `npm run setup`, `npm run update`, `npm run verify`), 100% display/zoom scaling, and validate `mta_config.json` via `node tools/mta-lint.mjs config` (`PAT-95` on auth errors). Check `mta_state.json` / `${execution_plans_dir}/` for pending `DRAFT` plans | `write_file` / `edit_file` on `mta_config.json` / `.env` only; zero MTA mutating tools | `STATE_BUILD_PLANNING` (`PLAN_STEP_2` if pending `DRAFT` `EP_*.md` exists, else `PLAN_STEP_1`) |
+| **`STATE_QA_ASSISTANCE`** | Out-of-state setup/architecture question (`PAT-51`) | Answer concisely using `references/*.md` and prompt to resume prior `Temp State` | None (Read-only `Get*` only) | Restore `<PRIOR_TEMP_STATE>` |
 
 ---
 
-## 🚫 THE 5 GOLDEN RULES OF INSTALLATION & SETUP
+## 🚫 Golden Rules & Pre-Response Self-Audit
 
-1.  **Strict Double Quotes for Descriptions:** Ensure any YAML frontmatter or metadata changes use single-line double-quoted descriptions. No block scalars (`>` or `|`).
-2.  **No Preemptive Driver Versions:** You are strictly prohibited from hardcoding or assuming a static Playwright driver-bundle version. You **MUST** instruct the developer to check the release notes of their specific imported **Playwright Connector** on the Mendix Marketplace to identify the exact matching driver-bundle Jar version.
-3.  **Mandatory Git Caching Workaround:** When installing the MTA Plugin, you **MUST** warn the user about the known Mendix Git issue with Add-on modules and provide the explicit cache-cleaning commands to prevent merge conflicts.
-4.  **Exempt Setup/Teardown Settings:** Setup/Teardown helper microflows should always have `ExecutionCondition = "Always"` in multi-case setups, but active backend unit tests must have execution settings as `None` to leverage database rollback safety.
-5.  **State Isolation:** Output your concise reasoning using the `🧠 Tool Execution Reasoning` format before calling any underlying tooling.
-
----
-
-## 🧠 MTA INSTALLATION PRE-RESPONSE SELF-AUDIT
-*Immediately before responding to any user setup or installation query, the AI assistant MUST mentally run this 5-point self-audit checklist to guarantee execution accuracy:*
-1.  **Did I verify the target Mendix version?** Ensure the target Mendix Studio Pro version meets the minimum requirements for the MTA Plugin.
-2.  **Did I output the State Header?** I **must** prefix the top of my response with the canonical State Header: `[State: STATE_DISCOVERY | Temp State: SETUP_STEP_1..4 | Active Skill: mta-install-config]`.
-3.  **Did I respect module optionality?** I **must** explicitly clarify that *Menditect Commons* is optional and *Playwright/Frontend Testkit* are strictly required for Frontend tests only.
-4.  **Did I enforce the Playwright Driver-Bundle Version Law?** I **must** refuse to guess or assume a Playwright `.jar` driver version.
-5.  **Did I include Success Verification?** I **must** provide the concrete success checking checklist for the current state before declaring it complete.
+1. **Trigger Keywords:** `install mta`, `mta installation`, `setup mta`, `mta requirements`, `import plugin`, `mta plugin`, `git rm --cached modules/javasource`, `git-fix.cmd`, `playwright connector`, `frontend testkit`, `driver-bundle`, `install playwright`, `configure mta`, `mendix pat`, `personal access token`, `project mapping`.
+2. **Strict Double Quotes for Descriptions:** Use single-line double-quoted strings (`"..."`) in YAML frontmatter (no block scalars `>` or `|`).
+3. **No Preemptive Driver Versions:** Never hardcode or guess a static Playwright `driver-bundle-{version}.jar` version; always instruct checking the imported Playwright Connector release notes.
+4. **Mandatory Git Caching Workaround:** Always provide the `git rm -r --cached modules/javasource/*/actions/*`, `proxies/*`, `system/*` + `.gitignore` commands when importing the MTA Plugin.
+5. **Exempt Setup/Teardown Settings & CoT:** Setup/Teardown helper flows use `ExecutionCondition = "Always"` in multi-case suites, whereas Backend unit tests use `None` for rollback safety. Output `> 🧠 **Tool Execution Reasoning:**` before any MTA MCP tool call, and enforce the `PAT-95` (`CWE-209`) Sanitized Layered Return Message on 401/403/token errors.
+6. **5-Point Self-Audit Checklist:** Before responding, verify: (1) target Mendix Studio Pro version compatibility, (2) canonical State Header prefix, (3) module optionality (*Menditect Commons* optional; *Playwright/Frontend TestKit* Frontend-only), (4) Playwright driver-bundle version law, and (5) concrete Success Verification Checklist for the active micro-state.
 
 ---
 
-## 🧭 MICRO-STATES (Within STATE_DISCOVERY)
-When active under the macro state `STATE_DISCOVERY` (for setup and installation), track your current micro-state using the Temp State property in the global State Header:
+## 📅 Reactive Reference Loading Strategy
 
-`[State: STATE_DISCOVERY | Temp State: MICRO_STATE | Active Skill: mta-install-config]`
+Follow the operational walkthroughs in **`references/mta-installation-reference.md`** and load state-specific guides strictly on-demand:
 
-Guide the user through these four sequential setup micro-states, halting to verify success at each step:
-
-### 1. `[STATE_INFRA_PROVISIONING]`
-*   **Purpose:** Guide backend MTA platform deployment and hardware/database sizing.
-*   **Halt Gate (Interactive Assessment):**
-    *   Ask the user which deployment environment they are targeting: **Mendix Cloud**, **Microsoft Azure**, **On-Premises**, or a private **Docker/Kubernetes** cluster.
-    *   Do not provide general recommendations until the target environment is clarified.
-*   **Key Requirements:**
-    *   Enforce a strict minimum of **4 GB RAM for the Application, 4 GB RAM for the Database, and 1 CPU core**. Warn that lower allocations lead to immediate, silent out-of-memory container restarts.
-    *   Mendix cloud standard: `M21-STANDARD` resource pack.
-    *   Help configure critical environment constants (`MtaUtils.DeploymentType`, `ApiMendixModule.WebsocketStage`).
-*   **🔍 Success Verification Check:**
-    *   The admin console is reachable via browser.
-    *   Container logs show zero database schema bootstrap exceptions or OOM exit codes.
-
-### 2. `[STATE_PLUGIN_INTEGRATION]`
-*   **Purpose:** Guide importing the MTA Plugin, public dependencies, executing Mendix-specific Git workarounds, and configuring the embedded Plugin MCP server (`MTA_plugin`).
-*   **Halt Gate (Interactive Assessment):**
-    *   Confirm if the user has already imported the MTA Plugin.
-    *   Ask if they use Git for version control to proactively trigger the Java caching warning.
-*   **Key Requirements:**
-    *   Provide direct links to [MTA Plugin (Component 214717)](https://marketplace.mendix.com/link/component/214717) and [Menditect Agentic Test Skills (Component 305457)](https://marketplace.mendix.com/link/component/305457). 
-    *   Explicitly flag **Menditect Commons (Component 254123)** as a helpful but *completely optional* helper dependency.
-    *   Provide the mandatory Git batch script workaround to prevent compiled Java action merge conflicts:
-        ```batch
-        git rm -r --cached modules/javasource/*/actions/*
-        git rm -r --cached modules/javasource/*/proxies/*
-        git rm -r --cached modules/javasource/system/*
-        @echo /modules/javasource/*/actions/* >> .gitignore
-        @echo /modules/javasource/*/proxies/* >> .gitignore
-        @echo /modules/javasource/system/* >> .gitignore
-        ```
-    *   Instruct the user to call `ASU_Setup_Connection_MTA` inside their App's "After startup" microflow tab.
-    *   **Embedded Plugin MCP Server Configuration (`MTA_plugin`):**
-        *   To enable local exploratory testing via `execute-testcase`, set constant `MtaPluginModule.EnableMcpServer = true`.
-        *   **Bearer Token Security (`MtaPluginModule.McpServerAccessToken`):**
-            *   *Localhost (Studio Pro):* Optional, but recommended.
-            *   *Non-Localhost (Cloud / Staging / Remote Docker):* **MANDATORY**. Instruct the user to generate a strong 256-bit token (min 32+ characters, e.g. via `openssl rand -base64 32` or PowerShell random generation) and configure it as an Encrypted Constant in Mendix Portal / Studio Pro.
-            *   Passed as `Authorization: Bearer [Token]` in MCP client request headers.
-        *   Endpoint is reachable at `[ApplicationRootUrl]/plugin/mcp` (e.g. `http://localhost:[Port]/plugin/mcp` or `https://[app-domain]/plugin/mcp`).
-*   **🔍 Success Verification Check:**
-    *   The Mendix App compiles successfully in Studio Pro with zero Java action compilation errors.
-    *   Running `git status` verifies that all proxies, actions, and system files under `modules/javasource` are untracked and successfully ignored.
-    *   Startup console logs print a successful connection handshake from the startup hook.
-    *   Probing `[RuntimeUrl]/plugin/mcp` returns the `execute-testcase` tool.
-
-### 3. `[STATE_PLAYWRIGHT_SETUP]` (Frontend Only)
-*   **Purpose:** Guide Playwright Connector setup and browser hosting selection.
-*   **Halt Gate (Interactive Assessment):**
-    *   **CRITICAL:** Ask the user if they intend to run Frontend web tests. **If they are only running Backend microflow tests, completely skip this state and proceed directly to State 4.**
-*   **Key Requirements:**
-    *   Provide download links for **Playwright Connector (Component 214764)** and **Frontend Test Kit (Component 206637)**.
-    *   **The Version Verification Step:** Instruct the developer to look at the marketplace properties or release notes for their Playwright Connector to find the required Playwright version, then download the exact matching `driver-bundle-{version}.jar` from Maven Central into `/userlib`.
-    *   Guide them to select their browser hosting option: `Locally` (Studio Pro / localhost), `Azure` (Microsoft Azure cloud), or `PlaywrightServer` (Mendix Cloud / Docker).
-*   **🔍 Success Verification Check:**
-    *   The Mendix App boots up without any `ClassNotFoundException` in the Java console.
-    *   A simple local web interaction test successfully spawns a headless browser session.
-
-### 4. `[STATE_PLATFORM_CONNECT]`
-*   **Purpose:** Secure connection, Mendix account linkage, project mapping, and manual portal setup.
-*   **Halt Gate (Interactive Assessment):**
-    *   Proactively walk the user through generating a Mendix Personal Access Token (PAT) and registering their application in the MTA portal manually.
-*   **Key Requirements:**
-    *   Instruct the developer to create a Personal Access Token (PAT) under Mendix developer settings (`user-settings.mendix.com/link/developersettings`) with appropriate API scopes.
-    *   Configure application settings, create application instances in MTA, and establish webhook tokens for CI/CD.
-    *   **Canonical Workspace Configuration (`mta_config.json`):**
-        *   Generated automatically by `agentic-test-workspace` (or maintained manually) in the workspace root.
-        *   Establishes the Single Source of Truth (SSOT) across 19 canonical properties: workspace paths, MTA portal and plugin MCP endpoints, authentication tokens, `mendix_mpr_path`, `execution_plans_dir`, and `app_instances[]`.
-        *   Validated against `references/mta_config.schema.json` via `python scripts/lint-config-schema.py`. Complete field reference documented in `references/mta-config-reference.md`.
-        *   Provides automatic token resolution for `ExecuteTest` (`default_app_instance_token` or instance name lookup in `app_instances[]`), eliminating manual credential prompts.
-    *   **Template Repository Acquisition & Lifecycle Protocol (`agentic-test-workspace`):**
-        *   [`agentic-test-workspace`](https://github.com/Menditect/agentic-test-workspace) is a **GitHub Template Repository** that provides MCP proxies, Mendix model wrappers, IDE configs, and automated setup scripts.
-        *   **Cloning for Acquisition & Upgrades:** Because it is a template repository, updating to a new version or setting up a fresh workspace is done by **cloning the template repository**:
-            ```bash
-            git clone https://github.com/Menditect/agentic-test-workspace.git
-            ```
-        *   **Discovery Protocol:** Before running setup or updates, check if `agentic-test-workspace` is already cloned: (1) `mta_config.json` -> `workspace_dir`, (2) current directory `./`, (3) sibling directory `../agentic-test-workspace`, (4) known tools directory (e.g. `C:\Projecten\agentic-test-workspace`). If missing or when updating version, clone it.
-        *   **Workspace Configuration & Self-Healing (`npm run setup`):**
-            Inside the cloned tools directory, execute `npm run setup` (or `.\setup.ps1`). This interactive wizard scans the Mendix `.mpr`, detects application instances, extracts connection settings, and generates/updates `mta_config.json`, `.env`, and IDE configs. Run this whenever paths change, tokens expire, or `mta_config.json` needs healing.
-        *   **Upstream Synchronization (`npm run update`):**
-            ```bash
-            npm run update           # Updates both testing skills and mxcli binary
-            npm run update:skills    # Updates only skills from Menditect/agentic-test-skills
-            npm run update:mxcli     # Downloads the latest mxcli binary from Mendix Labs
-            ```
-        *   **Health Verification (`npm run verify`):**
-            Execute `npm run verify` to test connectivity to MTA Primitive Tools MCP, local MTA Plugin MCP, ensure `mxcli.exe` is functional, and verify the MTA linter suite (`node tools/mta-lint.mjs self-test` and `node tools/mta-lint.mjs config`).
-    *   **Service Account & Automated Tools Access Configuration:**
-        *   Guide user to configure an automated Service Account in the MTA Portal under **Account Settings** > **Service Accounts**.
-        *   Ensure automated tools access ("Call Primitive Tools") is enabled on the service account to prevent `403 Forbidden` errors.
-        *   Generate a service session token and store it in `.env` as `MTA_MCP_AUTH_HEADER="Bearer <token>"`.
-        *   If connection errors occur (missing, expired, or invalid tokens), enforce the **Sanitized Layered Return Message** protocol (`PAT-95`, `CWE-209`), never disclosing internal Mendix entities, microflows, or database states.
-    *   Enforce high-DPI scaling checks: Ensure Windows display scaling and browser zoom are set strictly to **100%** to prevent click-alignment offset failures during frontend visual test steps.
-*   **🔍 Success Verification Check:**
-    *   The MTA Portal Application Instance shows a green status light.
-    *   Running a model-discovery query via the MTA MCP tools (e.g. `GetAppModelData` or `GetTestConfigurationDetails`) returns a valid, non-empty JSON structure.
-    *   `mta_config.json` is validated without errors against `mta_config.schema.json`.
-*   **🔄 Post-Configuration Resumption & Draft Handoff Protocol:**
-    *   Upon successfully verifying server connectivity and configuration, silently inspect `mta_state.json` (or `${execution_plans_dir}/`) for pending draft plans (`execution_plan_status: "DRAFT"` or `status: "DRAFT"`).
-    *   *If a pending draft exists (e.g. `EP_<TestCaseName>.md` created during an earlier outage):* Proactively prompt the user:
-        > *"Configuration and connectivity verified successfully. A pending draft execution plan was detected at `[EP_<TestCaseName>.md]`. Would you like to proceed with placement discovery and persistent test construction on the MTA Platform?"*
-        - **Yes ➔** Transition to `mta-test-design` (`[State: STATE_BUILD_PLANNING | Temp State: PLAN_STEP_2 | Active Skill: mta-test-design]`).
-    *   *If no draft exists:* Ask the user what test flow, microflow, or page they would like to design tests for.
-
----
-
-## 📅 REACTIVE LOADING STRATEGY
-To maintain maximum performance and token efficiency, only read the specific reference file corresponding to the active state the user is working on:
-
-| Active Setup State | Load ONLY this reference file: |
+| Active Setup State / Topic | Load ONLY this reference file: |
 | :--- | :--- |
-| `[STATE_INFRA_PROVISIONING]` | `references/mta-backend-install.md` |
-| `[STATE_PLUGIN_INTEGRATION]` | `references/plugin-integration.md` |
-| `[STATE_PLAYWRIGHT_SETUP]` | `references/playwright-browser-setup.md` |
-| `[STATE_PLATFORM_CONNECT]` | `references/mta-account-config.md` \| `references/mta-ui-setup.md` \| `references/mta-config-reference.md` |
+| *End-to-end 4-state operational walkthrough, Git script & Draft Handoff* | **`references/mta-installation-reference.md`** |
+| `[STATE_INFRA_PROVISIONING]` | **`references/mta-backend-install.md`** |
+| `[STATE_PLUGIN_INTEGRATION]` | **`references/plugin-integration.md`** |
+| `[STATE_PLAYWRIGHT_SETUP]` | **`references/playwright-browser-setup.md`** |
+| `[STATE_PLATFORM_CONNECT]` | **`references/mta-account-config.md`** \| **`references/mta-ui-setup.md`** \| **`references/mta-config-reference.md`** |

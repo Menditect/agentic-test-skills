@@ -18,6 +18,7 @@ To run an exploratory test directly on the active Mendix runtime without MTA pla
    * **Mandatory Execution User Context Law:** All exploratory requests MUST include `"ExecutorUsername": "MxAdmin"` (or the active project execution user) and `"ApplySecurityExecutor": "NONE"` (or `"ALL"`). Omitting `ExecutorUsername` causes `java.lang.Exception: Executor Username or Executor UserRoles need to be given to create a user` from the Mendix runtime.
    * **Verified Entity Fixture Attribute Binding Law (`PAT-75` / `ANTI-29`):** All entity attribute names, data types, and associations used in `TCEX_RQ_AttributeValueRun` or entity creation steps MUST be verified against the domain model AST (`DESCRIBE ENTITY`) prior to compiling the payload. Prohibits assumed synthetic attributes (e.g., `Code`, `Id`, `Name`). Furthermore, entity attribute wire types in `TCEX_RQ_AttributeValueRun` strictly require the schema-specific type name (e.g. `"StringType_limited"` or `"StringType_unlimited"`, NOT `"StringType"` which is reserved for microflow parameters in `TCEX_RQ_MicroflowParameter`).
 3. **Execute Tool:**
+   * **CRITICAL INVARIANT (PAT-43 / ANTI-46):** The tool `MTA_plugin.execute-testcase` MUST NEVER be called unless a corresponding `EP_*.md` Execution Plan file has already been persisted to `${execution_plans_dir}` (`menditect-output/execution-plans/`). Operating under `auto_execute` mode means `write_file` and `execute-testcase` occur in the same execution turn, NOT that `write_file` is skipped. Calling `execute-testcase` without an existing plan file is a critical policy failure.
    Call `call_mcp_tool` with:
    * `ServerName`: `"MTA_plugin"`
    * `ToolName`: `"execute-testcase"`
@@ -47,10 +48,14 @@ When testing boundary branches where a microflow parameter is null or empty, set
 }
 ```
 
-> [!NOTE]
-> **Exploratory vs. Persistent MTA Empty Object Bridge (`PAT-07`):**
-> In local exploratory JSON (`TCEX_RQ`), passing empty/null objects is configured directly per parameter via `"UseEmptyObjectList": true`. 
-> When promoting to or constructing on the persistent MTA Platform, parameter bindings are static; you **MUST** convert this to the **`PAT-07` Empty Object Retrieve Pattern** (`Retrieve Object` from upstream teststep with filter attribute set to short sentinels like `"NONE"` or `"NULL"` for empty object variations per the Universal Short Sentinel Law).
+> [!IMPORTANT]
+> **Mandatory PAT-07 Baseline Blueprint Drafting for Execution Plans (`PAT-07`, `PAT-111`, `ANTI-48`, `ANTI-60`):**
+> While transient exploratory execution payloads in memory (`execute-testcase`) may use `"UseEmptyObjectList": true` or direct handles, **all Execution Plans (`EP_*.md`) drafted for backend unit tests taking entity parameters MUST ALWAYS draft Section 3 using the PAT-07 Dual Retrieve/Filter Empty Object Pattern**:
+> 1. `CreateObject` (with `Sentinel = 'VALID'`)
+> 2. `RetrieveObject` (with `RetrieveOption = "Teststep"`, in-memory filter `Sentinel == 'VALID'`, and embedded `Assert Object Count == 1` per `PAT-08`)
+> 3. `CallMicroflow` (bound strictly to the retrieve step output handle, NEVER directly to `CreateObject`)
+> 4. Section 4 Variation Matrix drives valid vs. null object boundaries by varying the scalar sentinel attribute (e.g. `'VALID'` vs `'NONE'`).
+> Direct parameter bindings from `CreateObject` or omitting `PAT-07` sentinel retrieves in `EP_*.md` drafts is strictly prohibited and triggers `ANTI-48_VIOLATION` in `mta-lint plan`.
 
 
 
@@ -228,7 +233,7 @@ When Section 7 of an approved Execution Plan defines a Data Variation Matrix wit
    * Upon receiving the single or isolated `TCEX_RS` response(s), the agent maps each `MicroflowCall` step outcome, return value, and validation feedback messages back to its respective `VAR_xx` scenario row.
    * Present the unified multi-scenario report (`PAT-61`) in a single final response.
 
-> [!NOTE]
+> [!IMPORTANT]
 > **Frontend UI Automation Scope Notice:**
 > Frontend UI tests drive browser sessions via Playwright and require the full locator maps, browser lifecycle management, and 3-case suites of the MTA Platform (Option B). They are not executed via `MTA_plugin.execute-testcase`. See `frontend-testing.md` for Frontend test construction.
 
@@ -921,10 +926,10 @@ You are **strictly prohibited** from converting or constructing persistent MTA t
 4. **Present Summary & Sign-Off (Gate 2):** In `mta-test-design` (`PLAN_STEP_3`), present Placement & Target Summary for user approval.
 5. **Pre-Construction Model-to-MTA Schema Audit (PAT-82, ANTI-36):** Call `GetAppModelData` to compare entities, microflows, and pages against local Mendix AST (`mxcli`). If the MTA model revision is outdated or missing planned elements, halt and inform the user that MTA requires model synchronization.
 6. **Persist Execution Plan Locally:** Upon Gate 2 approval and successful schema audit, save the approved execution plan locally as a `.md` file (e.g. `${MTA_OUTPUT_PATH}/execution-plans/EP_<TestCaseName>.md`) sealed with YAML frontmatter (UUID v4 `plan_id`, `supersedes_plan_id`, integer `revision`, ISO 8601 `approved_at`). Automatically archive prior versions (`archive/EP_<TestCaseName>_<timestamp>.md`) on revision, avoid duplicate archives if unchanged, immediately notify the user with a clickable sealed receipt (or dual active/archived receipt), and persist metadata in `mta_state.json`. If local write tools are unavailable, warn the user and preserve the complete plan in active chat context. Check model revision currency (`PAT-36`).
-7. **Transition to Construction:** Set State Header to `[State: STATE_CONSTRUCTION | Temp State: STEP_BUILDING | Active Skill: mta-build]`. Check for plan drift before building.
+7. **Transition to Construction:** Set State Header to `[State: STATE_CONSTRUCTION | Temp State: SKELETON_PROVISIONING | Active Skill: mta-build]`. Check for plan drift before building.
 8. **Construct Server Assets (Deterministic 4-Phase Protocol - PAT-16, PAT-78, ANTI-32):** Provision test cases (`PAT-79`) and test steps sequentially in Phase 1 with direct output binding (`PAT-80`), resolve step detail keys via `GetTestCaseDetails`, and dispatch all parameter/attribute setters in safe parallel batches (max 15-20 calls per turn) in Phase 2 (`PAT-81`). If individual calls fail, surgically retry/repair them. When data variations are present, strictly execute the variation lifecycle (`PAT-77`): call `AddTestCaseVariationItem(Action="EnableTestCaseDatavariation")`, set template name and description via `EditTestCaseVariation(EditAction="SetName" / "SetDescription")`, duplicate columns (`CreateTestCaseVariation`), set each duplicated variation's name and description, and reconcile matrix cell values in safe batches (`PAT-54`).
 9. **Save Keys & Plan Metadata:** Write all generated keys (`test_configuration.key`, `test_suite.key`, `test_cases[].key`), `execution_plan_file`, `execution_plan_id`, `execution_plan_approved_at`, `execution_plan_revision`, and `execution_plan_supersedes_id` to `mta_state.json`.
-10. **Transition to Smoke Audit:** Set State Header to `[State: STATE_SMOKE_AUDIT | Temp State: SMOKE_AUDITING | Active Skill: mta-build]` and execute `GetTestCaseDetails` in staggered fashion (one test case per turn) to inspect test construction status, verify plan integrity, and verify all variation descriptions match Section 7 cell-by-cell (`PAT-49`, `PAT-77`).
+10. **Transition to Smoke Audit:** Set State Header to `[State: STATE_SMOKE_AUDIT | Temp State: AUDIT_VERIFICATION | Active Skill: mta-build]` and execute `GetTestCaseDetails` in staggered fashion (one test case per turn) to inspect test construction status, verify plan integrity, and verify all variation descriptions match Section 7 cell-by-cell (`PAT-49`, `PAT-77`).
 
 
 
