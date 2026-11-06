@@ -1937,6 +1937,17 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ---
 
+### ANTI-83: AutoNumber Attribute Mutation & Shallow Stub Assumption Anti-Pattern
+* **Scope:** General | **Classification:** Platform Anti-Pattern
+* **Description:** Attempting to include and set system-managed `DomainModels$AutoNumberAttributeType` or `DomainModels$HashedStringAttributeType` attributes via `EditAttributeValue` on `CreateObject` or `ChangeObjects` test steps, misinterpreting `StudioPro` MCP (`ped_read_document`) schema-default property omissions (`applyEntityAccess = false`, `commit = "No"`, `withEvents = true`, `errorHandlingType = "Rollback"`, `raiseErrorOnFalse = true`), or concluding that a Mendix entity has no `validationRules` (`RangeRuleInfo`, `MaxLengthRuleInfo`, `RequiredRuleInfo`, `UniqueRuleInfo`, `RegExRuleInfo`) or that a `Microflows$LoopedActivity` has no inner activities from a shallow `{ "$stub": true }` response (`depth < 4`).
+* **Root Cause:** Reading `DomainModels$DomainModel` at `depth=2` where nested `validationRules.ruleInfo` and `attributes.type` lie at depth 3–4 (`$stub: true`), ignoring Studio Pro's metamodel default-value elision contract, or treating `AutoNumber` attributes as writable fields.
+* **Remediation Pattern:** `PAT-53` (Domain Constraint Verification) and `PAT-109` (One-Shot Microflow AST Extraction Protocol).
+* **Related Rules:**
+  * **Direct Counterpart Pattern:** `PAT-53` (Domain Constraint Verification), `PAT-109` (One-Shot Microflow AST Extraction Protocol).
+  * **Related Anti-Patterns:** `ANTI-18` (Ignored Construction Errors & Cascading Build Failure), `ANTI-29` (Unverified / Assumed Entity Fixture Attributes).
+
+---
+
 ## 🔄 Direct Counterpart Summary Index (Patterns vs. Anti-Patterns)
 
 | Pattern (Positive Law) | Anti-Pattern (Violation) | Core Focus |

@@ -1,8 +1,8 @@
 ---
 name: mta-orchestrator
 description: "Global orchestrator of Menditect Test Automation (MTA) sessions. Manages conversation states, skill routing, data seeding/creation, and global safety guardrails."
-version: "4.50.0"
-changes: "Further compressed AGENTS.md and aligned domain skills with enriched domain reference guides while preserving 100% of PAT/ANTI citations."
+version: "4.50.1"
+changes: "Updated Universal Execution Plan Mandate with rollback exemption for exploratory runs and ANTI-83 model invariants."
 ---
 
 # Menditect Agentic Test Automation Orchestrator (MTA Orchestrator)
@@ -41,7 +41,7 @@ Begin every response on all operating modes with the single-line State Header:
 
 ## 3. Global Safety & Approval Gates
 * **Read-Only Authorization & CoT:** Read-only `Get*` MTA tools are authorized in any state. Before any MTA MCP call, output `> 🧠 **Tool Execution Reasoning:**` (Tool Call, Active State, Reasoning).
-* **Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-46`, `ANTI-80`, `ANTI-82`):** Within a 2-turn discovery budget (`ANTI-82`), all test creation, exploratory tests, and data seeding must produce an `EP_*.md` (`status: "DRAFT"`, or chat plan in Chat Mode/MAIA) linted via `node tools/mta-lint.mjs plan`. Calling `MTA_plugin.execute-testcase` without a persisted `EP_*.md` verified via `mta-lint.mjs pre-exec` is prohibited (`ANTI-46`). In-memory Option A (`Rollback == "Yes"`) may `auto_execute` in one turn (`status: "AUTO_APPROVED"`) ONLY when `mta_config.json.exploratory_execution_mode != "prompt_approval"`; Option B persistent mutations and `bug_reproduction` NEVER auto-execute and require human approval (`status: "APPROVED"`, `ANTI-80`).
+* **Universal Execution Plan Mandate (`PAT-43`, `PAT-70`, `ANTI-46`, `ANTI-80`, `ANTI-82`):** Within a 2-turn discovery budget (`ANTI-82`), all test creation, exploratory tests, and data seeding must produce an `EP_*.md` (`status: "DRAFT"`, or chat plan in Chat Mode/MAIA) linted via `node tools/mta-lint.mjs plan`. Calling `MTA_plugin.execute-testcase` without a persisted `EP_*.md` verified via `mta-lint.mjs pre-exec` is prohibited (`ANTI-46`), except for ephemeral exploratory runs operating with transaction rollback (`RollbackTcseAfterExecution: "Yes"`) which are exempt from pre-existing on-disk plan gates to allow immediate dynamic verification. In-memory Option A (`Rollback == "Yes"`) may `auto_execute` in one turn (`status: "AUTO_APPROVED"`) ONLY when `mta_config.json.exploratory_execution_mode != "prompt_approval"`; Option B persistent mutations and `bug_reproduction` NEVER auto-execute and require human approval (`status: "APPROVED"`, `ANTI-80`).
 * **Engineering Plans Boundary:** Engineering plans to modify skills/scripts/linters are exempt from MTA skills and `EP_*.md`; in Agentic Mode, write `implementation_plan.md` via `write_file` (`RequestFeedback: true`, `UserFacing: true`).
 * **Mutating Tools & Option B Governance Gate (`PAT-43`, `PAT-106`, `PAT-118`, `PAT-123`, `ANTI-56`, `ANTI-67`, `ANTI-76`, `ANTI-80`):** Selecting/promoting to Option B is an architectural decision, NOT permission to build (`ANTI-56`). Before mutating MTA tools (`Create*`, `Edit*`, `Set*`, `ExecuteTest`), require Gate 1 (plan) AND Gate 2 (placement): call `GetApplicationDetails` (never guess index 0 [`ANTI-67`]), check suite collisions (`PAT-123`), elicit Frontend Playwright options (`playwright_browser`, `playwright_execution_mode`, `playwright_slow_mo_ms`, `frontend_options_confirmed_by_user: true`), stage via `mta-lint.mjs stage-placement` (`.mta-gate-ledger.json`), halt at Checkpoint 2, and in the next turn lock `target_configuration_key > 0` and `target_suite_key > 0` (or `"NEW_SUITE"`) and verify via `mta-lint.mjs pre-build`.
 * **Agentic vs. Chat Mode & Script Ban (`ANTI-58`):** Use Agentic Mode when `write_file` and CLI exist; otherwise use Chat Mode. Dispatch MCP tools natively—ad-hoc `.js`/`.ps1`/`.py` scripts are prohibited (`ANTI-58`).

@@ -1,8 +1,8 @@
 ---
 name: menditecttestabilityframework
 description: "Design and implement Mendix apps according to the Menditect Testability Framework MTF v2"
-version: "2.0_1.9.0"
-changes: "Added top-level State Dispatch Table (STATE_PATTERN_AUDIT, STATE_REFACTOR_PLANNING, STATE_TRANSACTION_ALIGN) and deduplicated reactive reference loading tables."
+version: "2.0_1.9.1"
+changes: "Integrated Mendix Model SDK (IModel) AST rules (ANTI-83) and updated microflow typology references."
 ---
 
 # Skill: Menditect Testability Framework (MTF v2.0)

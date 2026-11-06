@@ -27,11 +27,24 @@ This reference guide provides the complete technical specification for MTA Test 
 
 | Step Type | `ObjectAction` Enum | Associated Configuration Tools | Core Validation / Behavior |
 | :--- | :--- | :--- | :--- |
-| **Create Object** | `"CreateObject"` | `EditAttributeValue`, `CreateSelectObjectForAssociation`, `EditTestStepAssociation` | Instantiates an entity in memory. Set all initial attributes and associations directly on this step (`PAT-06`). |
-| **Change Object** | `"ChangeObjects"` | `SetTestStepOutputForSelectObjectForChange`, `EditAttributeValue` | Modifies attributes of an existing retrieved or created object (`PAT-80`). |
+| **Create Object** | `"CreateObject"` | `EditAttributeValue`, `CreateSelectObjectForAssociation`, `EditTestStepAssociation` | Instantiates an entity in memory. Set all initial attributes and associations directly on this step (`PAT-06`). Never include or set read-only `AutoNumber` or `HashedString` attributes (`ANTI-83`). |
+| **Change Object** | `"ChangeObjects"` | `SetTestStepOutputForSelectObjectForChange`, `EditAttributeValue` | Modifies attributes of an existing retrieved or created object (`PAT-80`, `ANTI-83`). |
 | **Retrieve Object** | `"RetrieveObjects"` | `EditTestStepRetrieve`, `EditAttributeValue`, `EditAttributeValueFilter` | Retrieves objects from database or teststep output (`OactRetrieveOption`). Include attributes via `EditAttributeValue`; configure filter values/ranges via `EditAttributeValueFilter` (`PAT-07`). |
 | **Delete Object** | `"DeleteObjects"` | `SetTestStepOutputForSelectObjectForDelete` | Marks target objects for deletion (`PAT-80`, `PAT-95`). |
 | **Persist** | `"Persist"` | *(Position chronologically after write/delete steps)* | Commits all uncommitted in-memory object changes to the database (`PAT-21`, `PAT-91`, `PAT-92`). |
+
+#### Mendix Metamodel (`IModel`) `AttributeType` & Generalization -> MTA Setter Compatibility (`PAT-53`, `PAT-81`, `ANTI-35`, `ANTI-83`)
+
+| Mendix Model SDK `AttributeType` | MTA `EditAttributeValue` / `EditAttributeValueFilter` Action | Metamodel Constraint & Construction Guardrail |
+| :--- | :--- | :--- |
+| `DomainModels$AutoNumberAttributeType` | **Read-Only on `CreateObject` / `ChangeObjects` (`ANTI-83`)** | System-generated sequence; only valid as a filter or assertion target on `RetrieveObjects`, never as a writable attribute on `CreateObject` / `ChangeObjects`. |
+| `DomainModels$BooleanAttributeType` | `SetBooleanValue` (`true` / `false`) | Non-nullable 2-valued primitive in Mendix; can **never** be `empty` (`null`). |
+| `DomainModels$EnumerationAttributeType` | `SetStringValue` (exact `EnumerationValue.name` key) | 3-valued (`EnumKey` or `empty`); always pass the technical enum key (`name`), never the localized UI caption. |
+| `DomainModels$StringAttributeType` | `SetStringValue` (respect `length`, default `200`) | Honor `StringAttributeType.length` and `DomainModels$ValidationRule` (`MaxLengthRuleInfo`, `RegExRuleInfo`, `RequiredRuleInfo` per `PAT-53`). |
+| `DomainModels$IntegerAttributeType` / `LongAttributeType` | `SetIntegerLongValue` (`IntegerLongValue` integer wire property `PAT-81`) | Respect `RangeRuleInfo` min/max bounds; never pass synthetic `IntegerValue`/`LongValue` keys (`ANTI-35`). |
+| `DomainModels$DecimalAttributeType` | `SetDecimalValue` (`DecimalValue`) | Arbitrary-precision Mendix `Decimal`; distinct from legacy floating-point types. |
+| `DomainModels$DateTimeAttributeType` | `SetDateTimeValue` / `SetDateTimeValueWithCurrentDateTime` | Pass ISO-8601 UTC timestamps in exploratory JSON (`ANTI-53`) or offset/literal settings in MTA. |
+| `DomainModels$Generalization` (Inheritance) | Instantiate concrete specialized entity for `InheritanceSplit` / `CastAction` branches | Inherited parent attributes and associations are directly accessible on the specialized child entity in `CreateObject` / `RetrieveObjects`. |
 
 ### 2. Microflow Call Steps
 

@@ -81,3 +81,18 @@ To maintain Separation of Concerns and prevent circular dependencies, a strict c
 
 > [!TIP]
 > **TestPath Probe Placement**: To keep your regression tests stable when you refactor the orchestration/process layer, always place your TestLogger probes inside **Unit microflows** (the lowest layer of data manipulation), rather than in Orchestrations.
+
+---
+
+## Mendix Metamodel (`IModel` / `ped_read_document`) AST Audit Signatures
+
+When auditing a Mendix module or microflow against the 11-Point MTF Code Review Checklist via `StudioPro.ped_read_document`, inspect these exact Mendix Metamodel AST signatures:
+
+| MTF Checklist Rule | Mendix Metamodel AST Element (`$Type`) | Violation Signature in `ped_read_document` |
+| :--- | :--- | :--- |
+| **#3 No Hidden Retrieves (DI)** | `Microflows$RetrieveAction` | Inside an `OPR_`, `VAL_`, `FTN_`, or `RULE_` microflow, `retrieveSource.$Type === "Microflows$DatabaseRetrieveSource"` (database query inside a unit instead of passing the object/list via `Microflows$MicroflowParameterObject`). |
+| **#4 & #5 Isolatable Unit & Call Hierarchy** | `Microflows$MicroflowCallAction` | Inside an `OPR_`, `VAL_`, `FTN_`, or `RULE_` microflow, `microflowCall.microflow` invokes an `ORC_`, `CMT_`, `ACT_`, or dissimilar Unit prefix. |
+| **#7 Centralized Commit (`CMT_`)** | `Microflows$CommitAction`, `ChangeObjectAction`, `CreateObjectAction`, `DeleteAction` | Outside a `CMT_` microflow, any `CommitAction`, `DeleteAction`, or `CreateObjectAction` / `ChangeObjectAction` where `commit === "Yes"` or `"YesWithoutEvents"` (note: omitted `commit` defaults to `"No"`). |
+| **#8 Server-Side Invariant Validation** | `Microflows$MicroflowCallAction` -> `VAL_` / `VAL_ORC_` | A `CMT_` microflow executes `CommitAction` without a preceding `VAL_` / `VAL_ORC_` call and `ExclusiveSplit` guarding the commit path. |
+| **#9 Return Values for Testability** | `Microflows$Microflow.microflowReturnType` | An `OPR_`, `FTN_`, `VAL_`, or `ACT_` microflow has `microflowReturnType.$Type === "DataTypes$VoidType"` despite creating or mutating a primary entity. |
+| **#10 Safe Event Handlers** | `DomainModels$EventHandler` | On `DomainModels$Entity.eventHandlers`, `event === "BeforeCommit"` invokes a microflow containing `ValidationFeedbackAction` or sets `raiseErrorOnFalse === false` (note: omitted `raiseErrorOnFalse` defaults to `true`). |
