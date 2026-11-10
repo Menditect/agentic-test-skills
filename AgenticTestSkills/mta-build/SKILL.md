@@ -1,8 +1,8 @@
 ---
 name: mta-build
 description: "Focuses on test specifications, placement, container creation, active chronological test construction, step option binding, and variation matrix optimization (MTA v3.2). Trigger on keywords: MTA build, create test, add test case, build steps, test step, Backend, Frontend, specifications, MTA optimize, refactor test, reorganize suite, clean steps, convert to matrix, reduce duplication, test data creation/deletion steps, batch persist pipelines, and object lifecycle sequencing."
-version: "6.47.1"
-changes: "Integrated Mendix Model SDK (IModel) AST rules (ANTI-83) for AutoNumber attributes and Studio Pro default-value elision across references."
+version: "6.47.2"
+changes: "Synchronized reference guides with Mendix MAIA Plan Mode (Mendix 11.16+) and ANTI-80 updates."
 ---
 
 # MTA Build, Design, & Optimization Skill

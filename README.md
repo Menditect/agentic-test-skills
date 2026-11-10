@@ -105,8 +105,9 @@ The workspace template provides:
 - **ZERO MENDIX MODEL POLLUTION (NO TEST MICROFLOWS):** The Mendix application model is strictly READ-ONLY during testing. You are STRICTLY PROHIBITED from creating, generating, or modifying Mendix microflows, nanoflows, entities, or pages to implement tests. Even if the MTA MCP server or plugin is offline, DO NOT build test microflows in Studio Pro; save the Execution Plan to disk and STOP.
 - **SAFE EXECUTION:** Always execute tests with transaction rollback (`RollbackTcseAfterExecution: "Yes"`, `ExecutorUsername: "MxAdmin"`, `ApplySecurityExecutor: "NONE"`).
 - **EXECUTION STRATEGY SEGREGATION:**
-  1. **IN-MEMORY EXPLORATORY (Plugin):** Allowed to uto_execute ONLY when using MTA_plugin.execute-testcase (zero database mutation, safe rollback).
-  2. **PERSISTENT MTA PLATFORM MUTATIONS:** STRICTLY PROHIBITED from auto-executing. Before calling ANY mutating MTA server tools (CreateTestSuite, CreateTestCase, CreateObjectActionTestStep, etc.), the agent MUST pause and receive explicit, unambiguous user approval for Checkpoint 1 (Execution Plan) and Checkpoint 2 (Placement Summary). Never bypass this gate based on automated linter passes or context compaction summaries.
+  1. **IN-MEMORY EXPLORATORY (Plugin):** Allowed to auto_execute ONLY when using MTA_plugin.execute-testcase (zero database mutation, safe rollback) and MAIA Plan Mode is disabled.
+  2. **MAIA PLAN MODE (Mendix 11.16+):** Treated as `prompt_approval`. Auto-execution is strictly prohibited. MAIA can write `.md` execution plan files to disk and MUST write the plan adhering to the canonical 6-section format (`references/execution-plan-template.md`).
+  3. **PERSISTENT MTA PLATFORM MUTATIONS:** STRICTLY PROHIBITED from auto-executing. Before calling ANY mutating MTA server tools (CreateTestSuite, CreateTestCase, CreateObjectActionTestStep, etc.), the agent MUST pause and receive explicit, unambiguous user approval for Checkpoint 1 (Execution Plan) and Checkpoint 2 (Placement Summary). Never bypass this gate based on automated linter passes or context compaction summaries.
 - **MTA LICENSE TIER & CAPABILITIES:**
   * If `MTA` MCP server is not configured and `MtaPluginModule.MTAConnectionUrl` is `wss://services.menditect.com`, the user is operating under the **Free MTA Exploratory License**.
   * **Free Capabilities:** Unlimited local in-memory microflow testing (`execute-testcase`) and local Execution Plan generation (`EP_*.md`).
@@ -116,6 +117,12 @@ The workspace template provides:
 ```
 
 4. The AI assistant automatically derives the MCP endpoint as `[MtaUrl]/primitivetools/mcp` and resolves instance tokens.
+
+#### 🗺️ Mendix 11.16+ MAIA Plan Mode Integration
+Beginning in Mendix 11.16, Studio Pro MAIA includes a **Plan Mode**:
+- **Plan Mode Enabled:** MAIA treats the request as `prompt_approval`. Auto-execution is prohibited. MAIA can write `.md` files to disk and is strictly mandated to write the plan adhering to the standardized 6-section Execution Plan format (`references/execution-plan-template.md`). MAIA halts at Checkpoint 1 for human review.
+- **Plan Mode Disabled:** MAIA treats the request as `auto_execute`. For in-memory exploratory tests with transaction rollback (`RollbackTcseAfterExecution: "Yes"`), MAIA dispatches `MTA_plugin.execute-testcase` immediately without intermediate halting.
+- **Cognitive Validation (No Node.js Runtime):** Studio Pro MAIA has no access to a Node.js runtime or terminal; it cannot run `node tools/mta-lint.mjs`. Instead, MAIA validates the plan structure, 14 quality checks, and 6 anti-pattern scans cognitively before presenting Checkpoint 1.
 
 #### 💡 Prompting MAIA (Do's and Don'ts)
 Because MAIA's built-in system prompt prioritizes building Mendix model artifacts, phrase prompts clearly to ensure it routes to the MTA testing skill rather than generating test microflows:

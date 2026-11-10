@@ -14,6 +14,10 @@ The document structure consists of:
 - **## 5. Quality & Compliance Checks** (collapsed `<details>` 14-point audit & anti-pattern scan)
 - **## 6. Verification & Build Receipt** (collapsed `<details>` post-construction 4-phase smoke audit receipt)
 
+> [!IMPORTANT]
+> **Mendix MAIA Plan Mode Integration (Mendix 11.16+):**
+> When Mendix MAIA operates in Plan Mode, MAIA can write `.md` files to disk and MUST write its test plan strictly adhering to this canonical 6-section format (`schema_version: "2.1.0"`). MAIA has no Node.js execution environment and cannot run `tools/mta-lint.mjs`; instead, MAIA audits the plan against the Section 5 checklist cognitively. Generating Mendix microflow models inside the `.mpr` or writing unstructured chat summaries is strictly prohibited (`PAT-122`, `ANTI-73`).
+
 ---
 
 # Execution Plan: [TestCaseName]

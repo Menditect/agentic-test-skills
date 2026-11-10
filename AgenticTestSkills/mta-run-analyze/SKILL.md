@@ -1,8 +1,8 @@
 ---
 name: mta-run-analyze
 description: "Focuses on executing tests, exploratory test execution, retrieving test results, parsing logs, debugging runtime failures, performing static architecture audits, and explaining test case intent/logic to developers or testers (MTA v3.2). Trigger on keywords: MTA run, execute test, exploratory test, run exploratory test, execute exploratory test, view results, why did it fail, debug test, analyze run, troubleshoot, get testsuites, get testcases, show steps, list suites, inspect test, verify structure, explain test case, how does this test work, understand test script, document test suite, audit step sequence, test execution timing, performance benchmarking metrics, telemetry analysis, and live test data teardown."
-version: "6.44.1"
-changes: "Updated execution references with rollback exemption for ephemeral exploratory runs and ANTI-83 model invariants."
+version: "6.44.2"
+changes: "Synchronized reference guides with Mendix MAIA Plan Mode (Mendix 11.16+) and ANTI-80 updates."
 ---
 
 # MTA Execution, Analysis, & Diagnostics Skill

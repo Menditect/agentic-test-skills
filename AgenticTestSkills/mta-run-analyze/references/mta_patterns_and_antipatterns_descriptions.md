@@ -1904,8 +1904,8 @@ For each rule, this document outlines its scope, category, detailed operational 
 
 ### ANTI-80: Unverified Status Promotion or Auto-Approve Scope Bypass Anti-Pattern
 * **Scope:** General | **Classification:** Methodological Anti-Pattern
-* **Description:** Setting `status: "AUTO_APPROVED"` on Execution Plans that mutate persistent database state (`rollback: "No"`), target Frontend UI tests (`category: "Frontend"`), target the persistent MTA server (`execution_target: "MTA"`), or reproduce defects (`test_intent: "bug_reproduction"`), or promoting an `AUTO_APPROVED` exploratory plan directly into `STATE_CONSTRUCTION` without explicit Gate 2 human sign-off (`status: "APPROVED"`).
-* **Root Cause:** Conflating fast-path in-memory exploratory auto-execution (`Rollback: "Yes"`) with human-approved Gate 1/Gate 2 authorization (`status: "APPROVED"`).
+* **Description:** Setting `status: "AUTO_APPROVED"` on Execution Plans that mutate persistent database state (`rollback: "No"`), target Frontend UI tests (`category: "Frontend"`), target the persistent MTA server (`execution_target: "MTA"`), or reproduce defects (`test_intent: "bug_reproduction"`), bypassing `mta_config.json.exploratory_execution_mode: "prompt_approval"`, auto-executing when Mendix MAIA Plan Mode is enabled in Studio Pro (Mendix 11.16+), or promoting an `AUTO_APPROVED` exploratory plan directly into `STATE_CONSTRUCTION` without explicit Gate 2 human sign-off (`status: "APPROVED"`).
+* **Root Cause:** Conflating fast-path in-memory exploratory auto-execution (`Rollback: "Yes"`) with human-approved Gate 1/Gate 2 authorization (`status: "APPROVED"`), or failing to respect MAIA's Plan Mode toggle.
 * **Remediation Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol) and `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
 * **Related Rules:**
   * **Direct Counterpart Pattern:** `PAT-43` (Mandatory Dual-Gate Approval Protocol), `PAT-106` (Exploratory-to-Persistent Placement Discovery & Gate 2 Bridge Law).
